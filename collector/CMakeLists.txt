@@ -6,7 +6,7 @@ find_package(CURL REQUIRED)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall --std=c++17 -pthread -Wno-deprecated-declarations -fno-omit-frame-pointer -rdynamic")
 
-set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb -D_DEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-strict-aliasing -DNDEBUG")
 
 if(ADDRESS_SANITIZER)
@@ -52,6 +52,8 @@ set(DRIVER_HEADERS ${FALCO_DIR}/driver/ppm_events_public.h ${FALCO_DIR}/driver/p
 
 add_definitions(-DUSE_PROTO_ARENAS)
 
+add_definitions(-DASSERT_TO_LOG)
+
 file(GLOB COLLECTOR_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/lib/*.cpp)
 add_library(collector_lib ${DRIVER_HEADERS} ${COLLECTOR_LIB_SRC_FILES})
 add_dependencies(collector_lib sinsp-wrapper)
@@ -70,14 +72,14 @@ else()
 	target_link_libraries(collector_lib libprotobuf.a libcares.a)
 endif()
 
+if(NOT DISABLE_PROFILING)
+	target_link_libraries(collector_lib profiler tcmalloc)
+endif()
+
 target_link_libraries(collector_lib z ssl crypto CURL::libcurl bpf)
 
 add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)
-
-if(NOT DISABLE_PROFILING)
-	target_link_libraries(collector profiler tcmalloc)
-endif()
 
 target_link_libraries(collector libprometheus-cpp-pull.a)
 target_link_libraries(collector libprometheus-cpp-core.a)
