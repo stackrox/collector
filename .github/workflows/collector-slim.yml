@@ -92,6 +92,13 @@ jobs:
         env:
           ANSIBLE_CONFIG: ansible/ansible.cfg
 
+      - name: Save CMake cache
+        uses: actions/upload-artifact@v3
+        with:
+          name: cmake-${{ matrix.arch }}
+          path: cmake-build/CMakeCache.txt
+          retention-days: 1
+
   create-multiarch-manifest:
     needs:
     - build-collector-image
