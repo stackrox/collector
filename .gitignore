@@ -31,3 +31,6 @@ out/
 # IBM Cloud dynamic inventory files
 ansible/dev/inventory_ibmcloud.yml
 ansible/ci/inventory_ibmcloud.yml
+
+# Snyk
+.dccache
