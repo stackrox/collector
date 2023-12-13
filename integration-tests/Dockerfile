@@ -13,7 +13,7 @@ COPY go.* "$TEST_ROOT"
 
 WORKDIR "$TEST_ROOT"
 
-RUN CGO_ENABLED=0 go test -tags bench -c -o collector-tests
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go test -tags bench -c -o collector-tests
 
 FROM alpine:3.18
 
