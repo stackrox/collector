@@ -386,13 +386,13 @@ TEST(ConnTrackerTest, TestNormalizedEnableExternalIPs) {
   // from private network
   Connection conn1_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(10, 1, 1, 42), 0, true), 0), L4Proto::TCP, true);
   // from unmatched external IP
-  Connection conn2_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(35, 127, 0, 15), 0, true), 0), L4Proto::TCP, true);
+  Connection conn2_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(35, 127, 0, 15), 32, false), 0), L4Proto::TCP, true);
   // from matched external IP
   Connection conn3_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(35, 127, 1, 0), 24, false), 0), L4Proto::TCP, true);
   // to private network
   Connection conn4_normalized("xyz", Endpoint(), Endpoint(IPNet(Address(10, 1, 1, 42), 0, true), 9999), L4Proto::TCP, false);
   // to unmatched external IP
-  Connection conn5_normalized("xyz", Endpoint(), Endpoint(IPNet(Address(35, 127, 0, 15), 0, true), 54321), L4Proto::TCP, false);
+  Connection conn5_normalized("xyz", Endpoint(), Endpoint(IPNet(Address(35, 127, 0, 15), 32, false), 54321), L4Proto::TCP, false);
   // to matched external IP
   Connection conn6_normalized("xyz", Endpoint(), Endpoint(IPNet(Address(35, 127, 1, 0), 24, false), 54321), L4Proto::TCP, false);
 
