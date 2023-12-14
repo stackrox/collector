@@ -429,3 +429,20 @@ rox_connections_rate{dir="in",peer="private",quantile="0.5"} 2.17241382598877
 rox_connections_rate{dir="in",peer="private",quantile="0.9"} 4.800000190734863
 rox_connections_rate{dir="in",peer="private",quantile="0.95"} 4.833333492279053
 ```
+
+## Troubleshooting using gperftools
+
+Collector includes gperftools API for troubleshooting runtime performance, in
+particular memory issues. The API endpoint is exposed on port `8080`, and
+allows managing profiling status and fetch the result:
+
+```
+$ curl -X POST -d "on" collector:8080/profile/heap
+# leave some time for gathering a profile
+$ curl -X POST -d "off" collector:8080/profile/heap
+# fetch the result
+$ curl collector:8080/profile/heap
+```
+
+The resulting profile could be processed with `pprof` to get a human-readable
+output with debugging symbols.
