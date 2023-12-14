@@ -50,7 +50,7 @@ jobs:
         run: |
           ansible-galaxy install -r ansible/requirements.yml
 
-          BUILD_MULTI_ARCH="${{ contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') || github.event_name == 'push' }}"
+          BUILD_MULTI_ARCH="${{ contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') || github.event_name == 'push' || github.event_name == 'schedule' }}"
 
           # build_multi_arch passed in as json to ensure boolean type
           ansible-playbook \
