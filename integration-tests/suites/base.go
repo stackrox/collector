@@ -69,9 +69,17 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *com
 
 	s.Require().NoError(s.Collector().Setup(options))
 	s.Require().NoError(s.Collector().Launch())
+	// wait for collector to report healthy, includes initial setup and probes
+	// loading
+	_, err := s.waitForContainerToBecomeHealthy(
+		"collector",
+		s.Collector().ContainerID,
+		defaultWaitTickSeconds)
+	s.Require().NoError(err)
 
 	// wait for self-check process to guarantee collector is started
-	s.Sensor().WaitProcessesN(s.Collector().ContainerID, 30*time.Second, 1)
+	selfCheckOk := s.Sensor().WaitProcessesN(s.Collector().ContainerID, 30*time.Second, 1)
+	s.Require().True(selfCheckOk)
 }
 
 // StopCollector will tear down the collector container and stop
@@ -235,11 +243,16 @@ func (s *IntegrationTestSuiteBase) launchContainer(name string, args ...string) 
 	return outLines[len(outLines)-1], err
 }
 
-func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, containerID string, tickSeconds time.Duration) (bool, error) {
+func (s *IntegrationTestSuiteBase) waitForContainerStatus(
+	containerName string,
+	containerID string,
+	tickSeconds time.Duration,
+	filter string) (bool, error) {
+
 	cmd := []string{
 		common.RuntimeCommand, "ps", "-qa",
 		"--filter", "id=" + containerID,
-		"--filter", "status=exited",
+		"--filter", filter,
 	}
 
 	start := time.Now()
@@ -265,6 +278,22 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, contain
 			fmt.Printf("Waiting for container: %s, elapsed time: %s\n", containerName, time.Since(start))
 		}
 	}
+}
+
+func (s *IntegrationTestSuiteBase) waitForContainerToBecomeHealthy(
+	containerName string,
+	containerID string,
+	tickSeconds time.Duration) (bool, error) {
+
+	return s.waitForContainerStatus(containerName, containerID, tickSeconds, "health=healthy")
+}
+
+func (s *IntegrationTestSuiteBase) waitForContainerToExit(
+	containerName string,
+	containerID string,
+	tickSeconds time.Duration) (bool, error) {
+
+	return s.waitForContainerStatus(containerName, containerID, tickSeconds, "status=exited")
 }
 
 func (s *IntegrationTestSuiteBase) execContainer(containerName string, command []string) (string, error) {
