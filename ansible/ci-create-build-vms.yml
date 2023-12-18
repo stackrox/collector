@@ -1,0 +1,35 @@
+---
+- name: Create Build VMs
+  hosts: localhost
+  tags:
+    - setup
+  tasks:
+    - name: Create VMs for each architecture
+      include_role:
+        name: create-all-vms
+      vars:
+        test_platform: all
+        vm_list:
+          # amd64
+          # Not using virtual_machines['rhel'] here to avoid creating
+          # multiple build VMs
+          #          rhel:
+          #            project: rhel-cloud
+          #            families:
+          #              - rhel-9
+
+          # s390x
+          rhel-s390x: "{{ virtual_machines['rhel-s390x'] }}"
+            # # ppc64le
+            # rhel-ppc64le: "{{ virtual_machines['rhel-ppc64le'] }}"
+
+- name: Provision Build VMs
+  hosts: "job_id_{{ job_id }}"
+  roles:
+    - provision-vm
+  gather_facts: no
+  strategy: free
+  become: yes
+  tags:
+    - setup
+    - provision

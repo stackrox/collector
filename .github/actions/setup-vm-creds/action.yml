@@ -1,0 +1,39 @@
+name: Setup VM Credentials
+description: |
+  This action will setup the runner with the necessary credentials to create and
+  interact with VMs
+
+inputs:
+  gcp-ssh-key:
+    description:
+      The SSH private key to use for GCP
+  gcp-ssh-key-pub:
+    description:
+      The SSH public key to use for GCP
+  s390x-key:
+    description:
+      The SSH private key to use for s390x
+  ppc64le-key:
+    description:
+      The SSH private key to use for ppc64le
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+          mkdir -p "$HOME/.ssh"
+          chmod 0700 "$HOME/.ssh"
+
+          function copy_secret_to_file() {
+            local secret="$1"
+            local destination="$2"
+            local perms="$3"
+
+            echo "$secret" > "$destination"
+            chmod "$perms" "$destination"
+          }
+
+          copy_secret_to_file "${{ inputs.gcp-ssh-key }}" "$HOME/.ssh/GCP_SSH_KEY" 0600
+          copy_secret_to_file "${{ inputs.gcp-ssh-key-pub }}" "$HOME/.ssh/GCP_SSH_KEY.pub" 0600
+          copy_secret_to_file "${{ inputs.s390x-key }}" "$HOME/.ssh/acs-s390x-rsa.prv" 0600
+          copy_secret_to_file "${{ inputs.ppc64le-key }}" "$HOME/.ssh/acs-ppc64le-rsa.prv" 0600
