@@ -112,13 +112,20 @@ jobs:
             echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
           } > ${{ github.workspace }}/ansible/secrets.yml
 
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: Setup GCP
+        uses: 'google-github-actions/setup-gcloud@v1'
+
       - uses: ./.github/actions/setup-vm-creds
         with:
           gcp-ssh-key: ${{ secrets.GCP_SSH_KEY }}
           gcp-ssh-key-pub: ${{ secrets.GCP_SSH_KEY_PUB }}
           s390x-key: ${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}
           ppc64le-key: ${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}
-
 
       - name: Download inventory
         if: matrix.arch == 's390x'

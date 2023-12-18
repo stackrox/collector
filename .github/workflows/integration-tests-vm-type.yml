@@ -82,6 +82,14 @@ jobs:
         with:
           python-version: "3.10"
 
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - name: Setup GCP
+        uses: 'google-github-actions/setup-gcloud@v1'
+
       - uses: ./.github/actions/setup-vm-creds
         with:
           gcp-ssh-key: ${{ secrets.GCP_SSH_KEY }}
