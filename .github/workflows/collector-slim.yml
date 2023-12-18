@@ -32,6 +32,7 @@ jobs:
       vm_type: rhel-s390x
       job-tag: builder
       kind: build
+    secrets: inherit
 
   build-collector-image:
     name: Build the collector slim image

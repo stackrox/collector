@@ -42,6 +42,7 @@ jobs:
       vm_type: ${{ inputs.vm_type }}
       job-tag: ${{ inputs.job-tag }}
       kind: test
+    secrets: inherit
   tests:
     runs-on: ubuntu-latest
     needs:

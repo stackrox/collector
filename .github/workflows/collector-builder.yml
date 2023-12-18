@@ -50,6 +50,7 @@ jobs:
       vm_type: rhel-s390x
       job-tag: builder
       kind: build
+    secrets: inherit
 
   build-builder-image:
     name: Build the builder image
