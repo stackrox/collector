@@ -3,7 +3,7 @@
   hosts: all
 
   environment:
-    COLLECTOR_BUILDER_TAG: "{{ collector_build_tag }}"
+    COLLECTOR_BUILDER_TAG: "{{ collector_builder_tag }}"
     PLATFORM: "linux/{{ arch }}"
     COLLECTOR_TAG: "{{ collector_tag }}"
     DISABLE_PROFILING: "{{ disable_profiling }}"
