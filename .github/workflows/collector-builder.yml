@@ -169,16 +169,18 @@ jobs:
             -i ansible/ci \
             -e arch='${{ matrix.arch }}' \
             -e collector_builder_tag='${{ env.COLLECTOR_BUILDER_TAG }}' \
-            -e collector_git_ref='${{ github.sha }}' \
+            -e collector_git_ref='${{ github.ref }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-builder.yml
         env:
           VM_TYPE: rhel-s390x
 
       - name: Destroy VMs
-        if: always()
+        if: always() && matrix.arch == 's390x'
         run: |
           make -C ansible destroy-vms
+        env:
+          IC_API_KEY: ${{ secrets.IBM_CLOUD_S390X_API_KEY }}
 
   create-multiarch-manifest:
     needs:

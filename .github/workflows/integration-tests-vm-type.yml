@@ -97,6 +97,16 @@ jobs:
           s390x-key: ${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}
           ppc64le-key: ${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}
 
+      - name: Set env
+        run: |
+          if [[ "${{ inputs.vm_type }}" =~ s390x ]]; then
+            echo "IC_API_KEY=${{ secrets.IBM_CLOUD_S390X_API_KEY }}" >> "$GITHUB_ENV"
+          fi
+
+          if [[ "${{ inputs.vm_type }}" =~ ppc64le ]]; then
+            echo "IC_API_KEY=${{ secrets.IBM_CLOUD_POWER_API_KEY }}" >> "$GITHUB_ENV"
+          fi
+
       - name: Download inventory
         uses: actions/download-artifact@v3
         with:

@@ -141,7 +141,7 @@ jobs:
             -i ansible/ci \
             -e collector_image='${{ inputs.collector-image }}' \
             -e collector_tag='${{ inputs.collector-tag }}' \
-            -e collector_git_ref='${{ github.sha }}' \
+            -e collector_git_ref='${{ github.ref }}' \
             -e collector_builder_tag='${{ env.COLLECTOR_BUILDER_TAG }}' \
             -e arch='${{ matrix.arch }}' \
             -e disable_profiling="true" \
@@ -158,9 +158,11 @@ jobs:
           retention-days: 1
 
       - name: Destroy Build VMs
-        if: always()
+        if: always() && matrix.arch == 's390x'
         run: |
           make -C ansible destroy-vms
+        env:
+          IC_API_KEY: ${{ secrets.IIBM_CLOUD_S390X_API_KEY }}
 
   create-multiarch-manifest:
     needs:
