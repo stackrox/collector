@@ -38,6 +38,20 @@ jobs:
               - builder/Dockerfile
               - .github/workflows/collector-builder.yml
 
+  create-s390x-build-vms:
+    if: needs.builder-needs-rebuilding.outputs.build-image == 'true' ||
+      (github.event_name == 'push' && (
+        github.ref_type == 'tag' || startsWith(github.ref_name, 'release-')
+      )) ||
+      contains(github.event.pull_request.labels.*.name, 'build-builder-image')
+    needs:
+      - builder-needs-rebuilding
+    uses: ./.github/workflows/vms/create-vms.yml
+    with:
+      vm_type: rhel-s390x
+      job-tag: builder
+      kind: build
+
   build-builder-image:
     name: Build the builder image
     runs-on: ubuntu-latest
@@ -45,6 +59,7 @@ jobs:
     timeout-minutes: 480
     needs:
     - builder-needs-rebuilding
+    - create-s390x-build-vms
     if: |
       needs.builder-needs-rebuilding.outputs.build-image == 'true' ||
       (github.event_name == 'push' && (
@@ -128,6 +143,27 @@ jobs:
             echo "collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}"
           } > ${{ github.workspace }}/ansible/secrets.yml
 
+      - uses: ./.github/actions/setup-vm-creds
+        with:
+          gcp-ssh-key: ${{ secrets.GCP_SSH_KEY }}
+          gcp-ssh-key-pub: ${{ secrets.GCP_SSH_KEY_PUB }}
+          s390x-key: ${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}
+          ppc64le-key: ${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}
+
+
+      - name: Download inventory
+        if: matrix.arch == 's390x'
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ needs.create-s390x-build-vms.outputs.inventory }}
+
+      - name: Install ansible dependencies
+        run: |
+          ls -lah .
+          ls -lah ansible
+          ls -lah ansible/ci
+          ansible-galaxy install -r ansible/requirements.yml
+
       - name: Build images
         if: |
           github.event_name == 'push' ||
@@ -135,12 +171,12 @@ jobs:
           (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch != 's390x')
         timeout-minutes: 480
         run: |
-          ansible-galaxy install -r ansible/requirements.yml
           ansible-playbook \
             --connection local \
             -i localhost, \
             --limit localhost \
             -e arch='${{ matrix.arch }}' \
+            -e collector_builder_tag='${{ env.COLLECTOR_BUILDER_TAG }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-builder.yml
 

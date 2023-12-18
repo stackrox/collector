@@ -26,9 +26,20 @@ env:
   ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
 
 jobs:
+  create-s390x-build-vms:
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') || github.event_name == 'push' }}
+    uses: ./.github/workflows/vms/create-vms.yml
+    with:
+      vm_type: rhel-s390x
+      job-tag: builder
+      kind: build
+
   build-collector-image:
     name: Build the collector slim image
     runs-on: ubuntu-latest
+    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+    needs:
+      - create-s390x-build-vms
     strategy:
       fail-fast: false
       matrix:
@@ -36,6 +47,8 @@ jobs:
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
+      JOB_ID: ${{ needs.create-s390x-build-vms.outputs.job-id }}
+      BUILD_TYPE: ci
 
     steps:
       - uses: actions/checkout@v3
@@ -145,6 +158,11 @@ jobs:
 
       - name: Destroy Build VMs
         if: always() && matrix.arch == 's390x'
+        run: |
+          make -C ansible destroy-vms
+
+      - name: Destroy Build VMs
+        if: always()
         run: |
           make -C ansible destroy-vms
 
