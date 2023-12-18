@@ -73,14 +73,14 @@
     - name: Push slim to quay.io/rhacs-eng
       community.docker.docker_image:
         name: "{{ collector_image }}-{{ arch }}-slim"
-        repository: "{{ ansible_env.RHACS_ENG_IMAGE }}-{{ arch }}-slim"
+        repository: "{{ rhacs_eng_image }}-{{ arch }}-slim"
         push: true
         source: local
 
     - name: Push base to quay.io/stackrox-io
       community.docker.docker_image:
         name: "{{ collector_image }}-{{ arch }}-slim"
-        repository: "{{ ansible_env.RHACS_ENG_IMAGE }}-{{ arch }}-base"
+        repository: "{{ rhacs_eng_image }}-{{ arch }}-base"
         push: true
         source: local
 
@@ -90,8 +90,8 @@
         - "Pushed the following images:"
         - "  {{ collector_image }}-{{ arch }}-slim"
         - "  {{ collector_image }}-{{ arch }}-base"
-        - "  {{ ansible_env.RHACS_ENG_IMAGE }}-{{ arch }}-slim"
-        - "  {{ ansible_env.RHACS_ENG_IMAGE }}-{{ arch }}-base"
+        - "  {{ rhacs_eng_image }}-{{ arch }}-slim"
+        - "  {{ rhacs_eng_image }}-{{ arch }}-base"
       tags: [print_action]
 
     - name: Logout of quay.io

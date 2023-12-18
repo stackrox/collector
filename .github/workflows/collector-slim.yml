@@ -124,6 +124,7 @@ jobs:
             -i localhost, \
             --limit localhost \
             -e collector_image='${{ inputs.collector-image }}' \
+            -e rhacs_eng_image='${{ env.RHACS_ENG_IMAGE }}' \
             -e collector_tag='${{ inputs.collector-tag }}' \
             -e collector_builder_tag='${{ env.COLLECTOR_BUILDER_TAG }}' \
             -e arch='${{ matrix.arch }}' \
@@ -140,6 +141,7 @@ jobs:
           ansible-playbook \
             -i ansible/ci \
             -e collector_image='${{ inputs.collector-image }}' \
+            -e rhacs_eng_image='${{ env.RHACS_ENG_IMAGE }}' \
             -e collector_tag='${{ inputs.collector-tag }}' \
             -e collector_git_ref='${{ github.ref }}' \
             -e collector_builder_tag='${{ env.COLLECTOR_BUILDER_TAG }}' \
