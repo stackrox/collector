@@ -175,6 +175,15 @@ void CollectorConfig::HandleAfterglowEnvVars() {
     afterglow_period_micros_ = static_cast<int64_t>(atof(afterglow_period) * 1000000);
   }
 
+  int64_t max_afterglow_period_micros = 300000000;  // 5 minutes
+
+  if (afterglow_period_micros_ > max_afterglow_period_micros) {
+    CLOG(WARNING) << "User set afterglow period of " << afterglow_period_micros_ / 1000000
+                  << " is greater than the maximum allowed afterglow period of " << max_afterglow_period_micros / 1000000;
+    CLOG(WARNING) << "Setting the afterglow period to " << max_afterglow_period_micros / 1000000;
+    afterglow_period_micros_ = max_afterglow_period_micros;
+  }
+
   if (enable_afterglow_ && afterglow_period_micros_ > 0) {
     CLOG(INFO) << "Afterglow is enabled";
     return;
