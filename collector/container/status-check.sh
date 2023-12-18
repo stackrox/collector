@@ -12,7 +12,7 @@
 # }
 #
 # Take the status line, split it by ":" and trim spaces and quotes.
-STATUS=$(curl -s localhost:8080/ready | grep 'status' | awk -F ':' '{print $2}' | xargs)
+STATUS=$(curl -s localhost:8080/ready | grep 'status' | awk -F ':' '{print $2}' | tr -d '"' | tr -d ' ')
 
 if [[ "${STATUS}" = "ok" ]]; then
     exit 0
