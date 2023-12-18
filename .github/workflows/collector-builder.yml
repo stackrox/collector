@@ -16,6 +16,7 @@ on:
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
   DEFAULT_BUILDER_TAG: 3.16.x-195-g8f32e71fad
+  ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
 
 jobs:
   builder-needs-rebuilding:

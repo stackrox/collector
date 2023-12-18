@@ -23,6 +23,7 @@ env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
   COLLECTOR_BUILDER_TAG: ${{ inputs.collector-builder-tag }}
   RHACS_ENG_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+  ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
 
 jobs:
   create-s390x-build-vms:
@@ -129,8 +130,6 @@ jobs:
             -e disable_profiling="${{ matrix.arch != 'amd64' && matrix.arch != 'arm64' }}" \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-collector.yml
-        env:
-          ANSIBLE_CONFIG: ansible/ansible.cfg
 
       - name: Build s390x image
         if: |
@@ -148,8 +147,6 @@ jobs:
             -e disable_profiling="true" \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-collector.yml
-        env:
-          ANSIBLE_CONFIG: ansible/ansible.cfg
 
       - name: Save CMake cache
         uses: actions/upload-artifact@v3
