@@ -21,6 +21,9 @@ runs:
   steps:
     - shell: bash
       run: |
+          mkdir -p /tmp/secret/stackrox-collector-e2e-tests
+          cp "$GOOGLE_APPLICATION_CREDENTIALS" /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
+
           mkdir -p "$HOME/.ssh"
           chmod 0700 "$HOME/.ssh"
 
@@ -37,3 +40,5 @@ runs:
           copy_secret_to_file "${{ inputs.gcp-ssh-key-pub }}" "$HOME/.ssh/GCP_SSH_KEY.pub" 0600
           copy_secret_to_file "${{ inputs.s390x-key }}" "$HOME/.ssh/acs-s390x-rsa.prv" 0600
           copy_secret_to_file "${{ inputs.ppc64le-key }}" "$HOME/.ssh/acs-ppc64le-rsa.prv" 0600
+
+          ls -lah $HOME/.ssh/
