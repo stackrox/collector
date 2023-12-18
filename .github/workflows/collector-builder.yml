@@ -132,6 +132,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ${{ needs.create-s390x-build-vms.outputs.inventory }}
+          path: ${{ github.workspace }}/ansible/ci/
 
       - name: Install ansible dependencies
         run: |
@@ -144,7 +145,7 @@ jobs:
         if: |
           github.event_name == 'push' ||
           matrix.arch == 'amd64' ||
-          contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+          (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch != 's390x')
         timeout-minutes: 480
         run: |
           ansible-galaxy install -r ansible/requirements.yml

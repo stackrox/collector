@@ -101,6 +101,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ${{ needs.create-vms.outputs.inventory }}
+          path: ${{ github.workspace }}/ansible/ci/
 
       - name: Run Tests
         if: ${{ ! inputs.run-benchmarks }}
