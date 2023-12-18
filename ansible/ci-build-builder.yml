@@ -15,7 +15,7 @@
       ansible.builtin.git:
         repo: https://github.com/stackrox/collector
         dest: "{{ collector_root }}"
-        version: "{{ collector_git_ref }}"
+          #version: "{{ collector_git_ref }}"
         refspec: "{{ collector_git_ref }}"
         recursive: true
       when: arch == "s390x"
