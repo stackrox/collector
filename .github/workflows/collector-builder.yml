@@ -156,6 +156,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ${{ needs.create-s390x-build-vms.outputs.inventory }}
+          path: ${{ github.workspace }}/ansible/ci/
 
       - name: Install ansible dependencies
         run: |
