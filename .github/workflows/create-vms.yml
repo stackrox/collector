@@ -50,7 +50,6 @@ jobs:
       #
       JOB_ID: ${{ github.run_id }}${{ inputs.vm_type }}${{ inputs.job-tag }}
       BUILD_TYPE: ci
-      GCP_SSH_KEY_FILE: ~/.ssh/GCP_SSH_KEY
     steps:
       - uses: actions/checkout@v3
 
