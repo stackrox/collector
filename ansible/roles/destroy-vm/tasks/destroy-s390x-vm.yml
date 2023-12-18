@@ -2,6 +2,9 @@
   shell: hostname
   register: hostname
 
+- debug:
+    var: hostname
+
 - name: Check for existing VSI
   delegate_to: localhost
   ibm.cloudcollection.ibm_is_instance_info:
