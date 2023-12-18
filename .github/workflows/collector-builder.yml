@@ -172,6 +172,8 @@ jobs:
             -e collector_git_ref='${{ github.sha }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-builder.yml
+        env:
+          VM_TYPE: rhel-s390x
 
       - name: Destroy VMs
         if: always()

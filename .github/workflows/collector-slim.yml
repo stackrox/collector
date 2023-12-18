@@ -147,6 +147,8 @@ jobs:
             -e disable_profiling="true" \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-collector.yml
+        env:
+          VM_TYPE: rhel-s390x
 
       - name: Save CMake cache
         uses: actions/upload-artifact@v3

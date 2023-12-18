@@ -50,6 +50,7 @@ jobs:
       #
       JOB_ID: ${{ github.run_id }}${{ inputs.vm_type }}${{ inputs.job-tag }}
       BUILD_TYPE: ci
+      VM_TYPE: ${{ inputs.vm_type }}
     steps:
       - uses: actions/checkout@v3
 
