@@ -27,7 +27,7 @@ env:
 jobs:
   create-s390x-build-vms:
     if: ${{ contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') || github.event_name == 'push' }}
-    uses: ./.github/workflows/vms/create-vms.yml
+    uses: ./.github/workflows/create-vms.yml
     with:
       vm_type: rhel-s390x
       job-tag: builder

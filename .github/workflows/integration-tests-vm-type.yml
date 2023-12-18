@@ -37,7 +37,7 @@ on:
 
 jobs:
   create-vms:
-    uses: ./.github/workflows/vms/create-vms.yml
+    uses: ./.github/workflows/create-vms.yml
     with:
       vm_type: ${{ inputs.vm_type }}
       job-tag: ${{ inputs.job-tag }}

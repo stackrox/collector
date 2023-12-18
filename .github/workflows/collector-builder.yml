@@ -45,7 +45,7 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'build-builder-image')
     needs:
       - builder-needs-rebuilding
-    uses: ./.github/workflows/vms/create-vms.yml
+    uses: ./.github/workflows/create-vms.yml
     with:
       vm_type: rhel-s390x
       job-tag: builder
