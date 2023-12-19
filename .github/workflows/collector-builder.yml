@@ -166,6 +166,7 @@ jobs:
         run: |
           ansible-playbook \
             -i ansible/ci \
+            -e build_hosts='job_id_${{ env.JOB_ID }}' \
             -e arch='${{ matrix.arch }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-builder.yml

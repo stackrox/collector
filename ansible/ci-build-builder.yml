@@ -1,6 +1,6 @@
 ---
 - name: Build and push collector image
-  hosts: all
+  hosts: "{{ build_hosts | default('all') }}"
 
   environment:
     BUILD_BUILDER_IMAGE: "true"
