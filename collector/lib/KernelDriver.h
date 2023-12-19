@@ -43,7 +43,9 @@ class KernelDriverEBPF : public IKernelDriver {
     std::unordered_set<ppm_sc_code> ppm_sc;
 
     try {
-      inspector.open_bpf(SysdigService::kProbePath, DEFAULT_DRIVER_BUFFER_BYTES_DIM, ppm_sc, tp_set);
+      inspector.open_bpf(SysdigService::kProbePath,
+                         config.GetSinspBufferSize(),
+                         ppm_sc, tp_set);
     } catch (const sinsp_exception& ex) {
       CLOG(WARNING) << ex.what();
       return false;
@@ -99,8 +101,8 @@ class KernelDriverCOREEBPF : public IKernelDriver {
     }
 
     try {
-      inspector.open_modern_bpf(DEFAULT_DRIVER_BUFFER_BYTES_DIM,
-                                DEFAULT_CPU_FOR_EACH_BUFFER,
+      inspector.open_modern_bpf(config.GetSinspBufferSize(),
+                                config.GetSinspCpuPerBuffer(),
                                 true, ppm_sc, tp_set);
     } catch (const sinsp_exception& ex) {
       if (config.CoReBPFHardfail()) {

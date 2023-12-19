@@ -49,6 +49,14 @@ This is enabled by default.
   - `ROX_COLLECTOR_CONNECTION_STATS_WINDOW`: the length of the sliding time window
     in minutes. Default: `60`
 
+* `ROX_COLLECTOR_SINSP_CPU_PER_BUFFER`: Allows to control how many sinsp
+buffers are going to be allocated. The resulting number of buffers will be
+calculated as the overall number of CPU cores available divided by this
+value. The default value is 1, meaning one buffer for each CPU.
+
+* `ROX_COLLECTOR_SINSP_BUFFER_SIZE`: Specifies the size of a sinsp buffer in
+bytes. The default value is 16 MB.
+
 NOTE: Using environment variables is a preferred way of configuring Collector,
 so if you're adding a new configuration knob, keep this in mind.
 

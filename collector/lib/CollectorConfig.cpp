@@ -162,6 +162,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
 
   HandleAfterglowEnvVars();
   HandleConnectionStatsEnvVars();
+  HandleSinspEnvVars();
 
   host_config_ = ProcessHostHeuristics(*this);
 }
@@ -235,6 +236,31 @@ void CollectorConfig::HandleConnectionStatsEnvVars() {
       CLOG(INFO) << "Connection statistics window: " << connection_stats_window_;
     } catch (...) {
       CLOG(ERROR) << "Invalid window length value: '" << envvar << "'";
+    }
+  }
+}
+
+void CollectorConfig::HandleSinspEnvVars() {
+  const char* envvar;
+
+  sinsp_cpu_per_buffer_ = DEFAULT_CPU_FOR_EACH_BUFFER;
+  sinsp_buffer_size_ = DEFAULT_DRIVER_BUFFER_BYTES_DIM;
+
+  if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_CPU_PER_BUFFER")) != NULL) {
+    try {
+      sinsp_cpu_per_buffer_ = std::stoi(envvar);
+      CLOG(INFO) << "Sinsp cpu per buffer: " << sinsp_cpu_per_buffer_;
+    } catch (...) {
+      CLOG(ERROR) << "Invalid cpu per buffer value: '" << envvar << "'";
+    }
+  }
+
+  if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_BUFFER_SIZE")) != NULL) {
+    try {
+      sinsp_buffer_size_ = std::stoi(envvar);
+      CLOG(INFO) << "Sinsp buffer size: " << sinsp_buffer_size_;
+    } catch (...) {
+      CLOG(ERROR) << "Invalid buffer size value: '" << envvar << "'";
     }
   }
 }
