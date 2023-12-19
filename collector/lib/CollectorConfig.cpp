@@ -179,8 +179,8 @@ void CollectorConfig::HandleAfterglowEnvVars() {
 
   if (afterglow_period_micros_ > max_afterglow_period_micros) {
     CLOG(WARNING) << "User set afterglow period of " << afterglow_period_micros_ / 1000000
-                  << " is greater than the maximum allowed afterglow period of " << max_afterglow_period_micros / 1000000;
-    CLOG(WARNING) << "Setting the afterglow period to " << max_afterglow_period_micros / 1000000;
+                  << "s is greater than the maximum allowed afterglow period of " << max_afterglow_period_micros / 1000000 << "s";
+    CLOG(WARNING) << "Setting the afterglow period to " << max_afterglow_period_micros / 1000000 << "s";
     afterglow_period_micros_ = max_afterglow_period_micros;
   }
 
