@@ -160,9 +160,6 @@ jobs:
 
       - name: Install ansible dependencies
         run: |
-          ls -lah .
-          ls -lah ansible
-          ls -lah ansible/ci
           ansible-galaxy install -r ansible/requirements.yml
 
       - name: Build images
@@ -177,7 +174,6 @@ jobs:
             -i localhost, \
             --limit localhost \
             -e arch='${{ matrix.arch }}' \
-            -e collector_builder_tag='${{ env.COLLECTOR_BUILDER_TAG }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-builder.yml
 
