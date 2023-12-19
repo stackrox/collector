@@ -36,9 +36,19 @@ runs:
             chmod "$perms" "$destination"
           }
 
-          copy_secret_to_file "${{ inputs.gcp-ssh-key }}" "$HOME/.ssh/GCP_SSH_KEY" 0600
-          copy_secret_to_file "${{ inputs.gcp-ssh-key-pub }}" "$HOME/.ssh/GCP_SSH_KEY.pub" 0600
+          copy_secret_to_file "${{ inputs.gcp-ssh-key }}" "$HOME/.ssh/google_compute_engine" 0600
+          copy_secret_to_file "${{ inputs.gcp-ssh-key-pub }}" "$HOME/.ssh/google_compute_engine.pub" 0600
           copy_secret_to_file "${{ inputs.s390x-key }}" "$HOME/.ssh/acs-s390x-rsa.prv" 0600
           copy_secret_to_file "${{ inputs.ppc64le-key }}" "$HOME/.ssh/acs-ppc64le-rsa.prv" 0600
 
           ls -lah $HOME/.ssh/
+
+    - shell: bash
+      run: |
+        ansible-galaxy collection install -r "${{ github.workspace }}/ansible/requirements.yml"
+
+    # Added workaround for ssh connection issue with power vm from ubuntu machine.
+    # Changing mtu works in resolving the issue
+    - shell: bash
+      run: sudo ifconfig eth0 mtu 1000 up
+

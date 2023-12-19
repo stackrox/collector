@@ -37,6 +37,7 @@ on:
 
 jobs:
   create-vms:
+    name: Creating ${{ inputs.vm_type }} VMs
     uses: ./.github/workflows/create-vms.yml
     with:
       vm_type: ${{ inputs.vm_type }}
@@ -44,6 +45,7 @@ jobs:
       kind: test
     secrets: inherit
   tests:
+    name: Testing ${{ inputs.vm_type }}
     runs-on: ubuntu-latest
     needs:
       - create-vms
