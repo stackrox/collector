@@ -18,7 +18,7 @@
         repo: https://github.com/stackrox/collector
         dest: "{{ collector_root }}"
         version: "{{ collector_git_sha }}"
-        refspec: "+{{ collector_git_ref }}"
+        refspec: "+{{ collector_git_ref | replace('refs/', '') }}"
         recursive: true
       when: arch == "s390x"
 
