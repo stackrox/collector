@@ -67,7 +67,6 @@ jobs:
       # vm_type may contain hyphens, so the id is normalized below
       #
       JOB_ID: ${{ needs.create-vms.outputs.job-id }}
-      GCP_SSH_KEY_FILE: ~/.ssh/GCP_SSH_KEY
       BUILD_TYPE: ci
       VM_TYPE: "${{ inputs.vm_type }}"
       COLLECTOR_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
