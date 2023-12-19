@@ -69,12 +69,12 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *com
 
 	s.Require().NoError(s.Collector().Setup(options))
 	s.Require().NoError(s.Collector().Launch())
-	// wait for collector to report healthy, includes initial setup and probes
-	// loading
+	// Wait for collector to report healthy, includes initial setup and probes
+	// loading. It doesn't make sense to wait for very long, limit it to 1 min.
 	_, err := s.waitForContainerToBecomeHealthy(
 		"collector",
 		s.Collector().ContainerID,
-		defaultWaitTickSeconds)
+		defaultWaitTickSeconds, 1*time.Minute)
 	s.Require().NoError(err)
 
 	// wait for self-check process to guarantee collector is started
@@ -243,10 +243,16 @@ func (s *IntegrationTestSuiteBase) launchContainer(name string, args ...string) 
 	return outLines[len(outLines)-1], err
 }
 
+// Wait for a container to become a certain status.
+//   - tickSeconds -- how often to check for the status
+//   - timeoutThreshold -- the overall time limit for waiting,
+//     defaulting to 30 min if zero
+//   - filter -- description of the desired status
 func (s *IntegrationTestSuiteBase) waitForContainerStatus(
 	containerName string,
 	containerID string,
 	tickSeconds time.Duration,
+	timeoutThreshold time.Duration,
 	filter string) (bool, error) {
 
 	cmd := []string{
@@ -258,7 +264,12 @@ func (s *IntegrationTestSuiteBase) waitForContainerStatus(
 	start := time.Now()
 	tick := time.Tick(tickSeconds)
 	tickElapsed := time.Tick(1 * time.Minute)
-	timeout := time.After(30 * time.Minute)
+
+	if timeoutThreshold == 0 {
+		timeoutThreshold = 30 * time.Minute
+	}
+	timeout := time.After(timeoutThreshold)
+
 	for {
 		select {
 		case <-tick:
@@ -269,13 +280,17 @@ func (s *IntegrationTestSuiteBase) waitForContainerStatus(
 				return true, nil
 			}
 			if err != nil {
-				fmt.Printf("Retrying waitForContainerToExit(%s, %s): Error: %v\n", containerName, containerID, err)
+				fmt.Printf("Retrying waitForContainerStatus(%s, %s): Error: %v\n",
+					containerName, containerID, err)
 			}
 		case <-timeout:
-			fmt.Printf("Timed out waiting for container %s to exit, elapsed Time: %s\n", containerName, time.Since(start))
-			return false, nil
+			fmt.Printf("Timed out waiting for container %s to become %s, elapsed Time: %s\n",
+				containerName, filter, time.Since(start))
+			return false, fmt.Errorf("Timeout waiting for container %s to become %s after %v",
+				containerName, filter, timeoutThreshold)
 		case <-tickElapsed:
-			fmt.Printf("Waiting for container: %s, elapsed time: %s\n", containerName, time.Since(start))
+			fmt.Printf("Waiting for container %s to become %s, elapsed time: %s\n",
+				containerName, filter, time.Since(start))
 		}
 	}
 }
@@ -283,17 +298,21 @@ func (s *IntegrationTestSuiteBase) waitForContainerStatus(
 func (s *IntegrationTestSuiteBase) waitForContainerToBecomeHealthy(
 	containerName string,
 	containerID string,
-	tickSeconds time.Duration) (bool, error) {
+	tickSeconds time.Duration,
+	timeoutThreshold time.Duration) (bool, error) {
 
-	return s.waitForContainerStatus(containerName, containerID, tickSeconds, "health=healthy")
+	return s.waitForContainerStatus(containerName, containerID, tickSeconds,
+		timeoutThreshold, "health=healthy")
 }
 
 func (s *IntegrationTestSuiteBase) waitForContainerToExit(
 	containerName string,
 	containerID string,
-	tickSeconds time.Duration) (bool, error) {
+	tickSeconds time.Duration,
+	timeoutThreshold time.Duration) (bool, error) {
 
-	return s.waitForContainerStatus(containerName, containerID, tickSeconds, "status=exited")
+	return s.waitForContainerStatus(containerName, containerID, tickSeconds,
+		timeoutThreshold, "status=exited")
 }
 
 func (s *IntegrationTestSuiteBase) execContainer(containerName string, command []string) (string, error) {
@@ -371,7 +390,7 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	containerID, err := s.launchContainer(benchmarkName, benchmarkArgs...)
 	s.Require().NoError(err)
 
-	_, err = s.waitForContainerToExit(benchmarkName, containerID, defaultWaitTickSeconds)
+	_, err = s.waitForContainerToExit(benchmarkName, containerID, defaultWaitTickSeconds, 0)
 	s.Require().NoError(err)
 
 	benchmarkLogs, err := s.containerLogs("benchmark")
