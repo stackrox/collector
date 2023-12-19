@@ -46,6 +46,7 @@ runs:
     - shell: bash
       run: |
         ansible-galaxy collection install -r "${{ github.workspace }}/ansible/requirements.yml"
+        python -m pip install -r "${{ github.workspace }}/ansible/requirements.txt"
 
     # Added workaround for ssh connection issue with power vm from ubuntu machine.
     # Changing mtu works in resolving the issue

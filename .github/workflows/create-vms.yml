@@ -130,14 +130,14 @@ jobs:
       - name: Save Inventory Files
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.JOB_ID }}-inventory
+          name: ${{ inputs.vm_type }}-${{ inputs.job-tag }}-inventory
           path: |
             ${{ github.workspace }}/ansible/ci/*.yml
 
       - name: Set outputs
         id: finalize
         run: |
-          echo "inventory=${{ env.JOB_ID }}-inventory" >> "$GITHUB_OUTPUT"
+          echo "inventory=${{ inputs.vm_type }}-${{ inputs.job-tag }}-inventory" >> "$GITHUB_OUTPUT"
           echo "job-id=${{ env.JOB_ID }}" >> "$GITHUB_OUTPUT"
 
       - name: Clean up
