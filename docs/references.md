@@ -52,7 +52,9 @@ This is enabled by default.
 * `ROX_COLLECTOR_SINSP_CPU_PER_BUFFER`: Allows to control how many sinsp
 buffers are going to be allocated. The resulting number of buffers will be
 calculated as the overall number of CPU cores available divided by this
-value. The default value is 1, meaning one buffer for each CPU.
+value. The default value is 1, meaning one buffer for each CPU. The value 0 is
+special, it instructs sinsp to allocate only one buffer no matter how many CPUs
+are there. This parameter affects CO-RE BPF only.
 
 * `ROX_COLLECTOR_SINSP_BUFFER_SIZE`: Specifies the size of a sinsp buffer in
 bytes. The default value is 16 MB.
