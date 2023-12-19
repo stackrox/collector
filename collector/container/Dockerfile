@@ -30,6 +30,7 @@ COPY LICENSE-kernel-modules.txt /kernel-modules/LICENSE
 COPY container/libs/libsinsp-wrapper.so /usr/local/lib/
 COPY container/bin/collector /usr/local/bin/
 COPY container/bin/self-checks /usr/local/bin/self-checks
+COPY container/status-check.sh /usr/local/bin/status-check.sh
 
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
     ldconfig && \
@@ -37,6 +38,14 @@ RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
     chmod 700 bootstrap.sh
 
 EXPOSE 8080 9090
+
+HEALTHCHECK	\
+	# health checks within the first 5s are not counted as failure
+	--start-period=5s \
+	# perform health check every 5s
+	--interval=5s \
+	# the command uses /ready API
+	CMD /usr/local/bin/status-check.sh
 
 ENTRYPOINT ["/bootstrap.sh"]
 

@@ -18,7 +18,7 @@ func (s *MockSensor) ExpectProcessesN(t *testing.T, containerID string, timeout 
 }
 
 func (s *MockSensor) WaitProcessesN(containerID string, timeout time.Duration, n int) bool {
-	return len(s.waitProcessesN(func() {}, containerID, timeout, n)) == n
+	return len(s.waitProcessesN(func() {}, containerID, timeout, n)) >= n
 }
 
 func (s *MockSensor) ExpectProcesses(
@@ -101,7 +101,7 @@ func (s *MockSensor) ExpectLineages(t *testing.T, containerID string, timeout ti
 }
 
 func (s *MockSensor) waitProcessesN(timeoutFn func(), containerID string, timeout time.Duration, n int) []types.ProcessInfo {
-	if len(s.Processes(containerID)) == n {
+	if len(s.Processes(containerID)) >= n {
 		return s.Processes(containerID)
 	}
 
@@ -116,7 +116,7 @@ loop:
 				continue loop
 			}
 
-			if len(s.Processes(containerID)) == n {
+			if len(s.Processes(containerID)) >= n {
 				return s.Processes(containerID)
 			}
 		}
