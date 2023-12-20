@@ -8,7 +8,7 @@
   delegate_to: localhost
   ibm.cloudcollection.ibm_pi_instance_info:
     pi_instance_name: "{{ hostname }}"
-    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+    pi_cloud_instance_id: "{{ ppc64le.pi_cloud_instance_id }}"
   failed_when:
     - pi_instance_existing_output.rc != 0
     - '"does not exist" not in pi_instance_existing_output.stderr'
@@ -33,7 +33,7 @@
   delegate_to: localhost
   ibm.cloudcollection.ibm_pi_instance:
     state: absent
-    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+    pi_cloud_instance_id: "{{ ppc64le.pi_cloud_instance_id }}"
     id: "{{ pi_instance.id }}"
   retries: 3
   delay: 5
@@ -46,7 +46,7 @@
   delegate_to: localhost
   ibm.cloudcollection.ibm_pi_network_info:
     pi_network_name: "{{ hostname }}-network"
-    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+    pi_cloud_instance_id: "{{ ppc64le.pi_cloud_instance_id }}"
   failed_when:
     - pi_network_existing_output.rc != 0
     - '"unable to get network" not in pi_network_existing_output.stderr'
@@ -73,7 +73,7 @@
   delegate_to: localhost
   ibm.cloudcollection.ibm_pi_key_info:
     pi_key_name: "{{ hostname }}-ssh-key"
-    pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
+    pi_cloud_instance_id: "{{ ppc64le.pi_cloud_instance_id }}"
   failed_when:
     - pi_ssh_key_existing_output.rc != 0
     - '"does not exist" not in pi_ssh_key_existing_output.stderr'
