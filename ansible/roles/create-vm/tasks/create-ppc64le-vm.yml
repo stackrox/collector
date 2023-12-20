@@ -102,7 +102,7 @@
     pi_processors: "{{ ppc64le.processors }}"
     pi_instance_name: "{{ vm_name }}"
     pi_proc_type: "{{ ppc64le.proc_type }}"
-    pi_image_id: "{{ image_dict[pi_image] }}"
+    pi_image_id: "{{ image_dict[ppc64le.pi_image] }}"
     pi_volume_ids: []
     pi_network:
       - network_id: "{{ pi_network_id }}"
