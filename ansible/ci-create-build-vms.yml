@@ -11,7 +11,7 @@
         vm_list:
           s390x: "{{ virtual_machines['rhel-s390x'] | combine({'families': ['rhel-8-6-s390x'] }) }}"
           ppc64le: "{{ virtual_machines['rhel-ppc64le'] | combine({'families': ['p']}) }}"
-          arm64: "{{ virtual_machines['fcarm'] | combine({'families': ['fedora-coreos-stable-arm64']}) }}"
+          arm64: "{{ virtual_machines['rhel-arm64'] | combine({'families': ['rhel-9-arm64']}) }}"
 
 - name: Provision Build VMs
   hosts: "job_id_{{ job_id }}"
