@@ -31,6 +31,7 @@ compose:
   # use the public IP as the ansible host for SSH
   ansible_host: networkInterfaces[0].accessConfigs[0].natIP
   ansible_port: 22
+  ansible_ssh_private_key_file: ~/.ssh/google_compute_engine
 
   # This is useful for VM identification later on
   vm_config: labels.vm_config
