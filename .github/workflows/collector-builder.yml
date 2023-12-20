@@ -38,21 +38,6 @@ jobs:
               - builder/Dockerfile
               - .github/workflows/collector-builder.yml
 
-  create-s390x-build-vms:
-    if: needs.builder-needs-rebuilding.outputs.build-image == 'true' ||
-      (github.event_name == 'push' && (
-        github.ref_type == 'tag' || startsWith(github.ref_name, 'release-')
-      )) ||
-      contains(github.event.pull_request.labels.*.name, 'build-builder-image')
-    needs:
-      - builder-needs-rebuilding
-    uses: ./.github/workflows/create-vms.yml
-    with:
-      vm_type: rhel-s390x
-      job-tag: builder
-      kind: build
-    secrets: inherit
-
   build-builder-image:
     name: Build the builder image
     runs-on: ubuntu-latest
@@ -60,7 +45,6 @@ jobs:
     timeout-minutes: 480
     needs:
     - builder-needs-rebuilding
-    - create-s390x-build-vms
     if: |
       needs.builder-needs-rebuilding.outputs.build-image == 'true' ||
       (github.event_name == 'push' && (
@@ -77,7 +61,6 @@ jobs:
     env:
       PLATFORM: linux/${{ matrix.arch }}
       BUILD_TYPE: ci
-      JOB_ID: ${{ needs.create-s390x-build-vms.outputs.job-id }}
 
     steps:
       - uses: actions/checkout@v3
@@ -89,6 +72,35 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - uses: 'google-github-actions/setup-gcloud@v1'
+
+      - uses: ./.github/actions/setup-vm-creds
+        with:
+          gcp-ssh-key: ${{ secrets.GCP_SSH_KEY }}
+          gcp-ssh-key-pub: ${{ secrets.GCP_SSH_KEY_PUB }}
+          s390x-ssh-key: ${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}
+          ppc64le-ssh-key: ${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}
+          ppc64le-ssh-key-pub: ${{ secrets.IBM_CLOUD_POWER_SSH_PUBLIC_KEY }}
+          s390x-key: ${{ secrets.IBM_CLOUD_S390x_API_KEY }}
+          ppc64le-key: ${{ secrets.IBM_CLOUD_POWER_API_KEY }}
+          redhat-username: ${{ secrets.REDHAT_USERNAME }}
+          redhat-password: ${{ secrets.REDHAT_PASSWORD }}
+          vm-type: all
+          job-tag: builder
+
+      - name: Create Build VMs
+        if: matrix.arch == 's390x'
+        run: |
+          make -C "${{ github.workspace }}/ansible" create-build-vms
 
       - name: Define builder tag
         id: builder-tag
@@ -115,28 +127,6 @@ jobs:
             echo "collector_git_sha: ${{ github.sha }}"
             echo "collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}"
           } > ${{ github.workspace }}/ansible/secrets.yml
-
-      - name: Authenticate with GCP
-        uses: 'google-github-actions/auth@v1'
-        with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
-
-      - name: Setup GCP
-        uses: 'google-github-actions/setup-gcloud@v1'
-
-      - uses: ./.github/actions/setup-vm-creds
-        with:
-          gcp-ssh-key: ${{ secrets.GCP_SSH_KEY }}
-          gcp-ssh-key-pub: ${{ secrets.GCP_SSH_KEY_PUB }}
-          s390x-key: ${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}
-          ppc64le-key: ${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}
-
-      - name: Download inventory
-        if: matrix.arch == 's390x'
-        uses: actions/download-artifact@v3
-        with:
-          name: ${{ needs.create-s390x-build-vms.outputs.inventory }}
-          path: ${{ github.workspace }}/ansible/ci/
 
       - name: Build images
         if: |
@@ -166,16 +156,11 @@ jobs:
             -e arch='${{ matrix.arch }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-builder.yml
-        env:
-          VM_TYPE: rhel-s390x
 
       - name: Destroy VMs
         if: always() && matrix.arch == 's390x'
         run: |
           make -C ansible destroy-vms
-        env:
-          IC_API_KEY: ${{ secrets.IBM_CLOUD_S390X_API_KEY }}
-          IC_REGION: ca-tor
 
   create-multiarch-manifest:
     needs:

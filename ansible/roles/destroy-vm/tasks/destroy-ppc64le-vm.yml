@@ -1,6 +1,6 @@
 ---
- 
-#Set fact that are required to destroy vsi instance 
+
+#Set fact that are required to destroy vsi instance
 - set_fact:
     region: "{{ lookup('env', 'IC_REGION') }}"
     zone: "{{ lookup('env', 'IC_ZONE') }}"

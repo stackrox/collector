@@ -26,21 +26,9 @@ env:
   ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
 
 jobs:
-  create-s390x-build-vms:
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') || github.event_name == 'push' }}
-    uses: ./.github/workflows/create-vms.yml
-    with:
-      vm_type: rhel-s390x
-      job-tag: builder
-      kind: build
-    secrets: inherit
-
   build-collector-image:
     name: Build the collector slim image
     runs-on: ubuntu-latest
-    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
-    needs:
-      - create-s390x-build-vms
     strategy:
       fail-fast: false
       matrix:
@@ -48,8 +36,6 @@ jobs:
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
-      JOB_ID: ${{ needs.create-s390x-build-vms.outputs.job-id }}
-      BUILD_TYPE: ci
 
     steps:
       - uses: actions/checkout@v3
@@ -61,6 +47,35 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - uses: 'google-github-actions/setup-gcloud@v1'
+
+      - uses: ./.github/actions/setup-vm-creds
+        with:
+          gcp-ssh-key: ${{ secrets.GCP_SSH_KEY }}
+          gcp-ssh-key-pub: ${{ secrets.GCP_SSH_KEY_PUB }}
+          s390x-ssh-key: ${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}
+          ppc64le-ssh-key: ${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}
+          ppc64le-ssh-key-pub: ${{ secrets.IBM_CLOUD_POWER_SSH_PUBLIC_KEY }}
+          s390x-key: ${{ secrets.IBM_CLOUD_S390x_API_KEY }}
+          ppc64le-key: ${{ secrets.IBM_CLOUD_POWER_API_KEY }}
+          redhat-username: ${{ secrets.REDHAT_USERNAME }}
+          redhat-password: ${{ secrets.REDHAT_PASSWORD }}
+          vm-type: all
+          job-tag: builder
+
+      - name: Create Build VMs
+        if: matrix.arch == 's390x'
+        run: |
+          make -C "${{ github.workspace }}/ansible" create-build-vms
 
       - name: Checks PR, main and release branches
         run: |
@@ -97,20 +112,6 @@ jobs:
 
       - name: Setup GCP
         uses: 'google-github-actions/setup-gcloud@v1'
-
-      - uses: ./.github/actions/setup-vm-creds
-        with:
-          gcp-ssh-key: ${{ secrets.GCP_SSH_KEY }}
-          gcp-ssh-key-pub: ${{ secrets.GCP_SSH_KEY_PUB }}
-          s390x-key: ${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}
-          ppc64le-key: ${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}
-
-      - name: Download inventory
-        if: matrix.arch == 's390x'
-        uses: actions/download-artifact@v3
-        with:
-          name: ${{ needs.create-s390x-build-vms.outputs.inventory }}
-          path: ${{ github.workspace }}/ansible/ci/
 
       - name: Build images
         if: |
@@ -153,9 +154,6 @@ jobs:
         if: always() && matrix.arch == 's390x'
         run: |
           make -C ansible destroy-vms
-        env:
-          IC_API_KEY: ${{ secrets.IBM_CLOUD_S390X_API_KEY }}
-          IC_REGION: ca-tor
 
   create-multiarch-manifest:
     needs:

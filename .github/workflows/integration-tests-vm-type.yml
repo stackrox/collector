@@ -36,39 +36,10 @@ on:
         default: ""
 
 jobs:
-  create-vms:
-    name: Creating ${{ inputs.vm_type }} VMs
-    uses: ./.github/workflows/create-vms.yml
-    with:
-      vm_type: ${{ inputs.vm_type }}
-      job-tag: ${{ inputs.job-tag }}
-      kind: test
-    secrets: inherit
   tests:
     name: Testing ${{ inputs.vm_type }}
     runs-on: ubuntu-latest
-    needs:
-      - create-vms
     env:
-      #
-      # JOB_ID is a little odd in that it needs to be unique per vm_type,
-      # but GHA's run_id is only unique per job. Appending the vm_type
-      # makes it fit our requirements...
-      #
-      # but wait, there's more
-      #
-      # the job id is used both as part of a GCP instance name and label, but
-      # also as a group name in ansible, which means it has some restrictions:
-      #
-      # - must be alpha-numeric
-      # - must not contain underscores (because of GCP)
-      # - must not contain hyphens (because of ansible)
-      #
-      # vm_type may contain hyphens, so the id is normalized below
-      #
-      JOB_ID: ${{ needs.create-vms.outputs.job-id }}
-      BUILD_TYPE: ci
-      VM_TYPE: "${{ inputs.vm_type }}"
       COLLECTOR_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
       COLLECTOR_QA_TAG: ${{ inputs.collector-qa-tag }}
       TEST_IMAGE: quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}
@@ -95,31 +66,20 @@ jobs:
         with:
           gcp-ssh-key: ${{ secrets.GCP_SSH_KEY }}
           gcp-ssh-key-pub: ${{ secrets.GCP_SSH_KEY_PUB }}
-          s390x-key: ${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}
-          ppc64le-key: ${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}
+          s390x-ssh-key: ${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}
+          ppc64le-ssh-key: ${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}
+          ppc64le-ssh-key-pub: ${{ secrets.IBM_CLOUD_POWER_SSH_PUBLIC_KEY }}
+          s390x-key: ${{ secrets.IBM_CLOUD_S390x_API_KEY }}
+          ppc64le-key: ${{ secrets.IBM_CLOUD_POWER_API_KEY }}
+          redhat-username: ${{ secrets.REDHAT_USERNAME }}
+          redhat-password: ${{ secrets.REDHAT_PASSWORD }}
+          vm-type: ${{ inputs.vm_type }}
+          job-tag: ${{ inputs.job-tag }}
 
-      - name: Set env
+      - name: Create Build VMs
+        if: ${{ ! inputs.run-benchmarks }}
         run: |
-          if [[ "${{ inputs.vm_type }}" =~ s390x ]]; then
-            {
-              echo "IC_API_KEY=${{ secrets.IBM_CLOUD_S390X_API_KEY }}"
-              echo "IC_REGION=ca-tor"
-            } >> "$GITHUB_ENV"
-          fi
-
-          if [[ "${{ inputs.vm_type }}" =~ ppc64le ]]; then
-            {
-              echo "IC_API_KEY=${{ secrets.IBM_CLOUD_POWER_API_KEY }}"
-              echo "IC_REGION=osa"
-              echo "IC_ZONE=osa21"
-          } >> "$GITHUB_ENV"
-          fi
-
-      - name: Download inventory
-        uses: actions/download-artifact@v3
-        with:
-          name: ${{ needs.create-vms.outputs.inventory }}
-          path: ${{ github.workspace }}/ansible/ci/
+          make -C "${{ github.workspace }}/ansible" create-ci-vms
 
       - name: Run Tests
         if: ${{ ! inputs.run-benchmarks }}

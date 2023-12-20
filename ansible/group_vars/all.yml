@@ -7,8 +7,6 @@ test_platform: "{{ lookup('env', 'VM_TYPE', default='rhel') }}"
 collector_root: "{{ playbook_dir }}/.."
 collector_repo: "quay.io/stackrox-io"
 
-ansible_ssh_private_key_file: "{{ virtual_machines[test_platform].ssh_key_file | default(gcp_ssh_key_file) }}"
-
 # These control the container runtime used on the VMs.
 # They can be overridden in platform-specific group_vars files
 runtime_command: docker

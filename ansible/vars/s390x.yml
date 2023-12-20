@@ -1,5 +1,6 @@
 ---
 
+
 s390x:
   #rhel-8-6-s390x
   vsi_image_id: r038-0d89bf54-c28f-4dc4-bec0-0f8e03a74de3
@@ -16,3 +17,7 @@ s390x:
   # vsi_resource_group: stackrox-ci-resource-group
   vsi_resource_group_id: 1a33a6a9bd6e498f8115e9b1064bfa97
   disk_size: "{{ ibm_disk_size }}"
+
+  env:
+    IC_API_KEY: "{{ lookup('env', 'IBM_CLOUD_S390X_API_KEY') }}"
+    IC_REGION: ca-tor
