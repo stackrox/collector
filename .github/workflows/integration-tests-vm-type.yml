@@ -76,7 +76,7 @@ jobs:
           vm-type: ${{ inputs.vm_type }}
           job-tag: ${{ inputs.job-tag }}
 
-      - name: Create Build VMs
+      - name: Create Test VMs
         if: ${{ ! inputs.run-benchmarks }}
         run: |
           make -C "${{ github.workspace }}/ansible" create-ci-vms
