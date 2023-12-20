@@ -6,7 +6,7 @@
 
 - name: Check for existing SSH Key
   ibm.cloudcollection.ibm_pi_key_info:
-    pi_key_name: "{{ ppc64le.pi_name }}-ssh-key"
+    pi_key_name: "{{ vm_name }}-ssh-key"
     pi_cloud_instance_id: "{{ ppc64le.pi_cloud_instance_id }}"
   failed_when:
     - pi_ssh_key_existing_output.rc != 0
@@ -24,7 +24,7 @@
 
 - name: Add new SSH Key
   ibm.cloudcollection.ibm_pi_key:
-    pi_key_name: "{{ ppc64le.pi_name }}-ssh-key"
+    pi_key_name: "{{ vm_name }}-ssh-key"
     pi_ssh_key: "{{ ppc64le.ssh_public_key }}"
     pi_cloud_instance_id: "{{ ppc64le.pi_cloud_instance_id }}"
   register: pi_ssh_key_create_output
@@ -49,7 +49,7 @@
 
 - name: Check for existing network
   ibm.cloudcollection.ibm_pi_network_info:
-    pi_network_name: "{{ ppc64le.pi_name }}-network"
+    pi_network_name: "{{ vm_name }}-network"
     pi_cloud_instance_id: "{{ ppc64le.pi_cloud_instance_id }}"
   failed_when:
     - pi_network_existing_output.rc != 0
@@ -68,7 +68,7 @@
 
 - name: Add new network
   ibm.cloudcollection.ibm_pi_network:
-    pi_network_name: "{{ ppc64le.pi_name }}-network"
+    pi_network_name: "{{ vm_name }}-network"
     pi_network_type: "pub-vlan"
     pi_cloud_instance_id: "{{ ppc64le.pi_cloud_instance_id }}"
   register: pi_network_create_output
@@ -82,7 +82,7 @@
 
 - name: Check for existing Virtual Server Instance
   ibm.cloudcollection.ibm_pi_instance_info:
-    pi_instance_name: "{{ ppc64le.pi_name }}"
+    pi_instance_name: "{{ vm_name }}"
     pi_cloud_instance_id: "{{ ppc64le.pi_cloud_instance_id }}"
   failed_when:
     - pi_instance_existing_output.rc != 0
@@ -100,7 +100,7 @@
     state: available
     pi_memory: "{{ ppc64le.memory }}"
     pi_processors: "{{ ppc64le.processors }}"
-    pi_instance_name: "{{ ppc64le.pi_name }}"
+    pi_instance_name: "{{ vm_name }}"
     pi_proc_type: "{{ ppc64le.proc_type }}"
     pi_image_id: "{{ image_dict[pi_image] }}"
     pi_volume_ids: []
@@ -119,7 +119,7 @@
 
 - name: Check for existing Virtual Server Instance
   ibm.cloudcollection.ibm_pi_instance_info:
-    pi_instance_name: "{{ ppc64le.pi_name }}"
+    pi_instance_name: "{{ vm_name }}"
     pi_cloud_instance_id: "{{ ppc64le.pi_cloud_instance_id }}"
   register: pi_instance_new_output
   when: pi_instance_create_output.resource is defined
@@ -136,7 +136,7 @@
 
 - name: Add VSI to Ansible inventory
   add_host:
-    name: "{{ ppc64le.pi_name }}"
+    name: "{{ vm_name }}"
     ansible_host: "{{ pi_instance.addresses[0].external_ip }}"
     ansible_user: root
     groups:
