@@ -46,7 +46,7 @@ BoolEnvVar enable_connection_stats("ROX_COLLECTOR_ENABLE_CONNECTION_STATS", true
 
 BoolEnvVar enable_detailed_metrics("ROX_COLLECTOR_ENABLE_DETAILED_METRICS", true);
 
-BoolEnvVar enable_introspection("ROX_COLLECTOR_ENABLE_INTROSPECTION", false);
+BoolEnvVar enable_introspection("DEBUG_ENABLE_INTROSPECTION", false);
 
 }  // namespace
 
