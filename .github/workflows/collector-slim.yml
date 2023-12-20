@@ -82,11 +82,11 @@ jobs:
           ppc64le-key: ${{ secrets.IBM_CLOUD_POWER_API_KEY }}
           redhat-username: ${{ secrets.REDHAT_USERNAME }}
           redhat-password: ${{ secrets.REDHAT_PASSWORD }}
-          vm-type: all
+          vm-type: ${{ matrix.arch }}
           job-tag: builder
 
       - name: Create Build VMs
-        if: matrix.arch == 's390x'
+        if: matrix.arch != 'amd64'
         run: |
           make -C "${{ github.workspace }}/ansible" create-build-vms
 
@@ -127,10 +127,7 @@ jobs:
         uses: 'google-github-actions/setup-gcloud@v1'
 
       - name: Build images
-        if: |
-          github.event_name == 'push' ||
-          matrix.arch == 'amd64' ||
-          (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch != 's390x')
+        if: matrix.arch == 'amd64'
         timeout-minutes: 480
         run: |
           ansible-playbook \
@@ -141,23 +138,26 @@ jobs:
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-collector.yml
 
-      - name: Build s390x image
+      - name: Build multiarch image
         if: |
-          github.event_name == 'push' ||
-          (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch == 's390x')
+          github.event_name == 'push' &&
+          matrix.arch != 'amd64' ||
+          contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
         timeout-minutes: 480
         run: |
           ansible-playbook \
             -i ansible/ci \
             -e arch='${{ matrix.arch }}' \
-            -e build_hosts='job_id_${{ env.JOB_ID }}' \
+            -e build_hosts='job_id_${{ env.JOB_ID }}:&vm_arch_${{ matrix.arch }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-collector.yml
         env:
           VM_TYPE: rhel-s390x
 
       - name: Destroy Build VMs
-        if: always() && matrix.arch == 's390x'
+        if: always() &&
+          matrix.arch != 'amd64' ||
+          contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
         run: |
           make -C ansible destroy-vms
 
