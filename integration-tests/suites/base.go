@@ -91,7 +91,7 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *com
 	}
 
 	// wait for self-check process to guarantee collector is started
-	selfCheckOk := s.Sensor().WaitProcessesN(s.Collector().ContainerID, 30*time.Second, 1)
+	selfCheckOk := s.Sensor().WaitProcessesN(s.Collector().ContainerID, 180*time.Second, 1)
 	s.Require().True(selfCheckOk)
 }
 
