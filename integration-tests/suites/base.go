@@ -88,10 +88,19 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *com
 		s.Require().NoError(err)
 	} else {
 		fmt.Println("No HealthCheck found, do not wait for collector to become healthy")
+
+		// No way to figure out when all the services up and running, so give
+		// Collector a bit of time to spin up GRPC connection.
+		time.Sleep(10 * time.Second)
 	}
 
-	// wait for self-check process to guarantee collector is started
-	selfCheckOk := s.Sensor().WaitProcessesN(s.Collector().ContainerID, 180*time.Second, 1)
+	// Self-check process is not going to be sent via GRPC, instead create at
+	// least one canary process to make sure everything is fine.
+	_, err = s.execContainer("collector", []string{"echo"})
+	s.Require().NoError(err)
+
+	// wait for the canary process to guarantee collector is started
+	selfCheckOk := s.Sensor().WaitProcessesN(s.Collector().ContainerID, 30*time.Second, 1)
 	s.Require().True(selfCheckOk)
 }
 
