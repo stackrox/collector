@@ -143,13 +143,6 @@ jobs:
         env:
           VM_TYPE: rhel-s390x
 
-      - name: Save CMake cache
-        uses: actions/upload-artifact@v3
-        with:
-          name: cmake-${{ matrix.arch }}
-          path: cmake-build/CMakeCache.txt
-          retention-days: 1
-
       - name: Destroy Build VMs
         if: always() && matrix.arch == 's390x'
         run: |
