@@ -19,6 +19,8 @@ keyed_groups:
 
   - prefix: vm_arch
     key: labels.vm_arch
+groups:
+  gcp: true
 auth_kind: application
 hostnames:
   - name
