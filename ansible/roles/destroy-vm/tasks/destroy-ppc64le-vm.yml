@@ -9,8 +9,6 @@
 
 - name: Get instance id by name
   delegate_to: localhost
-  environment:
-    IC_API_KEY: "{{ lookup('env', 'IC_API_KEY') }}"
   ibm.cloudcollection.ibm_pi_instance_info:
     region: "{{ region }}"
     zone: "{{ zone }}"
