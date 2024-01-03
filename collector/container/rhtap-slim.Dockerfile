@@ -52,6 +52,9 @@ RUN /tmp/.rhtap/scripts/subscription-manager-bro.sh register && \
         wget \
         which \
         bpftool \
+        tbb-devel \
+        c-ares-devel \
+        jq-devel \
     && \
     /tmp/.rhtap/scripts/subscription-manager-bro.sh cleanup && \
     # We can do usual cleanup while we're here: remove packages that would trigger violations. \
@@ -94,8 +97,7 @@ RUN mkdir kernel-modules \
 
 # Build with gperftools (DISABLE_PROFILING=OFF) only for supported
 # architectures, at the moment x86_64 only
-RUN ./builder/install/install-dependencies.sh && \
-    if [[ "$(uname -m)" == "x86_64" ]];   \
+RUN if [[ "$(uname -m)" == "x86_64" ]];   \
         then DISABLE_PROFILING="OFF";   \
         else DISABLE_PROFILING="ON";    \
     fi ; \
