@@ -106,4 +106,3 @@ runs:
     # Changing mtu works in resolving the issue
     - shell: bash
       run: sudo ifconfig eth0 mtu 1000 up
-

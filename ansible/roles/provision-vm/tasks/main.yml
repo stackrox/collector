@@ -12,9 +12,7 @@
 
 # set facts for weird platforms that report different families
 - set_fact:
-    is_rhel: "{{ vm_config.find('rhel') != -1 }}"
     is_coreos: "{{ vm_config.find('coreos') != -1 }}"
-    is_ubuntu: "{{ vm_config.find('ubuntu-os') != -1 }}"
     is_flatcar: "{{ vm_config.find('flatcar') != -1 }}"
 
 # Wait for SSH to be available on the remote host
@@ -43,11 +41,11 @@
 
 - name: RedHat Provisioning
   include_tasks: "redhat.yml"
-  when: is_rhel|bool
+  when: ansible_facts['os_family'] == 'RedHat'
 
 - name: Ubuntu Provisioning
   include_tasks: "ubuntu.yml"
-  when: is_ubuntu|bool
+  when: ansible_facts['os_family'] == 'Debian'
 
 - name: Docker specific setup
   include_tasks: "docker.yml"
