@@ -93,11 +93,12 @@ RUN mkdir kernel-modules \
 # WITH_RHEL_RPMS controls for dependency installation, ie if they were already installed as RPMs.
 # Setting the value to empty will cause dependencies to be downloaded from repositories or accessed in submodules and compiled.
 # TODO(ROX-20651): Set ENV WITH_RHEL_RPMS=true when RHEL RPMs can be installed to enable hermetic builds.
-# ENV WITH_RHEL_RPMS=true
+ENV WITH_RHEL_RPMS=true
 
 # Build with gperftools (DISABLE_PROFILING=OFF) only for supported
 # architectures, at the moment x86_64 only
-RUN if [[ "$(uname -m)" == "x86_64" ]];   \
+RUN ./builder/install/install-dependencies.sh && \
+    if [[ "$(uname -m)" == "x86_64" ]];   \
         then DISABLE_PROFILING="OFF";   \
         else DISABLE_PROFILING="ON";    \
     fi ; \
