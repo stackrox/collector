@@ -59,6 +59,9 @@ spec:
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
+  - name: subscription-manager-activation-key
+    secret:
+      secretName: subscription-manager-activation-key
 
   pipelineSpec:
 
@@ -167,6 +170,7 @@ spec:
     workspaces:
     - name: workspace
     - name: git-auth
+    - name: subscription-manager-activation-key
 
     tasks:
 
