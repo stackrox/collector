@@ -11,11 +11,12 @@ on:
     outputs:
       collector-builder-tag:
         description: The builder tag used by the build
-        value: ${{ jobs.build-builder-image.outputs.collector-builder-tag || 'master' }}
+        value: ${{ jobs.build-builder-image.outputs.collector-builder-tag || '3.16.x-195-g8f32e71fad' }}
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
   DEFAULT_BUILDER_TAG: 3.16.x-195-g8f32e71fad
+  ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
 
 jobs:
   builder-needs-rebuilding:
@@ -59,6 +60,7 @@ jobs:
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
+      BUILD_TYPE: ci
 
     steps:
       - uses: actions/checkout@v3
@@ -70,6 +72,35 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - uses: 'google-github-actions/setup-gcloud@v1'
+
+      - uses: ./.github/actions/setup-vm-creds
+        with:
+          gcp-ssh-key: ${{ secrets.GCP_SSH_KEY }}
+          gcp-ssh-key-pub: ${{ secrets.GCP_SSH_KEY_PUB }}
+          s390x-ssh-key: ${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}
+          ppc64le-ssh-key: ${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}
+          ppc64le-ssh-key-pub: ${{ secrets.IBM_CLOUD_POWER_SSH_PUBLIC_KEY }}
+          s390x-key: ${{ secrets.IBM_CLOUD_S390x_API_KEY }}
+          ppc64le-key: ${{ secrets.IBM_CLOUD_POWER_API_KEY }}
+          redhat-username: ${{ secrets.REDHAT_USERNAME }}
+          redhat-password: ${{ secrets.REDHAT_PASSWORD }}
+          vm-type: all
+          job-tag: builder
+
+      - name: Create Build VMs
+        if: matrix.arch == 's390x'
+        run: |
+          make -C "${{ github.workspace }}/ansible" create-build-vms
 
       - name: Define builder tag
         id: builder-tag
@@ -84,7 +115,7 @@ jobs:
           echo "COLLECTOR_BUILDER_TAG=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_ENV"
           echo "collector-builder-tag=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
 
-      - name: Create Ansible Vars (inc. secrets)
+      - name: Create ansible vars
         run: |
           {
             echo "---"
@@ -92,21 +123,19 @@ jobs:
             echo "stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}"
             echo "rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}"
             echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
+            echo "collector_git_ref: ${{ github.ref }}"
+            echo "collector_git_sha: ${{ github.sha }}"
+            echo "collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}"
           } > ${{ github.workspace }}/ansible/secrets.yml
-
-          if [[ "${RUNNER_DEBUG}" == "1" ]]; then
-            echo "ANSIBLE_STDOUT_CALLBACK=debug" >> "${GITHUB_ENV}"
-          fi
 
       - name: Build images
         if: |
           github.event_name == 'push' ||
           matrix.arch == 'amd64' ||
-          contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+          (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch != 's390x')
         timeout-minutes: 480
         run: |
           ansible-galaxy install -r ansible/requirements.yml
-
           ansible-playbook \
             --connection local \
             -i localhost, \
@@ -114,6 +143,24 @@ jobs:
             -e arch='${{ matrix.arch }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-builder.yml
+
+      - name: Build s390x images
+        if: |
+          github.event_name == 'push' ||
+          (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch == 's390x')
+        timeout-minutes: 480
+        run: |
+          ansible-playbook \
+            -i ansible/ci \
+            -e build_hosts='job_id_${{ env.JOB_ID }}' \
+            -e arch='${{ matrix.arch }}' \
+            -e @'${{ github.workspace }}/ansible/secrets.yml' \
+            ansible/ci-build-builder.yml
+
+      - name: Destroy VMs
+        if: always() && matrix.arch == 's390x'
+        run: |
+          make -C ansible destroy-vms
 
   create-multiarch-manifest:
     needs:

@@ -1,14 +1,11 @@
 ---
 
 gcp_ssh_key_file: "{{ lookup('env', 'GCP_SSH_KEY_FILE', default='~/.ssh/google_compute_engine') }}"
-ibmcloud_ssh_key_file: "{{ lookup('env', 'IBMCLOUD_SSH_KEY_FILE', default='~/.ssh/acs-sshkey_rsa.prv') }}"
 
 current_user: "{{ lookup('env', 'USER') }}"
 test_platform: "{{ lookup('env', 'VM_TYPE', default='rhel') }}"
 collector_root: "{{ playbook_dir }}/.."
 collector_repo: "quay.io/stackrox-io"
-
-ansible_ssh_private_key_file: "{{ virtual_machines[test_platform].ssh_key_file | default(gcp_ssh_key_file) }}"
 
 # These control the container runtime used on the VMs.
 # They can be overridden in platform-specific group_vars files
@@ -23,8 +20,6 @@ excluded_pairs:
   # e.g. - ['ubuntu-1804-lts', 'core_bpf']
   # This can be removed once we have downloadable s390x eBPF drivers
   - [ 'rhel-8-6-s390x', 'ebpf' ]
-  # Also exclude Power & core_bpf, since it is currently unsupported
-  - [ 'p', 'core_bpf' ]
   # No ebpf support for arm... Yet...?
   - [ 'rhel-9-arm64', 'ebpf' ]
   - [ 'ubuntu-2004-lts-arm64', 'ebpf' ]
@@ -33,6 +28,9 @@ excluded_pairs:
   - [ 'fedora-coreos-stable-arm64', 'ebpf' ]
   # eBPF on Garden Linux is not supported.
   - [ 'garden-linux', 'ebpf' ]
+
+  - [ 'p', 'ebpf' ]
+  - [ 'rhel-8-6-s390x', 'ebpf' ]
 
 virtual_machines:
   rhel:
@@ -51,7 +49,7 @@ virtual_machines:
   rhel-s390x:
     project: rhel-s390x-cloud
     arch: s390x
-    ssh_key_file: "{{ ibmcloud_ssh_key_file }}"
+    ssh_key_file: "~/.ssh/acs-s390x-rsa.prv"
     families:
       - rhel-8-6-s390x
 
@@ -60,7 +58,7 @@ virtual_machines:
   rhel-ppc64le:
     project: rhel-ppc64le-cloud
     arch: ppc64le
-    ssh_key_file: "{{ ibmcloud_ssh_key_file }}"
+    ssh_key_file: "~/.ssh/acs-ppc64le-rsa.prv"
     families:
       - p
 

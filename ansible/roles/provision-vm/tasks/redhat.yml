@@ -38,6 +38,8 @@
       - docker-ce
       - docker-ce-cli
       - containerd.io
+      - git
+      - make
     state: latest
     update_cache: true
 
