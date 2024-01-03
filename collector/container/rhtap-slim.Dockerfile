@@ -11,29 +11,10 @@ FROM registry.access.redhat.com/ubi8/ubi:latest AS rpm-implanter
 COPY --from=ubi-normal / /mnt
 COPY ./.rhtap /tmp/.rhtap
 
+# TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
 RUN /tmp/.rhtap/scripts/subscription-manager-bro.sh register && \
     dnf -y --installroot=/mnt upgrade --nobest && \
-    dnf -y --installroot=/mnt module enable postgresql:13 && \
-    # find is used in /stackrox/import-additional-cas \
-    # snappy provides libsnappy.so.1, which is needed by most stackrox binaries \
-    dnf -y --installroot=/mnt install findutils snappy zstd postgresql && \
-    /tmp/.rhtap/scripts/subscription-manager-bro.sh cleanup
-    # We CANNOT do the usual cleanup because we still need to install rpms in next stage
-    # We can do usual cleanup while we're here: remove packages that would trigger violations. \
-    # dnf -y --installroot=/mnt clean all && \
-    # rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    # rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
-
-
-FROM scratch as builder
-
-COPY --from=rpm-implanter /mnt /
-
-COPY . .
-
-# TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
-RUN dnf upgrade -y --nobest \
-    && dnf -y install --nobest \
+    dnf -y --installroot=/mnt install --nobest \
         autoconf \
         automake \
         binutils-devel \
@@ -71,7 +52,18 @@ RUN dnf upgrade -y --nobest \
         wget \
         which \
         bpftool \
-    && dnf clean all
+    && \
+    /tmp/.rhtap/scripts/subscription-manager-bro.sh cleanup && \
+    # We can do usual cleanup while we're here: remove packages that would trigger violations. \
+    dnf -y --installroot=/mnt clean all && \
+    rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
+
+FROM scratch as builder
+
+COPY --from=rpm-implanter /mnt /
+
+COPY . .
 
 ARG BUILD_DIR
 ARG SRC_ROOT_DIR=${BUILD_DIR}
