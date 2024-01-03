@@ -112,6 +112,7 @@ jobs:
       - amd64-all-integration-tests
       - arm64-integration-tests
       - s390x-integration-tests
+      - ppc64le-integration-tests
     steps:
       - name: Slack notification
         uses: rtCamp/action-slack-notify@v2
