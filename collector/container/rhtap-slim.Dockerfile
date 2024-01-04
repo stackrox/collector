@@ -38,7 +38,7 @@ RUN /tmp/.rhtap/scripts/subscription-manager-bro.sh register && \
     /tmp/.rhtap/scripts/subscription-manager-bro.sh cleanup && \
     # We can do usual cleanup while we're here: remove packages that would trigger violations. \
     dnf -y --installroot=/mnt clean all && \
-    rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
 
 FROM scratch as builder
@@ -97,22 +97,24 @@ RUN ./builder/install/install-dependencies.sh && \
 
 # Application
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS ubi-minimal
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS rpm-implanter-app
+# The installer must be ubi (not minimal) and must be 8.9 or later since the earlier versions complain:
+#  subscription-manager is disabled when running inside a container. Please refer to your host system for subscription management.
+FROM ubi-normal AS rpm-implanter-app
 
 COPY --from=ubi-minimal / /mnt
 COPY ./.rhtap /tmp/.rhtap
 
 # TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
 RUN /tmp/.rhtap/scripts/subscription-manager-bro.sh register && \
-    microdnf -y --installroot=/mnt upgrade --nobest && \
-    microdnf -y --installroot=/mnt install --nobest \
+    dnf -y --installroot=/mnt upgrade --nobest && \
+    dnf -y --installroot=/mnt install --nobest \
       kmod \
       tbb \
       jq \
       c-ares && \
     /tmp/.rhtap/scripts/subscription-manager-bro.sh cleanup && \
     # We can do usual cleanup while we're here: remove packages that would trigger violations. \
-    microdnf -y --installroot=/mnt clean all && \
+    dnf -y --installroot=/mnt clean all && \
     rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
 
