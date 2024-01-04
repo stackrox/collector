@@ -66,7 +66,7 @@ class SelfCheckHandler : public SignalHandler {
   std::chrono::time_point<std::chrono::steady_clock> start_;
   std::chrono::seconds timeout_;
 
-  bool seen_self_check = false;
+  bool seen_self_check_ = false;
 };
 
 class SelfCheckProcessHandler : public SelfCheckHandler {
