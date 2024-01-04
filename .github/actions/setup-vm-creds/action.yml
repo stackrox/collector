@@ -96,6 +96,10 @@ runs:
           echo "REDHAT_PASSWORD=${{ inputs.redhat-password }}"
         } >> "$GITHUB_ENV"
 
+        if [[ "${RUNNER_DEBUG}" == "1" ]]; then
+          echo "ANSIBLE_STDOUT_CALLBACK=debug" >> "${GITHUB_ENV}"
+        fi
+
     - shell: bash
       run: |
         python -m pip install -r "${{ github.workspace }}/ansible/requirements.txt"

@@ -31,6 +31,9 @@ excluded_pairs:
 
   - [ 'p', 'ebpf' ]
 
+  # temporarily disabled due to socket calibration bug
+  - ['rhcos-413-86-202303151429-0-gcp-x86-64', 'ebpf']
+
 virtual_machines:
   rhel:
     project: rhel-cloud

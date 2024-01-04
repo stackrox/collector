@@ -11,11 +11,11 @@ on:
     outputs:
       collector-builder-tag:
         description: The builder tag used by the build
-        value: ${{ jobs.build-builder-image.outputs.collector-builder-tag || '3.16.x-195-g8f32e71fad' }}
+        value: ${{ jobs.build-builder-image.outputs.collector-builder-tag || 'master' }}
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
-  DEFAULT_BUILDER_TAG: 3.16.x-195-g8f32e71fad
+  DEFAULT_BUILDER_TAG: master
   ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
 
 jobs:
