@@ -21,8 +21,29 @@ on:
         default: ""
 
 jobs:
+  identify-image-platforms:
+    runs-on: ubuntu-latest
+    outputs:
+      supported_archs: "${{ steps.identify-archs.outputs.supported_archs }}"
+    steps:
+      - id: identify-archs
+        run: |
+          if docker manifest inspect "${COLLECTOR_IMAGE}"; then
+            docker pull "${COLLECTOR_IMAGE}"
+            supported_archs="$(docker inspect "${COLLECTOR_IMAGE}" | jq -c '[.[].Architecture]')"
+          else
+            supported_archs="$(docker manifest inspect "${COLLECTOR_IMAGE}" | jq -c '[.manifests[].platform.architecture]')"
+          fi
+
+          echo "supported_archs=${supported_archs}" >> "$GITHUB_OUTPUT"
+        env:
+          COLLECTOR_IMAGE: "quay.io/stackrox-io/collector:${{ inputs.collector-tag }}"
+
   amd64-required-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
+    needs:
+      - identify-image-platforms
+    if: contains(needs.identify-image-platforms.outputs.supported_archs, 'amd64')
     strategy:
       # ensure that if one part of the matrix fails, the
       # rest will continue
@@ -40,7 +61,11 @@ jobs:
 
   amd64-all-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: contains(github.event.pull_request.labels.*.name, 'all-integration-tests') || github.event_name == 'push'
+    needs:
+      - identify-image-platforms
+    if: contains(needs.identify-image-platforms.outputs.supported_archs, 'amd64') &&
+        contains(github.event.pull_request.labels.*.name, 'all-integration-tests') ||
+        github.event_name == 'push'
     strategy:
       # ensure that if one part of the matrix fails, the
       # rest will continue
@@ -63,7 +88,9 @@ jobs:
 
   arm64-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+    needs:
+      - identify-image-platforms
+    if: contains(needs.identify-image-platforms.outputs.supported_archs, 'arm64')
     strategy:
       # ensure that if one part of the matrix fails, the
       # rest will continue
