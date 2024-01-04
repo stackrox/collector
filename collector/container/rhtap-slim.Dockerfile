@@ -120,6 +120,9 @@ RUN /tmp/.rhtap/scripts/subscription-manager-bro.sh register && \
 
 FROM scratch
 
+# TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
+ARG COLLECTOR_VERSION=0.0.1-todo
+
 COPY --from=rpm-implanter-app /mnt /
 
 WORKDIR /
