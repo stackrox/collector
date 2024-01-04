@@ -20,13 +20,6 @@ class SelfCheckHandler : public SignalHandler {
     start_ = std::chrono::steady_clock::now();
   }
 
- protected:
-  sinsp* inspector_;
-  SysdigEventExtractor event_extractor_;
-
-  std::chrono::time_point<std::chrono::steady_clock> start_;
-  std::chrono::seconds timeout_;
-
   /**
    * @brief Verifies that a given event came from the self-check process,
    * by checking the process name and the executable path.
@@ -35,15 +28,26 @@ class SelfCheckHandler : public SignalHandler {
    *       the host pid, but when we fork the process we get the namespace
    *       pid.
    */
-  bool isSelfCheckEvent(sinsp_evt* evt) {
-    const std::string* name = event_extractor_.get_comm(evt);
-    const std::string* exe = event_extractor_.get_exe(evt);
+  static bool isSelfCheckEvent(sinsp_evt* evt, SysdigEventExtractor& event_extractor) {
+    const std::string* name = event_extractor.get_comm(evt);
+    const std::string* exe = event_extractor.get_exe(evt);
 
     if (name == nullptr || exe == nullptr) {
       return false;
     }
 
-    return name->compare(self_checks::kSelfChecksName) == 0 && exe->compare(self_checks::kSelfChecksExePath) == 0;
+    return IsSelfCheckEvent(*name, *exe);
+  }
+
+  static bool IsSelfCheckEvent(sinsp_threadinfo& tinfo) {
+    const std::string& name = tinfo.get_comm();
+    const std::string& exe = tinfo.get_exepath();
+
+    return IsSelfCheckEvent(name, exe);
+  }
+
+  static bool IsSelfCheckEvent(const std::string& name, const std::string& exe) {
+    return name.compare(self_checks::kSelfChecksName) == 0 || exe.compare(self_checks::kSelfChecksExePath);
   }
 
   /**
@@ -54,6 +58,15 @@ class SelfCheckHandler : public SignalHandler {
     auto now = std::chrono::steady_clock::now();
     return now > (start_ + timeout_);
   }
+
+ protected:
+  sinsp* inspector_;
+  SysdigEventExtractor event_extractor_;
+
+  std::chrono::time_point<std::chrono::steady_clock> start_;
+  std::chrono::seconds timeout_;
+
+  bool seen_self_check = false;
 };
 
 class SelfCheckProcessHandler : public SelfCheckHandler {
@@ -87,7 +100,7 @@ class SelfCheckNetworkHandler : public SelfCheckHandler {
         "shutdown<",
         "connect<",
         "accept<",
-        "listen<",
+        "getsockopt<",
     };
   }
 

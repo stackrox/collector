@@ -203,14 +203,21 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
     ServePendingProcessRequests();
 
     sinsp_evt* evt = GetNext();
-    if (!evt) continue;
+    if (!evt) {
+      continue;
+    }
 
     auto process_start = NowMicros();
     for (auto it = signal_handlers_.begin(); it != signal_handlers_.end(); it++) {
       auto& signal_handler = *it;
-      if (!signal_handler.ShouldHandle(evt)) continue;
+      if (!signal_handler.ShouldHandle(evt)) {
+        continue;
+      }
+
       LogUnreasonableEventTime(process_start, evt);
+
       auto result = signal_handler.handler->HandleSignal(evt);
+
       if (result == SignalHandler::NEEDS_REFRESH) {
         if (!SendExistingProcesses(signal_handler.handler.get())) {
           continue;
@@ -223,6 +230,8 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
         // We don't need to update the iterator post-deletion
         // because we also stop iteration at this point.
         signal_handlers_.erase(it);
+        break;
+      } else if (result != SignalHandler::IGNORED) {
         break;
       }
     }
@@ -246,6 +255,10 @@ bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
 
   return threads->loop([&](sinsp_threadinfo& tinfo) {
     if (!tinfo.m_container_id.empty() && tinfo.is_main_thread()) {
+      if (SelfCheckHandler::IsSelfCheckEvent(tinfo)) {
+        return true;
+      }
+
       auto result = handler->HandleExistingProcess(&tinfo);
       if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
         CLOG(WARNING) << "Failed to write existing process signal: " << &tinfo;
