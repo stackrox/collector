@@ -1,12 +1,13 @@
 ARG BUILD_DIR=/build
 ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
 
+# Builder
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 # TODO(ROX-20651): Use RHEL/ubi base image when entitlement is solved.
 # RPMs requiring entitlement: bpftool, cmake-3.18.2-9.el8, elfutils-libelf-devel, tbb-devel, c-ares-devel, jq-devel
 # FROM registry.access.redhat.com/ubi8/ubi:latest AS builder
 FROM registry.access.redhat.com/ubi8/ubi:latest AS ubi-normal
-FROM registry.access.redhat.com/ubi8/ubi:latest AS rpm-implanter
+FROM registry.access.redhat.com/ubi8/ubi:latest AS rpm-implanter-builder
 
 COPY --from=ubi-normal / /mnt
 COPY ./.rhtap /tmp/.rhtap
@@ -15,47 +16,25 @@ COPY ./.rhtap /tmp/.rhtap
 RUN /tmp/.rhtap/scripts/subscription-manager-bro.sh register && \
     dnf -y --installroot=/mnt upgrade --nobest && \
     dnf -y --installroot=/mnt install --nobest \
-        autoconf \
-        automake \
-        binutils-devel \
-        bison \
-        ca-certificates \
-        clang-15.0.7 \
-        cmake \
-        cracklib-dicts \
-        diffutils \
-        elfutils-libelf-devel \
-        file \
-        flex \
-        gcc \
-        gcc-c++ \
-        gdb \
-        gettext \
-        git \
-        glibc-devel \
-        libasan \
-        libubsan \
-        libcap-ng-devel \
-        libcurl-devel \
-        libtool \
-        libuuid-devel \
         make \
-        openssh-server \
-        openssl-devel \
-        patchutils \
-        passwd \
-        pkgconfig \
-        rsync \
-        tar \
-        unzip \
-        valgrind \
         wget \
-        which \
+        unzip \
+        clang \
         bpftool \
+        cmake-3.18.2-9.el8 \
+        gcc-c++ \
+        openssl-devel \
+        ncurses-devel \
+        curl-devel \
+        libuuid-devel \
+        libcap-ng-devel \
+        autoconf \
+        libtool \
+        git \
+        elfutils-libelf-devel \
         tbb-devel \
-        c-ares-devel \
         jq-devel \
-    && \
+        c-ares-devel && \
     /tmp/.rhtap/scripts/subscription-manager-bro.sh cleanup && \
     # We can do usual cleanup while we're here: remove packages that would trigger violations. \
     dnf -y --installroot=/mnt clean all && \
@@ -64,7 +43,7 @@ RUN /tmp/.rhtap/scripts/subscription-manager-bro.sh register && \
 
 FROM scratch as builder
 
-COPY --from=rpm-implanter /mnt /
+COPY --from=rpm-implanter-builder /mnt /
 
 COPY . .
 
@@ -116,15 +95,32 @@ RUN ./builder/install/install-dependencies.sh && \
         strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so"; fi
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+# Application
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS ubi-minimal
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS rpm-implanter-app
 
-ARG BUILD_DIR
-ARG CMAKE_BUILD_DIR
+COPY --from=ubi-minimal / /mnt
+COPY ./.rhtap /tmp/.rhtap
 
-# TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
-ARG COLLECTOR_VERSION=0.0.1-todo
+# TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
+RUN /tmp/.rhtap/scripts/subscription-manager-bro.sh register && \
+    microdnf -y --installroot=/mnt upgrade --nobest && \
+    microdnf -y --installroot=/mnt install --nobest \
+      kmod \
+      tbb \
+      jq \
+      c-ares && \
+    /tmp/.rhtap/scripts/subscription-manager-bro.sh cleanup && \
+    # We can do usual cleanup while we're here: remove packages that would trigger violations. \
+    microdnf -y --installroot=/mnt clean all && \
+    rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
 
-ENV COLLECTOR_HOST_ROOT=/host
+FROM scratch
+
+COPY --from=rpm-implanter-app /mnt /
+
+WORKDIR /
 
 LABEL \
     com.redhat.component="rhacs-collector-slim-container" \
@@ -140,24 +136,23 @@ LABEL \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     version=${COLLECTOR_VERSION}
 
-WORKDIR /
+ARG BUILD_DIR
+ARG CMAKE_BUILD_DIR
 
-COPY collector/container/rhel/install.sh /
-RUN ./install.sh && rm -f install.sh
+ENV COLLECTOR_HOST_ROOT=/host
 
-COPY collector/container/scripts/collector-wrapper.sh /usr/local/bin/
-COPY collector/container/scripts/bootstrap.sh /
-COPY collector/LICENSE-kernel-modules.txt /kernel-modules/LICENSE
-COPY kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
-COPY --from=builder /THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
-COPY --from=builder /collector/NOTICE-sysdig.txt /THIRD_PARTY_NOTICES/sysdig
+COPY --from=builder ${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so /usr/local/lib/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so /usr/local/lib/
+COPY --from=builder ${BUILD_DIR}/collector/container/scripts /
 
-RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
+RUN mv /collector-wrapper.sh /usr/local/bin/ && \
+    chmod 700 bootstrap.sh && \
+    echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
     ldconfig && \
-    chmod 700 bootstrap.sh
+    mkdir /kernel-modules
+
+COPY --from=builder ${BUILD_DIR}/kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
 
 EXPOSE 8080 9090
 
