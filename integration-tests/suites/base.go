@@ -70,8 +70,40 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *com
 	s.Require().NoError(s.Collector().Setup(options))
 	s.Require().NoError(s.Collector().Launch())
 
-	// wait for self-check process to guarantee collector is started
-	s.Sensor().WaitProcessesN(s.Collector().ContainerID, 30*time.Second, 1)
+	// Verify if the image we test has a health check. There are some CI
+	// configurations, where it's not the case. If something went wrong and we
+	// get an error, treat it as no health check was found for the sake of
+	// robustness.
+	hasHealthCheck, err := s.findContainerHealthCheck("collector",
+		s.Collector().ContainerID)
+
+	if hasHealthCheck && err == nil {
+		// Wait for collector to report healthy, includes initial setup and
+		// probes loading. It doesn't make sense to wait for very long, limit
+		// it to 1 min.
+		_, err := s.waitForContainerToBecomeHealthy(
+			"collector",
+			s.Collector().ContainerID,
+			defaultWaitTickSeconds, 1*time.Minute)
+		s.Require().NoError(err)
+	} else {
+		fmt.Println("No HealthCheck found, do not wait for collector to become healthy")
+
+		// No way to figure out when all the services up and running, skip this
+		// phase.
+	}
+
+	// wait for the canary process to guarantee collector is started
+	selfCheckOk := s.Sensor().WaitProcessesN(
+		s.Collector().ContainerID, 30*time.Second, 1, func() {
+			// Self-check process is not going to be sent via GRPC, instead
+			// create at least one canary process to make sure everything is
+			// fine.
+			fmt.Println("Spawn a canary process")
+			_, err = s.execContainer("collector", []string{"echo"})
+			s.Require().NoError(err)
+		})
+	s.Require().True(selfCheckOk)
 }
 
 // StopCollector will tear down the collector container and stop
@@ -235,17 +267,33 @@ func (s *IntegrationTestSuiteBase) launchContainer(name string, args ...string) 
 	return outLines[len(outLines)-1], err
 }
 
-func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, containerID string, tickSeconds time.Duration) (bool, error) {
+// Wait for a container to become a certain status.
+//   - tickSeconds -- how often to check for the status
+//   - timeoutThreshold -- the overall time limit for waiting,
+//     defaulting to 30 min if zero
+//   - filter -- description of the desired status
+func (s *IntegrationTestSuiteBase) waitForContainerStatus(
+	containerName string,
+	containerID string,
+	tickSeconds time.Duration,
+	timeoutThreshold time.Duration,
+	filter string) (bool, error) {
+
 	cmd := []string{
 		common.RuntimeCommand, "ps", "-qa",
 		"--filter", "id=" + containerID,
-		"--filter", "status=exited",
+		"--filter", filter,
 	}
 
 	start := time.Now()
 	tick := time.Tick(tickSeconds)
 	tickElapsed := time.Tick(1 * time.Minute)
-	timeout := time.After(30 * time.Minute)
+
+	if timeoutThreshold == 0 {
+		timeoutThreshold = 30 * time.Minute
+	}
+	timeout := time.After(timeoutThreshold)
+
 	for {
 		select {
 		case <-tick:
@@ -256,15 +304,74 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(containerName, contain
 				return true, nil
 			}
 			if err != nil {
-				fmt.Printf("Retrying waitForContainerToExit(%s, %s): Error: %v\n", containerName, containerID, err)
+				fmt.Printf("Retrying waitForContainerStatus(%s, %s): Error: %v\n",
+					containerName, containerID, err)
 			}
 		case <-timeout:
-			fmt.Printf("Timed out waiting for container %s to exit, elapsed Time: %s\n", containerName, time.Since(start))
-			return false, nil
+			fmt.Printf("Timed out waiting for container %s to become %s, elapsed Time: %s\n",
+				containerName, filter, time.Since(start))
+			return false, fmt.Errorf("Timeout waiting for container %s to become %s after %v",
+				containerName, filter, timeoutThreshold)
 		case <-tickElapsed:
-			fmt.Printf("Waiting for container: %s, elapsed time: %s\n", containerName, time.Since(start))
+			fmt.Printf("Waiting for container %s to become %s, elapsed time: %s\n",
+				containerName, filter, time.Since(start))
 		}
 	}
+}
+
+// Find a HealthCheck section in the specified container and verify it's what
+// we expect. This function would be used to wait until the health check
+// reports healthy, so be conservative and report true only if absolutely
+// certain.
+func (s *IntegrationTestSuiteBase) findContainerHealthCheck(
+	containerName string,
+	containerID string) (bool, error) {
+
+	cmd := []string{
+		common.RuntimeCommand, "inspect", "-f",
+		"'{{ .Config.Healthcheck }}'", containerID,
+	}
+
+	output, err := s.Executor().Exec(cmd...)
+	if err != nil {
+		return false, err
+	}
+
+	outLines := strings.Split(output, "\n")
+	lastLine := outLines[len(outLines)-1]
+
+	// Clearly no HealthCheck section
+	if lastLine == "<nil>" {
+		return false, nil
+	}
+
+	// If doesn't contain an expected command, do not consider it to be a valid
+	// health check
+	if strings.Contains(lastLine, "CMD-SHELL /usr/local/bin/status-check.sh") {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
+
+func (s *IntegrationTestSuiteBase) waitForContainerToBecomeHealthy(
+	containerName string,
+	containerID string,
+	tickSeconds time.Duration,
+	timeoutThreshold time.Duration) (bool, error) {
+
+	return s.waitForContainerStatus(containerName, containerID, tickSeconds,
+		timeoutThreshold, "health=healthy")
+}
+
+func (s *IntegrationTestSuiteBase) waitForContainerToExit(
+	containerName string,
+	containerID string,
+	tickSeconds time.Duration,
+	timeoutThreshold time.Duration) (bool, error) {
+
+	return s.waitForContainerStatus(containerName, containerID, tickSeconds,
+		timeoutThreshold, "status=exited")
 }
 
 func (s *IntegrationTestSuiteBase) execContainer(containerName string, command []string) (string, error) {
@@ -342,7 +449,7 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	containerID, err := s.launchContainer(benchmarkName, benchmarkArgs...)
 	s.Require().NoError(err)
 
-	_, err = s.waitForContainerToExit(benchmarkName, containerID, defaultWaitTickSeconds)
+	_, err = s.waitForContainerToExit(benchmarkName, containerID, defaultWaitTickSeconds, 0)
 	s.Require().NoError(err)
 
 	benchmarkLogs, err := s.containerLogs("benchmark")

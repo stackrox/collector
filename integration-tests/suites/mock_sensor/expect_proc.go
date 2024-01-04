@@ -14,11 +14,11 @@ import (
 func (s *MockSensor) ExpectProcessesN(t *testing.T, containerID string, timeout time.Duration, n int) []types.ProcessInfo {
 	return s.waitProcessesN(func() {
 		assert.FailNowf(t, "timed out", "found %d processes (expected %d)", len(s.Processes(containerID)), n)
-	}, containerID, timeout, n)
+	}, containerID, timeout, n, 0, func() {})
 }
 
-func (s *MockSensor) WaitProcessesN(containerID string, timeout time.Duration, n int) bool {
-	return len(s.waitProcessesN(func() {}, containerID, timeout, n)) == n
+func (s *MockSensor) WaitProcessesN(containerID string, timeout time.Duration, n int, tickFn func()) bool {
+	return len(s.waitProcessesN(func() {}, containerID, timeout, n, 0, tickFn)) >= n
 }
 
 func (s *MockSensor) ExpectProcesses(
@@ -100,14 +100,37 @@ func (s *MockSensor) ExpectLineages(t *testing.T, containerID string, timeout ti
 
 }
 
-func (s *MockSensor) waitProcessesN(timeoutFn func(), containerID string, timeout time.Duration, n int) []types.ProcessInfo {
-	if len(s.Processes(containerID)) == n {
+// Wait for expected number of processes to show up in a specified container.
+//   - timeoutFn: will be invoked after the timeout expiration
+//   - containerID: the target container for searching processes
+//   - timeout: maximum waiting time
+//   - n: expected number of processes
+//   - tickSeconds: how often to wake up within the timeout time, default is 1s
+//   - tickFn: what to do when ticking, could be used to trigger expected number
+//     of processes
+func (s *MockSensor) waitProcessesN(
+	timeoutFn func(),
+	containerID string,
+	timeout time.Duration,
+	n int,
+	tickSeconds time.Duration,
+	tickFn func()) []types.ProcessInfo {
+
+	if len(s.Processes(containerID)) >= n {
 		return s.Processes(containerID)
 	}
+
+	if tickSeconds == 0 {
+		tickSeconds = 1 * time.Second
+	}
+
+	tick := time.Tick(tickSeconds)
 
 loop:
 	for {
 		select {
+		case <-tick:
+			tickFn()
 		case <-time.After(timeout):
 			timeoutFn()
 			return make([]types.ProcessInfo, 0)
@@ -116,7 +139,7 @@ loop:
 				continue loop
 			}
 
-			if len(s.Processes(containerID)) == n {
+			if len(s.Processes(containerID)) >= n {
 				return s.Processes(containerID)
 			}
 		}
