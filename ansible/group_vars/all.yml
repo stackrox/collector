@@ -30,7 +30,6 @@ excluded_pairs:
   - [ 'garden-linux', 'ebpf' ]
 
   - [ 'p', 'ebpf' ]
-  - [ 'rhel-8-6-s390x', 'ebpf' ]
 
 virtual_machines:
   rhel:
