@@ -29,10 +29,10 @@ jobs:
       - id: identify-archs
         run: |
           if docker manifest inspect "${COLLECTOR_IMAGE}"; then
+            supported_archs="$(docker manifest inspect "${COLLECTOR_IMAGE}" | jq -c '[.manifests[].platform.architecture]')"
+          else
             docker pull "${COLLECTOR_IMAGE}"
             supported_archs="$(docker inspect "${COLLECTOR_IMAGE}" | jq -c '[.[].Architecture]')"
-          else
-            supported_archs="$(docker manifest inspect "${COLLECTOR_IMAGE}" | jq -c '[.manifests[].platform.architecture]')"
           fi
 
           echo "supported_archs=${supported_archs}" >> "$GITHUB_OUTPUT"
