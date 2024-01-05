@@ -183,26 +183,29 @@ bool HostInfo::HasEBPFSupport() {
 }
 
 bool HostInfo::HasBTFSymbols() {
+  struct location_s {
+    std::string pattern;
+    bool mounted;
+  };
   // This list is taken from libbpf
-  const char* locations[] = {
+  const std::vector<location_s> locations = {
       /* try canonical vmlinux BTF through sysfs first */
-      "/sys/kernel/btf/vmlinux",
+      {"/sys/kernel/btf/vmlinux", false},
       /* fall back to trying to find vmlinux on disk otherwise */
-      "/boot/vmlinux-%1$s",
-      "/lib/modules/%1$s/vmlinux-%1$s",
-      "/lib/modules/%1$s/build/vmlinux",
-      "/usr/lib/modules/%1$s/kernel/vmlinux",
-      "/usr/lib/debug/boot/vmlinux-%1$s",
-      "/usr/lib/debug/boot/vmlinux-%1$s.debug",
-      "/usr/lib/debug/lib/modules/%1$s/vmlinux",
-      0};
+      {"/boot/vmlinux-%1$s", false},
+      {"/lib/modules/%1$s/vmlinux-%1$s", false},
+      {"/lib/modules/%1$s/build/vmlinux", false},
+      {"/usr/lib/modules/%1$s/kernel/vmlinux", true},
+      {"/usr/lib/debug/boot/vmlinux-%1$s", true},
+      {"/usr/lib/debug/boot/vmlinux-%1$s.debug", true},
+      {"/usr/lib/debug/lib/modules/%1$s/vmlinux", true},
+  };
 
   char path[PATH_MAX + 1];
-  const char* const* location;
 
-  for (location = locations; *location; location++) {
-    snprintf(path, PATH_MAX, *location, kernel_version_.release.c_str());
-    std::string host_path = GetHostPath(path);
+  for (const auto& location : locations) {
+    snprintf(path, PATH_MAX, location.pattern.c_str(), kernel_version_.release.c_str());
+    std::string host_path = location.mounted ? GetHostPath(path) : path;
 
     if (faccessat(AT_FDCWD, host_path.c_str(), R_OK, AT_EACCESS) == 0) {
       CLOG(DEBUG) << "BTF symbols found in " << host_path;

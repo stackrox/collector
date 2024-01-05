@@ -78,7 +78,7 @@ func (s *ProcessNetworkTestSuite) TestProcessViz() {
 	expectedProcesses := []types.ProcessInfo{
 		types.ProcessInfo{
 			Name:    "ls",
-			ExePath: "/bin/ls",
+			ExePath: "/bin/busybox",
 			Uid:     0,
 			Gid:     0,
 			Args:    "",
@@ -92,14 +92,14 @@ func (s *ProcessNetworkTestSuite) TestProcessViz() {
 		},
 		types.ProcessInfo{
 			Name:    "sh",
-			ExePath: "/bin/sh",
+			ExePath: "/bin/busybox",
 			Uid:     0,
 			Gid:     0,
 			Args:    "-c ls",
 		},
 		types.ProcessInfo{
 			Name:    "sleep",
-			ExePath: "/bin/sleep",
+			ExePath: "/bin/busybox",
 			Uid:     0,
 			Gid:     0,
 			Args:    "5",
@@ -113,7 +113,7 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 	expectedLineages := []types.ProcessLineage{
 		types.ProcessLineage{
 			Name:          "awk",
-			ExePath:       "/usr/bin/awk",
+			ExePath:       "/usr/bin/gawk",
 			ParentUid:     0,
 			ParentExePath: "/usr/bin/bash",
 		},
@@ -125,7 +125,7 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 		},
 		types.ProcessLineage{
 			Name:          "sleep",
-			ExePath:       "/usr/bin/sleep",
+			ExePath:       "/usr/bin/coreutils",
 			ParentUid:     0,
 			ParentExePath: "/usr/bin/bash",
 		},

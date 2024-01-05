@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "libsinsp/filterchecks.h"
 #include "libsinsp/sinsp.h"
 
 #include "Logging.h"
@@ -22,10 +23,10 @@ class SysdigEventExtractor {
       extractor->wrappers_.push_back(this);
     }
 
-    sinsp_filter_check_iface* operator->() { return filter_check.get(); }
+    sinsp_filter_check* operator->() { return filter_check.get(); }
 
     const char* event_name;
-    std::unique_ptr<sinsp_filter_check_iface> filter_check;
+    std::unique_ptr<sinsp_filter_check> filter_check;
   };
 
   std::vector<FilterCheckWrapper*> wrappers_;
@@ -90,47 +91,22 @@ class SysdigEventExtractor {
 
   // Container related fields
   TINFO_FIELD(container_id);
-  FIELD_RAW(container_privileged, "container.privileged", uint32_t);
 
   // Process related fields
   TINFO_FIELD(comm);
   TINFO_FIELD(exe);
   TINFO_FIELD(exepath);
   TINFO_FIELD(pid);
-  TINFO_FIELD(tid);
   TINFO_FIELD_RAW(uid, user.uid, uint32_t);
   TINFO_FIELD_RAW(gid, group.gid, uint32_t);
-  FIELD_CSTR(proc_name, "proc.name");
-  FIELD_CSTR(proc_pname, "proc.pname");
   FIELD_CSTR(proc_args, "proc.args");
-  FIELD_CSTR(exeline, "proc.exeline");
-  FIELD_CSTR(cmdline, "proc.cmdline");
-  FIELD_CSTR(user_name, "user.name");
-  FIELD_CSTR(cwd, "proc.cwd");
-  FIELD_CSTR(evt_args, "evt.args");
-  FIELD_RAW(ppid, "proc.ppid", int64_t);
 
   // General event information
   FIELD_RAW(event_rawres, "evt.rawres", int64_t);
-  EVT_ARG(name);
-  EVT_ARG(newpath);
-  EVT_ARG(oldpath);
-  EVT_ARG(path);
-  EVT_ARG(target);
-  EVT_ARG(linkpath);
-  EVT_ARG_RAW(fd, int64_t);
-  EVT_ARG_RAW(flags, int32_t);
-  EVT_ARG_RAW(olddir, int64_t);
-  EVT_ARG_RAW(newdir, int64_t);
-  EVT_ARG_RAW(olddirfd, int64_t);
-  EVT_ARG_RAW(newdirfd, int64_t);
-  EVT_ARG_RAW(linkdirfd, int64_t);
-  EVT_ARG_RAW(dirfd, int64_t);
 
   // File/network related
   FIELD_RAW(client_port, "fd.cport", uint16_t);
   FIELD_RAW(server_port, "fd.sport", uint16_t);
-  FIELD_CSTR(fd_name, "fd.name");
 
 #undef TINFO_FIELD
 #undef FIELD_RAW

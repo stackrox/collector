@@ -1,5 +1,8 @@
 ---
 
+- include_vars: ppc64le.yml
+- include_vars: s390x.yml
+
 - name: Destroy GCP VM
   delegate_to: localhost
   google.cloud.gcp_compute_instance:
@@ -13,9 +16,15 @@
   when: vm_arch == "amd64" or vm_arch == "arm64"
 
 - name: Delete IBM Z VM
-  include_tasks: destroy-s390x-vm.yml
+  include_tasks:
+    file: destroy-s390x-vm.yml
+    apply:
+      environment: "{{ s390x.env }}"
   when: vm_arch == "s390x"
 
 - name: Delete IBM Power VSI
-  include_tasks: destroy-ppc64le-vm.yml
+  include_tasks:
+    file: destroy-ppc64le-vm.yml
+    apply:
+      environment: "{{ ppc64le.env }}"
   when: vm_arch == "ppc64le"

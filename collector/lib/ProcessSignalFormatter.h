@@ -30,12 +30,12 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
  private:
   Signal* CreateSignal(sinsp_evt* event);
   ProcessSignal* CreateProcessSignal(sinsp_evt* event);
+  bool ValidateProcessDetails(const sinsp_threadinfo* tinfo);
   bool ValidateProcessDetails(sinsp_evt* event);
   std::string ProcessDetails(sinsp_evt* event);
 
   Signal* CreateSignal(sinsp_threadinfo* tinfo);
   ProcessSignal* CreateProcessSignal(sinsp_threadinfo* tinfo);
-  bool ValidateProcessDetails(sinsp_threadinfo* tinfo);
   int GetTotalStringLength(const std::vector<LineageInfo>& lineage);
   void CountLineage(const std::vector<LineageInfo>& lineage);
 

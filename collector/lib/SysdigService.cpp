@@ -6,7 +6,6 @@
 #include <linux/ioctl.h>
 
 #include "libsinsp/parsers.h"
-#include "libsinsp/wrapper.h"
 
 #include <google/protobuf/util/time_util.h>
 
@@ -67,7 +66,7 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
 
 bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) {
   if (!inspector_) {
-    inspector_.reset(new_inspector());
+    inspector_.reset(new sinsp());
 
     // peeking into arguments has a big overhead, so we prevent it from happening
     inspector_->set_snaplen(0);
@@ -78,6 +77,9 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
     inspector_->set_log_callback(logging::InspectorLogCallback);
 
     inspector_->set_import_users(config.ImportUsers());
+    inspector_->set_thread_timeout_s(30);
+    inspector_->set_thread_purge_interval_s(60);
+    inspector_->m_thread_manager->set_max_thread_table_size(524288);
 
     // Connection status tracking is used in NetworkSignalHandler,
     // but only when trying to handle asynchronous connections
@@ -148,7 +150,37 @@ sinsp_evt* SysdigService::GetNext() {
   userspace_stats_.event_parse_micros[event->get_type()] += (NowMicros() - parse_start);
   ++userspace_stats_.nUserspaceEvents[event->get_type()];
 
+  if (!FilterEvent(event)) {
+    return nullptr;
+  }
+  ++userspace_stats_.nFilteredEvents[event->get_type()];
+
   return event;
+}
+
+bool SysdigService::FilterEvent(sinsp_evt* event) {
+  const auto* tinfo = event->get_thread_info();
+
+  return FilterEvent(tinfo);
+}
+
+bool SysdigService::FilterEvent(const sinsp_threadinfo* tinfo) {
+  if (tinfo == nullptr) {
+    return false;
+  }
+
+  // exclude runc events
+  if (tinfo->m_exepath == "runc" && tinfo->m_comm == "6") {
+    return false;
+  }
+
+  std::string_view exepath_sv{tinfo->m_exepath};
+  auto marker = exepath_sv.rfind(':');
+  if (marker != std::string_view::npos) {
+    exepath_sv.remove_prefix(marker + 1);
+  }
+
+  return exepath_sv.rfind("/proc/self", 0) != 0;
 }
 
 void SysdigService::Start() {
@@ -308,7 +340,7 @@ void SysdigService::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handl
   } else {
     const EventNames& event_names = EventNames::GetInstance();
     for (const auto& event_name : relevant_events) {
-      for (ppm_event_type event_id : event_names.GetEventIDs(event_name)) {
+      for (ppm_event_code event_id : event_names.GetEventIDs(event_name)) {
         event_filter.set(event_id);
         global_event_filter_.set(event_id);
       }

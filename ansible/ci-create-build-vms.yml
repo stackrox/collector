@@ -1,0 +1,24 @@
+---
+- name: Create Build VMs
+  hosts: localhost
+  tags:
+    - setup
+  tasks:
+    - name: Create VMs for each architecture
+      include_role:
+        name: create-all-vms
+      vars:
+        vm_list:
+          # s390x
+          rhel-s390x: "{{ virtual_machines['rhel-s390x'] }}"
+
+- name: Provision Build VMs
+  hosts: "job_id_{{ job_id }}"
+  roles:
+    - provision-vm
+  gather_facts: no
+  strategy: free
+  become: yes
+  tags:
+    - setup
+    - provision
