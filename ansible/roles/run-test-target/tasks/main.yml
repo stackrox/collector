@@ -19,7 +19,7 @@
   # which is quite significant for a specific test suite
   # (i.e. when testing during development) but is only
   # minor when running on CI
-  when: collector_test == 'ci-integration-tests'
+  when: lookup('env', 'COLLECTOR_PRE_PULL_IMAGES', default='false') | bool
 
 #
 # Separation of collection method is only possible with a separate
