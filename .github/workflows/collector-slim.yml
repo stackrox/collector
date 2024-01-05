@@ -115,7 +115,7 @@ jobs:
 
       - name: Build images
         if: |
-          github.event_name == 'push' ||
+          (github.event_name == 'push' && matrix.arch != 's390x') ||
           matrix.arch == 'amd64' ||
           (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch != 's390x')
         timeout-minutes: 480
@@ -130,7 +130,7 @@ jobs:
 
       - name: Build s390x image
         if: |
-          github.event_name == 'push' ||
+          (github.event_name == 'push' && matrix.arch == 's390x') ||
           (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch == 's390x')
         timeout-minutes: 480
         run: |
