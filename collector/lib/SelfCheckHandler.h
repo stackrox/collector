@@ -28,7 +28,7 @@ class SelfCheckHandler : public SignalHandler {
    *       the host pid, but when we fork the process we get the namespace
    *       pid.
    */
-  static bool isSelfCheckEvent(sinsp_evt* evt, SysdigEventExtractor& event_extractor) {
+  static bool IsSelfCheckEvent(sinsp_evt* evt, SysdigEventExtractor& event_extractor) {
     const std::string* name = event_extractor.get_comm(evt);
     const std::string* exe = event_extractor.get_exe(evt);
 
