@@ -20,8 +20,6 @@ PROBE_DIR="/collector/kernel-modules/probe"
 setup_environment "${FALCO_DIR}/driver" "/collector/"
 setup_driver_config "${FALCO_DIR}"
 
-cp "${DRIVER_DIR}/build/driver/src/driver_config.h" "${DRIVER_DIR}/driver/driver_config.h"
-
 make -C ${PROBE_DIR} FALCO_DIR="${FALCO_DIR}/driver/bpf"
 
 mkdir -p "${OUTPUT_DIR}"
