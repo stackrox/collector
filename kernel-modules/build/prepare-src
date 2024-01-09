@@ -129,4 +129,5 @@ else
     cp "${LEGACY_DIR}/kernel-modules/probe/collector_probe.h" "${DRIVER_SCRATCH}/driver/collector-probe/collector_probe.h"
 fi
 
+cd "${DRIVER_SCRATCH}/driver"
 archive_files
