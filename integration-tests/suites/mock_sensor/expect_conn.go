@@ -58,6 +58,18 @@ loop:
 // It does not consider the content of the events, just that a certain number
 // have been received
 func (s *MockSensor) ExpectConnectionsN(t *testing.T, containerID string, timeout time.Duration, n int) []types.NetworkInfo {
+	return s.waitConnectionsN(func() {
+		assert.FailNowf(t, "timed out", "found %d connections (expected %d)", len(s.Connections(containerID)), n)
+	}, containerID, timeout, n)
+}
+
+// WaitConnectionsN is a non-fatal version of ExpectConnectionsN. It waits for a given timeout
+// until n Connections have been receieved. On timeout it returns false.
+func (s *MockSensor) WaitConnectionsN(containerID string, timeout time.Duration, n int) bool {
+	return len(s.waitConnectionsN(func() {}, containerID, timeout, n)) == n
+}
+
+func (s *MockSensor) waitConnectionsN(timeoutFn func(), containerID string, timeout time.Duration, n int) []types.NetworkInfo {
 	if len(s.Connections(containerID)) == n {
 		return s.Connections(containerID)
 	}
@@ -67,9 +79,10 @@ loop:
 	for {
 		select {
 		case <-timer:
-			assert.FailNowf(t, "timed out", "found %d connections (expected %d)", len(s.Connections(containerID)), n)
-		case conn := <-s.LiveConnections():
-			if conn.GetContainerId() != containerID {
+			timeoutFn()
+			return make([]types.NetworkInfo, 0)
+		case ep := <-s.LiveEndpoints():
+			if ep.GetContainerId() != containerID {
 				continue loop
 			}
 
