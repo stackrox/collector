@@ -112,18 +112,23 @@ RUN /tmp/.rhtap/scripts/subscription-manager-bro.sh register && \
       tbb \
       jq \
       c-ares && \
-    /tmp/.rhtap/scripts/subscription-manager-bro.sh cleanup && \
-    # We can do usual cleanup while we're here: remove packages that would trigger violations. \
-    dnf -y --installroot=/mnt clean all && \
-    rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
+    /tmp/.rhtap/scripts/subscription-manager-bro.sh cleanup
+    # # We can do usual cleanup while we're here: remove packages that would trigger violations. \
+    # dnf -y --installroot=/mnt clean all && \
+    # rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    # rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
 
-FROM scratch
+FROM ubi-minimal
 
 # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
 ARG COLLECTOR_VERSION=0.0.1-todo
 
 COPY --from=rpm-implanter-app /mnt /
+
+# We can do usual cleanup while we're here: remove packages that would trigger violations.
+RUN dnf -y --installroot=/mnt clean all && \
+    rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
 
 WORKDIR /
 
