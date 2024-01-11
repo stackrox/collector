@@ -58,11 +58,11 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 	}
 
 	mounts := map[string]string{
-		"/host/proc:ro":        "/proc",
-		"/host/etc:ro":         "/etc",
-		"/host/usr/lib:ro":     "/usr/lib",
-		"/sys/kernel/debug:ro": "/sys/kernel/debug",
-		"/tmp":                 "/tmp",
+		"/host/proc:ro":             "/proc",
+		"/host/etc:ro":              "/etc",
+		"/host/usr/lib:ro":          "/usr/lib",
+		"/host/sys/kernel/debug:ro": "/sys/kernel/debug",
+		"/tmp":                      "/tmp",
 		// /module is an anonymous volume to reflect the way collector
 		// is usually run in kubernetes (with in-memory volume for /module)
 		"/module": "",
