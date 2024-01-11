@@ -126,9 +126,9 @@ ARG COLLECTOR_VERSION=0.0.1-todo
 COPY --from=rpm-implanter-app /mnt /
 
 # We can do usual cleanup while we're here: remove packages that would trigger violations.
-RUN dnf -y --installroot=/mnt clean all && \
-    rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
+RUN microdnf -y clean all && \
+    rpm --verbose -e --nodeps $(rpm -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /var/cache/dnf /var/cache/yum
 
 WORKDIR /
 
