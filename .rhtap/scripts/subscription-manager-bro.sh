@@ -8,7 +8,7 @@
 set -euo pipefail
 
 SCRIPT_NAME="$(basename -- "${BASH_SOURCE[0]}")"
-REPO_ROOT="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )"/../.. &> /dev/null && pwd )"
+REPO_ROOT="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}")"/../..  &> /dev/null && pwd)"
 
 RHTAP_SECRET_NAME="subscription-manager-activation-key"
 SECRET_KEY="activation-key"
@@ -20,10 +20,9 @@ TARGET_DIR="/mnt"
 # These were figured experimentally with the help of self-test subcommand.
 TARGET_BACKUP_PATHS=(etc/pki/product-default etc/yum.repos.d etc/pki/entitlement var/lib/rhsm etc/pki/product etc/pki/consumer)
 
-
 function main {
-    if [[ "$#" == "0" ]] ; then
-        >&2 echo "Error: command is missing. See usage below."
+    if [[ "$#" == "0" ]]; then
+            echo >&2 "Error: command is missing. See usage below."
         usage
         exit 2
     fi
@@ -34,26 +33,32 @@ function main {
     local fn
 
     case "$cmd" in
-    "help" | "--help" | "-h")
-        fn=usage ;;
-    "smuggle")
-        fn=smuggle ;;
-    "register")
-        fn=register ;;
-    "cleanup")
-        fn=cleanup ;;
-    "self-test")
-        fn=self_test ;;
-    "diff")
-        fn=assert_diff ;;
-    *)
-        >&2 echo "Error: unknown command '$1'; call '$SCRIPT_NAME help' to see usage."
-        exit 3
-        ;;
+        "help" | "--help" | "-h")
+            fn=usage
+                 ;;
+        "smuggle")
+            fn=smuggle
+                   ;;
+        "register")
+            fn=register
+                    ;;
+        "cleanup")
+            fn=cleanup
+                   ;;
+        "self-test")
+            fn=self_test
+                     ;;
+        "diff")
+            fn=assert_diff
+                       ;;
+        *)
+            echo >&2 "Error: unknown command '$1'; call '$SCRIPT_NAME help' to see usage."
+            exit 3
+            ;;
     esac
 
     if [[ "$#" -gt "1" && "$cmd" != "diff" ]]; then
-        >&2 echo "Error: too many arguments; call '$SCRIPT_NAME help' to see usage."
+            echo >&2 "Error: too many arguments; call '$SCRIPT_NAME help' to see usage."
         exit 4
     fi
 
@@ -110,7 +115,7 @@ function smuggle {
 
 function register {
     if [[ ! -d "${TARGET_DIR}"/etc ]]; then
-        >&2 echo "Error: Looks like target system is not mounted at ${TARGET_DIR}/etc"
+            echo >&2 "Error: Looks like target system is not mounted at ${TARGET_DIR}/etc"
         exit 5
     fi
 
@@ -167,7 +172,7 @@ function self_test {
 
 function assert_diff {
     if [[ "$#" != "2" ]]; then
-        >&2 echo "Error: expecting two arguments: expected and actual paths"
+            echo >&2 "Error: expecting two arguments: expected and actual paths"
         exit 6
     fi
 
@@ -178,7 +183,7 @@ function assert_diff {
     failed_check_file="$(mktemp)"
 
     echo "Comparing /etc"
-    if ! diff --brief --recursive --no-dereference --exclude='ld.so.cache' "$expected"/etc "$actual"/etc ; then
+    if ! diff --brief --recursive --no-dereference --exclude='ld.so.cache' "$expected"/etc "$actual"/etc; then
         echo 1 >> "$failed_check_file"
     fi
 
@@ -196,8 +201,8 @@ function assert_diff {
         echo '/var/log/hawkey\.log'
     } >> "$var_exclusions"
 
-    if { diff --brief --recursive --no-dereference "$expected"/var "$actual"/var || true; } | \
-        grep -vEf "$var_exclusions" | { grep '.'; }; then
+    if { diff --brief --recursive --no-dereference "$expected"/var "$actual"/var || true; } \
+                                                                                            | grep -vEf "$var_exclusions" | { grep '.'; }; then
         echo 2 >> "$failed_check_file"
     fi
 
@@ -211,7 +216,7 @@ function assert_diff {
     done
 
     if [[ -s "$failed_check_file" ]]; then
-        >&2 echo "Error: differences detected"
+            echo >&2 "Error: differences detected"
         exit 7
     fi
 
