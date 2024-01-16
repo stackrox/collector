@@ -1,0 +1,16 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.0
+ignore: {}
+patch: {}
+exclude:
+  global:
+    - '.github/actions'
+    - 'collector/lib/'
+    - 'collector/test/'
+    - 'integration-tests/'
+    - 'kernel-modules/'
+    - 'utilities/'
+    # Third party
+    - 'builder/third_party/'
+    - 'collector/proto/third_party/'
+    - 'falcosecurity-libs/'
