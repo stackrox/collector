@@ -79,6 +79,10 @@ loop:
 	for {
 		select {
 		case <-timer:
+			if len(s.Connections(containerID)) == n {
+				return s.Connections(containerID)
+			}
+
 			timeoutFn()
 			return make([]types.NetworkInfo, 0)
 		case ep := <-s.LiveEndpoints():
