@@ -88,6 +88,10 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	_, err = s.execContainer("nginx-curl", []string{"curl", serverAddress})
 	s.Sensor().ExpectConnectionsN(s.T(), s.ClientContainer, time.Duration(s.ScrapeInterval)*time.Second*2, 1)
 
+	// Clear the state so we don't need to account for the additional connection in the test
+	s.Sensor().Clear(s.ClientContainer)
+	s.Sensor().Clear(s.ServerContainer)
+
 	_, err = s.execContainer("nginx-curl", []string{
 		"/usr/bin/schedule-curls.sh",
 		strconv.Itoa(s.NumMetaIter),
@@ -100,8 +104,8 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.ClientIP, err = s.getIPAddress("nginx-curl")
 	s.Require().NoError(err)
 
-	totalTime := (s.SleepBetweenCurlTime*s.NumIter+s.SleepBetweenIterations)*s.NumMetaIter + s.AfterglowPeriod + 10
-	time.Sleep(time.Duration(totalTime) * time.Second)
+	//totalTime := (s.SleepBetweenCurlTime*s.NumIter+s.SleepBetweenIterations)*s.NumMetaIter + s.AfterglowPeriod + 10
+	// time.Sleep(time.Duration(totalTime) * time.Second)
 }
 
 func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
