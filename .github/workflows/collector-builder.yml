@@ -98,7 +98,9 @@ jobs:
           job-tag: builder
 
       - name: Create Build VMs
-        if: matrix.arch == 's390x'
+        if: |
+          matrix.arch == 's390x' &&
+          (github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds'))
         run: |
           make -C "${{ github.workspace }}/ansible" create-build-vms
 
