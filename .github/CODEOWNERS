@@ -7,3 +7,7 @@
 # A PR to update RELEASED_VERSIONS is automatically opened on each release and should ideally be reviewed and merged asap
 RELEASED_VERSIONS               @stackrox/collector-team
 RELEASED_VERSIONS.unsupported   @stackrox/collector-team
+
+# The RHTAP maintainers for ACS review all changes related to the RHTAP pipelines, such as new pipelines,
+# parameter changes or automated task updates.
+/.tekton/   @stackrox/rhtap-maintainers
