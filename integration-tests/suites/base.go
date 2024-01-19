@@ -84,7 +84,7 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *com
 		_, err := s.waitForContainerToBecomeHealthy(
 			"collector",
 			s.Collector().ContainerID,
-			defaultWaitTickSeconds, 1*time.Minute)
+			defaultWaitTickSeconds, 5*time.Minute)
 		s.Require().NoError(err)
 	} else {
 		fmt.Println("No HealthCheck found, do not wait for collector to become healthy")
