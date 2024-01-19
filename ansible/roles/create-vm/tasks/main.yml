@@ -3,11 +3,13 @@
 - name: Set source image from family
   set_fact:
     gcp_source_image: "projects/{{ vm_project }}/global/images/family/{{ vm_family }}"
+    excluded: "{{ [vm_family, vm_collection_method] in excluded_pairs }}"
   when: vm_image is not defined
 
 - name: Set source image from image
   set_fact:
     gcp_source_image: "projects/{{ vm_project }}/global/images/{{ vm_image }}"
+    excluded: "{{ [vm_image, vm_collection_method] in excluded_pairs }}"
   when: vm_image is defined
 
 #
@@ -37,13 +39,13 @@
   include_tasks: create-s390x-vm.yml
   vars:
     vsi_name: "{{ vm_name }}"
-  when: vm_arch == "s390x" and [vm_family, vm_collection_method] not in excluded_pairs
+  when: vm_arch == "s390x" and excluded == false
 
 - name: Create IBM POWER VM
   include_tasks: create-ppc64le-vm.yml
   vars:
     pi_name: "{{ vm_name }}"
-  when: vm_arch == "ppc64le" and [vm_family, vm_collection_method] not in excluded_pairs
+  when: vm_arch == "ppc64le" and excluded == false
 
 - name: Create GCP VM
   google.cloud.gcp_compute_instance:
@@ -78,7 +80,7 @@
     loop_var: gcp_zone
   register: instance_result
   when: >
-    (vm_arch == "amd64" or vm_arch == "arm64") and not condition and [vm_family, vm_collection_method] not in excluded_pairs
+    (vm_arch == "amd64" or vm_arch == "arm64") and not condition and excluded == false
   vars:
     condition: "{{ (instance_result | default({'changed': false})).changed }}"
 

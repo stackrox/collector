@@ -50,14 +50,22 @@ include_directories(/usr/local/include/civetweb)
 include_directories(/usr/local/include/prometheus)
 set(DRIVER_HEADERS ${FALCO_DIR}/driver/ppm_events_public.h ${FALCO_DIR}/driver/ppm_fillers.h)
 
-add_definitions(-DUSE_PROTO_ARENAS)
+add_definitions(-DUSE_PROTO_ARENAS -DMINIMAL_BUILD)
+
+add_definitions(-DASSERT_TO_LOG)
+
+# Optimization, only process socket file descriptors
+add_definitions(-DSCAP_SOCKET_ONLY_FD)
+
+# Filter out some cgroup subsys
+add_definitions("-DINTERESTING_SUBSYS=\"perf_event\", \"cpu\", \"cpuset\", \"memory\"")
 
 add_definitions(-DASSERT_TO_LOG)
 
 file(GLOB COLLECTOR_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/lib/*.cpp)
 add_library(collector_lib ${DRIVER_HEADERS} ${COLLECTOR_LIB_SRC_FILES})
-add_dependencies(collector_lib sinsp-wrapper)
-target_link_libraries(collector_lib sinsp-wrapper)
+add_dependencies(collector_lib sinsp)
+target_link_libraries(collector_lib sinsp)
 target_link_libraries(collector_lib stdc++fs) # This is needed for GCC-8 to link against the filesystem library
 target_link_libraries(collector_lib cap-ng)
 target_link_libraries(collector_lib uuid)
@@ -95,10 +103,11 @@ add_subdirectory(test)
 set(BUILD_DRIVER OFF CACHE BOOL "Build the driver on Linux" FORCE)
 set(USE_BUNDLED_DEPS OFF CACHE BOOL "Enable bundled dependencies instead of using the system ones" FORCE)
 set(USE_BUNDLED_CARES OFF CACHE BOOL "Enable bundled dependencies instead of using the system ones" FORCE)
-set(NO_LINK_GRPC_LIBS ON CACHE BOOL "Do not link gRPC libraries" FORCE)
 set(WITH_CHISEL OFF CACHE BOOL "Include chisel implementation" FORCE)
 set(BUILD_LIBSCAP_GVISOR OFF CACHE BOOL "Do not build gVisor support" FORCE)
-set(MINIMAL_BUILD_WITH_EBPF ON CACHE BOOL "Minimal" FORCE)
+set(MINIMAL_BUILD ON CACHE BOOL "Minimal" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build position independent libraries and executables" FORCE)
+set(LIBELF_LIB_SUFFIX ".so" CACHE STRING "Use libelf.so" FORCE)
 
 # Turn OFF falco's unit tests and examples
 set(CREATE_TEST_TARGETS OFF CACHE BOOL "Enable make-targets for unit testing" FORCE)
@@ -112,14 +121,10 @@ file(STRINGS "${PROJECT_SOURCE_DIR}/../kernel-modules/MODULE_VERSION" DRIVER_VER
 set(DRIVER_VERSION "${DRIVER_VERSION}" CACHE STRING "Falco driver version" FORCE)
 set(DRIVER_DEVICE_NAME "${DRIVER_NAME}" CACHE STRING "Driver device name" FORCE)
 
-set(SCAP_BPF_PROGS_MAX "256" CACHE STRING "Number of BPF progams supported in Falco" FORCE)
 set(SCAP_HOST_ROOT_ENV_VAR_NAME "COLLECTOR_HOST_ROOT" CACHE STRING "Host root environment variable name" FORCE)
 
-# ppc64le is not supported for the "modern" probe
-if(NOT CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "ppc64le")
-	set(BUILD_LIBSCAP_MODERN_BPF ON CACHE BOOL "Enable modern bpf engine" FORCE)
-endif()
+set(BUILD_LIBSCAP_MODERN_BPF ON CACHE BOOL "Enable modern bpf engine" FORCE)
 
 set(MODERN_BPF_EXCLUDE_PROGS "^(openat2|ppoll|setsockopt|clone3|io_uring_setup|nanosleep)$" CACHE STRING "Set of syscalls to exclude from modern bpf engine " FORCE)
 
-add_subdirectory(${FALCO_DIR} EXCLUDE_FROM_DEFAULT_BUILD)
+add_subdirectory(${FALCO_DIR} falco)

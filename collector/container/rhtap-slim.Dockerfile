@@ -151,7 +151,6 @@ ARG CMAKE_BUILD_DIR
 
 ENV COLLECTOR_HOST_ROOT=/host
 
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so /usr/local/lib/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
 COPY --from=builder ${BUILD_DIR}/collector/container/scripts /

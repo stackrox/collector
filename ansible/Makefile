@@ -1,3 +1,6 @@
+BASE_PATH = ./..
+include ../Makefile-constants.mk
+
 ifeq ($(BUILD_TYPE), ci)
 	CONTEXT=ci
 else
@@ -65,6 +68,13 @@ create-ci-vms:
 		-e job_id="$(JOB_ID)" \
 		--tags setup,provision \
 		integration-tests.yml
+
+.PHONY: create-build-vms
+create-build-vms:
+	ansible-playbook -i $(CONTEXT) \
+		-e job_id="$(JOB_ID)" \
+		--tags setup,provision \
+		ci-create-build-vms.yml
 
 .PHONY: vm-local-dev
 vm-local-dev:

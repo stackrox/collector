@@ -1,19 +1,12 @@
 ---
- 
-#Set fact that are required to destroy vsi instance 
+
+# Set fact that are required to destroy vsi instance
 - set_fact:
-    region: "{{ lookup('env', 'IC_REGION') }}"
-    zone: "{{ lookup('env', 'IC_ZONE') }}"
-    pi_cloud_instance_id: "51a46537-a3a3-4e79-88ee-507feb47e7d0"
     hostname: "{{ inventory_hostname }}"
 
 - name: Get instance id by name
   delegate_to: localhost
-  environment:
-    IC_API_KEY: "{{ lookup('env', 'IC_API_KEY') }}"
   ibm.cloudcollection.ibm_pi_instance_info:
-    region: "{{ region }}"
-    zone: "{{ zone }}"
     pi_instance_name: "{{ hostname }}"
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
   failed_when:
@@ -39,8 +32,6 @@
 - name: Delete instance by id
   delegate_to: localhost
   ibm.cloudcollection.ibm_pi_instance:
-    region: "{{ region }}"
-    zone: "{{ zone }}"
     state: absent
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
     id: "{{ pi_instance.id }}"
@@ -54,8 +45,6 @@
 - name: Check for existing network
   delegate_to: localhost
   ibm.cloudcollection.ibm_pi_network_info:
-    region: "{{ region }}"
-    zone: "{{ zone }}"
     pi_network_name: "{{ hostname }}-network"
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
   failed_when:
@@ -73,8 +62,6 @@
 - name: Delete network
   delegate_to: localhost
   ibm.cloudcollection.ibm_pi_network:
-    region: "{{ region }}"
-    zone: "{{ zone }}"
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
     state: absent
     id: "{{ pi_network_id }}"
@@ -85,8 +72,6 @@
 - name: Check for existing SSH Key
   delegate_to: localhost
   ibm.cloudcollection.ibm_pi_key_info:
-    region: "{{ region }}"
-    zone: "{{ zone }}"
     pi_key_name: "{{ hostname }}-ssh-key"
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
   failed_when:
@@ -104,8 +89,6 @@
 - name: Delete SSH Key
   delegate_to: localhost
   ibm.cloudcollection.ibm_pi_key:
-    region: "{{ region }}"
-    zone: "{{ zone }}"
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
     state: absent
     pi_ssh_key: "{{ pi_ssh_key_existing_output.resource }}"

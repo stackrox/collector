@@ -50,6 +50,7 @@ drivers: build-container-$(DEV_DRIVER_BUILDER)
 		-v $(DEV_SHARED_VOLUME):/collector \
 		-v /lib/modules/:/lib/modules/:ro \
 		-v /usr/src:/usr/src:ro \
+		-e GIT_COMMIT=$(shell git rev-parse HEAD) \
 		build-kernel-modules-$(DEV_DRIVER_BUILDER):latest \
 		-c /collector/kernel-modules/dev/build-drivers.sh
 
@@ -57,3 +58,10 @@ drivers: build-container-$(DEV_DRIVER_BUILDER)
 clean-drivers:
 	rm -rf ../falcosecurity-libs/build/
 	rm -rf container/kernel-modules/
+	rm -rf ../falcosecurity-libs/driver/driver_config.h
+	rm -rf probe/.Module.symvers.cmd
+	rm -rf probe/.modules.order.cmd
+	rm -rf probe/Module.symvers
+	rm -rf probe/modules.order
+	rm -rf probe/probe.ll
+	rm -rf probe/probe.o

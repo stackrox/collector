@@ -27,11 +27,6 @@ class CollectionHeuristic : public Heuristic {
     // If we're configured to use eBPF with BTF, we try to be conservative
     // and fail instead of falling-back to ebpf.
     if (config.GetCollectionMethod() == CollectionMethod::CORE_BPF) {
-      if (kernel.machine == "ppc64le") {
-        CLOG(FATAL) << "CORE_BPF collection method is not supported on ppc64le. "
-                    << "HINT: Change collection method to eBPF with collector.collectionMethod=EBPF.";
-      }
-
       if (!host.HasBTFSymbols()) {
         CLOG(FATAL) << "Missing BTF symbols, core_bpf is not available. "
                     << "They can be provided by the kernel when configured with DEBUG_INFO_BTF, "

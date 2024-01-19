@@ -37,6 +37,11 @@ ifeq ($(IS_CLANG_OLDER_THAN_10), 1)
 	KBUILD_CPPFLAGS := $(filter-out -fmacro-prefix-map=%,$(KBUILD_CPPFLAGS))
 endif
 
+# Optimization, pass only cpu & mem cgroups from the kernel side via bpf
+KBUILD_CPPFLAGS += -DBPF_SKIP_CPUSETS
+KBUILD_CPPFLAGS += -DBPF_SKIP_CPUACCT
+KBUILD_CPPFLAGS += -DBPF_SKIP_BLK_CGROUP
+
 all:
 	$(MAKE) -C $(KERNELDIR) M=$$PWD
 
