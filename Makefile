@@ -112,7 +112,7 @@ start-builder: builder teardown-builder
 	docker run -d \
 		--name $(COLLECTOR_BUILDER_NAME) \
 		-v $(CURDIR):$(CURDIR) \
-		${LOCAL_SSH_PORT+-p ${LOCAL_SSH_PORT}:22} \
+		$(if $(LOCAL_SSH_PORT),-p $(LOCAL_SSH_PORT):22 )\
 		-w $(CURDIR) \
 		--cap-add sys_ptrace \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
