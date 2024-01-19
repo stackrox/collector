@@ -25,7 +25,7 @@ const (
 
 var (
 	qa_tag            = ReadEnvVar(envQATag)
-	collection_method = ReadEnvVarWithDefault(envCollectionMethod, CollectionMethodEBPF)
+	collection_method = ReadEnvVarWithDefault(envCollectionMethod, CollectionMethodCoreBPF)
 	stop_timeout      = ReadEnvVarWithDefault(envStopTimeout, defaultStopTimeoutSeconds)
 
 	image_store       *ImageStore

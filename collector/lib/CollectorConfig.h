@@ -20,7 +20,7 @@ class CollectorConfig {
  public:
   static constexpr bool kTurnOffScrape = false;
   static constexpr int kScrapeInterval = 30;
-  static constexpr CollectionMethod kCollectionMethod = CollectionMethod::EBPF;
+  static constexpr CollectionMethod kCollectionMethod = CollectionMethod::CORE_BPF;
   static constexpr const char* kSyscalls[] = {
       "accept",
       "accept4",
