@@ -104,8 +104,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.ClientIP, err = s.getIPAddress("nginx-curl")
 	s.Require().NoError(err)
 
-	//totalTime := (s.SleepBetweenCurlTime*s.NumIter+s.SleepBetweenIterations)*s.NumMetaIter + s.AfterglowPeriod + 10
-	// time.Sleep(time.Duration(totalTime) * time.Second)
+	time.Sleep(time.Duration(s.ScrapeInterval) * time.Second * 2)
 }
 
 func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
