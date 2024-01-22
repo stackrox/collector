@@ -12,9 +12,15 @@ import (
 )
 
 func TestBenchmarkBaseline(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Not running Benchmarks in short mode")
+	}
 	suite.Run(t, new(suites.BenchmarkBaselineTestSuite))
 }
 
 func TestBenchmarkCollector(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Not running Benchmarks in short mode")
+	}
 	suite.Run(t, new(suites.BenchmarkCollectorTestSuite))
 }

@@ -11,11 +11,12 @@ on:
     outputs:
       collector-builder-tag:
         description: The builder tag used by the build
-        value: ${{ jobs.build-builder-image.outputs.collector-builder-tag }}
+        value: ${{ jobs.build-builder-image.outputs.collector-builder-tag || 'master' }}
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
-  DEFAULT_BUILDER_TAG: cache
+  DEFAULT_BUILDER_TAG: master
+  ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
 
 jobs:
   builder-needs-rebuilding:
@@ -32,8 +33,10 @@ jobs:
         with:
           filters: |
             builder-changed:
-              - builder/**
-              - third_party/**
+              - builder/install/**
+              - builder/third_party/**
+              - builder/Dockerfile
+              - .github/workflows/collector-builder.yml
 
   build-builder-image:
     name: Build the builder image
@@ -44,17 +47,20 @@ jobs:
     - builder-needs-rebuilding
     if: |
       needs.builder-needs-rebuilding.outputs.build-image == 'true' ||
-      (github.event_name == 'push' && github.ref_type == 'tag') ||
+      (github.event_name == 'push' && (
+        github.ref_type == 'tag' || startsWith(github.ref_name, 'release-')
+      )) ||
       contains(github.event.pull_request.labels.*.name, 'build-builder-image')
     outputs:
       collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag }}
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, ppc64le, s390x]
+        arch: [amd64, ppc64le, s390x, arm64]
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
+      BUILD_TYPE: ci
 
     steps:
       - uses: actions/checkout@v3
@@ -67,18 +73,49 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+
+      - uses: 'google-github-actions/setup-gcloud@v1'
+
+      - uses: ./.github/actions/setup-vm-creds
+        with:
+          gcp-ssh-key: ${{ secrets.GCP_SSH_KEY }}
+          gcp-ssh-key-pub: ${{ secrets.GCP_SSH_KEY_PUB }}
+          s390x-ssh-key: ${{ secrets.IBM_CLOUD_S390X_SSH_PRIVATE_KEY }}
+          ppc64le-ssh-key: ${{ secrets.IBM_CLOUD_POWER_SSH_PRIVATE_KEY }}
+          ppc64le-ssh-key-pub: ${{ secrets.IBM_CLOUD_POWER_SSH_PUBLIC_KEY }}
+          s390x-key: ${{ secrets.IBM_CLOUD_S390x_API_KEY }}
+          ppc64le-key: ${{ secrets.IBM_CLOUD_POWER_API_KEY }}
+          redhat-username: ${{ secrets.REDHAT_USERNAME }}
+          redhat-password: ${{ secrets.REDHAT_PASSWORD }}
+          vm-type: all
+          job-tag: builder
+
+      - name: Create Build VMs
+        if: matrix.arch == 's390x'
+        run: |
+          make -C "${{ github.workspace }}/ansible" create-build-vms
+
       - name: Define builder tag
         id: builder-tag
         run: |
           COLLECTOR_BUILDER_TAG="${DEFAULT_BUILDER_TAG}"
-          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
+          if [[ "${{ github.event_name }}" == 'pull_request' || \
+                "${{ github.ref_type }}" == 'tag' || \
+                "${{ github.ref_name }}" =~ ^release- ]]; then
             COLLECTOR_BUILDER_TAG="${{ inputs.collector-tag }}"
           fi
 
           echo "COLLECTOR_BUILDER_TAG=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_ENV"
           echo "collector-builder-tag=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
 
-      - name: Create secrets.yml
+      - name: Create ansible vars
         run: |
           {
             echo "---"
@@ -86,9 +123,16 @@ jobs:
             echo "stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}"
             echo "rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}"
             echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
+            echo "collector_git_ref: ${{ github.ref }}"
+            echo "collector_git_sha: ${{ github.sha }}"
+            echo "collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}"
           } > ${{ github.workspace }}/ansible/secrets.yml
 
       - name: Build images
+        if: |
+          (github.event_name == 'push' && matrix.arch != 's390x') ||
+          matrix.arch == 'amd64' ||
+          (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch != 's390x')
         timeout-minutes: 480
         run: |
           ansible-galaxy install -r ansible/requirements.yml
@@ -100,6 +144,24 @@ jobs:
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-builder.yml
 
+      - name: Build s390x images
+        if: |
+          (github.event_name == 'push' && matrix.arch == 's390x') ||
+          (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch == 's390x')
+        timeout-minutes: 480
+        run: |
+          ansible-playbook \
+            -i ansible/ci \
+            -e build_hosts='job_id_${{ env.JOB_ID }}' \
+            -e arch='${{ matrix.arch }}' \
+            -e @'${{ github.workspace }}/ansible/secrets.yml' \
+            ansible/ci-build-builder.yml
+
+      - name: Destroy VMs
+        if: always() && matrix.arch == 's390x'
+        run: |
+          make -C ansible destroy-vms
+
   create-multiarch-manifest:
     needs:
     - build-builder-image
@@ -107,10 +169,11 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' ||
-      needs.build-builder-image.outputs.collector-builder-tag != 'cache'
+      (needs.build-builder-image.outputs.collector-builder-tag != 'cache' &&
+       contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds'))
     env:
       COLLECTOR_BUILDER_TAG: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
-      ARCHS: amd64 ppc64le s390x
+      ARCHS: amd64 ppc64le s390x arm64
 
     steps:
       - uses: actions/checkout@v3
@@ -141,3 +204,34 @@ jobs:
           base-image: quay.io/rhacs-eng/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
           archs: ${{ env.ARCHS }}
 
+  retag-x86-image:
+    needs:
+    - build-builder-image
+    name: Retag x86 builder image
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' &&
+      needs.build-builder-image.outputs.collector-builder-tag != 'cache' &&
+      !contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+    env:
+      COLLECTOR_BUILDER_TAG: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
+    steps:
+      - name: Pull image to retag
+        run: |
+          docker pull "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-amd64"
+
+      - name: Retag and push stackrox-io
+        uses: stackrox/actions/images/retag-and-push@v1
+        with:
+          src-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}-amd64
+          dst-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Retag and push rhacs-eng
+        uses: stackrox/actions/images/retag-and-push@v1
+        with:
+          src-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}-amd64
+          dst-image: quay.io/rhacs-eng/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}

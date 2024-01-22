@@ -2,6 +2,7 @@ package suites
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -30,25 +31,22 @@ type AsyncConnectionTestSuite struct {
  *     a dummy address.
  */
 func (s *AsyncConnectionTestSuite) SetupSuite() {
-
-	s.metrics = map[string]float64{}
-	s.executor = common.NewExecutor()
+	s.RegisterCleanup("server", "client")
 	s.StartContainerStats()
-	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 
-	// we need a short scrape interval to have it trigger after the connection is closed.
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
-
-	if s.DisableConnectionStatusTracking {
-		s.collector.Env["ROX_COLLECT_CONNECTION_STATUS"] = "false"
+	collectorOptions := common.CollectorStartupOptions{
+		Env: map[string]string{
+			"ROX_COLLECT_CONNECTION_STATUS": strconv.FormatBool(!s.DisableConnectionStatusTracking),
+		},
+		Config: map[string]any{
+			"turnOffScrape": true,
+			// we need a short scrape interval to have it trigger
+			// after the connection is closed.
+			"scrapeInterval": 2,
+		},
 	}
 
-	err := s.collector.Setup()
-	s.Require().NoError(err)
-
-	err = s.collector.Launch()
-	s.Require().NoError(err)
-	time.Sleep(30 * time.Second) // TODO use readiness
+	s.StartCollector(false, &collectorOptions)
 
 	image_store := config.Images()
 
@@ -67,37 +65,28 @@ func (s *AsyncConnectionTestSuite) SetupSuite() {
 		target = "10.255.255.1"
 	}
 
-	containerID, err = s.launchContainer("client", image_store.QaImageByKey("curl"), "curl", "--connect-timeout", "5", fmt.Sprintf("http://%s/", target))
+	containerID, err = s.launchContainer("client", image_store.QaImageByKey("qa-alpine-curl"), "curl", "--connect-timeout", "5", fmt.Sprintf("http://%s/", target))
 
 	s.Require().NoError(err)
 	s.clientContainer = common.ContainerShortID(containerID)
 
 	time.Sleep(10 * time.Second) // give some time to the connection to fail
-
-	err = s.collector.TearDown()
-	s.Require().NoError(err)
-
-	s.db, err = s.collector.BoltDB()
-	s.Require().NoError(err)
 }
 
 func (s *AsyncConnectionTestSuite) TearDownSuite() {
-	s.cleanupContainer([]string{"server", "client"})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("AsyncConnection", stats, s.metrics)
+	s.StopCollector()
+	s.cleanupContainers("server", "client")
+	s.WritePerfResults()
 }
 
 func (s *AsyncConnectionTestSuite) TestNetworkFlows() {
-	networkInfos, err := s.GetNetworks(s.clientContainer)
+	networkInfos := s.Sensor().Connections(s.clientContainer)
 
 	if s.ExpectToSeeTheConnection {
 		// expect one connection
-		s.Require().NoError(err)
-
 		assert.Equal(s.T(), 1, len(networkInfos))
 	} else {
 		// expect no connections at all
-		s.Require().Error(err)
+		assert.Equal(s.T(), 0, len(networkInfos))
 	}
 }

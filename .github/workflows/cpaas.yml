@@ -11,6 +11,10 @@ on:
       - opened
       - reopened
 
+concurrency:
+  group: cpaas-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   should-run:
     outputs:
@@ -27,6 +31,8 @@ jobs:
     - should-run
     if: needs.should-run.outputs.should-run == 'true'
     uses: ./.github/workflows/init.yml
+    with:
+      cpaas-workflow: true
 
   sync-drivers-and-support-packages:
     uses: ./.github/workflows/cpaas-sync-drivers.yml
@@ -37,6 +43,8 @@ jobs:
       support-packages-index-bucket: ${{ needs.init.outputs.support-packages-index-bucket }}
       public-support-packages-bucket: ${{ needs.init.outputs.public-support-packages-bucket }}
       drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
+      merged-drivers-bucket: ${{ needs.init.outputs.merged-drivers-bucket }}
+      all-archs-drivers-bucket: ${{ needs.init.outputs.cpaas-all-archs-drivers-bucket }}
       branch-name: ${{ needs.init.outputs.branch-name }}
 
   check-drivers-failures:
@@ -49,9 +57,13 @@ jobs:
   build-collector-slim:
     runs-on: ubuntu-latest
     needs: init
+    strategy:
+      matrix:
+        arch:
+          - amd64
+          - s390x
+          - ppc64le
     steps:
-      - uses: actions/checkout@v3
-
       - uses: docker/login-action@v2
         with:
           registry: brew.registry.redhat.io
@@ -60,13 +72,13 @@ jobs:
 
       - name: Pull downstream slim collector
         run: |
-          docker pull brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
+          docker pull --platform linux/${{ matrix.arch }} brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
 
-      - name: Retag and push stackrox-io -slim
-        uses: ./.github/actions/retag-and-push
+      - name: Retag and push stackrox-io -amd64-slim
+        uses: stackrox/actions/images/retag-and-push@v1
         with:
           src-image: brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
-          dst-image: ${{ needs.init.outputs.collector-image }}-cpaas-slim
+          dst-image: ${{ needs.init.outputs.collector-image }}-cpaas-${{ matrix.arch }}-slim
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
@@ -74,15 +86,24 @@ jobs:
     uses: ./.github/workflows/collector-full.yml
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
-      drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}/x86_64
+      arch-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
       skip-built-drivers: true
-      build-full-image: true
-      max-layer-depth: "1"
+      archs: amd64 ppc64le s390x
     secrets: inherit
     needs:
     - init
     - build-collector-slim
     - sync-drivers-and-support-packages
+
+  build-test-containers:
+    uses: ./.github/workflows/integration-test-containers.yml
+    needs:
+    - init
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
+      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      rebuild-qa-containers: ${{ needs.init.outputs.rebuild-qa-containers == 'true' }}
+    secrets: inherit
 
   integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
@@ -95,12 +116,35 @@ jobs:
         vm_type:
           - rhel
           - rhel-sap
-            # Re-enable once s390x images exist for integration test
-            # components
-            #- rhel-s390x
+          - rhel-s390x
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
+      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      offline-mode: true
+      job-tag: cpaas
+    needs:
+    - init
+    - build-collector-full
+    - build-test-containers
+    secrets: inherit
+
+  # Isolating multi-arch testing temporarily while fixes are found for ppc64le
+  multiarch-integration-tests:
+    uses: ./.github/workflows/integration-tests-vm-type.yml
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') &&
+      contains(github.event.pull_request.labels.*.name, 'run-multiarch-tests') }}
+    strategy:
+      # ensure that if one part of the matrix fails, the
+      # rest will continue
+      fail-fast: false
+      matrix:
+        vm_type:
+          - rhel-ppc64le
+    with:
+      vm_type: ${{ matrix.vm_type }}
+      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
+      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
       offline-mode: true
       job-tag: cpaas
     needs:
@@ -117,6 +161,7 @@ jobs:
     - build-collector-slim
     - build-collector-full
     - integration-tests
+    - multiarch-integration-tests
     steps:
       - name: Slack notification
         uses: rtCamp/action-slack-notify@v2

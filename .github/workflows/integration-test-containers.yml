@@ -1,0 +1,115 @@
+name: Build Integration Test Containers
+
+on:
+  workflow_call:
+    inputs:
+      collector-tag:
+        type: string
+        required: true
+        description: |
+          The tag used to build the collector image
+      collector-qa-tag:
+        type: string
+        required: true
+        description: Tag used for QA containers
+      rebuild-qa-containers:
+        type: boolean
+        required: true
+        description: Whether the QA containers should be rebuilt
+
+jobs:
+  build-test-image:
+    name: Build the integration test image
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'pull_request' ||
+      !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests')
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Create Ansible Vars (inc. Secrets)
+        run: |
+          {
+            echo "---"
+            echo "rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}"
+            echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
+          } > ${{ github.workspace }}/ansible/secrets.yml
+
+          if [[ "${RUNNER_DEBUG}" == "1" ]]; then
+            echo "ANSIBLE_STDOUT_CALLBACK=debug" >> "${GITHUB_ENV}"
+          fi
+
+      - name: Build images
+        run: |
+          ansible-galaxy install -r ansible/requirements.yml
+
+          BUILD_MULTI_ARCH="${{ contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') || github.event_name == 'push' || github.event_name == 'schedule' }}"
+
+          # build_multi_arch passed in as json to ensure boolean type
+          ansible-playbook \
+            --connection local -i localhost, --limit localhost \
+            -e test_image='quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}' \
+            -e "{\"build_multi_arch\": $BUILD_MULTI_ARCH}" \
+            -e @'${{ github.workspace }}/ansible/secrets.yml' \
+            ansible/ci-build-tests.yml
+
+  common-variables:
+    runs-on: ubuntu-latest
+    outputs:
+      build-dirs: ${{ steps.variables.outputs.build-dirs }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set variables
+        id: variables
+        run: |
+          dirs=$(find integration-tests/container/ -type d -mindepth 1 -maxdepth 1)
+          json_dirs="$(echo "$dirs" | jq --raw-input --slurp 'split("\n") | map(select(. != ""))')"
+
+          {
+            echo "build-dirs<<EOS"
+            echo "$json_dirs"
+            echo "EOS"
+          } >> "$GITHUB_OUTPUT"
+
+  rebuild-containers:
+    needs:
+      - common-variables
+
+    if: inputs.rebuild-qa-containers
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        directory: ${{ fromJSON(needs.common-variables.outputs.build-dirs) }}
+    env:
+      PLATFORM: linux/amd64,linux/s390x,linux/ppc64le,linux/arm64
+      COLLECTOR_QA_TAG: ${{ inputs.collector-qa-tag }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to quay.io/rhacs-eng
+        uses: docker/login-action@v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
+      - name: Build and Push containers
+        run: |
+          make -C "${{ matrix.directory }}" build-and-push

@@ -54,6 +54,8 @@ void CollectorService::RunForever() {
   prometheus::Exposer exposer("9090");
   exposer.RegisterCollectable(registry);
 
+  CollectorStatsExporter exporter(registry, &config_, &sysdig_);
+
   std::unique_ptr<NetworkStatusNotifier> net_status_notifier;
 
   CLOG(INFO) << "Network scrape interval set to " << config_.ScrapeInterval() << " seconds";
@@ -79,16 +81,19 @@ void CollectorService::RunForever() {
     conn_tracker = std::make_shared<ConnectionTracker>();
     UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs(config_.IgnoredL4ProtoPortPairs());
     conn_tracker->UpdateIgnoredL4ProtoPortPairs(std::move(ignored_l4proto_port_pairs));
+    conn_tracker->EnableExternalIPs(config_.EnableExternalIPs());
 
     auto network_connection_info_service_comm = std::make_shared<NetworkConnectionInfoServiceComm>(config_.Hostname(), config_.grpc_channel);
 
-    net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper, config_.ScrapeInterval(), config_.ScrapeListenEndpoints(), config_.TurnOffScrape(),
-                                                            conn_tracker, config_.AfterglowPeriod(), config_.EnableAfterglow(),
-                                                            network_connection_info_service_comm);
+    net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper,
+                                                            conn_tracker,
+                                                            network_connection_info_service_comm,
+                                                            config_,
+                                                            config_.EnableConnectionStats() ? exporter.GetConnectionsTotalReporter() : 0,
+                                                            config_.EnableConnectionStats() ? exporter.GetConnectionsRateReporter() : 0);
     net_status_notifier->Start();
   }
 
-  CollectorStatsExporter exporter(registry, &config_, &sysdig_);
   if (!exporter.start()) {
     CLOG(FATAL) << "Unable to start collector stats exporter";
   }
@@ -100,18 +105,6 @@ void CollectorService::RunForever() {
   while ((cv = control_->load(std::memory_order_relaxed)) != STOP_COLLECTOR) {
     sysdig_.Run(*control_);
     CLOG(DEBUG) << "Interrupted collector!";
-
-    std::lock_guard<std::mutex> lock(chisel_mutex_);
-    if (update_chisel_) {
-      CLOG(DEBUG) << "Updating chisel ...";
-      sysdig_.SetChisel(chisel_);
-      update_chisel_ = false;
-      // Reset the control value to RUN, but abort if it has changed to STOP_COLLECTOR in the meantime.
-      cv = control_->exchange(RUN, std::memory_order_relaxed);
-      if (cv == STOP_COLLECTOR) {
-        break;
-      }
-    }
   }
 
   int signal = signum_.load();
@@ -138,21 +131,6 @@ bool CollectorService::WaitForGRPCServer() {
   std::string error_str;
   auto interrupt = [this] { return control_->load(std::memory_order_relaxed) == STOP_COLLECTOR; };
   return WaitForChannelReady(config_.grpc_channel, interrupt);
-}
-
-void CollectorService::OnChiselReceived(const std::string& new_chisel) {
-  {
-    std::lock_guard<std::mutex> lock(chisel_mutex_);
-    if (chisel_ == new_chisel) {
-      return;
-    }
-
-    chisel_ = new_chisel;
-    update_chisel_ = true;
-  }
-
-  ControlValue cv = RUN;
-  control_->compare_exchange_strong(cv, INTERRUPT_SYSDIG, std::memory_order_seq_cst);
 }
 
 bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServer, const CollectorConfig& config) {

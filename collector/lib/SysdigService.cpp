@@ -6,13 +6,13 @@
 #include <linux/ioctl.h>
 
 #include "libsinsp/parsers.h"
-#include "libsinsp/wrapper.h"
 
 #include <google/protobuf/util/time_util.h>
 
 #include "CollectionMethod.h"
 #include "CollectorException.h"
 #include "CollectorStats.h"
+#include "ContainerEngine.h"
 #include "EventNames.h"
 #include "HostInfo.h"
 #include "KernelDriver.h"
@@ -23,6 +23,7 @@
 #include "SelfChecks.h"
 #include "TimeUtil.h"
 #include "Utility.h"
+#include "logger.h"
 
 namespace collector {
 
@@ -32,10 +33,6 @@ constexpr char SysdigService::kProbePath[];
 constexpr char SysdigService::kProbeName[];
 
 void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) {
-  if (chisel_) {
-    throw CollectorException("Invalid state: SysdigService was already initialized");
-  }
-
   // The self-check handlers should only operate during start up,
   // so they are added to the handler list first, so they have access
   // to self-check events before the network and process handlers have
@@ -65,24 +62,24 @@ void SysdigService::Init(const CollectorConfig& config, std::shared_ptr<Connecti
     // do not send signals to Sensor.
     CLOG(FATAL) << "Internal error: There are no signal handlers.";
   }
-
-  SetChisel(config.Chisel());
-
-  use_chisel_cache_ = config.UseChiselCache();
 }
 
 bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) {
   if (!inspector_) {
-    inspector_.reset(new_inspector());
+    inspector_.reset(new sinsp());
 
     // peeking into arguments has a big overhead, so we prevent it from happening
     inspector_->set_snaplen(0);
 
-    if (logging::GetLogLevel() == logging::LogLevel::TRACE) {
-      inspector_->set_log_stderr();
-    }
+    auto log_level = (sinsp_logger::severity)logging::GetLogLevel();
+    inspector_->set_min_log_severity(log_level);
+    inspector_->disable_log_timestamps();
+    inspector_->set_log_callback(logging::InspectorLogCallback);
 
     inspector_->set_import_users(config.ImportUsers());
+    inspector_->set_thread_timeout_s(30);
+    inspector_->set_thread_purge_interval_s(60);
+    inspector_->m_thread_manager->set_max_thread_table_size(524288);
 
     // Connection status tracking is used in NetworkSignalHandler,
     // but only when trying to handle asynchronous connections
@@ -90,6 +87,12 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
     if (config.CollectConnectionStatus()) {
       inspector_->get_parser()->set_track_connection_status(true);
     }
+
+    auto engine = std::make_shared<ContainerEngine>(inspector_->m_container_manager);
+    auto* container_engines = inspector_->m_container_manager.get_container_engines();
+    container_engines->push_back(engine);
+
+    inspector_->set_filter("container.id != 'host'");
 
     default_formatter_.reset(new sinsp_evt_formatter(inspector_.get(),
                                                      DEFAULT_OUTPUT_STR));
@@ -108,41 +111,6 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
   }
 
   return true;
-}
-
-bool SysdigService::FilterEvent(sinsp_evt* event) {
-  if (!use_chisel_cache_) {
-    return chisel_->process(event);
-  }
-
-  sinsp_threadinfo* tinfo = event->get_thread_info();
-  if (!tinfo || tinfo->m_container_id.empty()) {
-    return false;
-  }
-
-  auto pair = chisel_cache_.emplace(tinfo->m_container_id, ACCEPTED);
-  ChiselCacheStatus& cache_status = pair.first->second;
-  bool res;
-
-  if (pair.second) {  // was newly inserted
-    res = chisel_->process(event);
-    if (chisel_cache_.size() > 1024) {
-      CLOG(INFO) << "Flushing chisel cache";
-      chisel_cache_.clear();
-      return res;
-    }
-    cache_status = res ? ACCEPTED : BLOCKED_USERSPACE;
-  } else {
-    res = (cache_status == ACCEPTED);
-
-    if (res) {
-      ++userspace_stats_.nChiselCacheHitsAccept[event->get_type()];
-    } else {
-      ++userspace_stats_.nChiselCacheHitsReject[event->get_type()];
-    }
-  }
-
-  return res;
 }
 
 sinsp_evt* SysdigService::GetNext() {
@@ -190,10 +158,35 @@ sinsp_evt* SysdigService::GetNext() {
   return event;
 }
 
+bool SysdigService::FilterEvent(sinsp_evt* event) {
+  const auto* tinfo = event->get_thread_info();
+
+  return FilterEvent(tinfo);
+}
+
+bool SysdigService::FilterEvent(const sinsp_threadinfo* tinfo) {
+  if (tinfo == nullptr) {
+    return false;
+  }
+
+  // exclude runc events
+  if (tinfo->m_exepath == "runc" && tinfo->m_comm == "6") {
+    return false;
+  }
+
+  std::string_view exepath_sv{tinfo->m_exepath};
+  auto marker = exepath_sv.rfind(':');
+  if (marker != std::string_view::npos) {
+    exepath_sv.remove_prefix(marker + 1);
+  }
+
+  return exepath_sv.rfind("/proc/self", 0) != 0;
+}
+
 void SysdigService::Start() {
   std::lock_guard<std::mutex> libsinsp_lock(libsinsp_mutex_);
 
-  if (!inspector_ || !chisel_) {
+  if (!inspector_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
 
@@ -234,7 +227,7 @@ void LogUnreasonableEventTime(int64_t time_micros, sinsp_evt* evt) {
 }
 
 void SysdigService::Run(const std::atomic<ControlValue>& control) {
-  if (!inspector_ || !chisel_) {
+  if (!inspector_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
 
@@ -273,7 +266,7 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
 bool SysdigService::SendExistingProcesses(SignalHandler* handler) {
   std::lock_guard<std::mutex> lock(libsinsp_mutex_);
 
-  if (!inspector_ || !chisel_) {
+  if (!inspector_) {
     throw CollectorException("Invalid state: SysdigService was not initialized");
   }
 
@@ -301,7 +294,6 @@ void SysdigService::CleanUp() {
   std::lock_guard<std::mutex> running_lock(running_mutex_);
   running_ = false;
   inspector_->close();
-  chisel_.reset();
   inspector_.reset();
 
   for (auto& signal_handler : signal_handlers_) {
@@ -340,15 +332,6 @@ bool SysdigService::GetStats(SysdigStats* stats) const {
   return true;
 }
 
-void SysdigService::SetChisel(const std::string& chisel) {
-  std::lock_guard<std::mutex> lock(libsinsp_mutex_);
-  CLOG(DEBUG) << "Updating chisel and flushing chisel cache";
-  CLOG(DEBUG) << "New chisel: " << chisel;
-  chisel_.reset(new_chisel(inspector_.get(), chisel, false));
-  chisel_->on_init();
-  chisel_cache_.clear();
-}
-
 void SysdigService::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler) {
   std::bitset<PPM_EVENT_MAX> event_filter;
   const auto& relevant_events = signal_handler->GetRelevantEvents();
@@ -357,7 +340,7 @@ void SysdigService::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handl
   } else {
     const EventNames& event_names = EventNames::GetInstance();
     for (const auto& event_name : relevant_events) {
-      for (ppm_event_type event_id : event_names.GetEventIDs(event_name)) {
+      for (ppm_event_code event_id : event_names.GetEventIDs(event_name)) {
         event_filter.set(event_id);
         global_event_filter_.set(event_id);
       }

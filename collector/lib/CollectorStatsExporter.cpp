@@ -10,11 +10,72 @@
 #include "SysdigService.h"
 #include "Utility.h"
 #include "prometheus/gauge.h"
+#include "prometheus/summary.h"
 
 namespace collector {
 
+template <typename T>
+class CollectorConnectionStatsPrometheus : public CollectorConnectionStats<T> {
+ public:
+  CollectorConnectionStatsPrometheus(
+      std::shared_ptr<prometheus::Registry> registry,
+      std::string name,
+      std::string help,
+      std::chrono::milliseconds max_age,
+      const std::vector<double>& quantiles,
+      double error) : family_(prometheus::BuildSummary().Name(name).Help(help).Register(*registry)),
+                      inbound_private_summary_(family_.Add({{"dir", "in"}, {"peer", "private"}}, MakeQuantiles(quantiles, error), max_age)),
+                      inbound_public_summary_(family_.Add({{"dir", "in"}, {"peer", "public"}}, MakeQuantiles(quantiles, error), max_age)),
+                      outbound_private_summary_(family_.Add({{"dir", "out"}, {"peer", "private"}}, MakeQuantiles(quantiles, error), max_age)),
+                      outbound_public_summary_(family_.Add({{"dir", "out"}, {"peer", "public"}}, MakeQuantiles(quantiles, error), max_age)) {}
+
+  void Observe(T inbound_private, T inbound_public, T outbound_private, T outbound_public) override {
+    inbound_private_summary_.Observe(inbound_private);
+    inbound_public_summary_.Observe(inbound_public);
+    outbound_private_summary_.Observe(outbound_private);
+    outbound_public_summary_.Observe(outbound_public);
+  }
+
+ private:
+  prometheus::Family<prometheus::Summary>& family_;
+  prometheus::Summary& inbound_private_summary_;
+  prometheus::Summary& inbound_public_summary_;
+  prometheus::Summary& outbound_private_summary_;
+  prometheus::Summary& outbound_public_summary_;
+
+  prometheus::Summary::Quantiles MakeQuantiles(std::vector<double> quantiles, double error) {
+    prometheus::Summary::Quantiles result;
+
+    result.reserve(quantiles.size());
+
+    auto make_quantile = [error](double q) -> prometheus::detail::CKMSQuantiles::Quantile {
+      return {q, error};
+    };
+
+    std::transform(quantiles.begin(), quantiles.end(), std::back_inserter(result), make_quantile);
+
+    return result;
+  }
+};
+
 CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig)
-    : registry_(std::move(registry)), config_(config), sysdig_(sysdig) {}
+    : registry_(std::move(registry)),
+      config_(config),
+      sysdig_(sysdig),
+      connections_total_reporter_(std::make_shared<CollectorConnectionStatsPrometheus<unsigned int>>(
+          registry_,
+          "rox_connections_total",
+          "Amount of stored connections over time",
+          std::chrono::minutes{config->GetConnectionStatsWindow()},
+          config->GetConnectionStatsQuantiles(),
+          config->GetConnectionStatsError())),
+      connections_rate_reporter_(std::make_shared<CollectorConnectionStatsPrometheus<float>>(
+          registry_,
+          "rox_connections_rate",
+          "Rate of connections over time",
+          std::chrono::minutes{config->GetConnectionStatsWindow()},
+          config->GetConnectionStatsQuantiles(),
+          config->GetConnectionStatsError())) {}
 
 bool CollectorStatsExporter::start() {
   if (!thread_.Start(&CollectorStatsExporter::run, this)) {
@@ -52,10 +113,7 @@ void CollectorStatsExporter::run() {
   auto& kernel = collectorEventCounters.Add({{"type", "kernel"}});
   auto& drops = collectorEventCounters.Add({{"type", "drops"}});
   auto& preemptions = collectorEventCounters.Add({{"type", "preemptions"}});
-  auto& filtered = collectorEventCounters.Add({{"type", "filtered"}});
   auto& userspaceEvents = collectorEventCounters.Add({{"type", "userspace"}});
-  auto& chiselCacheHitsAccept = collectorEventCounters.Add({{"type", "chiselCacheHitsAccept"}});
-  auto& chiselCacheHitsReject = collectorEventCounters.Add({{"type", "chiselCacheHitsReject"}});
   auto& grpcSendFailures = collectorEventCounters.Add({{"type", "grpcSendFailures"}});
 
   auto& processSent = collectorEventCounters.Add({{"type", "processSent"}});
@@ -110,10 +168,7 @@ void CollectorStatsExporter::run() {
   prometheus::Gauge* lineage_avg_string_len = &collectorProcessLineageInfo.Add({{"type", "lineage_avg_string_len"}});
 
   struct {
-    prometheus::Gauge* filtered = nullptr;
     prometheus::Gauge* userspace = nullptr;
-    prometheus::Gauge* chiselCacheHitsAccept = nullptr;
-    prometheus::Gauge* chiselCacheHitsReject = nullptr;
 
     prometheus::Gauge* parse_micros_total = nullptr;
     prometheus::Gauge* process_micros_total = nullptr;
@@ -135,14 +190,8 @@ void CollectorStatsExporter::run() {
 
     const char* event_dir = PPME_IS_ENTER(i) ? ">" : "<";
 
-    typed[i].filtered = &collectorTypedEventCounters.Add(
-        std::map<std::string, std::string>{{"quantity", "filtered"}, {"event_type", event_name}, {"event_dir", event_dir}});
     typed[i].userspace = &collectorTypedEventCounters.Add(
         std::map<std::string, std::string>{{"quantity", "userspace"}, {"event_type", event_name}, {"event_dir", event_dir}});
-    typed[i].chiselCacheHitsAccept = &collectorTypedEventCounters.Add(
-        std::map<std::string, std::string>{{"quantity", "chiselCacheHitsAccept"}, {"event_type", event_name}, {"event_dir", event_dir}});
-    typed[i].chiselCacheHitsReject = &collectorTypedEventCounters.Add(
-        std::map<std::string, std::string>{{"quantity", "chiselCacheHitsReject"}, {"event_type", event_name}, {"event_dir", event_dir}});
 
     typed[i].parse_micros_total = &collectorTypedEventTimesTotal.Add(
         std::map<std::string, std::string>{{"step", "parse"}, {"event_type", event_name}, {"event_dir", event_dir}});
@@ -165,38 +214,25 @@ void CollectorStatsExporter::run() {
     drops.Set(stats.nDrops);
     preemptions.Set(stats.nPreemptions);
 
-    uint64_t nFiltered = 0, nUserspace = 0, nChiselCacheHitsAccept = 0, nChiselCacheHitsReject = 0;
+    uint64_t nUserspace = 0;
     for (int i = 0; i < PPM_EVENT_MAX; i++) {
       auto& counters = typed[i];
 
-      auto filtered = stats.nFilteredEvents[i];
       auto userspace = stats.nUserspaceEvents[i];
-      auto chiselCacheHitsAccept = stats.nChiselCacheHitsAccept[i];
-      auto chiselCacheHitsReject = stats.nChiselCacheHitsReject[i];
       auto parse_micros_total = stats.event_parse_micros[i];
       auto process_micros_total = stats.event_process_micros[i];
 
-      nFiltered += filtered;
       nUserspace += userspace;
-      nChiselCacheHitsAccept += chiselCacheHitsAccept;
-      nChiselCacheHitsReject += chiselCacheHitsReject;
 
-      if (counters.filtered) counters.filtered->Set(filtered);
       if (counters.userspace) counters.userspace->Set(userspace);
-      if (counters.chiselCacheHitsAccept) counters.chiselCacheHitsAccept->Set(chiselCacheHitsAccept);
-      if (counters.chiselCacheHitsReject) counters.chiselCacheHitsReject->Set(chiselCacheHitsReject);
 
       if (counters.parse_micros_total) counters.parse_micros_total->Set(parse_micros_total);
       if (counters.process_micros_total) counters.process_micros_total->Set(process_micros_total);
 
       if (counters.parse_micros_avg) counters.parse_micros_avg->Set(userspace ? parse_micros_total / userspace : 0);
-      if (counters.process_micros_avg) counters.process_micros_avg->Set(filtered ? process_micros_total / filtered : 0);
     }
 
-    filtered.Set(nFiltered);
     userspaceEvents.Set(nUserspace);
-    chiselCacheHitsAccept.Set(nChiselCacheHitsAccept);
-    chiselCacheHitsReject.Set(nChiselCacheHitsReject);
 
     grpcSendFailures.Set(stats.nGRPCSendFailures);
 

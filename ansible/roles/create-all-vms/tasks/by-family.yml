@@ -1,8 +1,24 @@
 ---
 
+- include_vars: ppc64le.yml
+- include_vars: s390x.yml
+
+- set_fact:
+    arch: "{{ item.0.value.arch | default('amd64') }}"
+
+- set_fact:
+    ibm_env: "{{ s390x.env }}"
+  when: arch == 's390x'
+
+- set_fact:
+    ibm_env: "{{ ppc64le.env }}"
+  when: arch == 'ppc64le'
+
 - name: Create VMs From Family
   include_role:
     name: create-vm
+    apply:
+      environment: "{{ ibm_env | default({}) }}"
   vars:
     vm_name: "{{ gcp_instance_prefix }}-{{ normalized_collection_method }}-{{ item.1 }}-{{ job_id }}"
     vm_project: "{{ item.0.value.project }}"
@@ -12,4 +28,6 @@
     vm_collection_method: "{{ collection_method | default('any') | replace('-', '_') }}"
     vm_available_zones: "{{ gcp_available_zones }}"
     vm_ignition: "{{ item.0.value.ignition | default({}) }}"
-
+    vm_arch: "{{ arch }}"
+    vm_machine_type: "{{ item.0.value.machine_type | default('e2-standard-2') }}"
+    vm_ssh_key_file: "{{ item.0.value.ssh_key_file | default(gcp_ssh_key_file) }}"

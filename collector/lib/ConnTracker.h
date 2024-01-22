@@ -127,6 +127,7 @@ class ConnectionTracker {
 
   void UpdateKnownPublicIPs(UnorderedSet<Address>&& known_public_ips);
   void UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks);
+  void EnableExternalIPs(bool enable) { enable_external_ips_ = enable; }
   void UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair>&& ignored_l4proto_port_pairs);
 
   // Emplace a connection into the state ConnMap, or update its timestamp if the supplied timestamp is more recent
@@ -136,6 +137,21 @@ class ConnectionTracker {
   // Emplace a listen endpoint into the state ContainerEndpointMap, or update its timestamp if the supplied timestamp is more
   // recent than the stored one.
   void EmplaceOrUpdateNoLock(const ContainerEndpoint& ep, ConnStatus status);
+
+  //
+  // Statistics on the number of stored connections and their rate creation.
+  //
+  struct Stats {
+    struct {
+      unsigned int public_;
+      unsigned int private_;
+    } inbound, outbound;
+  };
+  // Retrieve the number of connections currently stored in ConnTracker, indexed by in/out and public/private nature.
+  Stats GetConnectionStats_StoredConnections();
+  // Retrieve the value of the ever-increasing counters of new connection insertion, indexed by in/out and public/private nature.
+  // Those counters are updated as new connections are reported by the system.
+  Stats GetConnectionStats_NewConnectionCounters();
 
  private:
   // NormalizeConnection transforms a connection into a normalized form.
@@ -170,14 +186,19 @@ class ConnectionTracker {
     return !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(cep.l4proto(), cep.endpoint().port()));
   }
 
+  inline void IncrementConnectionStats(Connection conn, ConnectionTracker::Stats& stats) const;
+
   std::mutex mutex_;
   ConnMap conn_state_;
   ContainerEndpointMap endpoint_state_;
 
   UnorderedSet<Address> known_public_ips_;
   NRadixTree known_ip_networks_;
+  bool enable_external_ips_ = false;
   UnorderedMap<Address::Family, bool> known_private_networks_exists_;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
+
+  Stats inserted_connections_counters_ = {};
 };
 
 /* static */

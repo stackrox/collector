@@ -1,6 +1,6 @@
 - name: Fetch the variables from var file
   include_vars:
-    file: s390x-vars.yml
+    file: s390x.yml
 
 - name: Check for existing VSI
   ibm.cloudcollection.ibm_is_instance_info:
@@ -15,15 +15,17 @@
     name: "{{ vsi_name }}"
     state: available
     id: "{{ vsi.resource.id | default(omit) }}"
-    vpc: "{{ vpc_id }}"
-    profile: "{{ vsi_profile }}"
-    image: "{{ vsi_image_id }}"
-    resource_group: "{{ vsi_resource_group_id }}"
+    vpc: "{{ s390x.vpc_id }}"
+    profile: "{{ s390x.vsi_profile }}"
+    image: "{{ s390x.vsi_image_id }}"
+    resource_group: "{{ s390x.vsi_resource_group_id }}"
     keys:
-      - "{{ ssh_key_id }}"
+      - "{{ s390x.ssh_key_id }}"
     primary_network_interface:
-     - subnet: "{{ subnet_id }}"
-    zone: "{{ zone }}"
+      - subnet: "{{ s390x.subnet_id }}"
+    zone: "{{ s390x.zone }}"
+    boot_volume:
+      - size: "{{ s390x.disk_size }}"
   register: vsi
 
 - name: Check for existing Floating IP
@@ -39,7 +41,7 @@
     name: "{{ vsi_name }}-fip"
     state: available
     id: "{{ fip.resource.id | default(omit) }}"
-    resource_group: "{{ vsi_resource_group_id }}"
+    resource_group: "{{ s390x.vsi_resource_group_id }}"
     target: "{{ vsi.resource.primary_network_interface[0]['id'] }}"
   register: fip
 
@@ -49,16 +51,19 @@
 
 - name: Add VSI to Ansible inventory
   add_host:
-    name: "{{ fip.resource.address }}"
+    name: "{{ vsi_name }}"
     ansible_user: root
+    ansible_host: "{{ fip.resource.address }}"
     groups:
       - job_id_{{ job_id }}
       - platform_{{ test_platform }}
+      - vm_arch_s390x
     ansible_ssh_extra_args: "-o StrictHostKeyChecking=no"
-    ansible_ssh_private_key_file: "~/.ssh/acs-sshkey_rsa.prv"
+    ansible_ssh_private_key_file: "{{ vm_ssh_key_file }}"
     vm_config: "{{ vm_config }}"
     vm_image_family: "{{ vm_family }}"
     vm_collection_method: "{{ vm_collection_method }}"
+    vm_arch: "{{ vm_arch }}"
     ibm_cloud_vm: true
 
 - name: generate provisioner inventory file

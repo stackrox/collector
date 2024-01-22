@@ -19,8 +19,6 @@ bypass this mechanism altogether.
 
 ## Falco libraries integration
 
-### Chisel
-
 ## Resource consumption breakdown
 
 ### Afterglow

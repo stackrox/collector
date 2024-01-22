@@ -222,11 +222,9 @@ TEST(NetworkStatusNotifier, SimpleStartStop) {
   });
 
   auto net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper,
-                                                               config_.ScrapeInterval(), config_.ScrapeListenEndpoints(),
-                                                               config_.TurnOffScrape(),
                                                                conn_tracker,
-                                                               config_.AfterglowPeriod(), config_.EnableAfterglow(),
-                                                               comm);
+                                                               comm,
+                                                               config_);
 
   net_status_notifier->Start();
 
@@ -324,11 +322,9 @@ TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
   });
 
   auto net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper,
-                                                               config.ScrapeInterval(), config.ScrapeListenEndpoints(),
-                                                               config.TurnOffScrape(),
                                                                conn_tracker,
-                                                               config.AfterglowPeriod(), config.EnableAfterglow(),
-                                                               comm);
+                                                               comm,
+                                                               config);
 
   net_status_notifier->Start();
 

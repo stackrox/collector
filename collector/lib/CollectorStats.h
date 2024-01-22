@@ -93,6 +93,14 @@ class CollectorStats {
   CollectorStats(){};
 };
 
+template <typename T>
+class CollectorConnectionStats {
+ public:
+  virtual void Observe(T inbound_private, T inbound_public, T outbound_private, T outbound_public) = 0;
+
+  virtual ~CollectorConnectionStats() {}
+};
+
 namespace internal {
 
 template <typename T>

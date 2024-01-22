@@ -70,7 +70,6 @@ func (b *BenchmarkTestSuiteBase) StartPerfContainer(name string, image string, a
 func (b *BenchmarkTestSuiteBase) RunInitContainer() {
 	init_image := config.Images().QaImageByKey("performance-init")
 	cmd := []string{
-		"host-init",
 		"-v", "/lib/modules:/lib/modules",
 		"-v", "/etc/os-release:/etc/os-release",
 		"-v", "/etc/lsb-release:/etc/lsb-release",
@@ -79,22 +78,21 @@ func (b *BenchmarkTestSuiteBase) RunInitContainer() {
 		init_image,
 	}
 
-	containerID, err := b.launchContainer(cmd...)
+	containerID, err := b.launchContainer("host-init", cmd...)
 	require.NoError(b.T(), err)
 
-	if finished, _ := b.waitForContainerToExit("host-init", containerID, 5*time.Second); !finished {
+	if finished, _ := b.waitForContainerToExit("host-init", containerID, 5*time.Second, 0); !finished {
 		logs, err := b.containerLogs("host-init")
 		if err == nil {
 			fmt.Println(logs)
 		}
 		assert.FailNow(b.T(), "Failed to initialize host for performance testing")
 	}
-	b.cleanupContainer([]string{containerID})
+	b.cleanupContainers(containerID)
 }
 
 func (b *BenchmarkTestSuiteBase) startContainer(name string, image string, args ...string) {
 	cmd := []string{
-		name,
 		"--privileged",
 		"-v", "/sys:/sys",
 		"-v", "/usr/src:/usr/src",
@@ -107,7 +105,7 @@ func (b *BenchmarkTestSuiteBase) startContainer(name string, image string, args 
 
 	cmd = append(cmd, args...)
 
-	containerID, err := b.launchContainer(cmd...)
+	containerID, err := b.launchContainer(name, cmd...)
 	require.NoError(b.T(), err)
 
 	b.perfContainers = append(b.perfContainers, containerID)
@@ -128,18 +126,12 @@ func (b *BenchmarkTestSuiteBase) StopPerfTools() {
 }
 
 func (s *BenchmarkCollectorTestSuite) SetupSuite() {
-	s.executor = common.NewExecutor()
+	s.RegisterCleanup("perf", "bcc", "bpftrace", "init")
 	s.StartContainerStats()
-	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
-	s.metrics = map[string]float64{}
-
-	err := s.collector.Setup()
-	require.NoError(s.T(), err)
 
 	s.StartPerfTools()
 
-	err = s.collector.Launch()
-	require.NoError(s.T(), err)
+	s.StartCollector(false, nil)
 }
 
 func (s *BenchmarkCollectorTestSuite) TestBenchmarkCollector() {
@@ -149,21 +141,13 @@ func (s *BenchmarkCollectorTestSuite) TestBenchmarkCollector() {
 func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
 	s.StopPerfTools()
 
-	err := s.collector.TearDown()
-	require.NoError(s.T(), err)
+	s.StopCollector()
 
-	s.db, err = s.collector.BoltDB()
-	require.NoError(s.T(), err)
-
-	s.cleanupContainer([]string{"collector", "grpc-server", "benchmark"})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("collector_benchmark", stats, s.metrics)
+	s.cleanupContainers("benchmark")
+	s.WritePerfResults()
 }
 
 func (s *BenchmarkBaselineTestSuite) SetupSuite() {
-	s.executor = common.NewExecutor()
-	s.metrics = map[string]float64{}
 	s.StartContainerStats()
 	s.StartPerfTools()
 }
@@ -174,8 +158,6 @@ func (s *BenchmarkBaselineTestSuite) TestBenchmarkBaseline() {
 
 func (s *BenchmarkBaselineTestSuite) TearDownSuite() {
 	s.StopPerfTools()
-	s.cleanupContainer([]string{"benchmark"})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("baseline_benchmark", stats, s.metrics)
+	s.cleanupContainers("benchmark")
+	s.WritePerfResults()
 }

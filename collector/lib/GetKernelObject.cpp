@@ -32,10 +32,15 @@ bool DownloadKernelObjectFromURL(FileDownloader& downloader, const std::string& 
   url += "?cid=collector";
 #endif
 
-  CLOG(INFO) << "Attempting to download kernel object from " << url;
+  if (!downloader.SetURL(url)) {
+    return false;
+  }
 
-  if (!downloader.SetURL(url)) return false;
-  if (!downloader.Download()) return false;
+  CLOG(INFO) << "Attempting to download kernel object from " << downloader.GetEffectiveURL();
+
+  if (!downloader.Download()) {
+    return false;
+  }
 
   CLOG(DEBUG) << "Downloaded kernel object from " << url;
 
@@ -66,9 +71,10 @@ bool DownloadKernelObjectFromHostname(FileDownloader& downloader, const Json::Va
 
   std::string server_hostname;
   if (hostname.compare(0, port_offset, SNI_hostname) != 0) {
+    downloader.SetConnectTo(SNI_hostname, hostname);
+
     const std::string server_port(hostname.substr(port_offset + 1));
     server_hostname = SNI_hostname + ":" + server_port;
-    downloader.ConnectTo(SNI_hostname + ":" + server_port + ":" + hostname);
   } else {
     server_hostname = hostname;
   }
@@ -127,7 +133,7 @@ std::string Sha256HashStream(std::istream& stream) {
   unsigned char hash[SHA256_DIGEST_LENGTH];
   char buffer[4096];
   SHA256_CTX sha256;
-  char output[64];
+  char output[65];
 
   SHA256_Init(&sha256);
   while (stream) {

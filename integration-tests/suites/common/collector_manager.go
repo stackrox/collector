@@ -1,126 +1,122 @@
 package common
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
 
+	"golang.org/x/exp/maps"
+
 	"github.com/hashicorp/go-multierror"
-
-	"github.com/boltdb/bolt"
-
 	"github.com/stackrox/collector/integration-tests/suites/config"
 )
 
+type CollectorStartupOptions struct {
+	Mounts        map[string]string
+	Env           map[string]string
+	Config        map[string]any
+	BootstrapOnly bool
+}
+
 type CollectorManager struct {
-	executor          Executor
-	Mounts            map[string]string
-	Env               map[string]string
-	DBPath            string
-	DBPathRemote      string
-	CollectorOutput   string
-	CollectorImage    string
-	GRPCServerImage   string
-	DisableGrpcServer bool
-	BootstrapOnly     bool
-	TestName          string
-	CoreDumpFile      string
-	VmConfig          string
+	executor      Executor
+	mounts        map[string]string
+	env           map[string]string
+	config        map[string]any
+	bootstrapOnly bool
+	coreDumpPath  string
+	testName      string
+
+	CollectorOutput string
+	ContainerID     string
 }
 
 func NewCollectorManager(e Executor, name string) *CollectorManager {
 	collectorOptions := config.CollectorInfo()
-	runtimeOptions := config.RuntimeInfo()
-	image_store := config.Images()
 
 	collectionMethod := config.CollectionMethod()
-	collectorConfig := fmt.Sprintf(`{"logLevel":"%s","turnOffScrape":true,"scrapeInterval":2}`, collectorOptions.LogLevel)
+
+	collectorConfig := map[string]any{
+		"logLevel":       collectorOptions.LogLevel,
+		"turnOffScrape":  true,
+		"scrapeInterval": 2,
+	}
 
 	env := map[string]string{
 		"GRPC_SERVER":                     "localhost:9999",
-		"COLLECTOR_CONFIG":                collectorConfig,
 		"COLLECTION_METHOD":               collectionMethod,
 		"COLLECTOR_PRE_ARGUMENTS":         collectorOptions.PreArguments,
 		"ENABLE_CORE_DUMP":                "false",
 		"ROX_COLLECTOR_CORE_BPF_HARDFAIL": "true",
 	}
+
 	if !collectorOptions.Offline {
 		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
 	}
+
 	mounts := map[string]string{
-		// The presence of this socket disables an optimisation, which would turn off podman runtime parsing.
-		// https://github.com/falcosecurity/libs/pull/296
-		"/run/podman/podman.sock:ro": runtimeOptions.Socket,
-		"/host/proc:ro":              "/proc",
-		"/host/etc:ro":               "/etc/",
-		"/host/usr/lib:ro":           "/usr/lib/",
-		"/host/sys:ro":               "/sys/",
-		"/host/dev:ro":               "/dev",
-		"/tmp":                       "/tmp",
+		"/host/proc:ro":             "/proc",
+		"/host/etc:ro":              "/etc",
+		"/host/usr/lib:ro":          "/usr/lib",
+		"/host/sys/kernel/debug:ro": "/sys/kernel/debug",
+		"/tmp":                      "/tmp",
 		// /module is an anonymous volume to reflect the way collector
 		// is usually run in kubernetes (with in-memory volume for /module)
 		"/module": "",
 	}
 
-	vm_config := config.VMInfo().Config
-
 	return &CollectorManager{
-		DBPathRemote:      "/tmp/collector-test.db",
-		DBPath:            "/tmp/collector-test-" + vm_config + "-" + collectionMethod + ".db",
-		executor:          e,
-		DisableGrpcServer: false,
-		BootstrapOnly:     false,
-		CollectorImage:    image_store.CollectorImage(),
-		GRPCServerImage:   image_store.ImageByKey("grpc-server"),
-		Env:               env,
-		Mounts:            mounts,
-		TestName:          name,
-		CoreDumpFile:      "/tmp/core.out",
-		VmConfig:          vm_config,
+		executor:      e,
+		bootstrapOnly: false,
+		env:           env,
+		mounts:        mounts,
+		config:        collectorConfig,
+		testName:      name,
+		coreDumpPath:  "/tmp/core.out",
 	}
 }
 
-func (c *CollectorManager) Setup() error {
-	if err := c.executor.PullImage(c.CollectorImage); err != nil {
-		return err
+func (c *CollectorManager) Setup(options *CollectorStartupOptions) error {
+	if options == nil {
+		// default to empty, if no options are provided (i.e. use the
+		// default values)
+		options = &CollectorStartupOptions{}
 	}
 
-	if !c.DisableGrpcServer {
-		if err := c.executor.PullImage(c.GRPCServerImage); err != nil {
-			return err
-		}
-
-		// remove previous db file
-		if _, err := c.executor.Exec("sudo", "rm", "-fv", c.DBPath); err != nil {
-			return err
-		}
+	if options.Env != nil {
+		maps.Copy(c.env, options.Env)
 	}
-	return nil
+
+	if options.Mounts != nil {
+		maps.Copy(c.mounts, options.Mounts)
+	}
+
+	if options.Config != nil {
+		maps.Copy(c.config, options.Config)
+	}
+
+	return c.executor.PullImage(config.Images().CollectorImage())
 }
 
 func (c *CollectorManager) Launch() error {
-	if !c.DisableGrpcServer {
-		err := c.launchGRPCServer()
-		if err != nil {
-			return err
-		}
-	}
 	return c.launchCollector()
 }
 
 func (c *CollectorManager) TearDown() error {
-	coreDumpErr := c.GetCoreDump(c.CoreDumpFile)
+	coreDumpErr := c.GetCoreDump(c.coreDumpPath)
 	if coreDumpErr != nil {
 		return coreDumpErr
 	}
-	isRunning, err := c.executor.IsContainerRunning("collector")
+
+	isRunning, err := c.IsRunning()
 	if err != nil {
 		fmt.Println("Error: Checking if container running")
 		return err
 	}
+
 	if !isRunning {
 		c.captureLogs("collector")
 		// Check if collector container segfaulted or exited with error
@@ -137,23 +133,12 @@ func (c *CollectorManager) TearDown() error {
 		c.captureLogs("collector")
 		c.killContainer("collector")
 	}
-	if !c.DisableGrpcServer {
-		c.captureLogs("grpc-server")
-		if _, err := c.executor.CopyFromHost(c.DBPathRemote, c.DBPath); err != nil {
-			return err
-		}
-		c.killContainer("grpc-server")
-	}
+
 	return nil
 }
 
-func (c *CollectorManager) BoltDB() (db *bolt.DB, err error) {
-	opts := &bolt.Options{ReadOnly: true}
-	db, err = bolt.Open(c.DBPath, 0600, opts)
-	if err != nil {
-		fmt.Printf("Permission error. %v\n", err)
-	}
-	return db, err
+func (c *CollectorManager) IsRunning() (bool, error) {
+	return c.executor.IsContainerRunning("collector")
 }
 
 // These two methods might be useful in the future. I used them for debugging
@@ -171,28 +156,8 @@ func (c *CollectorManager) getAllContainers() (string, error) {
 	return containers, err
 }
 
-func (c *CollectorManager) launchGRPCServer() error {
-	user, _ := user.Current()
-	selinuxErr := setSelinuxPermissiveIfNeeded()
-	if selinuxErr != nil {
-		return selinuxErr
-	}
-	cmd := []string{RuntimeCommand, "run",
-		"-d",
-		"--rm",
-		"--name", "grpc-server",
-		"--network=host",
-		"--privileged",
-		"-v", "/tmp:/tmp:rw",
-		"--user", user.Uid + ":" + user.Gid,
-		c.GRPCServerImage,
-	}
-	_, err := c.executor.Exec(cmd...)
-	return err
-}
-
 func (c *CollectorManager) launchCollector() error {
-	coreDumpErr := c.SetCoreDumpPath(c.CoreDumpFile)
+	coreDumpErr := c.SetCoreDumpPath(c.coreDumpPath)
 	if coreDumpErr != nil {
 		return coreDumpErr
 	}
@@ -202,11 +167,11 @@ func (c *CollectorManager) launchCollector() error {
 		"--privileged",
 		"--network=host"}
 
-	if !c.BootstrapOnly {
+	if !c.bootstrapOnly {
 		cmd = append(cmd, "-d")
 	}
 
-	for dst, src := range c.Mounts {
+	for dst, src := range c.mounts {
 		mount := src + ":" + dst
 		if src == "" {
 			// allows specification of anonymous volumes
@@ -214,18 +179,28 @@ func (c *CollectorManager) launchCollector() error {
 		}
 		cmd = append(cmd, "-v", mount)
 	}
-	for k, v := range c.Env {
+
+	for k, v := range c.env {
 		cmd = append(cmd, "--env", k+"="+v)
 	}
 
-	cmd = append(cmd, c.CollectorImage)
+	configJson, err := json.Marshal(c.config)
+	if err != nil {
+		return err
+	}
 
-	if c.BootstrapOnly {
+	cmd = append(cmd, "--env", "COLLECTOR_CONFIG="+string(configJson))
+	cmd = append(cmd, config.Images().CollectorImage())
+
+	if c.bootstrapOnly {
 		cmd = append(cmd, "exit", "0")
 	}
 
 	output, err := c.executor.Exec(cmd...)
 	c.CollectorOutput = output
+
+	outLines := strings.Split(output, "\n")
+	c.ContainerID = ContainerShortID(string(outLines[len(outLines)-1]))
 	return err
 }
 
@@ -235,9 +210,9 @@ func (c *CollectorManager) captureLogs(containerName string) (string, error) {
 		fmt.Printf(RuntimeCommand+" logs error (%v) for container %s\n", err, containerName)
 		return "", err
 	}
-	logDirectory := filepath.Join(".", "container-logs", c.VmConfig, c.Env["COLLECTION_METHOD"])
+	logDirectory := filepath.Join(".", "container-logs", config.VMInfo().Config, config.CollectionMethod())
 	os.MkdirAll(logDirectory, os.ModePerm)
-	logFile := filepath.Join(logDirectory, strings.ReplaceAll(c.TestName, "/", "_")+"-"+containerName+".log")
+	logFile := filepath.Join(logDirectory, strings.ReplaceAll(c.testName, "/", "_")+"-"+containerName+".log")
 	err = ioutil.WriteFile(logFile, []byte(logs), 0644)
 	if err != nil {
 		return "", err
@@ -261,7 +236,7 @@ func (c *CollectorManager) killContainer(name string) error {
 }
 
 func (c *CollectorManager) stopContainer(name string) error {
-	_, err := c.executor.Exec(RuntimeCommand, "stop", "--time", "100", name)
+	_, err := c.executor.Exec(RuntimeCommand, "stop", name)
 	return err
 }
 
@@ -305,7 +280,7 @@ func (c *CollectorManager) RestoreCoreDumpPath() error {
 // If the integration test is run on a remote host the core dump needs to be copied from the remote host
 // to the local maching
 func (c *CollectorManager) GetCoreDump(coreDumpFile string) error {
-	if c.Env["ENABLE_CORE_DUMP"] == "true" && !config.HostInfo().IsLocal() {
+	if c.env["ENABLE_CORE_DUMP"] == "true" && !config.HostInfo().IsLocal() {
 		cmd := []string{"sudo", "chmod", "755", coreDumpFile}
 		c.executor.Exec(cmd...)
 		c.executor.CopyFromHost(coreDumpFile, coreDumpFile)

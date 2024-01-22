@@ -38,13 +38,15 @@ BoolEnvVar set_import_users("ROX_COLLECTOR_SET_IMPORT_USERS", false);
 
 BoolEnvVar collect_connection_status("ROX_COLLECT_CONNECTION_STATUS", true);
 
+BoolEnvVar enable_external_ips("ROX_ENABLE_EXTERNAL_IPS", false);
+
+BoolEnvVar enable_connection_stats("ROX_COLLECTOR_ENABLE_CONNECTION_STATS", true);
+
 }  // namespace
 
-constexpr bool CollectorConfig::kUseChiselCache;
 constexpr bool CollectorConfig::kTurnOffScrape;
 constexpr int CollectorConfig::kScrapeInterval;
 constexpr CollectionMethod CollectorConfig::kCollectionMethod;
-constexpr char CollectorConfig::kChisel[];
 constexpr const char* CollectorConfig::kSyscalls[];
 constexpr bool CollectorConfig::kEnableProcessesListeningOnPorts;
 
@@ -53,15 +55,15 @@ const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = 
 
 CollectorConfig::CollectorConfig(CollectorArgs* args) {
   // Set default configuration values
-  use_chisel_cache_ = kUseChiselCache;
   scrape_interval_ = kScrapeInterval;
   turn_off_scrape_ = kTurnOffScrape;
-  chisel_ = kChisel;
   collection_method_ = kCollectionMethod;
   enable_processes_listening_on_ports_ = set_processes_listening_on_ports.value();
   core_bpf_hardfail_ = core_bpf_hardfail.value();
   import_users_ = set_import_users.value();
   collect_connection_status_ = collect_connection_status.value();
+  enable_external_ips_ = enable_external_ips.value();
+  enable_connection_stats_ = enable_connection_stats.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.push_back(syscall);
@@ -92,12 +94,6 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
       }
     }
 
-    // Chisel Cache
-    if (!config["useChiselCache"].empty()) {
-      use_chisel_cache_ = config["useChiselCache"].asBool();
-      CLOG(INFO) << "User configured useChiselCache=" << use_chisel_cache_;
-    }
-
     // Scrape Interval
     if (!config["scrapeInterval"].empty()) {
       scrape_interval_ = std::stoi(config["scrapeInterval"].asString());
@@ -108,13 +104,6 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     if (!config["turnOffScrape"].empty()) {
       turn_off_scrape_ = config["turnOffScrape"].asBool();
       CLOG(INFO) << "User configured turnOffScrape=" << turn_off_scrape_;
-    }
-
-    // Chisel
-    if (args->Chisel().length()) {
-      auto chiselB64 = args->Chisel();
-      CLOG(INFO) << "User configured chisel=" << chiselB64;
-      chisel_ = Base64Decode(chiselB64);
     }
 
     // Syscalls
@@ -172,6 +161,8 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   }
 
   HandleAfterglowEnvVars();
+  HandleConnectionStatsEnvVars();
+  HandleSinspEnvVars();
 
   host_config_ = ProcessHostHeuristics(*this);
 }
@@ -183,6 +174,15 @@ void CollectorConfig::HandleAfterglowEnvVars() {
 
   if (const char* afterglow_period = std::getenv("ROX_AFTERGLOW_PERIOD")) {
     afterglow_period_micros_ = static_cast<int64_t>(atof(afterglow_period) * 1000000);
+  }
+
+  const int64_t max_afterglow_period_micros = 300000000;  // 5 minutes
+
+  if (afterglow_period_micros_ > max_afterglow_period_micros) {
+    CLOG(WARNING) << "User set afterglow period of " << afterglow_period_micros_ / 1000000
+                  << "s is greater than the maximum allowed afterglow period of " << max_afterglow_period_micros / 1000000 << "s";
+    CLOG(WARNING) << "Setting the afterglow period to " << max_afterglow_period_micros / 1000000 << "s";
+    afterglow_period_micros_ = max_afterglow_period_micros;
   }
 
   if (enable_afterglow_ && afterglow_period_micros_ > 0) {
@@ -205,8 +205,73 @@ void CollectorConfig::HandleAfterglowEnvVars() {
   CLOG(INFO) << "Disabling afterglow";
 }
 
-bool CollectorConfig::UseChiselCache() const {
-  return use_chisel_cache_;
+void CollectorConfig::HandleConnectionStatsEnvVars() {
+  const char* envvar;
+
+  connection_stats_quantiles_ = {0.50, 0.90, 0.95};
+
+  if ((envvar = std::getenv("ROX_COLLECTOR_CONNECTION_STATS_QUANTILES")) != NULL) {
+    connection_stats_quantiles_.clear();
+    std::stringstream quantiles(envvar);
+    while (quantiles.good()) {
+      std::string quantile;
+      std::getline(quantiles, quantile, ',');
+      try {
+        double v = std::stod(quantile);
+        connection_stats_quantiles_.push_back(v);
+        CLOG(INFO) << "Connection statistics quantile: " << v;
+      } catch (...) {
+        CLOG(ERROR) << "Invalid quantile value: '" << quantile << "'";
+      }
+    }
+  }
+
+  connection_stats_error_ = 0.01;
+
+  if ((envvar = std::getenv("ROX_COLLECTOR_CONNECTION_STATS_ERROR")) != NULL) {
+    try {
+      connection_stats_error_ = std::stod(envvar);
+      CLOG(INFO) << "Connection statistics error value: " << connection_stats_error_;
+    } catch (...) {
+      CLOG(ERROR) << "Invalid quantile error value: '" << envvar << "'";
+    }
+  }
+
+  connection_stats_window_ = 60;
+
+  if ((envvar = std::getenv("ROX_COLLECTOR_CONNECTION_STATS_WINDOW")) != NULL) {
+    try {
+      connection_stats_window_ = std::stoi(envvar);
+      CLOG(INFO) << "Connection statistics window: " << connection_stats_window_;
+    } catch (...) {
+      CLOG(ERROR) << "Invalid window length value: '" << envvar << "'";
+    }
+  }
+}
+
+void CollectorConfig::HandleSinspEnvVars() {
+  const char* envvar;
+
+  sinsp_cpu_per_buffer_ = DEFAULT_CPU_FOR_EACH_BUFFER;
+  sinsp_buffer_size_ = DEFAULT_DRIVER_BUFFER_BYTES_DIM;
+
+  if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_CPU_PER_BUFFER")) != NULL) {
+    try {
+      sinsp_cpu_per_buffer_ = std::stoi(envvar);
+      CLOG(INFO) << "Sinsp cpu per buffer: " << sinsp_cpu_per_buffer_;
+    } catch (...) {
+      CLOG(ERROR) << "Invalid cpu per buffer value: '" << envvar << "'";
+    }
+  }
+
+  if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_BUFFER_SIZE")) != NULL) {
+    try {
+      sinsp_buffer_size_ = std::stoi(envvar);
+      CLOG(INFO) << "Sinsp buffer size: " << sinsp_buffer_size_;
+    } catch (...) {
+      CLOG(ERROR) << "Invalid buffer size value: '" << envvar << "'";
+    }
+  }
 }
 
 bool CollectorConfig::TurnOffScrape() const {
@@ -215,10 +280,6 @@ bool CollectorConfig::TurnOffScrape() const {
 
 int CollectorConfig::ScrapeInterval() const {
   return scrape_interval_;
-}
-
-std::string CollectorConfig::Chisel() const {
-  return chisel_;
 }
 
 CollectionMethod CollectorConfig::GetCollectionMethod() const {
@@ -255,14 +316,14 @@ bool CollectorConfig::IsCoreDumpEnabled() const {
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
   return os
          << "collection_method:" << c.GetCollectionMethod()
-         << ", useChiselCache:" << c.UseChiselCache()
          << ", scrape_interval:" << c.ScrapeInterval()
          << ", turn_off_scrape:" << c.TurnOffScrape()
          << ", hostname:" << c.Hostname()
          << ", processesListeningOnPorts:" << c.IsProcessesListeningOnPortsEnabled()
          << ", logLevel:" << c.LogLevel()
          << ", set_import_users:" << c.ImportUsers()
-         << ", collect_connection_status:" << c.CollectConnectionStatus();
+         << ", collect_connection_status:" << c.CollectConnectionStatus()
+         << ", enable_external_ips:" << c.EnableExternalIPs();
 }
 
 }  // namespace collector

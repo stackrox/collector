@@ -4,6 +4,7 @@
 integration-tests/container-logs/
 integration-tests/*.log
 integration-tests/*.logs
+integration-tests/bin/
 integration-tests/perf.json
 falcosecurity-libs/cmake-build
 falcosecurity-libs/cmake-build-rhel
@@ -28,5 +29,8 @@ cmake-build/
 out/
 
 # IBM Cloud dynamic inventory files
-ansible/dev/inventory_ibmcloud_z.yml
-ansible/ci/inventory_ibmcloud_z.yml
+ansible/dev/inventory_ibmcloud.yml
+ansible/ci/inventory_ibmcloud.yml
+
+# Snyk
+.dccache

@@ -19,10 +19,15 @@ class CollectorStatsExporter {
   void run();
   void stop();
 
+  std::shared_ptr<CollectorConnectionStats<unsigned int>> GetConnectionsTotalReporter() { return connections_total_reporter_; }
+  std::shared_ptr<CollectorConnectionStats<float>> GetConnectionsRateReporter() { return connections_rate_reporter_; }
+
  private:
   std::shared_ptr<prometheus::Registry> registry_;
   const CollectorConfig* config_;
   SysdigService* sysdig_;
+  std::shared_ptr<CollectorConnectionStats<unsigned int>> connections_total_reporter_;
+  std::shared_ptr<CollectorConnectionStats<float>> connections_rate_reporter_;
   StoppableThread thread_;
 };
 

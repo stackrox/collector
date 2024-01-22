@@ -4,12 +4,15 @@
 # Wildcards (*) can be used for glob-style pattern matching; if a pattern is
 # prefixed with ~, it is interpreted as a (Python) regex.
 # If <module-version> or <object type> is omitted, "*" is assumed
+# ROX-19721: RHEL8.9 breaks modules
+~4.18.0-(?:50[89]|5[1-9][0-9]|[6-9][0-9]{2})\.el8\.x86_64 * mod
 ~3\.10\.0-1062(?:\.\d+)*\.el7.x86_64 * bpf
 *.el6.*
 # TODO(ROX-6615) - Kernel crawler deletes debian kernels
 4.19.0-10-cloud-amd64
 4.19.0-14-amd64
 5.10.0-23-amd64
+5.10.0-24-cloud-amd64
 5.16.0-1-cloud-amd64
 5.16.0-1-amd64
 5.17.0-2-cloud-amd64
@@ -69,8 +72,21 @@
 6.2.* 2.2.0 *
 6.2.* 2.1.0 *
 6.2.* 2.0.1 *
-# TODO(ROX-16705) - 6.3/6.4 kernel compilation errors
+# ROX-16705 - 6.3/6.4 kernel compilation errors
 ~6\.[3-9]\.\d+.* ~2\.[2-5]\.\d+(?:-rc\d+)?
+# ROX-20541 - 6.6 kernel compilation errors
+6.6.* 2.6.0
+6.6.* 2.7.0
 # Block kernel module builds on all kernels
 # for module versions newer than 2.4.0
 * ~2\.[5-9]\.\d+(?:-rc\d+)? mod
+# Block kernel modules for RHEL 9.3+
+# These builds are broken but we no longer support kmods
+# See: https://github.com/falcosecurity/libs/pull/1174
+~.*\.el9_[3-9]\..* * mod
+# Block kernel modules for RHEL 8.9
+# Those have backported the change which was already an issue here:
+# https://github.com/falcosecurity/libs/issues/918
+# Since kmods are not supported anyway, block these combination
+~.*\.el8_9\..* * mod
+6.7.* * *

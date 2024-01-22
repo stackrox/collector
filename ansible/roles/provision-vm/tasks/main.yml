@@ -56,3 +56,7 @@
 - name: Podman specific setup
   include_tasks: "podman.yml"
   when: runtime_command == "podman"
+
+- name: Permissive SELinux
+  shell: sudo setenforce 0
+  when: needs_selinux_permissive is defined and needs_selinux_permissive

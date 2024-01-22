@@ -36,6 +36,11 @@ class MockS390xHeuristics : public S390XHeuristic {
   MockS390xHeuristics() = default;
 };
 
+class MockARM64Heuristics : public ARM64Heuristic {
+ public:
+  MockARM64Heuristics() = default;
+};
+
 class MockHostInfoHeuristics : public HostInfo {
  public:
   MockHostInfoHeuristics() = default;
@@ -56,6 +61,13 @@ class MockCollectorConfig : public CollectorConfig {
       : CollectorConfig(collectorArgs){};
 
   MOCK_CONST_METHOD0(UseEbpf, bool());
+
+  void SetCollectionMethod(CollectionMethod cm) {
+    if (host_config_.HasCollectionMethod()) {
+      host_config_.SetCollectionMethod(cm);
+    }
+    collection_method_ = cm;
+  }
 };
 
 TEST(HostHeuristicsTest, TestS390XRHEL84) {
@@ -66,10 +78,28 @@ TEST(HostHeuristicsTest, TestS390XRHEL84) {
   MockCollectorConfig config(args);
   HostConfig hconfig;
 
+  config.SetCollectionMethod(CollectionMethod::EBPF);
   hconfig.SetCollectionMethod(CollectionMethod::EBPF);
   EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(version));
 
   s390xHeuristics.Process(host, config, &hconfig);
+
+  EXPECT_EQ(hconfig.GetCollectionMethod(), CollectionMethod::CORE_BPF);
+}
+
+TEST(HostHeuristicsTest, TestARM64Heuristic) {
+  MockARM64Heuristics heuristic;
+  MockHostInfoHeuristics host;
+  KernelVersion version = KernelVersion("6.5.5-200.fc38.aarch64", "", "aarch64");
+  CollectorArgs* args = CollectorArgs::getInstance();
+  MockCollectorConfig config(args);
+  HostConfig hconfig;
+
+  config.SetCollectionMethod(CollectionMethod::EBPF);
+  hconfig.SetCollectionMethod(CollectionMethod::EBPF);
+  EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(version));
+
+  heuristic.Process(host, config, &hconfig);
 
   EXPECT_EQ(hconfig.GetCollectionMethod(), CollectionMethod::CORE_BPF);
 }

@@ -34,6 +34,31 @@ connections status. With this enabled, advertising of asynchronous connections
 will be postponed until their status is known and they are successful.
 The default is true.
 
+* `ROX_COLLECTOR_ENABLE_CONNECTION_STATS`: Instructs Collector to harvest
+and publish metrics regarding the
+[network connections](troubleshooting.md#connection-statistics) handled by the
+connection tracker. The data is summarized in quantiles published by prometheus.
+This is enabled by default.
+
+  - `ROX_COLLECTOR_CONNECTION_STATS_QUANTILES`: a coma separated list of decimals
+    defining the quantiles for all connection metrics. Default: `0.5,0.90,0.95`
+
+  - `ROX_COLLECTOR_CONNECTION_STATS_ERROR`: the allowed error for the quantiles
+    (used to aggregate observations). Default: `0.01`
+
+  - `ROX_COLLECTOR_CONNECTION_STATS_WINDOW`: the length of the sliding time window
+    in minutes. Default: `60`
+
+* `ROX_COLLECTOR_SINSP_CPU_PER_BUFFER`: Allows to control how many sinsp
+buffers are going to be allocated. The resulting number of buffers will be
+calculated as the overall number of CPU cores available divided by this
+value. The default value is 1, meaning one buffer for each CPU. The value 0 is
+special, it instructs sinsp to allocate only one buffer no matter how many CPUs
+are there. This parameter affects CO-RE BPF only.
+
+* `ROX_COLLECTOR_SINSP_BUFFER_SIZE`: Specifies the size of a sinsp buffer in
+bytes. The default value is 16 MB.
+
 NOTE: Using environment variables is a preferred way of configuring Collector,
 so if you're adding a new configuration knob, keep this in mind.
 
@@ -49,9 +74,6 @@ seconds. The default value is 30 seconds.
 
 * `logLevel`: Sets logging level. The default is INFO.
 
-* `useChiselCache`: Whether to use cache for Chisel. For more details see
-[Chisel](design-overview.md#Chisel) section.
-
 ### Other arguments
 
 * `--collection-method`: Which technology to use for data gathering. Either
@@ -59,9 +81,6 @@ seconds. The default value is 30 seconds.
 
 * `--grpc-server`: GRPC server endpoint for Collector to communicate, in the
 form "host:port".
-
-* `--chisel`: Whether or not to use Chisel. Again, for more details see
-[Chisel](design-overview.md#Chisel) section.
 
 ## Supported systems
 

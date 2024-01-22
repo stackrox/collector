@@ -2,27 +2,28 @@
 - set_fact:
     distro: centos
 
-- when: arch_info == "s390x"
+- when: vm_arch == "s390x"
   block:
     - name: Get distro info
       shell: awk -F= '$1=="ID" { print $2 ;}' /etc/os-release
       register: distro_id
-      when: arch_info == "s390x"
+      when: vm_arch == "s390x"
 
     - set_fact:
         distro: "{{ distro_id.stdout }}"
 
-    - name: Register server with Red Hat for IBM Z vms
-      tags: attach_subscription
-      community.general.redhat_subscription:
-        state: present
-        username: "{{ redhat_username }}"
-        password: "{{ redhat_password }}"
-        auto_attach: true
-      register: registration
-      retries: 2
-      delay: 30
-      until: registration is not failed
+- name: Register server with Red Hat for IBM POWER vms
+  tags: attach_subscription
+  community.general.redhat_subscription:
+    state: present
+    username: "{{ redhat_username }}"
+    password: "{{ redhat_password }}"
+    auto_attach: true
+  register: registration
+  retries: 2
+  delay: 30
+  until: registration is not failed
+  when: vm_arch == "ppc64le" or vm_arch == "s390x"
 
 - name: Add repository
   shell: |
@@ -37,6 +38,8 @@
       - docker-ce
       - docker-ce-cli
       - containerd.io
+      - git
+      - make
     state: latest
     update_cache: true
 

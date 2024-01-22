@@ -9,6 +9,18 @@ ifeq ($(COLLECTOR_IMAGE),)
 COLLECTOR_IMAGE=$(COLLECTOR_REPO):$(COLLECTOR_TAG)
 endif
 
+ifeq ($(COLLECTOR_QA_TAG),)
+COLLECTOR_QA_TAG=$(shell cat container/QA_TAG | tr -d '\n')
+endif
+
+ifeq ($(COLLECTOR_TESTS_REPO),)
+COLLECTOR_TESTS_REPO=quay.io/rhacs-eng/qa-multi-arch
+endif
+
+ifeq ($(COLLECTOR_TESTS_IMAGE),)
+COLLECTOR_TESTS_IMAGE=$(COLLECTOR_TESTS_REPO):collector-tests-$(COLLECTOR_TAG)
+endif
+
 SHELL=/bin/bash
 
 # Environment variable COLLECTOR_IMAGE is used by integration-tests
@@ -30,6 +42,17 @@ endef
 
 # Generates all the specific test targets
 $(foreach element,$(ALL_TESTS),$(eval $(call make-test-target,$(element))))
+
+.PHONY: build
+build:
+	mkdir -p bin
+	go test -tags bench -c -o bin/collector-tests
+
+.PHONY: build-image
+build-image:
+	docker build --platform $(PLATFORM) -t $(COLLECTOR_TESTS_IMAGE) \
+		--build-arg QA_TAG=$(shell cat container/QA_TAG) \
+		$(CURDIR)
 
 # Run everything on CI, rather than specific tests.
 .PHONY: ci-integration-tests
@@ -55,7 +78,7 @@ baseline: TestBenchmarkBaseline
 LOG_FILE ?= integration-test.log
 .PHONY: report
 report:
-	go get -u github.com/jstemmer/go-junit-report
+	go install github.com/jstemmer/go-junit-report/v2@latest
 	@echo "+ $@"
 	@cat $(LOG_FILE) | go-junit-report > `dirname $(LOG_FILE)`/integration-test-report.xml
 	@echo

@@ -150,8 +150,8 @@ def verify_data(data):
         # NOTE: We rely only on baseline/collector hackbench at the moment. As
         # soon as data for more tests will be collected, this section has to be
         # extended accordingly.
-        no_overhead_count = counter.get("baseline_benchmark", 0)
-        overhead_count = counter.get("collector_benchmark", 0)
+        no_overhead_count = counter.get("baseline_benchmark", 0) + counter.get("TestBenchmarkBaseline", 0)
+        overhead_count = counter.get("collector_benchmark", 0) + counter.get("TestBenchmarkBaseline", 0)
 
         if (no_overhead_count != overhead_count):
             raise Exception(f"Number of with/without overhead do not match:"
@@ -231,16 +231,23 @@ def group_data(content, *columns):
 
 
 def split_benchmark(measurements):
-    no_overhead = [
-        m["baseline_benchmark"]
-        for m in measurements
-        if "baseline_benchmark" in m
-    ]
-    overhead = [
-        m["collector_benchmark"]
-        for m in measurements
-        if "collector_benchmark" in m
-    ]
+    no_overhead = []
+    overhead = []
+
+    # This has to cover versions of the tests that tag perf data
+    # with "*_benchmark" or automatically with the test name.
+    for m in measurements:
+        if "baseline_benchmark" in m:
+            no_overhead.append(m["baseline_benchmark"])
+
+        if "TestBenchmarkBaseline" in m:
+            no_overhead.append(m["TestBenchmarkBaseline"])
+
+        if "collector_benchmark" in m:
+            overhead.append(m["collector_benchmark"])
+
+        if "TestBenchmarkCollector" in m:
+            overhead.append(m["TestBenchmarkCollector"])
 
     return (no_overhead, overhead)
 

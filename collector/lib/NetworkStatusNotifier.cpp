@@ -159,6 +159,44 @@ void NetworkStatusNotifier::WaitUntilWriterStarted(IDuplexClientWriter<sensor::N
   CLOG(INFO) << "Established network connection info stream.";
 }
 
+void NetworkStatusNotifier::ReportConnectionStats() {
+  if (connections_total_reporter_) {
+    //
+    // Total number of connections stored in ConnTracker
+    //
+    ConnectionTracker::Stats stats_total = conn_tracker_->GetConnectionStats_StoredConnections();
+
+    connections_total_reporter_->Observe(
+        stats_total.inbound.private_,
+        stats_total.inbound.public_,
+        stats_total.outbound.private_,
+        stats_total.outbound.public_);
+  }
+
+  if (connections_rate_reporter_) {
+    //
+    // Rate of connections creation since last iteration (reporting interval)
+    //
+    ConnectionTracker::Stats stats_new_counter = conn_tracker_->GetConnectionStats_NewConnectionCounters();
+
+    auto now = std::chrono::steady_clock::now();
+    auto delta_t = std::chrono::duration_cast<std::chrono::seconds>(now - connections_last_report_time_).count();
+
+    if (connections_rate_counter_last_  // skip the first call
+        && delta_t > 0) {               // division by zero assertion
+
+      connections_rate_reporter_->Observe(
+          ((float)stats_new_counter.inbound.private_ - connections_rate_counter_last_->inbound.private_) / delta_t,
+          ((float)stats_new_counter.inbound.public_ - connections_rate_counter_last_->inbound.public_) / delta_t,
+          ((float)stats_new_counter.outbound.private_ - connections_rate_counter_last_->outbound.private_) / delta_t,
+          ((float)stats_new_counter.outbound.public_ - connections_rate_counter_last_->outbound.public_) / delta_t);
+    }
+
+    connections_rate_counter_last_ = stats_new_counter;
+    connections_last_report_time_ = now;
+  }
+}
+
 bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
   if (turn_off_scraping_) {
     return true;
@@ -194,6 +232,8 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
     if (!UpdateAllConnsAndEndpoints()) {
       continue;
     }
+
+    ReportConnectionStats();
 
     const sensor::NetworkConnectionInfoMessage* msg;
     ConnMap new_conn_state;
@@ -239,6 +279,8 @@ void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::Netwo
     if (!UpdateAllConnsAndEndpoints()) {
       continue;
     }
+
+    ReportConnectionStats();
 
     int64_t time_micros = NowMicros();
     const sensor::NetworkConnectionInfoMessage* msg;

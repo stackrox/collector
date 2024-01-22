@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <chrono>
 #include <fstream>
+#include <optional>
 #include <string_view>
 #include <unistd.h>
 #include <utils.h>
@@ -59,7 +60,7 @@ int DebugCallback(CURL*, curl_infotype type, char* data, size_t size, void*) {
     return CURLE_OK;
   }
 
-  if (logging::GetLogLevel() > logging::LogLevel::TRACE) {
+  if (!logging::CheckLogLevel(logging::LogLevel::TRACE)) {
     // Skip other types of messages if we are not tracing
     return CURLE_OK;
   }
@@ -94,10 +95,36 @@ int DebugCallback(CURL*, curl_infotype type, char* data, size_t size, void*) {
 
 }  // namespace
 
-FileDownloader::FileDownloader() : connect_to_(nullptr) {
-  curl_ = curl_easy_init();
+ConnectTo::ConnectTo(std::string_view host, std::string_view connect_to) : connect_to_(nullptr, curl_slist_free_all) {
+  auto marker = connect_to.find(':');
+  if (marker == std::string_view::npos) {
+    connect_to_host_ = connect_to;
+    connect_to_port_ = "";
+  } else {
+    connect_to_host_ = connect_to.substr(0, marker);
+    connect_to_port_ = connect_to.substr(marker + 1);
+  }
 
-  if (curl_) {
+  marker = host.find(':');
+  if (marker == std::string_view::npos) {
+    host_ = host;
+    port_ = connect_to_port_;
+  } else {
+    host_ = host.substr(0, marker);
+    port_ = host.substr(marker + 1);
+  }
+
+  std::string entry{host_ + ":" + port_ + ":" + connect_to_host_ + ":" + connect_to_port_};
+
+  connect_to_.reset(curl_slist_append(nullptr, entry.c_str()));
+  if (connect_to_ == nullptr) {
+    CLOG(WARNING) << "Failed to create connect_to list";
+    return;
+  }
+}
+
+FileDownloader::FileDownloader() : curl_(curl_easy_init()), connect_to_(std::nullopt) {
+  if (curl_ != nullptr) {
     SetDefaultOptions();
   }
 
@@ -111,15 +138,17 @@ FileDownloader::~FileDownloader() {
   }
 
   curl_global_cleanup();
-
-  curl_slist_free_all(connect_to_);
 }
 
-bool FileDownloader::SetURL(const char* const url) {
-  url_path_ = std::string(url);
-  url_path_ = url_path_.substr(url_path_.find_last_of("/") + 1);
+bool FileDownloader::SetURL(const std::string& url) {
+  file_path_ = url.substr(url.find_last_of('/') + 1);
 
-  auto result = curl_easy_setopt(curl_, CURLOPT_URL, url);
+  if (!url_.SetURL(url)) {
+    CLOG(WARNING) << "Unable to set URL '" << url << "'";
+    return false;
+  }
+
+  auto result = curl_easy_setopt(curl_, CURLOPT_URL, url_.GetURL().c_str());
 
   if (result != CURLE_OK) {
     CLOG(WARNING) << "Unable to set URL '" << url << "' - " << curl_easy_strerror(result);
@@ -127,10 +156,6 @@ bool FileDownloader::SetURL(const char* const url) {
   }
 
   return true;
-}
-
-bool FileDownloader::SetURL(const std::string& url) {
-  return SetURL(url.c_str());
 }
 
 void FileDownloader::IPResolve(FileDownloader::resolve_t version) {
@@ -217,25 +242,15 @@ bool FileDownloader::Key(const char* const path) {
   return true;
 }
 
-bool FileDownloader::ConnectTo(const std::string& entry) {
-  return ConnectTo(entry.c_str());
-}
-
-bool FileDownloader::ConnectTo(const char* const entry) {
-  curl_slist* temp = curl_slist_append(connect_to_, entry);
-
-  if (temp == nullptr) {
-    CLOG(WARNING) << "Unable to set option to connect to '" << entry;
-    return false;
+bool FileDownloader::SetConnectTo(const std::string& host, const std::string& target) {
+  if (!host.empty() && !target.empty() && host != target) {
+    connect_to_ = ConnectTo(host, target);
   }
-
-  connect_to_ = temp;
-
   return true;
 }
 
 void FileDownloader::SetVerboseMode(bool verbose) {
-  if (logging::GetLogLevel() <= logging::LogLevel::DEBUG && verbose) {
+  if (logging::CheckLogLevel(logging::LogLevel::DEBUG) && verbose) {
     curl_easy_setopt(curl_, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(curl_, CURLOPT_DEBUGFUNCTION, DebugCallback);
   } else {
@@ -243,13 +258,28 @@ void FileDownloader::SetVerboseMode(bool verbose) {
   }
 }
 
+std::string FileDownloader::GetEffectiveURL() {
+  // For the time being, we can only have a single connect_to_ object,
+  // if it's not set, the download will go to the set URL.
+  if (!connect_to_) {
+    return GetURL();
+  }
+
+  if (connect_to_->GetPort() != GetPort() || connect_to_->GetHost() != GetHost()) {
+    return GetURL();
+  }
+
+  return GetScheme() + "://" + connect_to_->GetConnectToHost() + ":" + connect_to_->GetConnectToPort() + GetPath();
+}
+
 void FileDownloader::ResetCURL() {
   curl_easy_reset(curl_);
 
+  url_.reset();
+
   SetDefaultOptions();
 
-  curl_slist_free_all(connect_to_);
-  connect_to_ = nullptr;
+  connect_to_ = std::nullopt;
 }
 
 bool FileDownloader::IsReady() {
@@ -268,7 +298,7 @@ bool FileDownloader::Download() {
   }
 
   if (connect_to_) {
-    auto result = curl_easy_setopt(curl_, CURLOPT_CONNECT_TO, connect_to_);
+    auto result = curl_easy_setopt(curl_, CURLOPT_CONNECT_TO, connect_to_->GetList());
 
     if (result != CURLE_OK) {
       CLOG(WARNING) << "Unable to set connection host, the download is likely to fail - " << curl_easy_strerror(result);
@@ -314,13 +344,13 @@ bool FileDownloader::Download() {
 
     auto time_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start_time);
     if (time_elapsed > retry_.max_time) {
-      CLOG(WARNING) << "Timeout while retrying to download " << url_path_;
+      CLOG(WARNING) << "Timeout while retrying to download " << file_path_;
       return false;
     }
   }
 
-  CLOG(WARNING) << "Attempted to download " << url_path_ << " " << failures << " time(s)";
-  CLOG(WARNING) << "Failed to download from " << url_path_;
+  CLOG(WARNING) << "Attempted to download " << file_path_ << " " << failures << " time(s)";
+  CLOG(WARNING) << "Failed to download from " << file_path_;
 
   return false;
 }
@@ -329,6 +359,46 @@ void FileDownloader::SetDefaultOptions() {
   curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, WriteFile);
   curl_easy_setopt(curl_, CURLOPT_HEADERFUNCTION, HeaderCallback);
   curl_easy_setopt(curl_, CURLOPT_ERRORBUFFER, error_.data());
+}
+
+bool FileDownloader::URL::SetURL(const std::string& _url) {
+  std::string_view url{_url};
+  auto marker = url.find(':');
+  if (marker == std::string_view::npos) {
+    CLOG(WARNING) << "Invalid URL: " << url;
+    return false;
+  }
+
+  auto scheme = url.substr(0, marker);
+  url.remove_prefix(marker + 1);
+  if (url.length() < 3 || url[0] != '/' || url[1] != '/') {
+    CLOG(WARNING) << "Invalid URL: " << url;
+    return false;
+  }
+
+  // at this point we have a valid URL (though not strictly conforming to the standard).
+  scheme_ = scheme;
+
+  url.remove_prefix(2);
+  marker = url.find('/');
+
+  if (marker != std::string_view::npos) {
+    path_ = url.substr(marker);
+    url.remove_suffix(url.length() - marker);
+  } else {
+    path_.clear();
+  }
+
+  marker = url.find(':');
+  if (marker != std::string_view::npos) {
+    port_ = url.substr(marker + 1);
+    url.remove_suffix(url.length() - marker);
+  } else {
+    port_.clear();
+  }
+
+  hostname_ = url;
+  return true;
 }
 
 }  // namespace collector

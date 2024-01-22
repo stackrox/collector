@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/suites/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,30 +29,25 @@ type SocatTestSuite struct {
 }
 
 func (s *SocatTestSuite) SetupSuite() {
-
-	s.metrics = map[string]float64{}
-	s.executor = common.NewExecutor()
+	s.RegisterCleanup("socat")
 	s.StartContainerStats()
-	s.collector = common.NewCollectorManager(s.executor, s.T().Name())
 
-	s.collector.Env["COLLECTOR_CONFIG"] = `{"logLevel":"debug","turnOffScrape":false,"scrapeInterval":2}`
-	s.collector.Env["ROX_PROCESSES_LISTENING_ON_PORT"] = "true"
+	collectorOptions := common.CollectorStartupOptions{
+		Config: map[string]any{
+			"turnOffScrape": false,
+		},
+		Env: map[string]string{
+			"ROX_PROCESSES_LISTENING_ON_PORT": "true",
+		},
+	}
 
-	err := s.collector.Setup()
-	s.Require().NoError(err)
-
-	err = s.collector.Launch()
-	s.Require().NoError(err)
-	time.Sleep(30 * time.Second)
+	s.StartCollector(false, &collectorOptions)
 
 	processImage := config.Images().QaImageByKey("qa-socat")
 
 	// the socat container only needs to exist long enough for use to run both
 	// socat commands. 300 seconds should be more than long enough.
-	containerID, err := s.launchContainer("socat", processImage, "/bin/sh", "-c", "/bin/sleep 300")
-	s.Require().NoError(err)
-
-	_, err = s.execContainer("socat", []string{"/bin/sh", "-c", "socat TCP-LISTEN:80,fork STDOUT &"})
+	containerID, err := s.launchContainer("socat", processImage, "TCP-LISTEN:80,fork", "STDOUT")
 	s.Require().NoError(err)
 
 	_, err = s.execContainer("socat", []string{"/bin/sh", "-c", "socat TCP-LISTEN:8080,fork STDOUT &"})
@@ -60,35 +56,17 @@ func (s *SocatTestSuite) SetupSuite() {
 	s.serverContainer = common.ContainerShortID(containerID)
 
 	time.Sleep(6 * time.Second)
-
-	err = s.collector.TearDown()
-	s.Require().NoError(err)
-
-	s.db, err = s.collector.BoltDB()
-	s.Require().NoError(err)
 }
 
 func (s *SocatTestSuite) TearDownSuite() {
-	s.cleanupContainer([]string{"socat", "collector"})
-	stats := s.GetContainerStats()
-	s.PrintContainerStats(stats)
-	s.WritePerfResults("Socat", stats, s.metrics)
+	s.StopCollector()
+	s.cleanupContainers("socat")
+	s.WritePerfResults()
 }
 
 func (s *SocatTestSuite) TestSocat() {
-	processes, err := s.GetProcesses(s.serverContainer)
-	s.Require().NoError(err)
-	endpoints, err := s.GetEndpoints(s.serverContainer)
-	s.Require().NoError(err)
-
-	if !assert.Equal(s.T(), 2, len(endpoints)) {
-		// We can't continue if this is not the case, so panic immediately.
-		// It indicates an internal issue with this test and the non-deterministic
-		// way in which endpoints are reported.
-		assert.FailNowf(s.T(), "", "only retrieved %d endpoints (expect 2)", len(endpoints))
-	}
-
-	assert.Equal(s.T(), 6, len(processes))
+	processes := s.Sensor().ExpectProcessesN(s.T(), s.serverContainer, 10*time.Second, 3)
+	endpoints := s.Sensor().ExpectEndpointsN(s.T(), s.serverContainer, 10*time.Second, 2)
 
 	endpoint80, err := getEndpointByPort(endpoints, 80)
 	s.Require().NoError(err)
@@ -103,7 +81,6 @@ func (s *SocatTestSuite) TestSocat() {
 	assert.Equal(s.T(), "L4_PROTOCOL_TCP", endpoint80.Protocol)
 	assert.Equal(s.T(), endpoint80.Originator.ProcessName, process80.Name)
 	assert.Equal(s.T(), endpoint80.Originator.ProcessExecFilePath, process80.ExePath)
-
 	assert.Equal(s.T(), endpoint80.Originator.ProcessArgs, process80.Args)
 	assert.Equal(s.T(), 80, endpoint80.Address.Port)
 
@@ -114,7 +91,7 @@ func (s *SocatTestSuite) TestSocat() {
 	assert.Equal(s.T(), 8080, endpoint8080.Address.Port)
 }
 
-func getEndpointByPort(endpoints []common.EndpointInfo, port int) (*common.EndpointInfo, error) {
+func getEndpointByPort(endpoints []types.EndpointInfo, port int) (*types.EndpointInfo, error) {
 	for _, endpoint := range endpoints {
 		if endpoint.Address.Port == port {
 			return &endpoint, nil
@@ -126,7 +103,7 @@ func getEndpointByPort(endpoints []common.EndpointInfo, port int) (*common.Endpo
 	return nil, err
 }
 
-func getProcessByPort(processes []common.ProcessInfo, port int) (*common.ProcessInfo, error) {
+func getProcessByPort(processes []types.ProcessInfo, port int) (*types.ProcessInfo, error) {
 	re := regexp.MustCompile(`:(` + strconv.Itoa(port) + `),`)
 	for _, process := range processes {
 		portArr := re.FindStringSubmatch(process.Args)

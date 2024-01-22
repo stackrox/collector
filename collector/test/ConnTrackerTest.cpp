@@ -355,6 +355,56 @@ TEST(ConnTrackerTest, TestUpdateNormalizedExternal) {
                           std::make_pair(conn5_normalized, ConnStatus(time_micros, true))));
 }
 
+TEST(ConnTrackerTest, TestNormalizedEnableExternalIPs) {
+  Endpoint a(Address(10, 1, 1, 8), 9999);
+  Endpoint b(Address(10, 1, 1, 42), 9999);
+  Endpoint c(Address(35, 127, 0, 15), 54321);
+  Endpoint d(Address(35, 127, 1, 200), 54321);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, true);
+  Connection conn2("xyz", a, c, L4Proto::TCP, true);
+  Connection conn3("xyz", a, d, L4Proto::TCP, true);
+  Connection conn4("xyz", a, b, L4Proto::TCP, false);
+  Connection conn5("xyz", a, c, L4Proto::TCP, false);
+  Connection conn6("xyz", a, d, L4Proto::TCP, false);
+
+  // Connection conn13_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(255, 255, 255, 255), 0, true), 0), L4Proto::TCP, true);
+  // Connection conn24_normalized("xyz", Endpoint(), Endpoint(IPNet(Address(255, 255, 255, 255), 0, true), 54321), L4Proto::TCP, false);
+
+  int64_t time_micros = 1000;
+
+  ConnectionTracker tracker;
+  tracker.EnableExternalIPs(true);
+
+  UnorderedMap<Address::Family, std::vector<IPNet>> known_networks = {{Address::Family::IPV4, {IPNet(Address(35, 127, 1, 0), 24)}}};
+  tracker.UpdateKnownIPNetworks(std::move(known_networks));
+
+  tracker.Update({conn1, conn2, conn3, conn4, conn5, conn6}, {}, time_micros);
+
+  auto state = tracker.FetchConnState(true);
+
+  // from private network
+  Connection conn1_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(10, 1, 1, 42), 0, true), 0), L4Proto::TCP, true);
+  // from unmatched external IP
+  Connection conn2_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(35, 127, 0, 15), 32, false), 0), L4Proto::TCP, true);
+  // from matched external IP
+  Connection conn3_normalized("xyz", Endpoint(IPNet(), 9999), Endpoint(IPNet(Address(35, 127, 1, 0), 24, false), 0), L4Proto::TCP, true);
+  // to private network
+  Connection conn4_normalized("xyz", Endpoint(), Endpoint(IPNet(Address(10, 1, 1, 42), 0, true), 9999), L4Proto::TCP, false);
+  // to unmatched external IP
+  Connection conn5_normalized("xyz", Endpoint(), Endpoint(IPNet(Address(35, 127, 0, 15), 32, false), 54321), L4Proto::TCP, false);
+  // to matched external IP
+  Connection conn6_normalized("xyz", Endpoint(), Endpoint(IPNet(Address(35, 127, 1, 0), 24, false), 54321), L4Proto::TCP, false);
+
+  EXPECT_THAT(state, UnorderedElementsAre(
+                         std::make_pair(conn1_normalized, ConnStatus(time_micros, true)),
+                         std::make_pair(conn2_normalized, ConnStatus(time_micros, true)),
+                         std::make_pair(conn3_normalized, ConnStatus(time_micros, true)),
+                         std::make_pair(conn4_normalized, ConnStatus(time_micros, true)),
+                         std::make_pair(conn5_normalized, ConnStatus(time_micros, true)),
+                         std::make_pair(conn6_normalized, ConnStatus(time_micros, true))));
+}
+
 TEST(ConnTrackerTest, TestUpdateNormalizedExternalDelta) {
   Endpoint a(Address(10, 1, 1, 8), 9999);
   Endpoint b(Address(139, 14, 171, 3), 54321);
@@ -1473,6 +1523,85 @@ TEST(ConnTrackerTest, TestAdvertisedEndpointEquality) {
   EXPECT_FALSE(AdvertisedEndpointEquality()(
       ContainerEndpoint("container", a, L4Proto::TCP, referenceProcess),
       ContainerEndpoint("container", a, L4Proto::TCP, processWithDifferentArgs)));
+}
+
+TEST(ConnTrackerTest, TestConnectionStats) {
+  Endpoint local_ep(Address(10, 1, 1, 8), 1234);
+  Endpoint remote_pub(Address(35, 127, 0, 15), 1234);
+  Endpoint remote_priv(Address(10, 1, 1, 9), 1234);
+  Endpoint remote_altpub(Address(35, 127, 0, 16), 1234);
+
+  // Connection(container, local, remote, proto, is_server)
+  Connection conn1("xyz", local_ep, remote_pub, L4Proto::TCP, true);
+  Connection conn2("xyz", local_ep, remote_priv, L4Proto::TCP, true);
+  Connection conn3("xyz", local_ep, remote_pub, L4Proto::TCP, false);
+  Connection conn4("xyz", local_ep, remote_priv, L4Proto::TCP, false);
+  Connection conn5("xyz", local_ep, remote_altpub, L4Proto::TCP, false);
+  Connection conn6("xyz", local_ep, remote_altpub, L4Proto::TCP, true);
+
+  ConnectionTracker tracker;
+  tracker.Update({conn1, conn2, conn3, conn4}, {}, 0);
+
+  ConnectionTracker::Stats stats;
+
+  stats = tracker.GetConnectionStats_StoredConnections();
+  EXPECT_EQ(stats.inbound.private_, 1);
+  EXPECT_EQ(stats.inbound.public_, 1);
+  EXPECT_EQ(stats.outbound.private_, 1);
+  EXPECT_EQ(stats.outbound.public_, 1);
+
+  stats = tracker.GetConnectionStats_NewConnectionCounters();
+  EXPECT_EQ(stats.inbound.private_, 1);
+  EXPECT_EQ(stats.inbound.public_, 1);
+  EXPECT_EQ(stats.outbound.private_, 1);
+  EXPECT_EQ(stats.outbound.public_, 1);
+
+  tracker.Update({conn1, conn2, conn3, conn4, conn5}, {}, 0);
+  tracker.UpdateConnection(conn6, 0, true);  // inserted
+  tracker.UpdateConnection(conn1, 0, true);  // already known
+
+  stats = tracker.GetConnectionStats_StoredConnections();
+  EXPECT_EQ(stats.inbound.private_, 1);
+  EXPECT_EQ(stats.inbound.public_, 2);
+  EXPECT_EQ(stats.outbound.private_, 1);
+  EXPECT_EQ(stats.outbound.public_, 2);
+
+  stats = tracker.GetConnectionStats_NewConnectionCounters();
+  EXPECT_EQ(stats.inbound.private_, 1);
+  EXPECT_EQ(stats.inbound.public_, 2);
+  EXPECT_EQ(stats.outbound.private_, 1);
+  EXPECT_EQ(stats.outbound.public_, 2);
+
+  tracker.Update({}, {}, 0);
+  tracker.FetchConnState(true);  // clear
+
+  stats = tracker.GetConnectionStats_StoredConnections();
+  EXPECT_EQ(stats.inbound.private_, 0);
+  EXPECT_EQ(stats.inbound.public_, 0);
+  EXPECT_EQ(stats.outbound.private_, 0);
+  EXPECT_EQ(stats.outbound.public_, 0);
+
+  stats = tracker.GetConnectionStats_NewConnectionCounters();
+  EXPECT_EQ(stats.inbound.private_, 1);
+  EXPECT_EQ(stats.inbound.public_, 2);
+  EXPECT_EQ(stats.outbound.private_, 1);
+  EXPECT_EQ(stats.outbound.public_, 2);
+
+  tracker.Update({conn1, conn2, conn3, conn4, conn6}, {}, 0);
+  tracker.UpdateConnection(conn5, 0, true);  // inserted
+  tracker.UpdateConnection(conn3, 0, true);  // already known
+
+  stats = tracker.GetConnectionStats_StoredConnections();
+  EXPECT_EQ(stats.inbound.private_, 1);
+  EXPECT_EQ(stats.inbound.public_, 2);
+  EXPECT_EQ(stats.outbound.private_, 1);
+  EXPECT_EQ(stats.outbound.public_, 2);
+
+  stats = tracker.GetConnectionStats_NewConnectionCounters();
+  EXPECT_EQ(stats.inbound.private_, 2);
+  EXPECT_EQ(stats.inbound.public_, 4);
+  EXPECT_EQ(stats.outbound.private_, 2);
+  EXPECT_EQ(stats.outbound.public_, 4);
 }
 
 }  // namespace

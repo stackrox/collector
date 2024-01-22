@@ -13,7 +13,7 @@ set -euo pipefail
 #       -v /sys:/sys:ro \
 #       -v /dev:/dev \
 #       -v /tmp:/tmp \
-#       quay.io/stackrox-io/collector-builder:cache
+#       quay.io/stackrox-io/collector-builder:master
 #
 # If you are running on an immutable system, create a docker volume then add
 # the following arguments:

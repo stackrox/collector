@@ -7,7 +7,9 @@ namespace collector {
 
 void SysdigEventExtractor::Init(sinsp* inspector) {
   for (auto* wrapper : wrappers_) {
-    wrapper->filter_check.reset(sinsp_filter_check_iface::get(wrapper->event_name, inspector));
+    sinsp_filter_check* check = g_filterlist.new_filter_check_from_fldname(wrapper->event_name, inspector, true);
+    check->parse_field_name(wrapper->event_name, true, false);
+    wrapper->filter_check.reset(check);
   }
 }
 

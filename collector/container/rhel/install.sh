@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-microdnf upgrade -y
+# UBI 9 requires confirmation with -y flag.
+microdnf upgrade -y --nobest
 microdnf install -y kmod findutils elfutils-libelf
 
 microdnf clean all
