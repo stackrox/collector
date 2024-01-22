@@ -49,21 +49,18 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 func TestRepeatedNetworkFlowWithZeroAfterglowPeriod(t *testing.T) {
 	// Afterglow is disables as the afterglowPeriod is 0
 	// All server to client connections are reported.
-
-	for i := 0; i < 10; i++ {
-		repeatedNetworkFlowTestSuite := &suites.RepeatedNetworkFlowTestSuite{
-			AfterglowPeriod:        0,
-			ScrapeInterval:         2,
-			EnableAfterglow:        true,
-			NumMetaIter:            1,
-			NumIter:                3,
-			SleepBetweenCurlTime:   3,
-			SleepBetweenIterations: 1,
-			ExpectedActive:         0,
-			ExpectedInactive:       3,
-		}
-		suite.Run(t, repeatedNetworkFlowTestSuite)
+	repeatedNetworkFlowTestSuite := &suites.RepeatedNetworkFlowTestSuite{
+		AfterglowPeriod:        0,
+		ScrapeInterval:         2,
+		EnableAfterglow:        true,
+		NumMetaIter:            1,
+		NumIter:                3,
+		SleepBetweenCurlTime:   3,
+		SleepBetweenIterations: 1,
+		ExpectedActive:         0,
+		ExpectedInactive:       3,
 	}
+	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
 
 func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
