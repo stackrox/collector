@@ -1,5 +1,10 @@
 ---
 
+# Most of this is marked ignore_errors: true, because this is a best endeavors
+# attempt to pull the tests images. In the vast majority of cases, it will work
+# but can be flaky on some platforms. If this fails, the tests will still
+# attempt to pull the missing images.
+
 - name: Load image info
   set_fact:
     images: "{{ lookup('file', collector_root + '/integration-tests/images.yml') | from_yaml }}"
@@ -13,6 +18,7 @@
   async: 300
   poll: 0
   register: qa_result
+  ignore_errors: true
 
 - name: Pull non-QA images
   command: "{{ 'sudo' if runtime_as_root else '' }} {{ runtime_command }} pull {{ item.value }}"
@@ -21,6 +27,7 @@
   async: 300
   poll: 0
   register: non_qa_result
+  ignore_errors: true
 
 - name: Await QA
   async_status:
@@ -29,6 +36,7 @@
   register: await_qa
   until: await_qa.finished
   retries: 30
+  ignore_errors: true
 
 - name: Await non-QA
   async_status:
@@ -37,3 +45,4 @@
   register: await_non_qa
   until: await_non_qa.finished
   retries: 30
+  ignore_errors: true

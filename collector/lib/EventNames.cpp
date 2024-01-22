@@ -15,7 +15,7 @@ EventNames::EventNames() {
     std::string name(g_event_info[i].name);
     syscall_by_id_[i] = 0;
     names_by_id_[i] = name;
-    ppm_event_type event_type(static_cast<ppm_event_type>(i));
+    ppm_event_code event_type(static_cast<ppm_event_code>(i));
     events_by_name_[name].push_back(event_type);
     if (PPME_IS_ENTER(event_type)) {
       events_by_name_[name + ">"].push_back(event_type);
@@ -24,13 +24,13 @@ EventNames::EventNames() {
     }
   }
   for (int i = 0; i < SYSCALL_TABLE_SIZE; i++) {
-    ppm_event_type enter_evt = g_syscall_table[i].enter_event_type;
+    ppm_event_code enter_evt = g_syscall_table[i].enter_event_type;
     if (enter_evt < 0 || enter_evt >= syscall_by_id_.size()) {
       throw CollectorException("Invalid syscall event id " + std::to_string(enter_evt));
     }
     syscall_by_id_[enter_evt] = i;
 
-    ppm_event_type exit_evt = g_syscall_table[i].exit_event_type;
+    ppm_event_code exit_evt = g_syscall_table[i].exit_event_type;
     if (exit_evt < 0 || exit_evt >= syscall_by_id_.size()) {
       throw CollectorException("Invalid syscall event id " + std::to_string(exit_evt));
     }

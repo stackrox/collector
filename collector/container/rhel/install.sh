@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-microdnf upgrade --nobest
-microdnf install kmod findutils elfutils-libelf
+# UBI 9 requires confirmation with -y flag.
+microdnf upgrade -y --nobest
+microdnf install -y kmod findutils elfutils-libelf
 
 microdnf clean all
 rpm --query --all 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'findutils' | xargs -t rpm -e --nodeps

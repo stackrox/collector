@@ -153,8 +153,8 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   // set id
   signal->set_id(UUIDStr());
 
-  auto name = tinfo->get_comm();
-  auto exepath = tinfo->m_exepath;
+  const auto& name = tinfo->m_comm;
+  const auto& exepath = tinfo->m_exepath;
 
   // set name (if name is missing or empty, try to use exec_file_path)
   if (!name.empty() && name != "<NA>") {
@@ -206,14 +206,6 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   return signal;
 }
 
-bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_threadinfo* tinfo) {
-  if (tinfo->m_exepath == "<NA>" && tinfo->get_comm() == "<NA>") {
-    return false;
-  }
-
-  return true;
-}
-
 std::string ProcessSignalFormatter::ProcessDetails(sinsp_evt* event) {
   std::stringstream ss;
   const std::string* path = event_extractor_.get_exepath(event);
@@ -231,15 +223,22 @@ std::string ProcessSignalFormatter::ProcessDetails(sinsp_evt* event) {
   return ss.str();
 }
 
-bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
-  const std::string* path = event_extractor_.get_exepath(event);
-  const std::string* name = event_extractor_.get_comm(event);
+bool ProcessSignalFormatter::ValidateProcessDetails(const sinsp_threadinfo* tinfo) {
+  if (tinfo == nullptr) {
+    return false;
+  }
 
-  if ((path == nullptr || *path == "<NA>") && (name == nullptr || *name == "<NA>")) {
+  if (tinfo->m_exepath == "<NA>" && tinfo->m_comm == "<NA>") {
     return false;
   }
 
   return true;
+}
+
+bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
+  const sinsp_threadinfo* tinfo = event->get_thread_info();
+
+  return ValidateProcessDetails(tinfo);
 }
 
 int ProcessSignalFormatter::GetTotalStringLength(const std::vector<LineageInfo>& lineage) {

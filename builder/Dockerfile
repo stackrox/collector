@@ -4,10 +4,6 @@ ARG BUILD_DIR=/install-tmp
 
 USER root
 
-# clang 15 is used here due to an error on clang 16 when running on QEMU
-# emulating s390x on a x86 host (which is our case on GHA), see:
-# - https://bugzilla.redhat.com/show_bug.cgi?id=2209635
-# - https://bugzilla.redhat.com/show_bug.cgi?id=2211472
 RUN dnf -y update \
     && dnf -y install --nobest \
         autoconf \
@@ -15,7 +11,7 @@ RUN dnf -y update \
         binutils-devel \
         bison \
         ca-certificates \
-        clang-15.0.7 \
+        clang-17.0.6 \
         cmake \
         cracklib-dicts \
         diffutils \

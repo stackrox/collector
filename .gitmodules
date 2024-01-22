@@ -61,3 +61,6 @@
 	path = builder/third_party/gperftools
 	url = https://github.com/gperftools/gperftools.git
 	branch = master
+[submodule "third_party/uthash"]
+	path = builder/third_party/uthash
+	url = https://github.com/troydhanson/uthash.git
