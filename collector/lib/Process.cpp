@@ -111,7 +111,7 @@ void Process::ProcessInfoResolved(std::shared_ptr<sinsp_threadinfo> process_info
   std::unique_lock<std::mutex> lock(process_info_mutex_);
 
   if (process_info) {
-    CLOG(DEBUG) << "Process-info resolved. PID: " << pid() << " Exe: " + process_info->get_exe();
+    CLOG(DEBUG) << "Process-info resolved. PID: " << pid() << " Exe: " + process_info->m_exe;
   } else {
     CLOG(WARNING) << "Process-info request failed. PID: " << pid();
   }

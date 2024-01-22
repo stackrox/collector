@@ -136,7 +136,6 @@ COPY --from=builder /THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=builder /collector/NOTICE-sysdig.txt /THIRD_PARTY_NOTICES/sysdig
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so /usr/local/lib/
 
 RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
     ldconfig && \

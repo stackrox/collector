@@ -19,7 +19,7 @@
     - name: Build full image
       when:
         - build_full_image
-        - arch != 'arm64'
+        - arch != 'arm64' and arch != 'ppc64le' and arch != 's390x'
       block:
         - name: Calculate required layers
           shell:
@@ -46,7 +46,7 @@
             source: build
 
     - name: Retag slim image
-      when: not build_full_image or arch == 'arm64'
+      when: not build_full_image or arch == 'arm64' or arch == 'ppc64le' or arch == 's390x'
       block:
         - name: Retag slim image
           community.docker.docker_image:

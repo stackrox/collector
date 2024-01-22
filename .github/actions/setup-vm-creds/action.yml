@@ -1,0 +1,113 @@
+name: Setup VM Credentials
+description: |
+  This action will setup the runner with the necessary credentials to create and
+  interact with VMs
+
+inputs:
+  gcp-ssh-key:
+    description:
+      The SSH private key to use for GCP
+  gcp-ssh-key-pub:
+    description:
+      The SSH public key to use for GCP
+  s390x-ssh-key:
+    description:
+      The SSH private key to use for s390x
+  ppc64le-ssh-key:
+    description:
+      The SSH private key to use for ppc64le
+  ppc64le-ssh-key-pub:
+    description:
+      The SSH public key to use for ppc64le
+  s390x-key:
+    description:
+      The API key to use for s390x
+  ppc64le-key:
+    description:
+      The API key to use for ppc64le
+  redhat-username:
+    description:
+      The username for registering redhat servers
+  redhat-password:
+    description:
+      The password for registering redhat servers
+  vm-type:
+    description:
+      The type of VMs to be created
+  job-tag:
+    description:
+      Optional job tag to add to the ID
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+          mkdir -p /tmp/secret/stackrox-collector-e2e-tests
+          cp "$GOOGLE_APPLICATION_CREDENTIALS" /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
+
+          mkdir -p "$HOME/.ssh"
+          chmod 0700 "$HOME/.ssh"
+
+          function copy_secret_to_file() {
+            local secret="$1"
+            local destination="$2"
+            local perms="$3"
+
+            echo "$secret" > "$destination"
+            chmod "$perms" "$destination"
+          }
+
+          copy_secret_to_file "${{ inputs.gcp-ssh-key }}" "$HOME/.ssh/google_compute_engine" 0600
+          copy_secret_to_file "${{ inputs.gcp-ssh-key-pub }}" "$HOME/.ssh/google_compute_engine.pub" 0600
+          copy_secret_to_file "${{ inputs.s390x-ssh-key }}" "$HOME/.ssh/acs-s390x-rsa.prv" 0600
+          copy_secret_to_file "${{ inputs.ppc64le-ssh-key }}" "$HOME/.ssh/acs-ppc64le-rsa.prv" 0600
+
+          ls -lah $HOME/.ssh/
+
+    - shell: bash
+      run: |
+        #
+        # JOB_ID is a little odd in that it needs to be unique per vm_type,
+        # but GHA's run_id is only unique per job. Appending the vm_type
+        # makes it fit our requirements...
+        #
+        # but wait, there's more
+        #
+        # the job id is used both as part of a GCP instance name and label, but
+        # also as a group name in ansible, which means it has some restrictions:
+        #
+        # - must be alpha-numeric
+        # - must not contain underscores (because of GCP)
+        # - must not contain hyphens (because of ansible)
+        #
+        # vm_type may contain hyphens, so the id is normalized below
+        #
+        JOB_ID="${{ github.run_id }}${{ inputs.vm-type }}${{ inputs.job-tag }}"
+        NORM_JOB_ID="${JOB_ID//-/}"
+
+        {
+          echo "IBM_CLOUD_POWER_API_KEY=${{ inputs.ppc64le-key }}"
+          echo "IBM_CLOUD_S390X_API_KEY=${{ inputs.s390x-key }}"
+          echo "IBM_CLOUD_POWER_SSH_PUBLIC_KEY=${{ inputs.ppc64le-ssh-key-pub }}"
+          echo "JOB_ID=${NORM_JOB_ID}"
+          echo "BUILD_TYPE=ci"
+          echo "VM_TYPE=${{ inputs.vm-type }}"
+          echo "REDHAT_USERNAME=${{ inputs.redhat-username }}"
+          echo "REDHAT_PASSWORD=${{ inputs.redhat-password }}"
+        } >> "$GITHUB_ENV"
+
+        if [[ "${RUNNER_DEBUG}" == "1" ]]; then
+          echo "ANSIBLE_STDOUT_CALLBACK=debug" >> "${GITHUB_ENV}"
+        fi
+
+    - shell: bash
+      run: |
+        python -m pip install -r "${{ github.workspace }}/ansible/requirements.txt"
+        ansible-galaxy collection install -r "${{ github.workspace }}/ansible/requirements.yml"
+        ansible-galaxy collection install -r "${{ github.workspace }}/ansible/ansible-collections.yml"
+
+    # Added workaround for ssh connection issue with power vm from ubuntu machine.
+    # Changing mtu works in resolving the issue
+    - shell: bash
+      run: sudo ifconfig eth0 mtu 1000 up
+

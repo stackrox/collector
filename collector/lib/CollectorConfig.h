@@ -23,6 +23,7 @@ class CollectorConfig {
   static constexpr CollectionMethod kCollectionMethod = CollectionMethod::EBPF;
   static constexpr const char* kSyscalls[] = {
       "accept",
+      "accept4",
       "chdir",
       "clone",
       "close",
@@ -76,6 +77,8 @@ class CollectorConfig {
   const std::vector<double>& GetConnectionStatsQuantiles() const { return connection_stats_quantiles_; }
   double GetConnectionStatsError() const { return connection_stats_error_; }
   unsigned int GetConnectionStatsWindow() const { return connection_stats_window_; }
+  unsigned int GetSinspBufferSize() const { return sinsp_buffer_size_; }
+  unsigned int GetSinspCpuPerBuffer() const { return sinsp_cpu_per_buffer_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -105,10 +108,16 @@ class CollectorConfig {
   double connection_stats_error_;
   unsigned int connection_stats_window_;
 
+  // One ring buffer will be initialized for this many CPUs
+  unsigned int sinsp_cpu_per_buffer_;
+  // Size of one ring buffer, in bytes
+  unsigned int sinsp_buffer_size_;
+
   Json::Value tls_config_;
 
   void HandleAfterglowEnvVars();
   void HandleConnectionStatsEnvVars();
+  void HandleSinspEnvVars();
 };
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);

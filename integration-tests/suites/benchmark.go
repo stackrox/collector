@@ -81,7 +81,7 @@ func (b *BenchmarkTestSuiteBase) RunInitContainer() {
 	containerID, err := b.launchContainer("host-init", cmd...)
 	require.NoError(b.T(), err)
 
-	if finished, _ := b.waitForContainerToExit("host-init", containerID, 5*time.Second); !finished {
+	if finished, _ := b.waitForContainerToExit("host-init", containerID, 5*time.Second, 0); !finished {
 		logs, err := b.containerLogs("host-init")
 		if err == nil {
 			fmt.Println(logs)

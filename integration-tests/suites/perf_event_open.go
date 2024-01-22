@@ -30,7 +30,7 @@ func (s *PerfEventOpenTestSuite) TestReadingTracepoints() {
 	containerID, err := s.launchContainer("perf-event-open", "--privileged", image, "", "STDOUT")
 	s.Require().NoError(err)
 
-	if finished, _ := s.waitForContainerToExit("perf-event-open", containerID, 5*time.Second); finished {
+	if finished, _ := s.waitForContainerToExit("perf-event-open", containerID, 5*time.Second, 0); finished {
 		logs, err := s.containerLogs("perf-event-open")
 		if err != nil {
 			fmt.Println(logs)

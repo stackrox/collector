@@ -7,6 +7,8 @@
 #include <mutex>
 #include <string>
 
+#include <gtest/gtest_prod.h>
+
 #include "libsinsp/sinsp.h"
 
 #include "Control.h"
@@ -14,6 +16,7 @@
 #include "SignalHandler.h"
 #include "SignalServiceClient.h"
 #include "Sysdig.h"
+#include "threadinfo.h"
 
 namespace collector {
 
@@ -42,6 +45,8 @@ class SysdigService : public Sysdig {
   void GetProcessInformation(uint64_t pid, ProcessInfoCallbackRef callback);
 
  private:
+  FRIEND_TEST(SysdigServiceTest, FilterEvent);
+
   struct SignalHandlerEntry {
     std::unique_ptr<SignalHandler> handler;
     std::bitset<PPM_EVENT_MAX> event_filter;
@@ -55,6 +60,8 @@ class SysdigService : public Sysdig {
   };
 
   sinsp_evt* GetNext();
+  static bool FilterEvent(sinsp_evt* event);
+  static bool FilterEvent(const sinsp_threadinfo* tinfo);
 
   bool SendExistingProcesses(SignalHandler* handler);
 

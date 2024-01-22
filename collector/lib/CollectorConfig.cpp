@@ -162,6 +162,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
 
   HandleAfterglowEnvVars();
   HandleConnectionStatsEnvVars();
+  HandleSinspEnvVars();
 
   host_config_ = ProcessHostHeuristics(*this);
 }
@@ -173,6 +174,15 @@ void CollectorConfig::HandleAfterglowEnvVars() {
 
   if (const char* afterglow_period = std::getenv("ROX_AFTERGLOW_PERIOD")) {
     afterglow_period_micros_ = static_cast<int64_t>(atof(afterglow_period) * 1000000);
+  }
+
+  const int64_t max_afterglow_period_micros = 300000000;  // 5 minutes
+
+  if (afterglow_period_micros_ > max_afterglow_period_micros) {
+    CLOG(WARNING) << "User set afterglow period of " << afterglow_period_micros_ / 1000000
+                  << "s is greater than the maximum allowed afterglow period of " << max_afterglow_period_micros / 1000000 << "s";
+    CLOG(WARNING) << "Setting the afterglow period to " << max_afterglow_period_micros / 1000000 << "s";
+    afterglow_period_micros_ = max_afterglow_period_micros;
   }
 
   if (enable_afterglow_ && afterglow_period_micros_ > 0) {
@@ -235,6 +245,31 @@ void CollectorConfig::HandleConnectionStatsEnvVars() {
       CLOG(INFO) << "Connection statistics window: " << connection_stats_window_;
     } catch (...) {
       CLOG(ERROR) << "Invalid window length value: '" << envvar << "'";
+    }
+  }
+}
+
+void CollectorConfig::HandleSinspEnvVars() {
+  const char* envvar;
+
+  sinsp_cpu_per_buffer_ = DEFAULT_CPU_FOR_EACH_BUFFER;
+  sinsp_buffer_size_ = DEFAULT_DRIVER_BUFFER_BYTES_DIM;
+
+  if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_CPU_PER_BUFFER")) != NULL) {
+    try {
+      sinsp_cpu_per_buffer_ = std::stoi(envvar);
+      CLOG(INFO) << "Sinsp cpu per buffer: " << sinsp_cpu_per_buffer_;
+    } catch (...) {
+      CLOG(ERROR) << "Invalid cpu per buffer value: '" << envvar << "'";
+    }
+  }
+
+  if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_BUFFER_SIZE")) != NULL) {
+    try {
+      sinsp_buffer_size_ = std::stoi(envvar);
+      CLOG(INFO) << "Sinsp buffer size: " << sinsp_buffer_size_;
+    } catch (...) {
+      CLOG(ERROR) << "Invalid buffer size value: '" << envvar << "'";
     }
   }
 }

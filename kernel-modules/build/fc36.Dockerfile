@@ -9,6 +9,7 @@ RUN dnf -y install \
         llvm \
         clang \
         elfutils-libelf-devel \
+        gettext \
         kmod  && \
     # We trick Debian builds into thinking they have the required GCC binary
     ln -s /usr/bin/gcc /usr/bin/gcc-10 && \
