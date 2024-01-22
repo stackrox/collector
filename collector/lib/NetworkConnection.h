@@ -10,6 +10,7 @@
 
 #include <array>
 #include <cstring>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -32,6 +33,10 @@ class Address {
   static constexpr size_t kU64MaxLen = kMaxLen / sizeof(uint64_t);
 
   static Address Any(Family family) { return Address(family); }
+
+  // Parse the string representation of an address.
+  // Returns nullopt if the parsing fails.
+  static std::optional<Address> parse(const std::string& address_string);
 
   Address() : Address(Family::UNKNOWN) {}
 

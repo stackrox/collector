@@ -80,6 +80,34 @@ TEST(TestAddress, TestLoopback) {
   EXPECT_TRUE(c.IsLocal());
 }
 
+TEST(TestAddress, Parse) {
+  std::optional<Address> address;
+
+  address = Address::parse("192.168.0.1");
+  EXPECT_TRUE(address);
+  EXPECT_EQ(address.value(), Address(192, 168, 0, 1));
+  EXPECT_EQ(address->family(), Address::Family::IPV4);
+
+  address = Address::parse("not an IP");
+  EXPECT_FALSE(address);
+
+  address = Address::parse("");
+  EXPECT_FALSE(address);
+
+  address = Address::parse("192.168.0.1/16");
+  EXPECT_FALSE(address);
+
+  address = Address::parse("2001:0db8:0000:85a3:0000:0000:ac1f:8001");
+  EXPECT_TRUE(address);
+  EXPECT_EQ(address->family(), Address::Family::IPV6);
+  EXPECT_EQ(address.value(), Address(Address::Family::IPV6, std::array<uint8_t, Address::kMaxLen>{0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0xac, 0x1f, 0x80, 0x01}));
+
+  address = Address::parse("2001:0db8:0000:85a3::ac1f:8001");
+  EXPECT_TRUE(address);
+  EXPECT_EQ(address->family(), Address::Family::IPV6);
+  EXPECT_EQ(address.value(), Address(Address::Family::IPV6, std::array<uint8_t, Address::kMaxLen>{0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0xac, 0x1f, 0x80, 0x01}));
+}
+
 TEST(TestIPNet, TestNetworkDescComparator) {
   std::array<IPNet, 8> networks = {
       IPNet(Address(10, 0, 0, 0), 8),
