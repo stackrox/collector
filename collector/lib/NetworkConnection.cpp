@@ -112,4 +112,27 @@ std::optional<Address> Address::parse(const std::string& address_string) {
   return std::nullopt;
 }
 
+std::optional<IPNet> IPNet::parse(const std::string& ipnet_string) {
+  std::string_view address_string = ipnet_string;
+  unsigned int prefix_length = 0;
+
+  auto slash = address_string.find("/");
+
+  if (slash != std::string_view::npos) {
+    try {
+      prefix_length = std::stol(std::string(address_string.substr(slash + 1)));
+    } catch (...) {
+      return std::nullopt;
+    }
+    address_string.remove_suffix(address_string.size() - slash);
+  }
+
+  std::optional<Address> address = Address::parse(std::string(address_string));
+  if (!address) {
+    return std::nullopt;
+  }
+
+  return IPNet(address.value(), prefix_length, prefix_length != 0);
+}
+
 }  // namespace collector

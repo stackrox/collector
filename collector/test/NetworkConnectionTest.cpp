@@ -136,6 +136,32 @@ TEST(TestIPNet, TestNetworkDescComparator) {
   EXPECT_EQ(networks, expected);
 }
 
+TEST(TestIPNet, Parse) {
+  std::optional<IPNet> ip_net;
+
+  ip_net = IPNet::parse("192.168.0.1/16");
+  EXPECT_TRUE(ip_net);
+  EXPECT_EQ(ip_net.value(), IPNet(Address(192, 168, 0, 1), 16));
+  EXPECT_EQ(ip_net->family(), Address::Family::IPV4);
+
+  ip_net = IPNet::parse("not a subnet");
+  EXPECT_FALSE(ip_net);
+
+  ip_net = IPNet::parse("");
+  EXPECT_FALSE(ip_net);
+
+  ip_net = IPNet::parse("192.168.0.1");
+  EXPECT_TRUE(ip_net);
+  EXPECT_EQ(ip_net.value(), IPNet(Address(192, 168, 0, 1), 0, true));
+  EXPECT_EQ(ip_net->family(), Address::Family::IPV4);
+
+  ip_net = IPNet::parse("192.168.0.1/");
+  EXPECT_FALSE(ip_net);
+
+  ip_net = IPNet::parse("192.168.0.1/not a number");
+  EXPECT_FALSE(ip_net);
+}
+
 }  // namespace
 
 }  // namespace collector

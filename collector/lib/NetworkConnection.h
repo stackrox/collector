@@ -154,6 +154,10 @@ class Address {
 
 class IPNet {
  public:
+  // Parse the string representation of a network (<address>/<prefix>) or an address (<address>).
+  // Returns nullopt if the parsing fails.
+  static std::optional<IPNet> parse(const std::string& ipnet_string);
+
   IPNet() : IPNet(Address(), 0, false) {}
   explicit IPNet(const Address& address) : IPNet(address, 8 * address.length(), true) {}
   IPNet(const Address& address, size_t bits, bool is_addr = false)
