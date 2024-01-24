@@ -7393,11 +7393,14 @@
 6.5.0-1010-azure
 6.5.0-1010-gcp
 6.5.0-1011-aws
+6.5.0-1011-azure
+6.5.0-1012-aws
 6.5.0-1012-gcp
 6.5.0-1013-aws
 6.5.0-12-generic
 6.5.0-13-generic
 6.5.0-14-generic
+6.5.0-15-generic
 6.5.0-16-generic
 6.5.0-17-generic
 6.5.0-2-generic
