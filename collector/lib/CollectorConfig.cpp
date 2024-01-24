@@ -87,7 +87,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     if (!config["logLevel"].empty()) {
       logging::LogLevel level;
       if (logging::ParseLogLevelName(config["logLevel"].asString(), &level)) {
-        logging::SetLogLevel(level);
+        logging::SetLogLevel(logging::LogLevel::DEBUG);
         CLOG(INFO) << "User configured logLevel=" << config["logLevel"].asString();
       } else {
         CLOG(INFO) << "User configured logLevel is invalid " << config["logLevel"].asString();

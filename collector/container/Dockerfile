@@ -36,13 +36,13 @@ RUN echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt && \
 
 EXPOSE 8080 9090
 
-HEALTHCHECK	\
-	# health checks within the first 5s are not counted as failure
-	--start-period=5s \
-	# perform health check every 5s
-	--interval=5s \
-	# the command uses /ready API
-	CMD /usr/local/bin/status-check.sh
+#HEALTHCHECK	\
+	## health checks within the first 5s are not counted as failure
+	#--start-period=5s \
+	## perform health check every 5s
+	#--interval=5s \
+	## the command uses /ready API
+	#CMD /usr/local/bin/status-check.sh
 
 ENTRYPOINT ["/bootstrap.sh"]
 
