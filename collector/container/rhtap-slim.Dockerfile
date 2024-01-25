@@ -130,10 +130,7 @@ RUN ./install.sh && rm -f install.sh
 
 COPY collector/container/scripts/collector-wrapper.sh /usr/local/bin/
 COPY collector/container/scripts/bootstrap.sh /
-COPY collector/LICENSE-kernel-modules.txt /kernel-modules/LICENSE
 COPY kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
-COPY --from=builder /THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
-COPY --from=builder /collector/NOTICE-sysdig.txt /THIRD_PARTY_NOTICES/sysdig
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
 
