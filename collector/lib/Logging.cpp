@@ -113,7 +113,7 @@ void InspectorLogCallback(std::string&& msg, sinsp_logger::severity severity) {
     return;
   }
 
-  collector::logging::LogMessage(__FILE__, __LINE__, false, collector_severity) << msg;
+  collector::logging::LogMessage(__FILE__, __LINE__, collector_severity) << msg;
 }
 
 const char* GetGlobalLogPrefix() {
