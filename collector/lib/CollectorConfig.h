@@ -69,7 +69,6 @@ class CollectorConfig {
   bool IsCoreDumpEnabled() const;
   Json::Value TLSConfiguration() const { return tls_config_; }
   bool IsProcessesListeningOnPortsEnabled() const { return enable_processes_listening_on_ports_; }
-  bool CoReBPFHardfail() const { return core_bpf_hardfail_; }
   bool ImportUsers() const { return import_users_; }
   bool CollectConnectionStatus() const { return collect_connection_status_; }
   bool EnableExternalIPs() const { return enable_external_ips_; }
@@ -99,7 +98,6 @@ class CollectorConfig {
   bool enable_afterglow_ = true;
   bool enable_core_dump_ = false;
   bool enable_processes_listening_on_ports_;
-  bool core_bpf_hardfail_;
   bool import_users_;
   bool collect_connection_status_;
   bool enable_external_ips_;

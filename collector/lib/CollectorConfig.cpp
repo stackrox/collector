@@ -32,8 +32,6 @@ BoolEnvVar set_enable_core_dump("ENABLE_CORE_DUMP", false);
 // If true, add originator process information in NetworkEndpoint
 BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", CollectorConfig::kEnableProcessesListeningOnPorts);
 
-BoolEnvVar core_bpf_hardfail("ROX_COLLECTOR_CORE_BPF_HARDFAIL", false);
-
 BoolEnvVar set_import_users("ROX_COLLECTOR_SET_IMPORT_USERS", false);
 
 BoolEnvVar collect_connection_status("ROX_COLLECT_CONNECTION_STATUS", true);
@@ -59,7 +57,6 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   turn_off_scrape_ = kTurnOffScrape;
   collection_method_ = kCollectionMethod;
   enable_processes_listening_on_ports_ = set_processes_listening_on_ports.value();
-  core_bpf_hardfail_ = core_bpf_hardfail.value();
   import_users_ = set_import_users.value();
   collect_connection_status_ = collect_connection_status.value();
   enable_external_ips_ = enable_external_ips.value();

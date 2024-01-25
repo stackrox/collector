@@ -46,11 +46,10 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 	}
 
 	env := map[string]string{
-		"GRPC_SERVER":                     "localhost:9999",
-		"COLLECTION_METHOD":               collectionMethod,
-		"COLLECTOR_PRE_ARGUMENTS":         collectorOptions.PreArguments,
-		"ENABLE_CORE_DUMP":                "false",
-		"ROX_COLLECTOR_CORE_BPF_HARDFAIL": "true",
+		"GRPC_SERVER":             "localhost:9999",
+		"COLLECTION_METHOD":       collectionMethod,
+		"COLLECTOR_PRE_ARGUMENTS": collectorOptions.PreArguments,
+		"ENABLE_CORE_DUMP":        "false",
 	}
 
 	if !collectorOptions.Offline {
