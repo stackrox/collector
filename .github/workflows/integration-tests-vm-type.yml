@@ -40,7 +40,8 @@ jobs:
     name: Testing ${{ inputs.vm_type }}
     runs-on: ubuntu-latest
     env:
-      COLLECTOR_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+      # COLLECTOR_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+      COLLECTOR_IMAGE: quay.io/redhat-user-workloads/rh-acs-tenant/acs/collector:on-pr-93d9e9e690ef7755e65fc0582936ef0d8bffe050
       COLLECTOR_QA_TAG: ${{ inputs.collector-qa-tag }}
       TEST_IMAGE: quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}
     steps:
