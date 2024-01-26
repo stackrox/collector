@@ -109,7 +109,7 @@ endif
 
 .PHONY: start-builder
 start-builder: builder teardown-builder
-	docker run -d \
+	docker run -d -i --entrypoint /bin/bash \
 		--name $(COLLECTOR_BUILDER_NAME) \
 		-v $(CURDIR):$(CURDIR) \
 		$(if $(LOCAL_SSH_PORT),-p $(LOCAL_SSH_PORT):22 )\
