@@ -103,27 +103,6 @@ RUN ./builder/install/install-dependencies.sh && \
 FROM brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0 AS drivers-build
 # FROM registry-proxy.engineering.redhat.com/rh-osbs/rhacs-drivers-build-rhel8:0.1.0 AS drivers-build
 
-# TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS unpacker
-
-RUN microdnf install -y findutils
-WORKDIR /staging
-
-# Next, import modules from downstream build, which take priority over upstream, on non-x86 architectures
-# TODO(ROX-13563): find a way to not have to separately pull in the support package and downstream-built drivers.
-COPY --from=drivers-build /kernel-modules /staging/downstream
-RUN cp -r /staging/downstream/. /staging/kernel-modules/
-
-# Create destination for drivers.
-RUN mkdir /kernel-modules
-# Move files for the current version to /kernel-modules
-RUN find "/staging/kernel-modules/$(cat MODULE_VERSION.txt)/" -type f -exec mv -t /kernel-modules {} +
-# Fail the build if at the end there were no drivers matching the module version.
-RUN if [[ "$(ls -A /kernel-modules)" == "" ]]; then \
-        >&2 echo "Did not find any kernel drivers for the module version $(cat MODULE_VERSION.txt)."; \
-        exit 1; \
-    fi
-
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
 ARG BUILD_DIR
@@ -155,7 +134,7 @@ RUN ./install.sh && rm -f install.sh
 
 COPY collector/container/scripts/collector-wrapper.sh /usr/local/bin/
 COPY collector/container/scripts/bootstrap.sh /
-COPY --from=unpacker /kernel-modules /kernel-modules
+COPY --from=drivers-build /kernel-modules /kernel-modules
 COPY kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
