@@ -12,6 +12,7 @@
 #include <utility>
 
 #include "Logging.h"
+#include "Utility.h"
 
 namespace collector {
 
@@ -57,9 +58,17 @@ struct ParseBool {
   }
 };
 
+struct ParseStringList {
+  bool operator()(std::vector<std::string>* out, std::string str_val) {
+    *out = SplitStringView(std::string_view(str_val), ',');
+    return true;
+  }
+};
+
 }  // namespace internal
 
 using BoolEnvVar = EnvVar<bool, internal::ParseBool>;
+using StringListEnvVar = EnvVar<std::vector<std::string>, internal::ParseStringList>;
 
 }  // namespace collector
 
