@@ -22,6 +22,9 @@ BoolEnvVar ports_feature_flag("ROX_NETWORK_GRAPH_PORTS", true);
 // If true, ignore connections with configured protocol and port pairs (e.g., udp/9).
 BoolEnvVar network_drop_ignored("ROX_NETWORK_DROP_IGNORED", true);
 
+// Connection endpoints matching a network prefix listed here will be ignored.
+StringListEnvVar ignored_networks("ROX_IGNORE_NETWORKS", std::vector<std::string>({"169.254.0.0/16"}));
+
 // If true, set curl to be verbose, adding further logging that might be useful for debugging.
 BoolEnvVar set_curl_verbose("ROX_COLLECTOR_SET_CURL_VERBOSE", false);
 
@@ -151,6 +154,18 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   if (network_drop_ignored) {
     ignored_l4proto_port_pairs_ = kIgnoredL4ProtoPortPairs;
   }
+
+  std::transform(ignored_networks.value().begin(), ignored_networks.value().end(), std::back_insert_iterator(ignored_networks_),
+                 [](const std::string& str) -> IPNet {
+                   std::optional<IPNet> net;
+
+                   net = IPNet::parse(str);
+
+                   if (!net) {
+                     CLOG(FATAL) << "Invalid network in ROX_IGNORE_NETWORKS : " << str;
+                   }
+                   return *net;
+                 });
 
   if (set_curl_verbose) {
     curl_verbose_ = true;
