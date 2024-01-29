@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -293,7 +294,10 @@ func (m *MockSensor) PushSignals(stream sensorAPI.SignalService_PushSignalsServe
 		if signal != nil && signal.GetSignal() != nil && signal.GetSignal().GetProcessSignal() != nil {
 			processSignal := signal.GetSignal().GetProcessSignal()
 
-			if strings.HasPrefix(processSignal.GetExecFilePath(), "/proc/self") {
+			_, err := strconv.Atoi(processSignal.GetName())
+			isNumericName := err == nil
+
+			if strings.HasPrefix(processSignal.GetExecFilePath(), "/proc/self") || isNumericName {
 				//
 				// There exists a potential race condition for the driver
 				// to capture very early container process events.
