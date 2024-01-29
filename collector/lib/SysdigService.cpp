@@ -170,7 +170,9 @@ bool SysdigService::FilterEvent(const sinsp_threadinfo* tinfo) {
   }
 
   // exclude runc events
-  if (tinfo->m_exepath == "runc" && tinfo->m_comm == "6") {
+  if ((tinfo->m_exepath == "runc" ||
+       tinfo->m_exepath == "/usr/bin/runc") &&
+      tinfo->m_comm == "6") {
     return false;
   }
 
@@ -216,12 +218,12 @@ void LogUnreasonableEventTime(int64_t time_micros, sinsp_evt* evt) {
 
   time_diff = time_micros - evt_ts;
   if (time_diff > max_past_time) {
-    CLOG_THROTTLED(WARNING, std::chrono::seconds(10)) << "Event of type " << evt->get_type() << " is unreasonably old. It's timestamp is " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(evt_ts);
+    CLOG_THROTTLED(WARNING, std::chrono::seconds(1800)) << "Event of type " << evt->get_type() << " is unreasonably old. It's timestamp is " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(evt_ts);
     COUNTER_INC(CollectorStats::event_timestamp_distant_past);
   }
 
   if (time_diff < -max_future_time) {
-    CLOG_THROTTLED(WARNING, std::chrono::seconds(10)) << "Event of type " << evt->get_type() << " is in the future. It's timestamp is " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(evt_ts);
+    CLOG_THROTTLED(WARNING, std::chrono::seconds(1800)) << "Event of type " << evt->get_type() << " is in the future. It's timestamp is " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(evt_ts);
     COUNTER_INC(CollectorStats::event_timestamp_future);
   }
 }

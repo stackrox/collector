@@ -5,7 +5,6 @@ NPROCS ?= $(shell nproc)
 
 MOD_VER_FILE=$(CURDIR)/kernel-modules/kobuild-tmp/MODULE_VERSION.txt
 
-LOCAL_SSH_PORT ?= 2222
 DEV_SSH_SERVER_KEY ?= $(CURDIR)/.collector_dev_ssh_host_ed25519_key
 BUILD_BUILDER_IMAGE ?= false
 
@@ -110,9 +109,10 @@ endif
 
 .PHONY: start-builder
 start-builder: builder teardown-builder
-	docker run -id --entrypoint /bin/sh \
+	docker run -d -i --entrypoint /bin/bash \
 		--name $(COLLECTOR_BUILDER_NAME) \
 		-v $(CURDIR):$(CURDIR) \
+		$(if $(LOCAL_SSH_PORT),-p $(LOCAL_SSH_PORT):22 )\
 		-w $(CURDIR) \
 		--cap-add sys_ptrace \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)

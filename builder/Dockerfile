@@ -4,10 +4,6 @@ ARG BUILD_DIR=/install-tmp
 
 USER root
 
-# clang 15 is used here due to an error on clang 16 when running on QEMU
-# emulating s390x on a x86 host (which is our case on GHA), see:
-# - https://bugzilla.redhat.com/show_bug.cgi?id=2209635
-# - https://bugzilla.redhat.com/show_bug.cgi?id=2211472
 RUN dnf -y update \
     && dnf -y install --nobest \
         autoconf \
@@ -15,7 +11,7 @@ RUN dnf -y update \
         binutils-devel \
         bison \
         ca-certificates \
-        clang-15.0.7 \
+        clang-17.0.6 \
         cmake \
         cracklib-dicts \
         diffutils \
@@ -65,10 +61,9 @@ RUN ssh-keygen -A \
     echo 'LogLevel DEBUG2'; \
     echo 'PermitRootLogin yes'; \
     echo 'PasswordAuthentication yes'; \
-    echo 'HostKey /etc/sshkeys/ssh_host_ed25519_key'; \
     echo 'HostKeyAlgorithms ssh-ed25519'; \
     echo 'Subsystem sftp /usr/libexec/openssh/sftp-server'; \
-  ) > /etc/ssh/sshd_config_remote_development \
+  ) > /etc/ssh/sshd_config \
   && mkdir /run/sshd
 
 # Add remote development user
@@ -78,4 +73,4 @@ RUN useradd -m remoteuser \
 # Create directory to copy collector source into builder container
 RUN mkdir /src && chmod a+rwx /src
 
-CMD ["/usr/sbin/sshd", "-D", "-e", "-f", "/etc/ssh/sshd_config_remote_development"]
+CMD ["/usr/sbin/sshd", "-D", "-e"]
