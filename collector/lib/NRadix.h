@@ -80,7 +80,6 @@ class NRadixTree {
       auto inserted = this->Insert(network);
       if (!inserted) {
         CLOG(ERROR) << "Failed to insert CIDR " << network << " in network tree";
-        delete root_;
       }
     }
   }
