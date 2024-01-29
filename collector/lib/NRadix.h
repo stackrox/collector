@@ -111,6 +111,8 @@ class NRadixTree {
   IPNet Find(const Address& addr) const;
   // Returns a vector of all the stored networks.
   std::vector<IPNet> GetAll() const;
+  // Tells whether the RadixTree contains no network.
+  bool IsEmpty() const;
   // Determines whether any network in `other` is fully contained by any network in this tree.
   bool IsAnyIPNetSubset(const NRadixTree& other) const;
   // Determines whether any network in `other` is fully contained by any network in this tree, for a given family.

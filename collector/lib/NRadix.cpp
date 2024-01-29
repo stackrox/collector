@@ -229,6 +229,10 @@ bool isAnyIPNetSubsetUtil(Address::Family family, const nRadixNode* n1, const nR
          isAnyIPNetSubsetUtil(family, nullptr, n2->right_, containing_net, contained_net);
 }
 
+bool NRadixTree::IsEmpty() const {
+  return root_->left_ == nullptr && root_->right_ == nullptr && root_->value_ == nullptr;
+}
+
 bool NRadixTree::IsAnyIPNetSubset(const NRadixTree& other) const {
   return this->IsAnyIPNetSubset(Address::Family::UNKNOWN, other);
 }
