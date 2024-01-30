@@ -114,14 +114,14 @@ ARG COLLECTOR_VERSION=0.0.1-todo
 ENV COLLECTOR_HOST_ROOT=/host
 
 LABEL \
-    com.redhat.component="rhacs-collector-slim-container" \
+    com.redhat.component="rhacs-collector-container" \
     com.redhat.license_terms="https://www.redhat.com/agreements" \
     description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
     io.k8s.description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
-    io.k8s.display-name="collector-slim" \
+    io.k8s.display-name="collector" \
     io.openshift.tags="rhacs,collector,stackrox" \
     maintainer="Red Hat, Inc." \
-    name="rhacs-collector-slim-rhel8" \
+    name="rhacs-collector-rhel8" \
     source-location="https://github.com/stackrox/collector" \
     summary="Runtime data collection for the StackRox Kubernetes Security Platform" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
