@@ -17,6 +17,10 @@ curl, when loading kernel objects. The default is false.
 * `ROX_NETWORK_DROP_IGNORED`: Ignore connections with configured protocol and
 port pairs (at the moment only `udp/9`). The default is true.
 
+* `ROX_IGNORE_NETWORKS`: A coma-separated list of network prefixes to ignore.
+Any connection with a remote peer matching this list will not be reported.
+The default is `169.254.0.0/16`
+
 * `ROX_NETWORK_GRAPH_PORTS`: Controls whether to retrieve TCP listening
 sockets, while reading connection information from procfs. The default is true.
 
