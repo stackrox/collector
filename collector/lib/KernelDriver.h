@@ -51,6 +51,8 @@ class IKernelDriver {
      * procexit is essential for keeping threadinfo cache under control.
      */
     ppm_sc.insert((ppm_sc_code)PPM_SC_SCHED_PROCESS_EXIT);
+
+    ppm_sc.insert((ppm_sc_code)PPM_SC_SCHED_SWITCH);
     return ppm_sc;
   }
 };
