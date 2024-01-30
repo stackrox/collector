@@ -155,17 +155,18 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     ignored_l4proto_port_pairs_ = kIgnoredL4ProtoPortPairs;
   }
 
-  std::transform(ignored_networks.value().begin(), ignored_networks.value().end(), std::back_insert_iterator(ignored_networks_),
-                 [](const std::string& str) -> IPNet {
-                   std::optional<IPNet> net;
+  std::for_each(ignored_networks.value().begin(), ignored_networks.value().end(),
+                [&ignored_networks = this->ignored_networks_](const std::string& str) {
+                  if (str.empty())
+                    return;
 
-                   net = IPNet::parse(str);
+                  std::optional<IPNet> net = IPNet::parse(str);
 
-                   if (!net) {
-                     CLOG(FATAL) << "Invalid network in ROX_IGNORE_NETWORKS : " << str;
-                   }
-                   return *net;
-                 });
+                  if (!net) {
+                    CLOG(ERROR) << "Invalid network in ROX_IGNORE_NETWORKS : " << str;
+                  }
+                  ignored_networks.emplace_back(std::move(*net));
+                });
 
   if (set_curl_verbose) {
     curl_verbose_ = true;
