@@ -77,7 +77,7 @@ seconds. The default value is 30 seconds.
 ### Other arguments
 
 * `--collection-method`: Which technology to use for data gathering. Either
-"ebpf" or "kernel_module".
+"ebpf" or "core-bpf".
 
 * `--grpc-server`: GRPC server endpoint for Collector to communicate, in the
 form "host:port".
