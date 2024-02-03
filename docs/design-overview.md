@@ -2,7 +2,7 @@
 
 ## Data gathering methods
 ### Kernel drivers
-Collector leverages eBPF probes and kernel modules for gathering data directly
+Collector leverages a CO-RE eBPF probe and eBPF probes and kernel modules for gathering data directly
 from the kernel.
 
 #### Driver candidates
