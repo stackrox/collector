@@ -162,7 +162,9 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
 
                   std::optional<IPNet> net = IPNet::parse(str);
 
-                  if (!net) {
+                  if (net) {
+                    CLOG(INFO) << "Ignore network : " << *net;
+                  } else {
                     CLOG(ERROR) << "Invalid network in ROX_IGNORE_NETWORKS : " << str;
                   }
                   ignored_networks.emplace_back(std::move(*net));
@@ -195,9 +197,9 @@ void CollectorConfig::HandleAfterglowEnvVars() {
   const int64_t max_afterglow_period_micros = 300000000;  // 5 minutes
 
   if (afterglow_period_micros_ > max_afterglow_period_micros) {
-    CLOG(WARNING) << "User set afterglow period of " << afterglow_period_micros_ / 1000000
-                  << "s is greater than the maximum allowed afterglow period of " << max_afterglow_period_micros / 1000000 << "s";
-    CLOG(WARNING) << "Setting the afterglow period to " << max_afterglow_period_micros / 1000000 << "s";
+    CLOG(ERROR) << "User set afterglow period of " << afterglow_period_micros_ / 1000000
+                << "s is greater than the maximum allowed afterglow period of " << max_afterglow_period_micros / 1000000 << "s";
+    CLOG(ERROR) << "Setting the afterglow period to " << max_afterglow_period_micros / 1000000 << "s";
     afterglow_period_micros_ = max_afterglow_period_micros;
   }
 
@@ -212,9 +214,9 @@ void CollectorConfig::HandleAfterglowEnvVars() {
   }
 
   if (afterglow_period_micros_ < 0) {
-    CLOG(WARNING) << "Invalid afterglow period " << afterglow_period_micros_ / 1000000 << ". ROX_AFTERGLOW_PERIOD must be positive.";
+    CLOG(ERROR) << "Invalid afterglow period " << afterglow_period_micros_ / 1000000 << ". ROX_AFTERGLOW_PERIOD must be positive.";
   } else {
-    CLOG(WARNING) << "Afterglow period set to 0";
+    CLOG(ERROR) << "Afterglow period set to 0";
   }
 
   enable_afterglow_ = false;
