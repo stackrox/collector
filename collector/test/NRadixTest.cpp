@@ -372,6 +372,20 @@ TEST(NRadixTest, BenchMarkNetworkLookup) {
   std::cout << "Avg time to lookup " << num_nets << " addresses without network radix tree (#networks:" << num_nets << "): " << (aggr_dur_without_tree / num_nets) << "ms\n";
 }
 
+TEST(NRadixTest, IsEmpty) {
+  NRadixTree tree;
+
+  EXPECT_TRUE(tree.IsEmpty());
+
+  tree.Insert(IPNet(Address(10, 10, 0, 0), 16));
+
+  EXPECT_FALSE(tree.IsEmpty());
+
+  tree = NRadixTree(std::vector<IPNet>({IPNet(Address(10, 10, 0, 0), 16)}));
+
+  EXPECT_FALSE(tree.IsEmpty());
+}
+
 }  // namespace
 
 }  // namespace collector

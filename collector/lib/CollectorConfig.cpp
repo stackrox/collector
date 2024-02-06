@@ -22,6 +22,9 @@ BoolEnvVar ports_feature_flag("ROX_NETWORK_GRAPH_PORTS", true);
 // If true, ignore connections with configured protocol and port pairs (e.g., udp/9).
 BoolEnvVar network_drop_ignored("ROX_NETWORK_DROP_IGNORED", true);
 
+// Connection endpoints matching a network prefix listed here will be ignored.
+StringListEnvVar ignored_networks("ROX_IGNORE_NETWORKS", std::vector<std::string>({"169.254.0.0/16"}));
+
 // If true, set curl to be verbose, adding further logging that might be useful for debugging.
 BoolEnvVar set_curl_verbose("ROX_COLLECTOR_SET_CURL_VERBOSE", false);
 
@@ -152,6 +155,21 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
     ignored_l4proto_port_pairs_ = kIgnoredL4ProtoPortPairs;
   }
 
+  std::for_each(ignored_networks.value().begin(), ignored_networks.value().end(),
+                [&ignored_networks = this->ignored_networks_](const std::string& str) {
+                  if (str.empty())
+                    return;
+
+                  std::optional<IPNet> net = IPNet::parse(str);
+
+                  if (net) {
+                    CLOG(INFO) << "Ignore network : " << *net;
+                    ignored_networks.emplace_back(std::move(*net));
+                  } else {
+                    CLOG(ERROR) << "Invalid network in ROX_IGNORE_NETWORKS : " << str;
+                  }
+                });
+
   if (set_curl_verbose) {
     curl_verbose_ = true;
   }
@@ -179,9 +197,9 @@ void CollectorConfig::HandleAfterglowEnvVars() {
   const int64_t max_afterglow_period_micros = 300000000;  // 5 minutes
 
   if (afterglow_period_micros_ > max_afterglow_period_micros) {
-    CLOG(WARNING) << "User set afterglow period of " << afterglow_period_micros_ / 1000000
-                  << "s is greater than the maximum allowed afterglow period of " << max_afterglow_period_micros / 1000000 << "s";
-    CLOG(WARNING) << "Setting the afterglow period to " << max_afterglow_period_micros / 1000000 << "s";
+    CLOG(ERROR) << "User set afterglow period of " << afterglow_period_micros_ / 1000000
+                << "s is greater than the maximum allowed afterglow period of " << max_afterglow_period_micros / 1000000 << "s";
+    CLOG(ERROR) << "Setting the afterglow period to " << max_afterglow_period_micros / 1000000 << "s";
     afterglow_period_micros_ = max_afterglow_period_micros;
   }
 
@@ -196,9 +214,9 @@ void CollectorConfig::HandleAfterglowEnvVars() {
   }
 
   if (afterglow_period_micros_ < 0) {
-    CLOG(WARNING) << "Invalid afterglow period " << afterglow_period_micros_ / 1000000 << ". ROX_AFTERGLOW_PERIOD must be positive.";
+    CLOG(ERROR) << "Invalid afterglow period " << afterglow_period_micros_ / 1000000 << ". ROX_AFTERGLOW_PERIOD must be positive.";
   } else {
-    CLOG(WARNING) << "Afterglow period set to 0";
+    CLOG(ERROR) << "Afterglow period set to 0";
   }
 
   enable_afterglow_ = false;

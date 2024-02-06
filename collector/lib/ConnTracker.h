@@ -129,6 +129,7 @@ class ConnectionTracker {
   void UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks);
   void EnableExternalIPs(bool enable) { enable_external_ips_ = enable; }
   void UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair>&& ignored_l4proto_port_pairs);
+  void UpdateIgnoredNetworks(const std::vector<IPNet>& network_list);
 
   // Emplace a connection into the state ConnMap, or update its timestamp if the supplied timestamp is more recent
   // than the stored one.
@@ -160,8 +161,8 @@ class ConnectionTracker {
   IPNet NormalizeAddressNoLock(const Address& address) const;
 
   // Returns true if any connection filters are found.
-  inline bool HasConnectionStateFilters() const {
-    return !ignored_l4proto_port_pairs_.empty();
+  inline bool HasConnectionFilters() const {
+    return !ignored_l4proto_port_pairs_.empty() || !ignored_networks_.IsEmpty();
   }
 
   // Determine if a protocol port combination from a connection or endpoint should be ignored
@@ -178,7 +179,8 @@ class ConnectionTracker {
   // Determine if a connection should be ignored
   inline bool ShouldFetchConnection(const Connection& conn) const {
     return !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(conn.l4proto(), conn.local().port())) &&
-           !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(conn.l4proto(), conn.remote().port()));
+           !IsIgnoredL4ProtoPortPair(L4ProtoPortPair(conn.l4proto(), conn.remote().port())) &&
+           ignored_networks_.Find(conn.remote().address()).IsNull();
   }
 
   // Determine if a container endpoint should be ignored
@@ -197,6 +199,7 @@ class ConnectionTracker {
   bool enable_external_ips_ = false;
   UnorderedMap<Address::Family, bool> known_private_networks_exists_;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
+  NRadixTree ignored_networks_;
 
   Stats inserted_connections_counters_ = {};
 };

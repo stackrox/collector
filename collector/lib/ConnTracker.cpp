@@ -209,7 +209,7 @@ ConnMap ConnectionTracker::FetchConnState(bool normalize, bool clear_inactive) {
   size_t state_size;
   WITH_LOCK(mutex_) {
     state_size = conn_state_.size();
-    if (HasConnectionStateFilters()) {
+    if (HasConnectionFilters()) {
       if (normalize) {
         cm = FetchState(
             &conn_state_, clear_inactive,
@@ -239,7 +239,7 @@ AdvertisedEndpointMap ConnectionTracker::FetchEndpointState(bool normalize, bool
   size_t state_size;
   WITH_LOCK(mutex_) {
     state_size = conn_state_.size();
-    if (HasConnectionStateFilters()) {
+    if (HasConnectionFilters()) {
       if (normalize) {
         cem = FetchState<ContainerEndpoint, std::function<ContainerEndpoint(const ContainerEndpoint&)>, std::function<bool(const ContainerEndpoint&)>, AdvertisedEndpointEquality>(
             &endpoint_state_, clear_inactive,
@@ -321,6 +321,12 @@ void ConnectionTracker::UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPa
         CLOG(DEBUG) << proto_port_pair.first << "/" << proto_port_pair.second;
       }
     }
+  }
+}
+
+void ConnectionTracker::UpdateIgnoredNetworks(const std::vector<IPNet>& network_list) {
+  WITH_LOCK(mutex_) {
+    ignored_networks_ = NRadixTree(network_list);
   }
 }
 
