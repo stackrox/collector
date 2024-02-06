@@ -164,10 +164,10 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
 
                   if (net) {
                     CLOG(INFO) << "Ignore network : " << *net;
+                    ignored_networks.emplace_back(std::move(*net));
                   } else {
                     CLOG(ERROR) << "Invalid network in ROX_IGNORE_NETWORKS : " << str;
                   }
-                  ignored_networks.emplace_back(std::move(*net));
                 });
 
   if (set_curl_verbose) {
