@@ -130,8 +130,8 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
       } else if (cm == "core_bpf") {
         collection_method_ = CollectionMethod::CORE_BPF;
       } else {
-        CLOG(WARNING) << "Invalid collection-method (" << cm << "), using eBPF";
-        collection_method_ = CollectionMethod::EBPF;
+        CLOG(WARNING) << "Invalid collection-method (" << cm << "), using CO-RE BPF";
+        collection_method_ = CollectionMethod::CORE_BPF;
       }
     }
 
