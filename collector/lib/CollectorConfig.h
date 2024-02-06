@@ -48,8 +48,8 @@ class CollectorConfig {
   static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
   static constexpr bool kEnableProcessesListeningOnPorts = true;
 
-  CollectorConfig() = delete;
-  CollectorConfig(CollectorArgs* collectorArgs);
+  CollectorConfig();
+  void InitCollectorConfig(CollectorArgs* collectorArgs);
 
   std::string asString() const;
 

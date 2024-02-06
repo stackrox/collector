@@ -141,7 +141,8 @@ int main(int argc, char** argv) {
     CLOG(FATAL) << "Error parsing arguments";
   }
 
-  CollectorConfig config(args);
+  CollectorConfig config;
+  config.InitCollectorConfig(args);
 
   setCoreDumpLimit(config.IsCoreDumpEnabled());
 

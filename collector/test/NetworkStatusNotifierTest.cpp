@@ -65,6 +65,15 @@ class Semaphore {
   std::mutex mutex_;
 };
 
+class MockCollectorConfig : public collector::CollectorConfig {
+ public:
+  MockCollectorConfig() : collector::CollectorConfig() {}
+
+  void DisableAfterglow() {
+    enable_afterglow_ = false;
+  }
+};
+
 class MockConnScraper : public IConnScraper {
  public:
   MOCK_METHOD(bool, Scrape, (std::vector<Connection> * connections, std::vector<ContainerEndpoint>* listen_endpoints), (override));
@@ -173,12 +182,7 @@ class NetworkConnectionInfoMessageParser {
 /* Simple validation that the service starts and sends at least one event */
 TEST(NetworkStatusNotifier, SimpleStartStop) {
   bool running = true;
-  CollectorArgs* args = CollectorArgs::getInstance();
-  int argc = 3;
-  const char* argv[] = {"collector", "--collection-method", "ebpf"};
-  int exitCode = 0;
-  args->parse(argc, const_cast<char**>(argv), exitCode);
-  CollectorConfig config_(args);
+  CollectorConfig config_;
   std::shared_ptr<MockConnScraper> conn_scraper = std::make_shared<MockConnScraper>();
   auto conn_tracker = std::make_shared<ConnectionTracker>();
   auto comm = std::make_shared<MockNetworkConnectionInfoServiceComm>();
@@ -238,14 +242,8 @@ TEST(NetworkStatusNotifier, SimpleStartStop) {
    - we check that the former declared connection is deleted and redeclared as part of this network */
 TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
   bool running = true;
-  setenv("ROX_AFTERGLOW_PERIOD", "0", 1);
-  CollectorArgs* args = CollectorArgs::getInstance();
-  int argc = 3;
-  const char* argv[] = {"collector", "--collection-method", "ebpf"};
-  int exitCode = 0;
-  args->parse(argc, const_cast<char**>(argv), exitCode);
-  CollectorConfig config(args);
-  unsetenv("ROX_AFTERGLOW_PERIOD");
+  MockCollectorConfig config;
+  config.DisableAfterglow();
   std::shared_ptr<MockConnScraper> conn_scraper = std::make_shared<MockConnScraper>();
   auto conn_tracker = std::make_shared<ConnectionTracker>();
   auto comm = std::make_shared<MockNetworkConnectionInfoServiceComm>();

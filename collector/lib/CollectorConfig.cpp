@@ -51,11 +51,14 @@ constexpr bool CollectorConfig::kEnableProcessesListeningOnPorts;
 const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = {{L4Proto::UDP, 9}};
 ;
 
-CollectorConfig::CollectorConfig(CollectorArgs* args) {
+CollectorConfig::CollectorConfig() {
   // Set default configuration values
   scrape_interval_ = kScrapeInterval;
   turn_off_scrape_ = kTurnOffScrape;
   collection_method_ = kCollectionMethod;
+}
+
+void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   enable_processes_listening_on_ports_ = set_processes_listening_on_ports.value();
   import_users_ = set_import_users.value();
   collect_connection_status_ = collect_connection_status.value();
