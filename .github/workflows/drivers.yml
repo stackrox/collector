@@ -1,7 +1,6 @@
 name: Build collector drivers
 
 on:
-  pull_request:
   workflow_call:
     inputs:
       drivers-bucket:
