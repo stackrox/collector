@@ -36,8 +36,6 @@ BoolEnvVar set_enable_core_dump("ENABLE_CORE_DUMP", false);
 // If true, add originator process information in NetworkEndpoint
 BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", CollectorConfig::kEnableProcessesListeningOnPorts);
 
-BoolEnvVar core_bpf_hardfail("ROX_COLLECTOR_CORE_BPF_HARDFAIL", false);
-
 BoolEnvVar set_import_users("ROX_COLLECTOR_SET_IMPORT_USERS", false);
 
 BoolEnvVar collect_connection_status("ROX_COLLECT_CONNECTION_STATUS", true);
@@ -57,13 +55,15 @@ constexpr bool CollectorConfig::kEnableProcessesListeningOnPorts;
 const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = {{L4Proto::UDP, 9}};
 ;
 
-CollectorConfig::CollectorConfig(CollectorArgs* args) {
+CollectorConfig::CollectorConfig() {
   // Set default configuration values
   scrape_interval_ = kScrapeInterval;
   turn_off_scrape_ = kTurnOffScrape;
   collection_method_ = kCollectionMethod;
+}
+
+void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   enable_processes_listening_on_ports_ = set_processes_listening_on_ports.value();
-  core_bpf_hardfail_ = core_bpf_hardfail.value();
   import_users_ = set_import_users.value();
   collect_connection_status_ = collect_connection_status.value();
   enable_external_ips_ = enable_external_ips.value();
@@ -134,8 +134,8 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
       } else if (cm == "core_bpf") {
         collection_method_ = CollectionMethod::CORE_BPF;
       } else {
-        CLOG(WARNING) << "Invalid collection-method (" << cm << "), using eBPF";
-        collection_method_ = CollectionMethod::EBPF;
+        CLOG(WARNING) << "Invalid collection-method (" << cm << "), using CO-RE BPF";
+        collection_method_ = CollectionMethod::CORE_BPF;
       }
     }
 

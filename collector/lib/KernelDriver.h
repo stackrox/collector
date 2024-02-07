@@ -98,12 +98,7 @@ class KernelDriverCOREEBPF : public IKernelDriver {
                                 config.GetSinspCpuPerBuffer(),
                                 true, ppm_sc);
     } catch (const sinsp_exception& ex) {
-      if (config.CoReBPFHardfail()) {
-        throw ex;
-      } else {
-        CLOG(WARNING) << ex.what();
-        return false;
-      }
+      throw ex;
     }
 
     return true;
