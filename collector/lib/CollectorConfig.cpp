@@ -23,6 +23,7 @@ BoolEnvVar ports_feature_flag("ROX_NETWORK_GRAPH_PORTS", true);
 BoolEnvVar network_drop_ignored("ROX_NETWORK_DROP_IGNORED", true);
 
 // Connection endpoints matching a network prefix listed here will be ignored.
+// The default value contains link-local addresses for IPv4 (RFC3927) and IPv6 (RFC2462)
 StringListEnvVar ignored_networks("ROX_IGNORE_NETWORKS", std::vector<std::string>({"169.254.0.0/16", "fe80::/10"}));
 
 // If true, set curl to be verbose, adding further logging that might be useful for debugging.
