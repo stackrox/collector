@@ -81,8 +81,9 @@ jobs:
       - name: Check disk usage
         shell: bash
         run: |
+          set +e
           df -k
-          go env GOCACHE && du -hs "$(go env GOCACHE)"
-          go env GOMODCACHE && du -hs "$(go env GOMODCACHE)"
+          go env GOCACHE && du -hs "$(go env GOCACHE)" || true
+          go env GOMODCACHE && du -hs "$(go env GOMODCACHE)" || true
           du -ks /*
-          docker system df
+          docker system df || true
