@@ -43,7 +43,7 @@
     - name: Retag collector image to arch specific
       community.docker.docker_image:
         name: "{{ collector_image }}"
-        repository: "{{ collector_image }}-{{ arch }}-slim"
+        repository: "{{ collector_image }}-{{ arch }}"
         source: local
 
     - name: Untag collector image to prevent issues with multiarch
@@ -57,15 +57,15 @@
         username: "{{ stackrox_io_username }}"
         password: "{{ stackrox_io_password }}"
 
-    - name: Push slim to quay.io/stackrox-io
+    - name: Push to quay.io/stackrox-io
       community.docker.docker_image:
-        name: "{{ collector_image }}-{{ arch }}-slim"
+        name: "{{ collector_image }}-{{ arch }}"
         push: true
         source: local
 
     - name: Push base to quay.io/stackrox-io
       community.docker.docker_image:
-        name: "{{ collector_image }}-{{ arch }}-slim"
+        name: "{{ collector_image }}-{{ arch }}"
         repository: "{{ collector_image }}-{{ arch }}-base"
         push: true
         source: local
@@ -76,16 +76,16 @@
         username: "{{ rhacs_eng_username }}"
         password: "{{ rhacs_eng_password }}"
 
-    - name: Push slim to quay.io/rhacs-eng
+    - name: Push to quay.io/rhacs-eng
       community.docker.docker_image:
-        name: "{{ collector_image }}-{{ arch }}-slim"
-        repository: "{{ rhacs_eng_image }}-{{ arch }}-slim"
+        name: "{{ collector_image }}-{{ arch }}"
+        repository: "{{ rhacs_eng_image }}-{{ arch }}"
         push: true
         source: local
 
     - name: Push base to quay.io/stackrox-io
       community.docker.docker_image:
-        name: "{{ collector_image }}-{{ arch }}-slim"
+        name: "{{ collector_image }}-{{ arch }}"
         repository: "{{ rhacs_eng_image }}-{{ arch }}-base"
         push: true
         source: local
@@ -94,9 +94,9 @@
       debug:
         msg:
         - "Pushed the following images:"
-        - "  {{ collector_image }}-{{ arch }}-slim"
+        - "  {{ collector_image }}-{{ arch }}"
         - "  {{ collector_image }}-{{ arch }}-base"
-        - "  {{ rhacs_eng_image }}-{{ arch }}-slim"
+        - "  {{ rhacs_eng_image }}-{{ arch }}"
         - "  {{ rhacs_eng_image }}-{{ arch }}-base"
       tags: [print_action]
 

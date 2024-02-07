@@ -30,7 +30,7 @@ env:
 
 jobs:
   build-collector-image:
-    name: Build the collector slim image
+    name: Build the collector image
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -181,12 +181,11 @@ jobs:
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
-      - name: Create and push multiarch manifest for stackrox-io -slim
+      - name: Create and push multiarch manifest for stackrox-io
         uses: ./.github/actions/create-multiarch-manifest
         with:
           base-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
           archs: ${{ env.ARCHS }}
-          suffix: -slim
 
       - name: Create and push multiarch manifest for stackrox-io -base
         uses: ./.github/actions/create-multiarch-manifest
@@ -202,12 +201,11 @@ jobs:
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
-      - name: Create and push multiarch manifest for rhacs-eng -slim
+      - name: Create and push multiarch manifest for rhacs-eng
         uses: ./.github/actions/create-multiarch-manifest
         with:
           base-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
           archs: ${{ env.ARCHS }}
-          suffix: -slim
 
       - name: Create and push multiarch manifest for rhacs-eng -base
         uses: ./.github/actions/create-multiarch-manifest
@@ -219,7 +217,7 @@ jobs:
   retag-x86-image:
     needs:
     - build-collector-image
-    name: Retag x86 slim image
+    name: Retag x86 image
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'pull_request' &&
@@ -227,36 +225,36 @@ jobs:
     steps:
       - name: Pull image to retag
         run: |
-          docker pull ${{ inputs.collector-image }}-amd64-slim
+          docker pull ${{ inputs.collector-image }}-amd64
 
-      - name: Retag and push stackrox-io -slim
+      - name: Retag and push stackrox-io
         uses: stackrox/actions/images/retag-and-push@v1
         with:
-          src-image: ${{ inputs.collector-image }}-amd64-slim
-          dst-image: ${{ inputs.collector-image }}-slim
+          src-image: ${{ inputs.collector-image }}-amd64
+          dst-image: ${{ inputs.collector-image }}
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
       - name: Retag and push stackrox-io -base
         uses: stackrox/actions/images/retag-and-push@v1
         with:
-          src-image: ${{ inputs.collector-image }}-amd64-slim
+          src-image: ${{ inputs.collector-image }}-amd64
           dst-image: ${{ inputs.collector-image }}-base
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
-      - name: Retag and push rhacs-eng -slim
+      - name: Retag and push rhacs-eng
         uses: stackrox/actions/images/retag-and-push@v1
         with:
-          src-image: ${{ inputs.collector-image }}-amd64-slim
-          dst-image: ${{ env.RHACS_ENG_IMAGE }}-slim
+          src-image: ${{ inputs.collector-image }}-amd64
+          dst-image: ${{ env.RHACS_ENG_IMAGE }}
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
       - name: Retag and push rhacs-eng -base
         uses: stackrox/actions/images/retag-and-push@v1
         with:
-          src-image: ${{ inputs.collector-image }}-amd64-slim
+          src-image: ${{ inputs.collector-image }}-amd64
           dst-image: ${{ env.RHACS_ENG_IMAGE }}-base
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
