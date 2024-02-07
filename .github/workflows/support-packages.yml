@@ -82,7 +82,7 @@ jobs:
         shell: bash
         run: |
           df -k
-          go env GOCACHE && du -hs $(go env GOCACHE)
-          go env GOMODCACHE && du -hs $(go env GOMODCACHE)
+          go env GOCACHE && du -hs "$(go env GOCACHE)"
+          go env GOMODCACHE && du -hs "$(go env GOMODCACHE)"
           du -ks /*
           docker system df
