@@ -31,7 +31,7 @@ on:
 
 jobs:
   build-support-packages:
-    runs-on: ubuntu-latest
+    runs-on: Beorn
 
     steps:
       - uses: actions/checkout@v3
@@ -78,59 +78,11 @@ jobs:
           parent: false
           destination: ${{ inputs.support-packages-bucket }}/x86_64
 
-      - name: Push support-packages to public bucket
-        uses: 'google-github-actions/upload-cloud-storage@v1'
-        if: github.event_name == 'push'
-        with:
-          path: /tmp/support-packages/output
-          parent: false
-          destination: ${{ inputs.public-support-packages-bucket }}/x86_64
-
-      - uses: ./.github/actions/support-package-index
-        with:
-          gcp-bucket: ${{ inputs.support-packages-bucket }}
-          metadata-path: /tmp/support-packages/metadata
-          output-path: /tmp/support-packages/output
-
-      - name: Push index.html
-        uses: 'google-github-actions/upload-cloud-storage@v1'
-        with:
-          path: /tmp/support-packages/output/index.html
-          parent: false
-          destination: ${{ inputs.support-packages-index-bucket }}
-
-      - name: Push index.html to public bucket
-        uses: 'google-github-actions/upload-cloud-storage@v1'
-        if: github.event_name == 'push'
-        with:
-          path: /tmp/support-packages/output/index.html
-          parent: false
-          destination: ${{ inputs.public-support-packages-bucket }}
-
-      - name: Push driver matrix
-        uses: 'google-github-actions/upload-cloud-storage@v1'
-        with:
-          path: /tmp/driver-matrix.json
-          parent: false
-          destination: ${{ inputs.support-packages-bucket }}
-
-      - name: Push index.html to public bucket
-        uses: 'google-github-actions/upload-cloud-storage@v1'
-        if: github.event_name == 'push'
-        with:
-          path: /tmp/driver-matrix.json
-          parent: false
-          destination: ${{ inputs.public-support-packages-bucket }}
-
-      - name: Slack notification
-        if: failure() && github.event_name == 'push'
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_ONCALL_WEBHOOK }}
-          SLACK_CHANNEL: team-acs-collector-oncall
-          SLACK_COLOR: ${{ job.status }}
-          SLACK_LINK_NAMES: true
-          SLACK_TITLE: Support package job failed
-          MSG_MINIMAL: actions url,commit
-          SLACK_MESSAGE: |
-            @acs-collector-oncall
+      - name: Check disk usage
+        shell: bash
+        run: |
+          df -k
+          go env GOCACHE && du -hs $(go env GOCACHE)
+          go env GOMODCACHE && du -hs $(go env GOMODCACHE)
+          du -ks /*
+          docker system df
