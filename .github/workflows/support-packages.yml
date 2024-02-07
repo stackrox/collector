@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          df -Hi
+          df -k
           go env GOCACHE && du -hs "$(go env GOCACHE)" || true
           go env GOMODCACHE && du -hs "$(go env GOMODCACHE)" || true
           du -ks /* 2>/dev/null
@@ -52,7 +52,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          df -Hi
+          df -k
           go env GOCACHE && du -hs "$(go env GOCACHE)" || true
           go env GOMODCACHE && du -hs "$(go env GOMODCACHE)" || true
           du -ks /* 2>/dev/null
@@ -70,7 +70,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          df -Hi
+          df -k
           go env GOCACHE && du -hs "$(go env GOCACHE)" || true
           go env GOMODCACHE && du -hs "$(go env GOMODCACHE)" || true
           du -ks /* 2>/dev/null
@@ -91,7 +91,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          df -Hi
+          df -k
           go env GOCACHE && du -hs "$(go env GOCACHE)" || true
           go env GOMODCACHE && du -hs "$(go env GOMODCACHE)" || true
           du -ks /* 2>/dev/null
@@ -122,7 +122,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          df -Hi
+          df -k
           go env GOCACHE && du -hs "$(go env GOCACHE)" || true
           go env GOMODCACHE && du -hs "$(go env GOMODCACHE)" || true
           du -ks /* 2>/dev/null
