@@ -1,6 +1,7 @@
 name: Build and push support-packages
 
 on:
+  pull_request:
   workflow_call:
     inputs:
       branch-name:
