@@ -37,6 +37,7 @@ jobs:
       - name: Check disk usage
         shell: bash
         run: |
+          set +e
           df -Hi
           go env GOCACHE && du -hs "$(go env GOCACHE)" || true
           go env GOMODCACHE && du -hs "$(go env GOMODCACHE)" || true
@@ -50,6 +51,7 @@ jobs:
       - name: Check disk usage
         shell: bash
         run: |
+          set +e
           df -Hi
           go env GOCACHE && du -hs "$(go env GOCACHE)" || true
           go env GOMODCACHE && du -hs "$(go env GOMODCACHE)" || true
@@ -67,6 +69,7 @@ jobs:
       - name: Check disk usage
         shell: bash
         run: |
+          set +e
           df -Hi
           go env GOCACHE && du -hs "$(go env GOCACHE)" || true
           go env GOMODCACHE && du -hs "$(go env GOMODCACHE)" || true
@@ -87,6 +90,7 @@ jobs:
       - name: Check disk usage
         shell: bash
         run: |
+          set +e
           df -Hi
           go env GOCACHE && du -hs "$(go env GOCACHE)" || true
           go env GOMODCACHE && du -hs "$(go env GOMODCACHE)" || true
@@ -117,6 +121,7 @@ jobs:
       - name: Check disk usage
         shell: bash
         run: |
+          set +e
           df -Hi
           go env GOCACHE && du -hs "$(go env GOCACHE)" || true
           go env GOMODCACHE && du -hs "$(go env GOMODCACHE)" || true
