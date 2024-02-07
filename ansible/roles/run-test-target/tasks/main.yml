@@ -35,7 +35,7 @@
   vars:
     collection_method: "{{ item }}"
   with_items:
-    "{{ lookup('env', 'COLLECTION_METHODS', default='core_bpf,ebpf') | split(',') }}"
+    "{{ lookup('env', 'COLLECTION_METHODS', default='core_bpf') | split(',') }}"
 
 - name: Check results
   ansible.builtin.fail:
