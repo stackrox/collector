@@ -34,9 +34,27 @@ jobs:
     runs-on: Beorn
 
     steps:
+      - name: Check disk usage
+        shell: bash
+        run: |
+          df -Hi
+          go env GOCACHE && du -hs "$(go env GOCACHE)" || true
+          go env GOMODCACHE && du -hs "$(go env GOMODCACHE)" || true
+          du -ks /* 2>/dev/null
+          docker system df || true
+
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
+      - name: Check disk usage
+        shell: bash
+        run: |
+          df -Hi
+          go env GOCACHE && du -hs "$(go env GOCACHE)" || true
+          go env GOMODCACHE && du -hs "$(go env GOMODCACHE)" || true
+          du -ks /* 2>/dev/null
+          docker system df || true
 
       - name: Authenticate with GCP
         uses: 'google-github-actions/auth@v1'
@@ -45,6 +63,15 @@ jobs:
 
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v1'
+
+      - name: Check disk usage
+        shell: bash
+        run: |
+          df -Hi
+          go env GOCACHE && du -hs "$(go env GOCACHE)" || true
+          go env GOMODCACHE && du -hs "$(go env GOMODCACHE)" || true
+          du -ks /* 2>/dev/null
+          docker system df || true
 
       - uses: ./.github/actions/support-package-metadata
         with:
@@ -56,6 +83,15 @@ jobs:
           metadata-dir: /tmp/support-packages/metadata/module-versions
           upstream-drivers-bucket: gs://${{ inputs.upstream-drivers-bucket }}
           downstream-drivers-bucket: gs://${{ inputs.downstream-drivers-bucket }}
+
+      - name: Check disk usage
+        shell: bash
+        run: |
+          df -Hi
+          go env GOCACHE && du -hs "$(go env GOCACHE)" || true
+          go env GOMODCACHE && du -hs "$(go env GOMODCACHE)" || true
+          du -ks /* 2>/dev/null
+          docker system df || true
 
       - name: Create support-packages
         run: |
@@ -81,9 +117,8 @@ jobs:
       - name: Check disk usage
         shell: bash
         run: |
-          set +e
-          df -k
+          df -Hi
           go env GOCACHE && du -hs "$(go env GOCACHE)" || true
           go env GOMODCACHE && du -hs "$(go env GOMODCACHE)" || true
-          du -ks /*
+          du -ks /* 2>/dev/null
           docker system df || true
