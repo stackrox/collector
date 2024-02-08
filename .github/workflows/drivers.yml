@@ -122,7 +122,7 @@ jobs:
           ${{ github.workspace }}/kernel-modules/build/kernel-splitter.py
 
       - name: Store tasks and sources
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: tasks-and-sources
           if-no-files-found: ignore
@@ -225,7 +225,7 @@ jobs:
           done
 
       - name: Store built drivers
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: built-drivers
           path: /tmp/output
@@ -233,7 +233,7 @@ jobs:
           retention-days: 1
 
       - name: Store build failures
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: driver-build-failures
           path: /tmp/FAILURES
