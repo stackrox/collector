@@ -57,6 +57,8 @@ jobs:
           upstream-drivers-bucket: gs://${{ inputs.upstream-drivers-bucket }}
           downstream-drivers-bucket: gs://${{ inputs.downstream-drivers-bucket }}
 
+      - uses: ./.github/actions/job-preamble
+
       - name: Create support-packages
         run: |
           ${{ github.workspace }}/kernel-modules/support-packages/04-create-support-packages.sh \
