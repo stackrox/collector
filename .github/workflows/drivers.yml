@@ -37,7 +37,7 @@ jobs:
       KERNELS_FILE: ${{ github.workspace }}/kernel-modules/KERNEL_VERSIONS
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Patch files
         env:
@@ -144,7 +144,7 @@ jobs:
         builder: ${{ fromJSON(needs.split-tasks.outputs.parallel-array) }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Authenticate with GCP
         uses: 'google-github-actions/auth@v1'

@@ -26,7 +26,7 @@ jobs:
       !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests')
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v2
@@ -66,7 +66,7 @@ jobs:
       build-dirs: ${{ steps.variables.outputs.build-dirs }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set variables
         id: variables
@@ -95,7 +95,7 @@ jobs:
       COLLECTOR_QA_TAG: ${{ inputs.collector-qa-tag }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2

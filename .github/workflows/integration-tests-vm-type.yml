@@ -44,7 +44,7 @@ jobs:
       COLLECTOR_QA_TAG: ${{ inputs.collector-qa-tag }}
       TEST_IMAGE: quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v3
         with:
