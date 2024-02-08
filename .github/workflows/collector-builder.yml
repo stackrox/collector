@@ -68,20 +68,20 @@ jobs:
           submodules: true
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - uses: 'google-github-actions/auth@v1'
+      - uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
-      - uses: 'google-github-actions/setup-gcloud@v1'
+      - uses: 'google-github-actions/setup-gcloud@v2'
 
       - uses: ./.github/actions/setup-vm-creds
         with:
@@ -181,7 +181,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Login to quay.io/stackrox-io
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
@@ -194,7 +194,7 @@ jobs:
           archs: ${{ env.ARCHS }}
 
       - name: Login to quay.io/rhacs-eng
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}

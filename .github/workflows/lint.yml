@@ -10,7 +10,7 @@ jobs:
         with:
           # fetch all to allow linting of differences between branches
           fetch-depth: 0
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v5
       - uses: mfinelli/setup-shfmt@v2
 
       - name: Install actionlint
