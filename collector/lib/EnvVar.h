@@ -12,6 +12,7 @@
 #include <utility>
 
 #include "Logging.h"
+#include "Utility.h"
 
 namespace collector {
 
@@ -25,7 +26,7 @@ class EnvVar {
   const T& value() const {
     std::call_once(init_once_, [this]() {
       const char* env_val = std::getenv(env_var_name_);
-      if (!env_val || !*env_val) {
+      if (!env_val) {
         return;
       }
       if (!ParseT()(&val_, env_val)) {
@@ -49,6 +50,9 @@ namespace internal {
 
 struct ParseBool {
   bool operator()(bool* out, std::string str_val) const {
+    if (str_val.empty()) {
+      return false;
+    }
     std::transform(str_val.begin(), str_val.end(), str_val.begin(), [](char c) -> char {
       return static_cast<char>(std::tolower(c));
     });
@@ -57,9 +61,17 @@ struct ParseBool {
   }
 };
 
+struct ParseStringList {
+  bool operator()(std::vector<std::string>* out, std::string str_val) {
+    *out = SplitStringView(std::string_view(str_val), ',');
+    return true;
+  }
+};
+
 }  // namespace internal
 
 using BoolEnvVar = EnvVar<bool, internal::ParseBool>;
+using StringListEnvVar = EnvVar<std::vector<std::string>, internal::ParseStringList>;
 
 }  // namespace collector
 

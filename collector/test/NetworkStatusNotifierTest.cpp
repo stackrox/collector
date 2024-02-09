@@ -6,6 +6,7 @@
 
 #include "internalapi/sensor/network_connection_iservice.grpc.pb.h"
 
+#include "CollectorArgs.h"
 #include "CollectorConfig.h"
 #include "DuplexGRPC.h"
 #include "NetworkStatusNotifier.h"
@@ -66,7 +67,7 @@ class Semaphore {
 
 class MockCollectorConfig : public collector::CollectorConfig {
  public:
-  MockCollectorConfig() : collector::CollectorConfig(0) {}
+  MockCollectorConfig() : collector::CollectorConfig() {}
 
   void DisableAfterglow() {
     enable_afterglow_ = false;
@@ -181,7 +182,7 @@ class NetworkConnectionInfoMessageParser {
 /* Simple validation that the service starts and sends at least one event */
 TEST(NetworkStatusNotifier, SimpleStartStop) {
   bool running = true;
-  CollectorConfig config_(0);
+  CollectorConfig config_;
   std::shared_ptr<MockConnScraper> conn_scraper = std::make_shared<MockConnScraper>();
   auto conn_tracker = std::make_shared<ConnectionTracker>();
   auto comm = std::make_shared<MockNetworkConnectionInfoServiceComm>();
@@ -242,6 +243,7 @@ TEST(NetworkStatusNotifier, SimpleStartStop) {
 TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
   bool running = true;
   MockCollectorConfig config;
+  config.DisableAfterglow();
   std::shared_ptr<MockConnScraper> conn_scraper = std::make_shared<MockConnScraper>();
   auto conn_tracker = std::make_shared<ConnectionTracker>();
   auto comm = std::make_shared<MockNetworkConnectionInfoServiceComm>();
@@ -254,8 +256,6 @@ TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
   Connection conn2("containerId", Endpoint(Address(), 1024), Endpoint(Address(255, 255, 255, 255), 0), L4Proto::TCP, true);
   // the same server connection normalized and grouped in a known subnet
   Connection conn3("containerId", Endpoint(Address(), 1024), Endpoint(IPNet(Address(139, 45, 0, 0), 16), 0), L4Proto::TCP, true);
-
-  config.DisableAfterglow();
 
   // the connection is always ready
   EXPECT_CALL(*comm, WaitForConnectionReady).WillRepeatedly(Return(true));

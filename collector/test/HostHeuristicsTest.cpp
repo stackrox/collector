@@ -52,15 +52,10 @@ class MockHostInfoHeuristics : public HostInfo {
   MOCK_METHOD0(GetDistro, std::string&());
 };
 
-// Note that in every test below, ProcessHostHeuristics will be called first
-// with creation of a config mock, which is somewhat annoying, but doesn't
-// cause any serious issues.
 class MockCollectorConfig : public CollectorConfig {
  public:
-  MockCollectorConfig(CollectorArgs* collectorArgs)
-      : CollectorConfig(collectorArgs){};
-
-  MOCK_CONST_METHOD0(UseEbpf, bool());
+  MockCollectorConfig()
+      : CollectorConfig(){};
 
   void SetCollectionMethod(CollectionMethod cm) {
     if (host_config_.HasCollectionMethod()) {
@@ -74,8 +69,7 @@ TEST(HostHeuristicsTest, TestS390XRHEL84) {
   MockS390xHeuristics s390xHeuristics;
   MockHostInfoHeuristics host;
   KernelVersion version = KernelVersion("4.18.0-305.88.1.el8_4.s390x", "", "s390x");
-  CollectorArgs* args = CollectorArgs::getInstance();
-  MockCollectorConfig config(args);
+  MockCollectorConfig config;
   HostConfig hconfig;
 
   config.SetCollectionMethod(CollectionMethod::EBPF);
@@ -91,8 +85,7 @@ TEST(HostHeuristicsTest, TestARM64Heuristic) {
   MockARM64Heuristics heuristic;
   MockHostInfoHeuristics host;
   KernelVersion version = KernelVersion("6.5.5-200.fc38.aarch64", "", "aarch64");
-  CollectorArgs* args = CollectorArgs::getInstance();
-  MockCollectorConfig config(args);
+  MockCollectorConfig config;
   HostConfig hconfig;
 
   config.SetCollectionMethod(CollectionMethod::EBPF);

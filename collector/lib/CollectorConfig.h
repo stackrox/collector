@@ -20,7 +20,7 @@ class CollectorConfig {
  public:
   static constexpr bool kTurnOffScrape = false;
   static constexpr int kScrapeInterval = 30;
-  static constexpr CollectionMethod kCollectionMethod = CollectionMethod::EBPF;
+  static constexpr CollectionMethod kCollectionMethod = CollectionMethod::CORE_BPF;
   static constexpr const char* kSyscalls[] = {
       "accept",
       "accept4",
@@ -48,8 +48,8 @@ class CollectorConfig {
   static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
   static constexpr bool kEnableProcessesListeningOnPorts = true;
 
-  CollectorConfig() = delete;
-  CollectorConfig(CollectorArgs* collectorArgs);
+  CollectorConfig();
+  void InitCollectorConfig(CollectorArgs* collectorArgs);
 
   std::string asString() const;
 
@@ -64,12 +64,12 @@ class CollectorConfig {
   std::string LogLevel() const;
   bool DisableNetworkFlows() const { return disable_network_flows_; }
   const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }
+  const std::vector<IPNet>& IgnoredNetworks() const { return ignored_networks_; }
   bool CurlVerbose() const { return curl_verbose_; }
   bool EnableAfterglow() const { return enable_afterglow_; }
   bool IsCoreDumpEnabled() const;
   Json::Value TLSConfiguration() const { return tls_config_; }
   bool IsProcessesListeningOnPortsEnabled() const { return enable_processes_listening_on_ports_; }
-  bool CoReBPFHardfail() const { return core_bpf_hardfail_; }
   bool ImportUsers() const { return import_users_; }
   bool CollectConnectionStatus() const { return collect_connection_status_; }
   bool EnableExternalIPs() const { return enable_external_ips_; }
@@ -92,6 +92,7 @@ class CollectorConfig {
   bool disable_network_flows_ = false;
   bool scrape_listen_endpoints_ = false;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
+  std::vector<IPNet> ignored_networks_;
   bool curl_verbose_ = false;
 
   HostConfig host_config_;
@@ -99,7 +100,6 @@ class CollectorConfig {
   bool enable_afterglow_ = true;
   bool enable_core_dump_ = false;
   bool enable_processes_listening_on_ports_;
-  bool core_bpf_hardfail_;
   bool import_users_;
   bool collect_connection_status_;
   bool enable_external_ips_;

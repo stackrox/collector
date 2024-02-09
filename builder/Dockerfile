@@ -61,10 +61,9 @@ RUN ssh-keygen -A \
     echo 'LogLevel DEBUG2'; \
     echo 'PermitRootLogin yes'; \
     echo 'PasswordAuthentication yes'; \
-    echo 'HostKey /etc/sshkeys/ssh_host_ed25519_key'; \
     echo 'HostKeyAlgorithms ssh-ed25519'; \
     echo 'Subsystem sftp /usr/libexec/openssh/sftp-server'; \
-  ) > /etc/ssh/sshd_config_remote_development \
+  ) > /etc/ssh/sshd_config \
   && mkdir /run/sshd
 
 # Add remote development user
@@ -74,4 +73,4 @@ RUN useradd -m remoteuser \
 # Create directory to copy collector source into builder container
 RUN mkdir /src && chmod a+rwx /src
 
-CMD ["/usr/sbin/sshd", "-D", "-e", "-f", "/etc/ssh/sshd_config_remote_development"]
+CMD ["/usr/sbin/sshd", "-D", "-e"]

@@ -170,7 +170,9 @@ bool SysdigService::FilterEvent(const sinsp_threadinfo* tinfo) {
   }
 
   // exclude runc events
-  if (tinfo->m_exepath == "runc" && tinfo->m_comm == "6") {
+  if ((tinfo->m_exepath == "runc" ||
+       tinfo->m_exepath == "/usr/bin/runc") &&
+      tinfo->m_comm == "6") {
     return false;
   }
 

@@ -46,11 +46,14 @@ class IKernelDriver {
     }
 
     /*
-     * Earlier version of Falco used to include procexit by default, now we
-     * have to explicitly add it alongside with the required syscalls.
-     * procexit is essential for keeping threadinfo cache under control.
+     * Earlier version of Falco used to include procexit and sched_switch by
+     * default, now we have to explicitly add it alongside with the required
+     * syscalls. procexit is essential for keeping threadinfo cache under
+     * control, and sched_switch makes conveying process information more
+     * reliable.
      */
     ppm_sc.insert((ppm_sc_code)PPM_SC_SCHED_PROCESS_EXIT);
+    ppm_sc.insert((ppm_sc_code)PPM_SC_SCHED_SWITCH);
     return ppm_sc;
   }
 };
@@ -95,12 +98,7 @@ class KernelDriverCOREEBPF : public IKernelDriver {
                                 config.GetSinspCpuPerBuffer(),
                                 true, ppm_sc);
     } catch (const sinsp_exception& ex) {
-      if (config.CoReBPFHardfail()) {
-        throw ex;
-      } else {
-        CLOG(WARNING) << ex.what();
-        return false;
-      }
+      throw ex;
     }
 
     return true;

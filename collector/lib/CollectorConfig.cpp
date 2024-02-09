@@ -22,6 +22,10 @@ BoolEnvVar ports_feature_flag("ROX_NETWORK_GRAPH_PORTS", true);
 // If true, ignore connections with configured protocol and port pairs (e.g., udp/9).
 BoolEnvVar network_drop_ignored("ROX_NETWORK_DROP_IGNORED", true);
 
+// Connection endpoints matching a network prefix listed here will be ignored.
+// The default value contains link-local addresses for IPv4 (RFC3927) and IPv6 (RFC2462)
+StringListEnvVar ignored_networks("ROX_IGNORE_NETWORKS", std::vector<std::string>({"169.254.0.0/16", "fe80::/10"}));
+
 // If true, set curl to be verbose, adding further logging that might be useful for debugging.
 BoolEnvVar set_curl_verbose("ROX_COLLECTOR_SET_CURL_VERBOSE", false);
 
@@ -31,8 +35,6 @@ BoolEnvVar set_enable_core_dump("ENABLE_CORE_DUMP", false);
 
 // If true, add originator process information in NetworkEndpoint
 BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", CollectorConfig::kEnableProcessesListeningOnPorts);
-
-BoolEnvVar core_bpf_hardfail("ROX_COLLECTOR_CORE_BPF_HARDFAIL", false);
 
 BoolEnvVar set_import_users("ROX_COLLECTOR_SET_IMPORT_USERS", false);
 
@@ -53,13 +55,15 @@ constexpr bool CollectorConfig::kEnableProcessesListeningOnPorts;
 const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = {{L4Proto::UDP, 9}};
 ;
 
-CollectorConfig::CollectorConfig(CollectorArgs* args) {
+CollectorConfig::CollectorConfig() {
   // Set default configuration values
   scrape_interval_ = kScrapeInterval;
   turn_off_scrape_ = kTurnOffScrape;
   collection_method_ = kCollectionMethod;
+}
+
+void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   enable_processes_listening_on_ports_ = set_processes_listening_on_ports.value();
-  core_bpf_hardfail_ = core_bpf_hardfail.value();
   import_users_ = set_import_users.value();
   collect_connection_status_ = collect_connection_status.value();
   enable_external_ips_ = enable_external_ips.value();
@@ -130,8 +134,8 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
       } else if (cm == "core_bpf") {
         collection_method_ = CollectionMethod::CORE_BPF;
       } else {
-        CLOG(WARNING) << "Invalid collection-method (" << cm << "), using eBPF";
-        collection_method_ = CollectionMethod::EBPF;
+        CLOG(WARNING) << "Invalid collection-method (" << cm << "), using CO-RE BPF";
+        collection_method_ = CollectionMethod::CORE_BPF;
       }
     }
 
@@ -151,6 +155,21 @@ CollectorConfig::CollectorConfig(CollectorArgs* args) {
   if (network_drop_ignored) {
     ignored_l4proto_port_pairs_ = kIgnoredL4ProtoPortPairs;
   }
+
+  std::for_each(ignored_networks.value().begin(), ignored_networks.value().end(),
+                [&ignored_networks = this->ignored_networks_](const std::string& str) {
+                  if (str.empty())
+                    return;
+
+                  std::optional<IPNet> net = IPNet::parse(str);
+
+                  if (net) {
+                    CLOG(INFO) << "Ignore network : " << *net;
+                    ignored_networks.emplace_back(std::move(*net));
+                  } else {
+                    CLOG(ERROR) << "Invalid network in ROX_IGNORE_NETWORKS : " << str;
+                  }
+                });
 
   if (set_curl_verbose) {
     curl_verbose_ = true;
@@ -179,9 +198,9 @@ void CollectorConfig::HandleAfterglowEnvVars() {
   const int64_t max_afterglow_period_micros = 300000000;  // 5 minutes
 
   if (afterglow_period_micros_ > max_afterglow_period_micros) {
-    CLOG(WARNING) << "User set afterglow period of " << afterglow_period_micros_ / 1000000
-                  << "s is greater than the maximum allowed afterglow period of " << max_afterglow_period_micros / 1000000 << "s";
-    CLOG(WARNING) << "Setting the afterglow period to " << max_afterglow_period_micros / 1000000 << "s";
+    CLOG(ERROR) << "User set afterglow period of " << afterglow_period_micros_ / 1000000
+                << "s is greater than the maximum allowed afterglow period of " << max_afterglow_period_micros / 1000000 << "s";
+    CLOG(ERROR) << "Setting the afterglow period to " << max_afterglow_period_micros / 1000000 << "s";
     afterglow_period_micros_ = max_afterglow_period_micros;
   }
 
@@ -196,9 +215,9 @@ void CollectorConfig::HandleAfterglowEnvVars() {
   }
 
   if (afterglow_period_micros_ < 0) {
-    CLOG(WARNING) << "Invalid afterglow period " << afterglow_period_micros_ / 1000000 << ". ROX_AFTERGLOW_PERIOD must be positive.";
+    CLOG(ERROR) << "Invalid afterglow period " << afterglow_period_micros_ / 1000000 << ". ROX_AFTERGLOW_PERIOD must be positive.";
   } else {
-    CLOG(WARNING) << "Afterglow period set to 0";
+    CLOG(ERROR) << "Afterglow period set to 0";
   }
 
   enable_afterglow_ = false;
