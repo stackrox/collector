@@ -90,3 +90,4 @@
 # Since kmods are not supported anyway, block these combination
 ~.*\.el8_9\..* * mod
 6.7.* * *
+6.8.* * *
