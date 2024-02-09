@@ -48,17 +48,11 @@ jobs:
       branch-name: ${{ needs.init.outputs.branch-name }}
 
   check-drivers-failures:
-    strategy:
-      matrix:
-        platform:
-          - x86_64
-          - s390x
-          - ppc64le
     uses: ./.github/workflows/check-drivers-failures.yml
     needs: sync-drivers-and-support-packages
     with:
       logs-artifact:
-        drivers-build-failures-${{ matrix.platform }}
+        drivers-build-failures
 
   build-collector-slim:
     runs-on: ubuntu-latest
