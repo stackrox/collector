@@ -12,6 +12,7 @@ verify_downloaded_file() {
 }
 
 main() {
+  # TODO(ROX-22429): Set up process for Fast Stream Releases to update the support package version.
   # Make sure to update this URL when releasing the new version of ACS.
   # Get the most current link at https://cdn.stackrox.io/collector/support-packages/index.html
   # DO NOT use "stable link", i.e. the URL MUST NOT end with "-latest.zip". This is done to avoid uploading 1.5GB
