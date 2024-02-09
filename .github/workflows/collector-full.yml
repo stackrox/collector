@@ -68,7 +68,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Restore built drivers
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         if: matrix.arch == 'amd64' && !inputs.skip-built-drivers
         with:
           name: built-drivers
