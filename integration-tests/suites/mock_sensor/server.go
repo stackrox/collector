@@ -281,6 +281,22 @@ func (m *MockSensor) Stop() {
 	m.endpointChannel.Stop()
 }
 
+// Clear will clear the state for a given containerID
+// (processes, network events)
+func (m *MockSensor) Clear(containerID string) {
+	m.processMutex.Lock()
+	defer m.processMutex.Unlock()
+
+	delete(m.processes, containerID)
+	delete(m.processLineages, containerID)
+
+	m.networkMutex.Lock()
+	defer m.networkMutex.Unlock()
+
+	delete(m.connections, containerID)
+	delete(m.endpoints, containerID)
+}
+
 // PushSignals conforms to the Sensor API. It is here that process signals and
 // process lineage information is handled and stored/sent to the relevant channel
 func (m *MockSensor) PushSignals(stream sensorAPI.SignalService_PushSignalsServer) error {

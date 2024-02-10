@@ -85,7 +85,7 @@
       IMAGE_FAMILY: "{{ vm_image_family }}"
       COLLECTOR_IMAGE: "{{ collector_image }}"
       COLLECTOR_QA_TAG: "{{ lookup('env', 'COLLECTOR_QA_TAG', default=lookup('file', integration_tests_root + '/container/QA_TAG')) }}"
-      COLLECTOR_LOG_LEVEL: "{{ lookup('env', 'COLLECTOR_LOG_LEVEL', default='info') }}"
+      COLLECTOR_LOG_LEVEL: "{{ lookup('env', 'COLLECTOR_LOG_LEVEL', default='debug') }}"
     register: test_result
     # ensure that this is printed
     tags: [print_action]
