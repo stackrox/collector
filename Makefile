@@ -30,12 +30,12 @@ container-dockerfile-dev:
 .PHONY: builder
 builder:
 ifneq ($(BUILD_BUILDER_IMAGE), false)
-	docker buildx build --load --platform ${PLATFORM} \
-		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
+	docker buildx build --load --platform $(PLATFORM) \
+		-t $(COLLECTOR_BUILDER_IMAGE) \
 		-f "$(CURDIR)/builder/Dockerfile" \
 		"$(CURDIR)/builder"
 else
-	docker pull --platform ${PLATFORM} quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
+	docker pull --platform $(PLATFORM) $(COLLECTOR_BUILDER_IMAGE)
 endif
 
 collector: check-builder
@@ -59,7 +59,7 @@ build-drivers:
 
 image: collector unittest
 	make -C collector txt-files
-	docker buildx build --load --platform ${PLATFORM} \
+	docker buildx build --load --platform $(PLATFORM) \
 		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
 		--build-arg MODULE_VERSION="$(MODULE_VERSION)" \
 		-f collector/container/Dockerfile \
@@ -68,7 +68,8 @@ image: collector unittest
 
 image-dev: collector unittest container-dockerfile-dev
 	make -C collector txt-files
-	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
+	docker buildx build --load --platform $(PLATFORM) \
+		--build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg BUILD_TYPE=devel \
 		--build-arg MODULE_VERSION="$(MODULE_VERSION)" \
 		-f collector/container/Dockerfile.dev \
@@ -77,7 +78,7 @@ image-dev: collector unittest container-dockerfile-dev
 
 image-dev-full: image-dev build-drivers
 	docker tag quay.io/stackrox-io/collector:$(COLLECTOR_TAG) quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-slim
-	docker build \
+	docker buildx build --load --platform $(PLATFORM) \
 		--target=probe-layer-1 \
 		--tag quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-full \
 		--build-arg collector_repo=quay.io/stackrox-io/collector \
@@ -111,11 +112,12 @@ endif
 start-builder: builder teardown-builder
 	docker run -d \
 		--name $(COLLECTOR_BUILDER_NAME) \
+		--platform $(PLATFORM) \
 		-v $(CURDIR):$(CURDIR) \
 		$(if $(LOCAL_SSH_PORT),-p $(LOCAL_SSH_PORT):22 )\
 		-w $(CURDIR) \
 		--cap-add sys_ptrace \
-		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
+		$(COLLECTOR_BUILDER_IMAGE)
 
 .PHONY: check-builder
 check-builder:
@@ -128,6 +130,7 @@ teardown-builder:
 .PHONY: clean
 clean:
 	rm -rf cmake-build/
+	rm -rf $(CMAKE_BASE_DIR)
 	make -C collector clean
 
 .PHONY: shfmt-check
