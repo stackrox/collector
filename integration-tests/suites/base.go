@@ -16,6 +16,7 @@ import (
 
 	"github.com/stackrox/collector/integration-tests/suites/common"
 	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/suites/log"
 	"github.com/stackrox/collector/integration-tests/suites/mock_sensor"
 	"github.com/stackrox/collector/integration-tests/suites/types"
 )
@@ -87,7 +88,7 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *com
 			defaultWaitTickSeconds, 5*time.Minute)
 		s.Require().NoError(err)
 	} else {
-		fmt.Println("No HealthCheck found, do not wait for collector to become healthy")
+		log.Error("No HealthCheck found, do not wait for collector to become healthy")
 
 		// No way to figure out when all the services up and running, skip this
 		// phase.
@@ -99,7 +100,7 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *com
 			// Self-check process is not going to be sent via GRPC, instead
 			// create at least one canary process to make sure everything is
 			// fine.
-			fmt.Println("Spawn a canary process")
+			log.Log("Spawn a canary process")
 			_, err = s.execContainer("collector", []string{"echo"})
 			s.Require().NoError(err)
 		})
@@ -208,7 +209,7 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats() {
 		s.AddMetric(fmt.Sprintf("%s_cpu_mean", name), stat.Mean(cpu, nil))
 		s.AddMetric(fmt.Sprintf("%s_cpu_stddev", name), stat.StdDev(cpu, nil))
 
-		fmt.Printf("CPU: Container %s, Mean %v, StdDev %v\n",
+		log.Log("CPU: Container %s, Mean %v, StdDev %v\n",
 			name, stat.Mean(cpu, nil), stat.StdDev(cpu, nil))
 	}
 }
@@ -229,7 +230,7 @@ func (s *IntegrationTestSuiteBase) WritePerfResults() {
 	perfJson, _ := json.Marshal(perf)
 	perfFilename := filepath.Join(config.LogPath(), "perf.json")
 
-	fmt.Printf("Writing %s\n", perfFilename)
+	log.Info("Writing %s\n", perfFilename)
 	f, err := os.OpenFile(perfFilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	s.Require().NoError(err)
 	defer f.Close()
@@ -304,16 +305,16 @@ func (s *IntegrationTestSuiteBase) waitForContainerStatus(
 				return true, nil
 			}
 			if err != nil {
-				fmt.Printf("Retrying waitForContainerStatus(%s, %s): Error: %v\n",
+				log.Error("Retrying waitForContainerStatus(%s, %s): Error: %v\n",
 					containerName, containerID, err)
 			}
 		case <-timeout:
-			fmt.Printf("Timed out waiting for container %s to become %s, elapsed Time: %s\n",
+			log.Error("Timed out waiting for container %s to become %s, elapsed Time: %s\n",
 				containerName, filter, time.Since(start))
 			return false, fmt.Errorf("Timeout waiting for container %s to become %s after %v",
 				containerName, filter, timeoutThreshold)
 		case <-tickElapsed:
-			fmt.Printf("Waiting for container %s to become %s, elapsed time: %s\n",
+			log.Error("Waiting for container %s to become %s, elapsed time: %s\n",
 				containerName, filter, time.Since(start))
 		}
 	}
@@ -387,6 +388,7 @@ func (s *IntegrationTestSuiteBase) execContainerShellScript(containerName string
 }
 
 func (s *IntegrationTestSuiteBase) cleanupContainers(containers ...string) {
+	log.Debug("Killing and removing containers %v\n", containers)
 	for _, container := range containers {
 		s.Executor().KillContainer(container)
 		s.Executor().RemoveContainer(container)
@@ -394,12 +396,14 @@ func (s *IntegrationTestSuiteBase) cleanupContainers(containers ...string) {
 }
 
 func (s *IntegrationTestSuiteBase) stopContainers(containers ...string) {
+	log.Debug("Stopping containers %v\n", containers)
 	for _, container := range containers {
 		s.Executor().StopContainer(container)
 	}
 }
 
 func (s *IntegrationTestSuiteBase) removeContainers(containers ...string) {
+	log.Debug("Removing containers %v\n", containers)
 	for _, container := range containers {
 		s.Executor().RemoveContainer(container)
 	}
@@ -456,12 +460,12 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	re := regexp.MustCompile(`Average: ([0-9.]+) Seconds`)
 	matches := re.FindSubmatch([]byte(benchmarkLogs))
 	if matches != nil {
-		fmt.Printf("Benchmark Time: %s\n", matches[1])
+		log.Log("Benchmark Time: %s\n", matches[1])
 		f, err := strconv.ParseFloat(string(matches[1]), 64)
 		s.Require().NoError(err)
 		s.AddMetric("hackbench_avg_time", f)
 	} else {
-		fmt.Printf("Benchmark Time: Not found! Logs: %s\n", benchmarkLogs)
+		log.Error("Benchmark Time: Not found! Logs: %s\n", benchmarkLogs)
 		assert.FailNow(s.T(), "Benchmark Time not found")
 	}
 }

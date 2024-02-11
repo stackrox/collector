@@ -12,6 +12,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/suites/log"
 )
 
 type CollectorStartupOptions struct {
@@ -105,7 +106,7 @@ func (c *CollectorManager) Launch() error {
 func (c *CollectorManager) TearDown() error {
 	isRunning, err := c.IsRunning()
 	if err != nil {
-		fmt.Println("Error: Checking if container running")
+		log.Error("Checking if container running")
 		return err
 	}
 
@@ -114,7 +115,7 @@ func (c *CollectorManager) TearDown() error {
 		// Check if collector container segfaulted or exited with error
 		exitCode, err := c.executor.ExitCode("collector")
 		if err != nil {
-			fmt.Println("Error: Container not running")
+			log.Error("Container not running")
 			return err
 		}
 		if exitCode != 0 {
@@ -194,7 +195,7 @@ func (c *CollectorManager) launchCollector() error {
 func (c *CollectorManager) captureLogs(containerName string) (string, error) {
 	logs, err := c.executor.Exec(RuntimeCommand, "logs", containerName)
 	if err != nil {
-		fmt.Printf(RuntimeCommand+" logs error (%v) for container %s\n", err, containerName)
+		log.Error(RuntimeCommand+" logs error (%v) for container %s\n", err, containerName)
 		return "", err
 	}
 	logDirectory := filepath.Join(".", "container-logs", config.VMInfo().Config, config.CollectionMethod())
