@@ -99,7 +99,7 @@ func NewExecutor() Executor {
 	return &e
 }
 
-// Execute provided command with retries on error.
+// Exec executes the provided command with retries with non-zero error from the command.
 func (e *executor) Exec(args ...string) (string, error) {
 	if args[0] == RuntimeCommand && RuntimeAsRoot {
 		args = append([]string{"sudo"}, args...)
@@ -109,6 +109,8 @@ func (e *executor) Exec(args ...string) (string, error) {
 	})
 }
 
+// ExecWithErrorCheck executes the provided command, retrying if an error occurs
+// and the command's output does not contain any of the accepted output contents.
 func (e *executor) ExecWithErrorCheck(errCheckFn func(string, error) error, args ...string) (string, error) {
 	if args[0] == RuntimeCommand && RuntimeAsRoot {
 		args = append([]string{"sudo"}, args...)
@@ -118,6 +120,7 @@ func (e *executor) ExecWithErrorCheck(errCheckFn func(string, error) error, args
 	})
 }
 
+// ExecWithoutRetry executes provided command once, without retries.
 func (e *executor) ExecWithoutRetry(args ...string) (string, error) {
 	if args[0] == RuntimeCommand && RuntimeAsRoot {
 		args = append([]string{"sudo"}, args...)
@@ -207,7 +210,9 @@ func (e *executor) ExitCode(containerID string) (int, error) {
 	return strconv.Atoi(strings.Trim(result, "\"'"))
 }
 
-func checkContainerOutput(name string, cmd string, output string, err error) error {
+// checkContainerCommandError returns nil if the output of the container
+// command indicates retries are not needed.
+func checkContainerCommandError(name string, cmd string, output string, err error) error {
 	for _, str := range []string{
 		"no such container",
 		"cannot " + cmd + " container",
@@ -220,22 +225,25 @@ func checkContainerOutput(name string, cmd string, output string, err error) err
 	return err
 }
 
-func containerErrorCheckFunc(name string, cmd string) func(string, error) error {
+func containerErrorCheckFunction(name string, cmd string) func(string, error) error {
 	return func(stdout string, err error) error {
-		return checkContainerOutput(name, cmd, stdout, err)
+		return checkContainerCommandError(name, cmd, stdout, err)
 	}
 }
 
+// KillContainer runs the kill operation on the provided container name
 func (e *executor) KillContainer(name string) (string, error) {
-	return e.ExecWithErrorCheck(containerErrorCheckFunc(name, "kill"), RuntimeCommand, "kill", name)
+	return e.ExecWithErrorCheck(containerErrorCheckFunction(name, "kill"), RuntimeCommand, "kill", name)
 }
 
+// RemoveContainer runs the remove operation on the provided container name
 func (e *executor) RemoveContainer(name string) (string, error) {
-	return e.ExecWithErrorCheck(containerErrorCheckFunc(name, "remove"), RuntimeCommand, "rm", name)
+	return e.ExecWithErrorCheck(containerErrorCheckFunction(name, "remove"), RuntimeCommand, "rm", name)
 }
 
+// StopContainer runs the stop operation on the provided container name
 func (e *executor) StopContainer(name string) (string, error) {
-	return e.ExecWithErrorCheck(containerErrorCheckFunc(name, "stop"), RuntimeCommand, "stop", name)
+	return e.ExecWithErrorCheck(containerErrorCheckFunction(name, "stop"), RuntimeCommand, "stop", name)
 }
 
 func (e *localCommandBuilder) ExecCommand(execArgs ...string) *exec.Cmd {
