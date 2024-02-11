@@ -130,7 +130,7 @@ func (e *executor) RunCommand(cmd *exec.Cmd) (string, error) {
 		return "", nil
 	}
 	commandLine := strings.Join(cmd.Args, " ")
-	if true { // debug {
+	if debug {
 		fmt.Printf("Run: %s\n", commandLine)
 	}
 	stdoutStderr, err := cmd.CombinedOutput()
