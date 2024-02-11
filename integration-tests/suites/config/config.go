@@ -152,7 +152,7 @@ func RuntimeInfo() *Runtime {
 func CollectorInfo() *CollectorOptions {
 	if collector_options == nil {
 		collector_options = &CollectorOptions{
-			LogLevel:     ReadEnvVarWithDefault(envCollectorLogLevel, "debug"),
+			LogLevel:     ReadEnvVarWithDefault(envCollectorLogLevel, "info"),
 			Offline:      ReadBoolEnvVar(envCollectorOfflineMode),
 			PreArguments: ReadEnvVar(envCollectorPreArguments),
 		}

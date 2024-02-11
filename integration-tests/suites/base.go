@@ -30,7 +30,7 @@ const (
 
 	containerStatsName = "container-stats"
 
-	defaultWaitTickSeconds = 30 * time.Second
+	defaultWaitTickSeconds = 5 * time.Second
 )
 
 type IntegrationTestSuiteBase struct {
@@ -259,9 +259,7 @@ func (s *IntegrationTestSuiteBase) launchContainer(name string, args ...string) 
 	cmd := []string{common.RuntimeCommand, "run", "-d", "--name", name}
 	cmd = append(cmd, args...)
 
-	output, err := common.Retry(func() (string, error) {
-		return s.Executor().Exec(cmd...)
-	})
+	output, err := s.Executor().Exec(cmd...)
 
 	outLines := strings.Split(output, "\n")
 	return outLines[len(outLines)-1], err
@@ -388,20 +386,20 @@ func (s *IntegrationTestSuiteBase) execContainerShellScript(containerName string
 
 func (s *IntegrationTestSuiteBase) cleanupContainers(containers ...string) {
 	for _, container := range containers {
-		s.Executor().Exec(common.RuntimeCommand, "kill", container)
-		s.Executor().Exec(common.RuntimeCommand, "rm", container)
+		s.Executor().KillContainer(container)
+		s.Executor().RemoveContainer(container)
 	}
 }
 
 func (s *IntegrationTestSuiteBase) stopContainers(containers ...string) {
 	for _, container := range containers {
-		s.Executor().Exec(common.RuntimeCommand, "stop", "-t", config.StopTimeout(), container)
+		s.Executor().StopContainer(container)
 	}
 }
 
 func (s *IntegrationTestSuiteBase) removeContainers(containers ...string) {
 	for _, container := range containers {
-		s.Executor().Exec(common.RuntimeCommand, "rm", container)
+		s.Executor().RemoveContainer(container)
 	}
 }
 

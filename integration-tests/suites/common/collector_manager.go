@@ -220,8 +220,8 @@ func (c *CollectorManager) captureLogs(containerName string) (string, error) {
 }
 
 func (c *CollectorManager) killContainer(name string) error {
-	_, err1 := c.executor.Exec(RuntimeCommand, "kill", name)
-	_, err2 := c.executor.Exec(RuntimeCommand, "rm", "-fv", name)
+	_, err1 := c.executor.KillContainer(name)
+	_, err2 := c.executor.RemoveContainer(name)
 
 	var result error
 	if err1 != nil {
@@ -235,7 +235,7 @@ func (c *CollectorManager) killContainer(name string) error {
 }
 
 func (c *CollectorManager) stopContainer(name string) error {
-	_, err := c.executor.Exec(RuntimeCommand, "stop", name)
+	_, err := c.executor.StopContainer(name)
 	return err
 }
 
