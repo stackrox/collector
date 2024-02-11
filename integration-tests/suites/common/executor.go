@@ -99,7 +99,7 @@ func NewExecutor() Executor {
 	return &e
 }
 
-// Exec executes the provided command with retries with non-zero error from the command.
+// Exec executes the provided command with retries on non-zero error from the command.
 func (e *executor) Exec(args ...string) (string, error) {
 	if args[0] == RuntimeCommand && RuntimeAsRoot {
 		args = append([]string{"sudo"}, args...)
