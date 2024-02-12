@@ -24,6 +24,7 @@ type Executor interface {
 	CopyFromHost(src string, dst string) (string, error)
 	PullImage(image string) error
 	IsContainerRunning(image string) (bool, error)
+	ContainerExists(container string) (bool, error)
 	ExitCode(container string) (int, error)
 	Exec(args ...string) (string, error)
 	ExecWithStdin(pipedContent string, args ...string) (string, error)
@@ -194,6 +195,14 @@ func (e *executor) PullImage(image string) error {
 
 func (e *executor) IsContainerRunning(containerID string) (bool, error) {
 	result, err := e.Exec(RuntimeCommand, "inspect", containerID, "--format='{{.State.Running}}'")
+	if err != nil {
+		return false, err
+	}
+	return strconv.ParseBool(strings.Trim(result, "\"'"))
+}
+
+func (e *executor) ContainerExists(container string) (bool, error) {
+	result, err := e.Exec(RuntimeCommand, "ps", "-aq", "--format=id="+container)
 	if err != nil {
 		return false, err
 	}
