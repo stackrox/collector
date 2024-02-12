@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+## Adapted from https://gitlab.cee.redhat.com/stackrox/rhacs-midstream/-/blob/rhacs-1.0-rhel-8/distgit/containers/rhacs-collector/pre-build-script.
+
 set -euxo pipefail
 
 verify_downloaded_file() {
