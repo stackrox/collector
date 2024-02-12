@@ -164,7 +164,9 @@ func (s *IntegrationTestSuiteBase) RegisterCleanup(containers ...string) {
 		// if resources are already gone.
 		containers = append(containers, containerStatsName)
 		s.cleanupContainers(containers...)
-		if running, _ := s.Collector().IsRunning(); running {
+		// StopCollector is safe when collector isn't running, but the container must exist.
+		// This will ensure that logs are still written even when test setup fails
+		if exists, _ := s.Executor().ContainerExists("collector"); exists {
 			s.StopCollector()
 		}
 	})
