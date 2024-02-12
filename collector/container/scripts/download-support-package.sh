@@ -21,7 +21,7 @@ main() {
     # 302) to  the latter one. I'm NOT enabling curl redirects because this can potentially take us to untrusted locations
     # and I do not want to risk downloading kernel drivers from untrusted location.
     MODULE_VERSION=$(cat kernel-modules/MODULE_VERSION)
-    SUPPORT_PKG_VERSION="20240201232339"
+    SUPPORT_PKG_VERSION="20240209164910"
     support_pkg="https://cdn.stackrox.io/collector/support-packages/x86_64/${MODULE_VERSION}/support-pkg-${MODULE_VERSION}-${SUPPORT_PKG_VERSION}.zip"
 
     zip_file="$(basename "${support_pkg}")"
