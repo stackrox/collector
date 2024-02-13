@@ -149,51 +149,51 @@ func (c *CollectorManager) getAllContainers() (string, error) {
 	return containers, err
 }
 
-func (c *CollectorManager) launchCollector() error {
-	cmd := []string{RuntimeCommand, "run",
-		"--name", "collector",
-		"--privileged",
-		"--network=host"}
-
-	if !c.bootstrapOnly {
-		cmd = append(cmd, "-d")
+func (c *CollectorManager) createCollectorStartConfig() (ContainerStartConfig, error) {
+	coreDumpErr := c.SetCoreDumpPath(c.coreDumpPath)
+	if coreDumpErr != nil {
+		return ContainerStartConfig{}, coreDumpErr
 	}
 
-	for dst, src := range c.mounts {
-		mount := src + ":" + dst
-		if src == "" {
-			// allows specification of anonymous volumes
-			mount = dst
-		}
-		cmd = append(cmd, "-v", mount)
-	}
-
-	for k, v := range c.env {
-		cmd = append(cmd, "--env", k+"="+v)
+	startConfig := ContainerStartConfig{
+		Name:        "collector",
+		Image:       config.Images().CollectorImage(),
+		Privileged:  true,
+		NetworkMode: "host",
+		Mounts:      c.mounts,
+		Env:         c.env,
 	}
 
 	configJson, err := json.Marshal(c.config)
 	if err != nil {
-		return err
+		return ContainerStartConfig{}, err
 	}
-
-	cmd = append(cmd, "--env", "COLLECTOR_CONFIG="+string(configJson))
-	cmd = append(cmd, config.Images().CollectorImage())
+	startConfig.Env["COLLECTOR_CONFIG"] = string(configJson)
 
 	if c.bootstrapOnly {
-		cmd = append(cmd, "exit", "0")
+		startConfig.Command = []string{"exit", "0"}
 	}
 
-	output, err := c.executor.Exec(cmd...)
-	c.CollectorOutput = output
+	return startConfig, nil
+}
 
+func (c *CollectorManager) launchCollector() error {
+	startConfig, err := c.createCollectorStartConfig()
+	if err != nil {
+		return err
+	}
+	output, err := c.executor.StartContainer(startConfig)
+	c.CollectorOutput = output
+	if err != nil {
+		return err
+	}
 	outLines := strings.Split(output, "\n")
 	c.ContainerID = ContainerShortID(string(outLines[len(outLines)-1]))
 	return err
 }
 
 func (c *CollectorManager) captureLogs(containerName string) (string, error) {
-	logs, err := c.executor.Exec(RuntimeCommand, "logs", containerName)
+	logs, err := c.executor.GetContainerLogs(containerName)
 	if err != nil {
 		log.Error(RuntimeCommand+" logs error (%v) for container %s\n", err, containerName)
 		return "", err

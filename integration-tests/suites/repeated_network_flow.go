@@ -68,12 +68,17 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	time.Sleep(10 * time.Second)
 
 	// invokes default nginx
-	containerID, err := s.launchContainer("nginx", image_store.ImageByKey("nginx"))
+	containerID, err := s.startContainer(common.ContainerStartConfig{
+		Name:  "nginx",
+		Image: image_store.ImageByKey("nginx")})
 	s.Require().NoError(err)
 	s.ServerContainer = containerID[0:12]
 
 	// invokes another container
-	containerID, err = s.launchContainer("nginx-curl", scheduled_curls_image, "sleep", "300")
+	containerID, err = s.startContainer(common.ContainerStartConfig{
+		Name:    "nginx-curl",
+		Image:   scheduled_curls_image,
+		Command: []string{"sleep", "300"}})
 	s.Require().NoError(err)
 	s.ClientContainer = containerID[0:12]
 

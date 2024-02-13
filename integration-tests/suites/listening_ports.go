@@ -33,7 +33,10 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 
 	processImage := getProcessListeningOnPortsImage()
 
-	containerID, err := s.launchContainer("process-ports", "-v", "/tmp:/tmp", processImage)
+	containerID, err := s.startContainer(common.ContainerStartConfig{
+		Name:   "process-ports",
+		Image:  processImage,
+		Mounts: map[string]string{"/tmp": "/tmp"}})
 	s.Require().NoError(err)
 
 	s.serverContainer = common.ContainerShortID(containerID)

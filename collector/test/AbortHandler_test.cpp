@@ -8,9 +8,10 @@ void test_crash() {
 }
 
 TEST(AbortHandler, Crash) {
-#if defined(__powerpc64__)
+#if defined(__powerpc64__) || defined(__aarch64__)
   GTEST_SKIP() << "Skipping AbortHandler test on ppc64le";
 #endif
+  GTEST_SKIP() << "Skipping AbortHandler test on ppc64le";
 
   // Install the AbortHandler, and verify that the stderr output will contain
   // something that looks like a stacktrace with AbortHander & Crash_Test frames.

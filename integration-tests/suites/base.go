@@ -186,9 +186,7 @@ func (s *IntegrationTestSuiteBase) GetContainerStats() []ContainerStat {
 		logLines := strings.Split(logs, "\n")
 		for _, line := range logLines {
 			var stat ContainerStat
-
 			_ = json.Unmarshal([]byte(line), &stat)
-
 			s.stats = append(s.stats, stat)
 		}
 
@@ -258,6 +256,10 @@ func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) []string {
 	return logLines
 }
 
+func (s *IntegrationTestSuiteBase) startContainer(startConfig common.ContainerStartConfig) (string, error) {
+	return s.Executor().StartContainer(startConfig)
+}
+
 func (s *IntegrationTestSuiteBase) launchContainer(name string, args ...string) (string, error) {
 	cmd := []string{common.RuntimeCommand, "run", "-d", "--name", name}
 	cmd = append(cmd, args...)
@@ -280,12 +282,6 @@ func (s *IntegrationTestSuiteBase) waitForContainerStatus(
 	timeoutThreshold time.Duration,
 	filter string) (bool, error) {
 
-	cmd := []string{
-		common.RuntimeCommand, "ps", "-qa",
-		"--filter", "id=" + containerID,
-		"--filter", filter,
-	}
-
 	start := time.Now()
 	tick := time.Tick(tickSeconds)
 	tickElapsed := time.Tick(1 * time.Minute)
@@ -298,15 +294,13 @@ func (s *IntegrationTestSuiteBase) waitForContainerStatus(
 	for {
 		select {
 		case <-tick:
-			output, err := s.Executor().Exec(cmd...)
-			outLines := strings.Split(output, "\n")
-			lastLine := outLines[len(outLines)-1]
-			if lastLine == common.ContainerShortID(containerID) {
-				return true, nil
-			}
+			found, err := s.Executor().IsContainerFoundFiltered(containerID, filter)
 			if err != nil {
 				log.Error("Retrying waitForContainerStatus(%s, %s): Error: %v\n",
 					containerName, containerID, err)
+			}
+			if found {
+				return true, nil
 			}
 		case <-timeout:
 			log.Error("Timed out waiting for container %s to become %s, elapsed Time: %s\n",
@@ -327,28 +321,14 @@ func (s *IntegrationTestSuiteBase) waitForContainerStatus(
 func (s *IntegrationTestSuiteBase) findContainerHealthCheck(
 	containerName string,
 	containerID string) (bool, error) {
-
-	cmd := []string{
-		common.RuntimeCommand, "inspect", "-f",
-		"'{{ .Config.Healthcheck }}'", containerID,
-	}
-
-	output, err := s.Executor().Exec(cmd...)
+	healthcheck, err := s.Executor().GetContainerHealthCheck(containerName)
 	if err != nil {
 		return false, err
 	}
 
-	outLines := strings.Split(output, "\n")
-	lastLine := outLines[len(outLines)-1]
-
-	// Clearly no HealthCheck section
-	if lastLine == "<nil>" {
-		return false, nil
-	}
-
 	// If doesn't contain an expected command, do not consider it to be a valid
 	// health check
-	if strings.Contains(lastLine, "CMD-SHELL /usr/local/bin/status-check.sh") {
+	if strings.Contains(healthcheck, "CMD-SHELL /usr/local/bin/status-check.sh") {
 		return true, nil
 	} else {
 		return false, nil
@@ -376,15 +356,13 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(
 }
 
 func (s *IntegrationTestSuiteBase) execContainer(containerName string, command []string) (string, error) {
-	cmd := []string{common.RuntimeCommand, "exec", containerName}
-	cmd = append(cmd, command...)
-	return s.Executor().Exec(cmd...)
+	return s.Executor().ExecContainer(containerName, command)
 }
 
 func (s *IntegrationTestSuiteBase) execContainerShellScript(containerName string, shell string, script string, args ...string) (string, error) {
-	cmd := []string{common.RuntimeCommand, "exec", "-i", containerName, shell, "-s"}
+	cmd := []string{shell, "-s"}
 	cmd = append(cmd, args...)
-	return s.Executor().ExecWithStdin(script, cmd...)
+	return s.Executor().ExecContainer(containerName, cmd)
 }
 
 func (s *IntegrationTestSuiteBase) cleanupContainers(containers ...string) {
@@ -410,31 +388,15 @@ func (s *IntegrationTestSuiteBase) removeContainers(containers ...string) {
 }
 
 func (s *IntegrationTestSuiteBase) containerLogs(containerName string) (string, error) {
-	return s.Executor().Exec(common.RuntimeCommand, "logs", containerName)
+	return s.Executor().GetContainerLogs(containerName)
 }
 
 func (s *IntegrationTestSuiteBase) getIPAddress(containerName string) (string, error) {
-	stdoutStderr, err := s.Executor().Exec(common.RuntimeCommand, "inspect", "--format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'", containerName)
-	return strings.Replace(string(stdoutStderr), "'", "", -1), err
+	return s.Executor().GetContainerIP(containerName)
 }
 
 func (s *IntegrationTestSuiteBase) getPort(containerName string) (string, error) {
-	stdoutStderr, err := s.Executor().Exec(common.RuntimeCommand, "inspect", "--format='{{json .NetworkSettings.Ports}}'", containerName)
-	if err != nil {
-		return "", err
-	}
-	rawString := strings.Trim(string(stdoutStderr), "'\n")
-	var portMap map[string]interface{}
-	err = json.Unmarshal([]byte(rawString), &portMap)
-	if err != nil {
-		return "", err
-	}
-
-	for k := range portMap {
-		return strings.Split(k, "/")[0], nil
-	}
-
-	return "", fmt.Errorf("no port mapping found: %v %v", rawString, portMap)
+	return s.Executor().GetContainerPort(containerName)
 }
 
 func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
@@ -444,13 +406,11 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	err := s.Executor().PullImage(benchmarkImage)
 	s.Require().NoError(err)
 
-	benchmarkArgs := []string{
-		"--env", "FORCE_TIMES_TO_RUN=1",
-		benchmarkImage,
-		"batch-benchmark", "collector",
-	}
-
-	containerID, err := s.launchContainer(benchmarkName, benchmarkArgs...)
+	containerID, err := s.startContainer(common.ContainerStartConfig{
+		Name:    benchmarkName,
+		Image:   benchmarkImage,
+		Env:     map[string]string{"FORCE_TIMES_TO_RUN": "1"},
+		Command: []string{"batch-benchmark", "collector"}})
 	s.Require().NoError(err)
 
 	_, err = s.waitForContainerToExit(benchmarkName, containerID, defaultWaitTickSeconds, 0)
@@ -472,13 +432,15 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
 	image := config.Images().QaImageByKey("performance-stats")
-	args := []string{"-v", common.RuntimeSocket + ":/var/run/docker.sock", image}
-
 	err := s.Executor().PullImage(image)
 	s.Require().NoError(err)
 
-	_, err = s.launchContainer(containerStatsName, args...)
+	_, err = s.startContainer(common.ContainerStartConfig{
+		Name:   containerStatsName,
+		Image:  image,
+		Mounts: map[string]string{"/var/run/docker.sock": common.RuntimeSocket}})
 	s.Require().NoError(err)
+
 }
 
 func (s *IntegrationTestSuiteBase) waitForFileToBeDeleted(file string) error {

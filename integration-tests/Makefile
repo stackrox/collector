@@ -67,7 +67,7 @@ ci-benchmarks: benchmark
 
 .PHONY: docker-clean
 docker-clean:
-	docker rm -fv container-stats benchmark collector grpc-server 2>/dev/null || true
+	docker rm -fv container-stats benchmark collector grpc-server nginx nginx-curl jsonlabel 2>/dev/null || true
 
 .PHONY:
 benchmark: TestBenchmarkCollector
