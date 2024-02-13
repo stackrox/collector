@@ -204,11 +204,11 @@ func (e *executor) IsContainerRunning(containerID string) (bool, error) {
 }
 
 func (e *executor) ContainerExists(container string) (bool, error) {
-	result, err := e.Exec(RuntimeCommand, "ps", "-aq", "--format=id="+container)
+	_, err := e.ExecWithoutRetry(RuntimeCommand, "inspect", container)
 	if err != nil {
 		return false, err
 	}
-	return strconv.ParseBool(strings.Trim(result, "\"'"))
+	return true, nil
 }
 
 func (e *executor) ExitCode(containerID string) (int, error) {
