@@ -79,7 +79,7 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
     inspector_->set_import_users(config.ImportUsers());
     inspector_->set_thread_timeout_s(30);
     inspector_->set_thread_purge_interval_s(60);
-    inspector_->m_thread_manager->set_max_thread_table_size(524288);
+    inspector_->m_thread_manager->set_max_thread_table_size(config.GetSinspThreadCacheSize());
 
     // Connection status tracking is used in NetworkSignalHandler,
     // but only when trying to handle asynchronous connections
