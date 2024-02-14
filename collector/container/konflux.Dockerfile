@@ -120,8 +120,8 @@ COPY kernel-modules/MODULE_VERSION MODULE_VERSION.txt
 RUN mkdir -p "/staging/kernel-modules/$(cat MODULE_VERSION.txt)"
 # First, unpack upstream support package, only on x86_64
 RUN if [[ "$(uname -m)" == x86_64 ]]; then unzip support-pkg.zip ; fi
-# Fail non-scratch build if there were no drivers matching the module version.
-RUN if [[ "$(uname -m)" == x86_64 && "$(ls -A /staging/kernel-modules/$(cat MODULE_VERSION.txt))" == "" && "$(unzip -Z1 support-pkg.zip)" != "dummy-support-pkg" ]] ; then \
+# Fail build if there were no drivers in the support package matching the module version.
+RUN if [[ "$(uname -m)" == x86_64 && "$(ls -A /staging/kernel-modules/$(cat MODULE_VERSION.txt))" == "" ]] ; then \
       >&2 echo "Did not find any kernel drivers for the module version $(cat MODULE_VERSION.txt) in the support package"; \
       exit 1; \
     fi
