@@ -108,7 +108,6 @@ RUN ./download-support-package.sh
 # Do NOT use follow_tag here, as we do not need or want collector to be rebuilt
 # with each drivers build (which may become very frequent)
 FROM brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0 AS drivers-build
-# FROM registry-proxy.engineering.redhat.com/rh-osbs/rhacs-drivers-build-rhel8:0.1.0 AS drivers-build
 
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS unpacker
