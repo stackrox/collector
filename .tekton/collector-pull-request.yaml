@@ -237,7 +237,16 @@ spec:
             image: registry.access.redhat.com/ubi8-minimal:latest
             script: |
               #!/usr/bin/env bash
-              "$(workspaces.source.path)/source/collector/container/scripts/download-support-package.sh" \
+
+              set -x
+
+              pwd
+              ls -lisa
+
+              ls -lisa "$(workspaces.source.path)"
+              ls -lisa "$(workspaces.source.path)/source"
+              cd "$(workspaces.source.path)/source"
+              collector/container/scripts/download-support-package.sh \
                 "$(workspaces.source.path)/source/staging"
       workspaces:
       - name: source
