@@ -38,7 +38,7 @@ spec:
   # TODO(ROX-20234): Enable hermetic builds
   # - name: hermetic
   #   value: "true"
-  # No language dependencies are required for central-db image.
+  # No language dependencies are required for collector image.
   - name: prefetch-input
     value: ''
 
