@@ -118,12 +118,15 @@ WORKDIR /staging
 COPY --from=support-packages-downloader /staging/support-pkg.zip /staging/
 COPY kernel-modules/MODULE_VERSION MODULE_VERSION.txt
 RUN mkdir -p "/staging/kernel-modules/$(cat MODULE_VERSION.txt)"
+
 # First, unpack upstream support package, only on x86_64
-RUN if [[ "$(uname -m)" == x86_64 ]]; then unzip support-pkg.zip ; fi
-# Fail build if there were no drivers in the support package matching the module version.
-RUN if [[ "$(uname -m)" == x86_64 && "$(ls -A /staging/kernel-modules/$(cat MODULE_VERSION.txt))" == "" ]] ; then \
-      >&2 echo "Did not find any kernel drivers for the module version $(cat MODULE_VERSION.txt) in the support package"; \
-      exit 1; \
+RUN if [[ "$(uname -m)" == x86_64 ]]; then \
+        unzip support-pkg.zip \
+        # Fail build if there were no drivers in the support package matching the module version.
+        if [[ "$(ls -A /staging/kernel-modules/$(cat MODULE_VERSION.txt))" == "" ]] ; then \
+            >&2 echo "Did not find any kernel drivers for the module version $(cat MODULE_VERSION.txt) in the support package"; \
+            exit 1 \
+        fi \
     fi
 
 # Next, import modules from downstream build, which take priority over upstream, on non-x86 architectures
