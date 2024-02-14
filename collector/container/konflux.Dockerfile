@@ -138,8 +138,7 @@ RUN mkdir /kernel-modules
 # Move files for the current version to /kernel-modules
 RUN find "/staging/kernel-modules/$(cat MODULE_VERSION.txt)/" -type f -exec mv -t /kernel-modules {} +
 # Fail the build if at the end there were no drivers matching the module version.
-RUN if [[ "$(ls -A /kernel-modules)" == "" && \
-        !("$(uname -m)" == x86_64 && "$(unzip -Z1 support-pkg.zip)" == "dummy-support-pkg") ]]; then \
+RUN if [[ "$(ls -A /kernel-modules)" == "" ]]; then \
         >&2 echo "Did not find any kernel drivers for the module version $(cat MODULE_VERSION.txt)."; \
         exit 1; \
     fi
