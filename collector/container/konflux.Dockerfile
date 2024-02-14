@@ -117,7 +117,6 @@ WORKDIR /staging
 
 COPY --from=support-packages-downloader /staging/support-pkg.zip /staging/
 COPY kernel-modules/MODULE_VERSION MODULE_VERSION.txt
-# Creating this directory ensures the scratch build with dummy support-pkg.zip will not fail.
 RUN mkdir -p "/staging/kernel-modules/$(cat MODULE_VERSION.txt)"
 # First, unpack upstream support package, only on x86_64
 RUN if [[ "$(uname -m)" == x86_64 ]]; then unzip support-pkg.zip ; fi
