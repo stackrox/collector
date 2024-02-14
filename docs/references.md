@@ -63,6 +63,12 @@ are there. This parameter affects CO-RE BPF only.
 * `ROX_COLLECTOR_SINSP_BUFFER_SIZE`: Specifies the size of a sinsp buffer in
 bytes. The default value is 16 MB.
 
+* `ROX_COLLECTOR_SINSP_THREAD_CACHE_SIZE`: Puts upper limit on how many
+thread info objects are going to be kept in memory. Since for process-based
+workloads it's the main part of memory consumption, this value effectively
+translates into the upper limit for memory usage. Note, that Falco puts it's
+own upper limit on top of that, which is 2^17.
+
 NOTE: Using environment variables is a preferred way of configuring Collector,
 so if you're adding a new configuration knob, keep this in mind.
 
