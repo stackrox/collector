@@ -330,6 +330,7 @@ bool SysdigService::GetStats(SysdigStats* stats) const {
   stats->nEvents = kernel_stats.n_evts;
   stats->nDrops = kernel_stats.n_drops;
   stats->nPreemptions = kernel_stats.n_preemptions;
+  stats->nThreadCacheSize = inspector_->m_thread_manager->get_thread_count();
 
   return true;
 }
