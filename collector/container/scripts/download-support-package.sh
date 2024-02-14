@@ -2,7 +2,7 @@
 
 ## Adapted from https://gitlab.cee.redhat.com/stackrox/rhacs-midstream/-/blob/rhacs-1.0-rhel-8/distgit/containers/rhacs-collector/pre-build-script
 
-set -euxo pipefail
+set -euo pipefail
 
 verify_downloaded_file() {
     file=$1
@@ -14,6 +14,8 @@ verify_downloaded_file() {
 }
 
 main() {
+    TARGET_DIR="$1"
+
     # TODO(ROX-22429): Set up process for Fast Stream Releases to update the support package version.
     # Make sure to update this URL when releasing the new version of ACS.
     # Get the most current link at https://cdn.stackrox.io/collector/support-packages/index.html
@@ -37,13 +39,14 @@ main() {
     curl --fail --location --max-redirs 0 --output "${zip_file}" "${support_pkg}"
     curl --fail --location --max-redirs 0 --output "${zip_file}.sha256" "${support_pkg}.sha256"
 
-    verify_downloaded_file "$zip_file"
+    verify_downloaded_file "${zip_file}"
     verify_downloaded_file "${zip_file}.sha256"
 
     sha256sum -c "${zip_file}.sha256"
 
     # Rename the support package so the docker build can find it in the same place every build.
-    mv "$zip_file" "support-pkg.zip"
+    mkdir -p "${TARGET_DIR}"
+    mv "${zip_file}" "${TARGET_DIR}/support-pkg.zip"
 }
 
-main
+main "$@"

@@ -96,15 +96,6 @@ RUN ./builder/install/install-dependencies.sh && \
     ctest -V --test-dir ${CMAKE_BUILD_DIR} && \
     strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS support-packages-downloader
-
-WORKDIR /staging
-
-COPY kernel-modules/MODULE_VERSION kernel-modules/MODULE_VERSION
-COPY collector/container/scripts/download-support-package.sh download-support-package.sh
-
-RUN ./download-support-package.sh
-
 # 0.1.0 is a floating tag and it's used intentionally to pick up the most recent downstream drivers build without
 # having to routinely and frequently bump tags here.
 FROM brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0 AS drivers-build
@@ -115,18 +106,16 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS unpacker
 RUN microdnf install -y unzip findutils
 WORKDIR /staging
 
-COPY --from=support-packages-downloader /staging/support-pkg.zip /staging/
+COPY staging/support-pkg.zip /staging/
 COPY kernel-modules/MODULE_VERSION MODULE_VERSION.txt
 RUN mkdir -p "/staging/kernel-modules/$(cat MODULE_VERSION.txt)"
 
 # First, unpack upstream support package, only on x86_64
-RUN if [[ "$(uname -m)" == x86_64 ]]; then \
-        unzip support-pkg.zip \
-        # Fail build if there were no drivers in the support package matching the module version.
-        if [[ "$(ls -A /staging/kernel-modules/$(cat MODULE_VERSION.txt))" == "" ]] ; then \
-            >&2 echo "Did not find any kernel drivers for the module version $(cat MODULE_VERSION.txt) in the support package"; \
-            exit 1 \
-        fi \
+RUN if [[ "$(uname -m)" == x86_64 ]]; then unzip support-pkg.zip ; fi
+# Fail build if there were no drivers in the support package matching the module version.
+RUN if [[ "$(uname -m)" == x86_64 && "$(ls -A /staging/kernel-modules/$(cat MODULE_VERSION.txt))" == "" ]] ; then \
+      >&2 echo "Did not find any kernel drivers for the module version $(cat MODULE_VERSION.txt) in the support package"; \
+      exit 1; \
     fi
 
 # Next, import modules from downstream build, which take priority over upstream, on non-x86 architectures

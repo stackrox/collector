@@ -180,6 +180,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+
     - name: clone-repository
       params:
       - name: url
@@ -206,6 +207,7 @@ spec:
         workspace: workspace
       - name: basic-auth
         workspace: git-auth
+
     - name: prefetch-dependencies
       params:
       - name: input
@@ -221,6 +223,22 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+      workspaces:
+      - name: source
+        workspace: workspace
+
+    - name: fetch-support-package
+      runAfter:
+      - init
+      - clone-repository
+      taskSpec:
+        steps:
+          - name: fetch-support-package
+            image: registry.access.redhat.com/ubi8-minimal:latest
+            script: |
+              #!/usr/bin/env bash
+              "$(workspaces.source.path)/source/collector/container/scripts/download-support-package.sh" \
+                "$(workspaces.source.path)/source/staging"
       workspaces:
       - name: source
         workspace: workspace
@@ -243,6 +261,7 @@ spec:
         value: $(tasks.clone-repository.results.commit)
       runAfter:
       - prefetch-dependencies
+      - fetch-support-package
       taskRef:
         params:
         - name: name
