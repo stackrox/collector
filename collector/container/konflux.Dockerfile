@@ -105,8 +105,8 @@ COPY collector/container/scripts/download-support-package.sh download-support-pa
 
 RUN ./download-support-package.sh
 
-# Do NOT use follow_tag here, as we do not need or want collector to be rebuilt
-# with each drivers build (which may become very frequent)
+# 0.1.0 is a floating tag and it's used intentionally to pick up the most recent downstream drivers build without
+# having to routinely and frequently bump tags here.
 FROM brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0 AS drivers-build
 
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
