@@ -41,6 +41,8 @@ spec:
   # No language dependencies are required for collector image.
   - name: prefetch-input
     value: ''
+  - name: clone-submodules
+    value: 'true'
 
   workspaces:
   - name: workspace
@@ -142,6 +144,9 @@ spec:
       description: Image tag expiration time, time values could be something like
         1h, 2d, 3w for hours, days, and weeks, respectively.
       name: image-expires-after
+    - default: "true"
+      description: Initialize and fetch git submodules during cloning of repository.
+      name: clone-submodules
     results:
     - description: ""
       name: IMAGE_URL
@@ -180,12 +185,15 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+
     - name: clone-repository
       params:
       - name: url
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
+      - name: submodules
+        value: $(params.clone-submodules)
       runAfter:
       - init
       taskRef:
@@ -206,6 +214,7 @@ spec:
         workspace: workspace
       - name: basic-auth
         workspace: git-auth
+
     - name: prefetch-dependencies
       params:
       - name: input
@@ -221,6 +230,24 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+      workspaces:
+      - name: source
+        workspace: workspace
+
+    - name: fetch-support-package
+      runAfter:
+      - init
+      - clone-repository
+      taskSpec:
+        steps:
+          - name: fetch-support-package
+            image: registry.access.redhat.com/ubi8-minimal:latest
+            script: |
+              #!/usr/bin/env bash
+
+              cd "$(workspaces.source.path)/source"
+              collector/container/scripts/download-support-package.sh \
+                "$(workspaces.source.path)/source/staging"
       workspaces:
       - name: source
         workspace: workspace
@@ -243,6 +270,7 @@ spec:
         value: $(tasks.clone-repository.results.commit)
       runAfter:
       - prefetch-dependencies
+      - fetch-support-package
       taskRef:
         params:
         - name: name
