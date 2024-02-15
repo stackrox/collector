@@ -238,13 +238,6 @@ spec:
             script: |
               #!/usr/bin/env bash
 
-              set -x
-
-              pwd
-              ls -lisa
-
-              ls -lisa "$(workspaces.source.path)"
-              ls -lisa "$(workspaces.source.path)/source"
               cd "$(workspaces.source.path)/source"
               collector/container/scripts/download-support-package.sh \
                 "$(workspaces.source.path)/source/staging"
