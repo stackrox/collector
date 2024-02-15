@@ -47,6 +47,8 @@ main() {
     # Rename the support package so the docker build can find it in the same place every build.
     mkdir -p "${TARGET_DIR}"
     mv "${zip_file}" "${TARGET_DIR}/support-pkg.zip"
+    
+    echo "Saved support package as ${TARGET_DIR}/support-pkg.zip"
 }
 
 main "$@"
