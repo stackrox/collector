@@ -119,7 +119,6 @@ RUN if [[ "$(uname -m)" == x86_64 && "$(ls -A /staging/kernel-modules/$(cat MODU
     fi
 
 # Next, import modules from downstream build, which take priority over upstream, on non-x86 architectures
-# TODO(ROX-13563): find a way to not have to separately pull in the support package and downstream-built drivers.
 COPY --from=drivers-build /kernel-modules /staging/downstream
 RUN if [[ "$(uname -m)" != x86_64 ]]; then \
       cp -r /staging/downstream/. /staging/kernel-modules/ ; \
