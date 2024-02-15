@@ -41,6 +41,8 @@ spec:
   # No language dependencies are required for collector image.
   - name: prefetch-input
     value: ''
+  - name: clone-submodules
+    value: 'true'
 
   workspaces:
   - name: workspace
@@ -142,6 +144,9 @@ spec:
       description: Image tag expiration time, time values could be something like
         1h, 2d, 3w for hours, days, and weeks, respectively.
       name: image-expires-after
+    - default: "true"
+      description: Initialize and fetch git submodules during cloning of repository.
+      name: clone-submodules
     results:
     - description: ""
       name: IMAGE_URL
@@ -187,6 +192,8 @@ spec:
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
+      - name: submodules
+        value: $(params.clone-submodules)
       runAfter:
       - init
       taskRef:
