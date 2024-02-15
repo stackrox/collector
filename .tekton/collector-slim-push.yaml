@@ -21,7 +21,7 @@ spec:
 
   params:
   - name: dockerfile
-    value: collector/container/rhtap-slim.Dockerfile
+    value: collector/container/konflux-slim.Dockerfile
   - name: git-url
     value: '{{repo_url}}'
   - name: image-expires-after
