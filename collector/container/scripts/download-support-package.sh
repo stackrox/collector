@@ -32,7 +32,7 @@ main() {
 
     # This downloads the support package with all collector kernel drivers (probes) built upstream.
     # Eventually this needs to go away and we should build kernel drivers downstream.
-    # See https://stack-rox.atlassian.net/browse/RS-230
+    # See https://issues.redhat.com/browse/ROX-11373
     #
     # Utilizing curl with "--fail --location --max-redirs 0" ensures failure
     # on redirect attempt because we don't expect any.
@@ -47,7 +47,7 @@ main() {
     # Rename the support package so the docker build can find it in the same place every build.
     mkdir -p "${TARGET_DIR}"
     mv "${zip_file}" "${TARGET_DIR}/support-pkg.zip"
-    
+
     echo "Saved support package as ${TARGET_DIR}/support-pkg.zip"
 }
 
