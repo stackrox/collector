@@ -30,6 +30,8 @@ main() {
 
     zip_file="$(basename "${support_pkg}")"
 
+    cd "${TARGET_DIR}"
+
     # This downloads the support package with all collector kernel drivers (probes) built upstream.
     # Eventually this needs to go away and we should build kernel drivers downstream.
     # See https://issues.redhat.com/browse/ROX-11373
@@ -45,10 +47,10 @@ main() {
     sha256sum -c "${zip_file}.sha256"
 
     # Rename the support package so the docker build can find it in the same place every build.
-    mkdir -p "${TARGET_DIR}"
-    mv "${zip_file}" "${TARGET_DIR}/support-pkg.zip"
+    mkdir -p "staging"
+    mv "${zip_file}" "staging/support-pkg.zip"
 
-    echo "Saved support package as ${TARGET_DIR}/support-pkg.zip"
+    echo "Saved support package as ${TARGET_DIR}/staging/support-pkg.zip"
 }
 
 main "$@"
