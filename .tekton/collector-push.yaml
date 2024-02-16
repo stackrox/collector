@@ -247,7 +247,7 @@ spec:
 
               "$(workspaces.source.path)/source/collector/container/scripts/download-support-package.sh" \
                 "$(workspaces.source.path)/source/staging" \
-                "$(cat $(workspaces.source.path)/source/kernel-modules/MODULE_VERSION)"
+                "$(cat "$(workspaces.source.path)/source/kernel-modules/MODULE_VERSION")"
       workspaces:
       - name: source
         workspace: workspace
