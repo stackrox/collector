@@ -15,6 +15,7 @@ verify_downloaded_file() {
 
 main() {
     TARGET_DIR="$1"
+    MODULE_VERSION="$2"
 
     # TODO(ROX-22429): Set up process for Fast Stream Releases to update the support package version.
     # Make sure to update this URL when releasing the new version of ACS.
@@ -24,7 +25,6 @@ main() {
     # Be sure to replace https://install.stackrox.io with https://cdn.stackrox.io because the former one redirects (status
     # 302) to  the latter one. I'm NOT enabling curl redirects because this can potentially take us to untrusted locations
     # and I do not want to risk downloading kernel drivers from untrusted location.
-    MODULE_VERSION=$(cat kernel-modules/MODULE_VERSION)
     SUPPORT_PKG_VERSION="20240209164910"
     support_pkg="https://cdn.stackrox.io/collector/support-packages/x86_64/${MODULE_VERSION}/support-pkg-${MODULE_VERSION}-${SUPPORT_PKG_VERSION}.zip"
 
