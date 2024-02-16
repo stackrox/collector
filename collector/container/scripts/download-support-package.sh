@@ -30,6 +30,7 @@ main() {
 
     zip_file="$(basename "${support_pkg}")"
 
+    mkdir -p "${TARGET_DIR}"
     cd "${TARGET_DIR}"
 
     # This downloads the support package with all collector kernel drivers (probes) built upstream.
@@ -47,10 +48,9 @@ main() {
     sha256sum -c "${zip_file}.sha256"
 
     # Rename the support package so the docker build can find it in the same place every build.
-    mkdir -p "staging"
-    mv "${zip_file}" "staging/support-pkg.zip"
+    mv "${zip_file}" "support-pkg.zip"
 
-    echo "Saved support package as ${TARGET_DIR}/staging/support-pkg.zip"
+    echo "Saved support package as ${TARGET_DIR}/support-pkg.zip"
 }
 
 main "$@"

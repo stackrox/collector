@@ -246,7 +246,7 @@ spec:
               #!/usr/bin/env bash
 
               collector/container/scripts/download-support-package.sh \
-                "$(workspaces.source.path)/source"
+                "$(workspaces.source.path)/source/staging"
       workspaces:
       - name: source
         workspace: workspace
