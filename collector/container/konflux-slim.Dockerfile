@@ -94,10 +94,7 @@ RUN ./builder/install/install-dependencies.sh && \
            -DTRACE_SINSP_EVENTS=${TRACE_SINSP_EVENTS} && \
     cmake --build ${CMAKE_BUILD_DIR} --target all -- -j "${NPROCS:-2}" && \
     ctest -V --test-dir ${CMAKE_BUILD_DIR} && \
-    strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector" && \
-    if [[ -f "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so" ]]; then \
-        strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so"; fi
-
+    strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
