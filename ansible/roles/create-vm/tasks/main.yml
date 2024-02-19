@@ -24,6 +24,7 @@
   set_fact:
     gcp_meta_data:
       user-data: "{{ vm_ignition | to_json }}"
+      ssh-keys: "{{ vm_user }}:{{ lookup('file', vm_ssh_key_file + '.pub') }}"
   when: vm_ignition != {}
 
 - set_fact:
