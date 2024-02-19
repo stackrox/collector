@@ -91,7 +91,3 @@ seconds. The default value is 30 seconds.
 
 * `--grpc-server`: GRPC server endpoint for Collector to communicate, in the
 form "host:port".
-
-## Supported systems
-
-## Glossary
