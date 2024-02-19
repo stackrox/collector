@@ -10,8 +10,11 @@ require (
 	github.com/stackrox/rox v0.0.0-20210914215712-9ac265932e28
 	github.com/stretchr/testify v1.8.4
 	github.com/thoas/go-funk v0.9.3
-	google.golang.org/grpc v1.58.0
+	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
+	golang.org/x/sys v0.13.0
+	google.golang.org/grpc v1.58.3
 	gopkg.in/yaml.v3 v3.0.1
+	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
 )
 
 require (
@@ -35,9 +38,7 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
-	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1 // indirect
-	golang.org/x/net v0.15.0 // indirect
-	golang.org/x/sys v0.12.0 // indirect
+	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/genproto v0.0.0-20230803162519-f966b187b2e5 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230803162519-f966b187b2e5 // indirect
@@ -45,7 +46,6 @@ require (
 	google.golang.org/protobuf v1.31.0 // indirect
 	k8s.io/apimachinery v0.27.4 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
-	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5 // indirect
 )
 
 replace (
