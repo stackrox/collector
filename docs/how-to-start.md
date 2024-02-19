@@ -237,5 +237,3 @@ gdb -ex "target extended-remote localhost:40000"\
 
 You should now be attached to a debug session. If you need to restart the session, you will need to recreate
 both the collector pod and the port-forwarding process.
-
-## Profiling
