@@ -27,6 +27,12 @@
       ssh-keys: "{{ vm_user }}:{{ lookup('file', vm_ssh_key_file + '.pub') }}"
   when: vm_ignition != {}
 
+- name: Set metadata
+  set_fact:
+    gcp_meta_data:
+      ssh-keys: "{{ vm_user }}:{{ lookup('file', vm_ssh_key_file + '.pub') }}"
+  when: vm_ignition == {}
+
 - set_fact:
     gcp_extra_labels:
       platform: "{{ vm_platform }}"
