@@ -293,6 +293,7 @@ Units: occurence
 | preemptions                            | Number of preemptions (?)                                                                           |
 | userspace[syscall]                     | Number of this kind of event                                                                        |
 | grpcSendFailures                       | (not used?)                                                                                         |
+| threadCacheSize                        | Number of thread-info entries stored in the thread cache (sampled every 5s)                         |
 | processSent                            | Process signal sent with success                                                                    |
 | processSendFailures                    | Failure upon sending a process signal                                                               |
 | processResolutionFailuresByEvt         | Count of invalid process signal events received, then ignored (invalid path or name, or not execve) |

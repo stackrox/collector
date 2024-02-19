@@ -273,6 +273,8 @@ void CollectorConfig::HandleSinspEnvVars() {
 
   sinsp_cpu_per_buffer_ = DEFAULT_CPU_FOR_EACH_BUFFER;
   sinsp_buffer_size_ = DEFAULT_DRIVER_BUFFER_BYTES_DIM;
+  // the default value for sinsp_thread_cache_size_ is not picked up from
+  // Falco, but set in the CollectorConfig class.
 
   if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_CPU_PER_BUFFER")) != NULL) {
     try {
@@ -289,6 +291,15 @@ void CollectorConfig::HandleSinspEnvVars() {
       CLOG(INFO) << "Sinsp buffer size: " << sinsp_buffer_size_;
     } catch (...) {
       CLOG(ERROR) << "Invalid buffer size value: '" << envvar << "'";
+    }
+  }
+
+  if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_THREAD_CACHE_SIZE")) != NULL) {
+    try {
+      sinsp_thread_cache_size_ = std::stoi(envvar);
+      CLOG(INFO) << "Sinsp thread cache size: " << sinsp_thread_cache_size_;
+    } catch (...) {
+      CLOG(ERROR) << "Invalid thread cache size value: '" << envvar << "'";
     }
   }
 }

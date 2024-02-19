@@ -94,10 +94,45 @@ RUN ./builder/install/install-dependencies.sh && \
            -DTRACE_SINSP_EVENTS=${TRACE_SINSP_EVENTS} && \
     cmake --build ${CMAKE_BUILD_DIR} --target all -- -j "${NPROCS:-2}" && \
     ctest -V --test-dir ${CMAKE_BUILD_DIR} && \
-    strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector" && \
-    if [[ -f "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so" ]]; then \
-        strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp/libsinsp-wrapper.so"; fi
+    strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
+# 0.1.0 is a floating tag and it's used intentionally to pick up the most recent downstream drivers build without
+# having to routinely and frequently bump tags here.
+FROM brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0 AS drivers-build
+
+# TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS unpacker
+
+RUN microdnf install -y unzip findutils
+WORKDIR /staging
+
+COPY staging/support-pkg.zip /staging/
+COPY kernel-modules/MODULE_VERSION MODULE_VERSION.txt
+RUN mkdir -p "/staging/kernel-modules/$(cat MODULE_VERSION.txt)"
+
+# First, unpack upstream support package, only on x86_64
+RUN if [[ "$(uname -m)" == x86_64 ]]; then unzip support-pkg.zip ; fi
+# Fail build if there were no drivers in the support package matching the module version.
+RUN if [[ "$(uname -m)" == x86_64 && "$(ls -A /staging/kernel-modules/$(cat MODULE_VERSION.txt))" == "" ]] ; then \
+      >&2 echo "Did not find any kernel drivers for the module version $(cat MODULE_VERSION.txt) in the support package"; \
+      exit 1; \
+    fi
+
+# Next, import modules from downstream build, which take priority over upstream, on non-x86 architectures
+COPY --from=drivers-build /kernel-modules /staging/downstream
+RUN if [[ "$(uname -m)" != x86_64 ]]; then \
+      cp -r /staging/downstream/. /staging/kernel-modules/ ; \
+    fi
+
+# Create destination for drivers.
+RUN mkdir /kernel-modules
+# Move files for the current version to /kernel-modules
+RUN find "/staging/kernel-modules/$(cat MODULE_VERSION.txt)/" -type f -exec mv -t /kernel-modules {} +
+# Fail the build if at the end there were no drivers matching the module version.
+RUN if [[ "$(ls -A /kernel-modules)" == "" ]]; then \
+        >&2 echo "Did not find any kernel drivers for the module version $(cat MODULE_VERSION.txt)."; \
+        exit 1; \
+    fi
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
@@ -110,14 +145,14 @@ ARG COLLECTOR_VERSION=0.0.1-todo
 ENV COLLECTOR_HOST_ROOT=/host
 
 LABEL \
-    com.redhat.component="rhacs-collector-slim-container" \
+    com.redhat.component="rhacs-collector-container" \
     com.redhat.license_terms="https://www.redhat.com/agreements" \
     description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
     io.k8s.description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
-    io.k8s.display-name="collector-slim" \
+    io.k8s.display-name="collector" \
     io.openshift.tags="rhacs,collector,stackrox" \
     maintainer="Red Hat, Inc." \
-    name="rhacs-collector-slim-rhel8" \
+    name="rhacs-collector-rhel8" \
     source-location="https://github.com/stackrox/collector" \
     summary="Runtime data collection for the StackRox Kubernetes Security Platform" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
@@ -130,6 +165,7 @@ RUN ./install.sh && rm -f install.sh
 
 COPY collector/container/scripts/collector-wrapper.sh /usr/local/bin/
 COPY collector/container/scripts/bootstrap.sh /
+COPY --from=unpacker /kernel-modules /kernel-modules
 COPY kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/

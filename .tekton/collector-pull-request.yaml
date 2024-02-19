@@ -13,22 +13,22 @@ metadata:
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: collector-slim
+    appstudio.openshift.io/component: collector
     pipelines.appstudio.openshift.io/type: build
-  name: collector-slim-on-pull-request
+  name: collector-on-pull-request
   namespace: rh-acs-tenant
 
 spec:
 
   params:
   - name: dockerfile
-    value: collector/container/konflux-slim.Dockerfile
+    value: collector/container/konflux.Dockerfile
   - name: git-url
     value: '{{repo_url}}'
   - name: image-expires-after
     value: '13w'
   - name: output-image
-    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/collector-slim:on-pr-{{revision}}
+    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/collector:on-pr-{{revision}}
   - name: path-context
     value: .
   - name: revision
@@ -41,7 +41,7 @@ spec:
   # No language dependencies are required for collector image.
   - name: prefetch-input
     value: ''
-  - name: build-source-image
+  - name: clone-submodules
     value: 'true'
 
   workspaces:
@@ -59,6 +59,10 @@ spec:
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
+
+  # The pipeline regularly takes >1h to finish.
+  timeouts:
+    pipeline: 1h30m0s
 
   pipelineSpec:
 
@@ -95,7 +99,6 @@ spec:
         - name: kind
           value: task
         resolver: bundles
-
     params:
     - description: Source Repository URL
       name: git-url
@@ -141,12 +144,9 @@ spec:
       description: Image tag expiration time, time values could be something like
         1h, 2d, 3w for hours, days, and weeks, respectively.
       name: image-expires-after
-      type: string
-    - default: "false"
-      description: Build a source image.
-      name: build-source-image
-      type: string
-
+    - default: "true"
+      description: Initialize and fetch git submodules during cloning of repository.
+      name: clone-submodules
     results:
     - description: ""
       name: IMAGE_URL
@@ -192,6 +192,8 @@ spec:
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
+      - name: submodules
+        value: $(params.clone-submodules)
       runAfter:
       - init
       taskRef:
@@ -232,6 +234,24 @@ spec:
       - name: source
         workspace: workspace
 
+    - name: fetch-support-package
+      runAfter:
+      - init
+      - clone-repository
+      taskSpec:
+        steps:
+          - name: fetch-support-package
+            image: registry.access.redhat.com/ubi8-minimal:latest
+            script: |
+              #!/usr/bin/env bash
+
+              "$(workspaces.source.path)/source/collector/container/scripts/download-support-package.sh" \
+                "$(workspaces.source.path)/source/staging" \
+                "$(cat "$(workspaces.source.path)/source/kernel-modules/MODULE_VERSION")"
+      workspaces:
+      - name: source
+        workspace: workspace
+
     - name: build-container
       params:
       - name: IMAGE
@@ -250,6 +270,7 @@ spec:
         value: $(tasks.clone-repository.results.commit)
       runAfter:
       - prefetch-dependencies
+      - fetch-support-package
       taskRef:
         params:
         - name: name
@@ -265,34 +286,6 @@ spec:
         values: [ "true" ]
       workspaces:
       - name: source
-        workspace: workspace
-
-    - name: build-source-image
-      params:
-      - name: BINARY_IMAGE
-        value: $(params.output-image)
-      - name: BASE_IMAGES
-        value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
-      runAfter:
-      - build-container
-      taskRef:
-        params:
-        - name: name
-          value: source-build
-        - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-source-build:0.1@sha256:3ad20adff4aa5cd153695b115133cb7c71c87f095af02fae5932396b1c72eb00
-        - name: kind
-          value: task
-        resolver: bundles
-      when:
-      - input: $(tasks.init.results.build)
-        operator: in
-        values: [ "true" ]
-      - input: $(params.build-source-image)
-        operator: in
-        values: [ "true" ]
-      workspaces:
-      - name: workspace
         workspace: workspace
 
     - name: inspect-image
@@ -324,8 +317,6 @@ spec:
       params:
       - name: BASE_IMAGES_DIGESTS
         value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
-      runAfter:
-      - build-container
       taskRef:
         params:
         - name: name
@@ -427,4 +418,3 @@ spec:
         values: [ "false" ]
 
 status: { }
-taskRunTemplate: { }

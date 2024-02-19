@@ -25,6 +25,7 @@ struct SysdigStats {
   volatile uint64_t nFilteredEvents[PPM_EVENT_MAX] = {0};   // events post filtering
   volatile uint64_t nUserspaceEvents[PPM_EVENT_MAX] = {0};  // events processed by userspace
   volatile uint64_t nGRPCSendFailures = 0;                  // number of signals that were not sent on GRPC
+  volatile uint64_t nThreadCacheSize = 0;                   // number of thread-info entries stored in the cache
 
   // process related metrics
   volatile uint64_t nProcessSent = 0;                       // number of process signals sent

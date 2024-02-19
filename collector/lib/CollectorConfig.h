@@ -79,6 +79,7 @@ class CollectorConfig {
   unsigned int GetConnectionStatsWindow() const { return connection_stats_window_; }
   unsigned int GetSinspBufferSize() const { return sinsp_buffer_size_; }
   unsigned int GetSinspCpuPerBuffer() const { return sinsp_cpu_per_buffer_; }
+  unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -112,6 +113,12 @@ class CollectorConfig {
   unsigned int sinsp_cpu_per_buffer_;
   // Size of one ring buffer, in bytes
   unsigned int sinsp_buffer_size_;
+
+  // Max size of the thread cache. This parameter essentially translated into
+  // the upper boundary for memory consumption. Note that Falco puts it's own
+  // upper limit on top of this value, m_thread_table_absolute_max_size, which
+  // is 2^17 (131072) and twice as large.
+  unsigned int sinsp_thread_cache_size_ = 65536;
 
   Json::Value tls_config_;
 
