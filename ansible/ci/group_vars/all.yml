@@ -1,6 +1,6 @@
 ---
 
-gcp_project: "stackrox-ci"
+gcp_project: "acs-san-stackroxci"
 gcp_auth_kind: "serviceaccount"
 gcp_service_account_file: /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
 gcp_instance_prefix: collector-ci
