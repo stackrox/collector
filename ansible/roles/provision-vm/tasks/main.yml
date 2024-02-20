@@ -20,6 +20,24 @@
 - debug:
     var: ansible_ssh_private_key_file
 
+- stat:
+    path: "{{ ansible_ssh_private_key_file }}"
+    checksum_algorithm: sha256
+    get_checksum: yes
+  register: priv_sha
+
+- stat:
+    path: "{{ ansible_ssh_private_key_file }}.pub"
+    checksum_algorithm: sha256
+    get_checksum: yes
+  register: pub_sha
+
+- debug:
+    var: priv_sha
+
+- debug:
+    var: pub_sha
+
 # Wait for SSH to be available on the remote host
 # This is agnostic of whether or not ansible is available at that end.
 - wait_for:
