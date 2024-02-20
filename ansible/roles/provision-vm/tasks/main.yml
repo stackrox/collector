@@ -25,12 +25,14 @@
     checksum_algorithm: sha256
     get_checksum: yes
   register: priv_sha
+  delegate_to: localhost
 
 - stat:
     path: "{{ ansible_ssh_private_key_file }}.pub"
     checksum_algorithm: sha256
     get_checksum: yes
   register: pub_sha
+  delegate_to: localhost
 
 - debug:
     var: priv_sha
