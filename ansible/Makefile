@@ -82,6 +82,11 @@ vm-local-dev:
 		-e job_id="$(JOB_ID)" \
 		local-development.yml
 
+# Useful for verifying access and availability of all VMs
+.PHONY: ping
+ping:
+	ansible -i $(CONTEXT) -m ping job_id_$(JOB_ID)
+
 .PHONY: secrets-config
 secrets.yml:
 	@echo "---" > secrets.yml
