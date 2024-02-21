@@ -115,11 +115,11 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
 
 sinsp_evt* SysdigService::GetNext() {
   std::lock_guard<std::mutex> lock(libsinsp_mutex_);
-  sinsp_evt* event;
+  sinsp_evt* event = nullptr;
 
   auto parse_start = NowMicros();
   auto res = inspector_->next(&event);
-  if (res != SCAP_SUCCESS) return nullptr;
+  if (res != SCAP_SUCCESS || event == nullptr) return nullptr;
 
 #ifdef TRACE_SINSP_EVENTS
   // Do not allow to change sinsp events tracing at runtime, as the output
