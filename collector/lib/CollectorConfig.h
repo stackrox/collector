@@ -118,7 +118,7 @@ class CollectorConfig {
   // the upper boundary for memory consumption. Note that Falco puts it's own
   // upper limit on top of this value, m_thread_table_absolute_max_size, which
   // is 2^17 (131072) and twice as large.
-  unsigned int sinsp_thread_cache_size_ = 65536;
+  unsigned int sinsp_thread_cache_size_ = 32768;
 
   Json::Value tls_config_;
 
