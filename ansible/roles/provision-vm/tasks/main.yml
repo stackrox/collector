@@ -25,6 +25,7 @@
     checksum_algorithm: sha256
     get_checksum: yes
   register: priv_sha
+  become: no
   delegate_to: localhost
 
 - stat:
@@ -32,6 +33,7 @@
     checksum_algorithm: sha256
     get_checksum: yes
   register: pub_sha
+  become: no
   delegate_to: localhost
 
 - debug:
