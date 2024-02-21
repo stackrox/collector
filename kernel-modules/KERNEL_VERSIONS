@@ -2071,6 +2071,7 @@
 4.15.0-2066-gcp-fips
 4.15.0-2067-aws-fips
 4.15.0-2067-azure-fips
+4.15.0-2067-gcp-fips
 4.15.0-2068-azure-fips
 4.15.0-2069-aws-fips
 4.15.0-207-generic
@@ -2117,6 +2118,7 @@
 4.15.0-2101-aws-fips
 4.15.0-2102-aws-fips
 4.15.0-2103-aws-fips
+4.15.0-2104-aws-fips
 4.15.0-211-generic
 4.15.0-211-generic~16.04
 4.15.0-212-generic
