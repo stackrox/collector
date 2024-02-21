@@ -43,6 +43,8 @@ spec:
     value: ''
   - name: clone-submodules
     value: 'true'
+  - name: build-source-image
+    value: 'true'
 
   workspaces:
   - name: workspace
@@ -147,6 +149,10 @@ spec:
     - default: "true"
       description: Initialize and fetch git submodules during cloning of repository.
       name: clone-submodules
+    - default: "false"
+      description: Build a source image.
+      name: build-source-image
+      type: string
     results:
     - description: ""
       name: IMAGE_URL
@@ -286,6 +292,34 @@ spec:
         values: [ "true" ]
       workspaces:
       - name: source
+        workspace: workspace
+
+    - name: build-source-image
+      params:
+      - name: BINARY_IMAGE
+        value: $(params.output-image)
+      - name: BASE_IMAGES
+        value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
+      runAfter:
+      - build-container
+      taskRef:
+        params:
+        - name: name
+          value: source-build
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/task-source-build:0.1@sha256:3ad20adff4aa5cd153695b115133cb7c71c87f095af02fae5932396b1c72eb00
+        - name: kind
+          value: task
+        resolver: bundles
+      when:
+      - input: $(tasks.init.results.build)
+        operator: in
+        values: [ "true" ]
+      - input: $(params.build-source-image)
+        operator: in
+        values: [ "true" ]
+      workspaces:
+      - name: workspace
         workspace: workspace
 
     - name: inspect-image
