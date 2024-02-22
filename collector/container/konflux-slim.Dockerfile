@@ -102,7 +102,7 @@ COPY --from=ubi-minimal / /mnt
 COPY ./.rhtap /tmp/.rhtap
 
 # TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
-RUN /tmp/.rhtap/scripts/subscription-manager-bro.sh register && \
+RUN /tmp/.rhtap/scripts/subscription-manager-bro.sh register /mnt && \
     dnf -y --installroot=/mnt upgrade --nobest && \
     dnf -y --installroot=/mnt install --nobest \
       kmod \
