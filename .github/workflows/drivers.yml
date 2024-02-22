@@ -25,6 +25,17 @@ env:
   DRIVERS_BUCKET: ${{ inputs.drivers-bucket }}
 
 jobs:
+  # This sentinel job exists such that this workflow call "runs" even
+  # if subsequent driver build steps are skipped. This means that other
+  # workflows can depend on this workflow and still run even if it is skipped
+  #
+  # This only affects release branches, so is limited to those.
+  sentinel:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref_name, 'release-')
+    steps:
+      - run: echo Drivers Build
+
   split-tasks:
     runs-on: ubuntu-latest
     if: |
