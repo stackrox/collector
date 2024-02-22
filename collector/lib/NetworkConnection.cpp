@@ -1,5 +1,11 @@
 #include "NetworkConnection.h"
 
+#include <netdb.h>
+
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+
 #include "Process.h"
 
 namespace collector {
@@ -50,6 +56,83 @@ std::ostream& operator<<(std::ostream& os, const Connection& conn) {
     os << "6";
   }
   return os << "]";
+}
+
+static bool parse_address(const char* address, struct sockaddr_storage& sockaddr) {
+  struct addrinfo hints = {.ai_flags = AI_NUMERICHOST, 0};
+  struct addrinfo* addrinfo = NULL;
+  bool success;
+
+  success = 0 == getaddrinfo(address, NULL, &hints, &addrinfo);
+
+  if (addrinfo && addrinfo->ai_addr) {
+    memcpy(&sockaddr, reinterpret_cast<struct sockaddr_storage*>(addrinfo->ai_addr), addrinfo->ai_addrlen);
+  } else {
+    success = false;
+  }
+
+  freeaddrinfo(addrinfo);
+
+  return success;
+}
+
+static Address::Family get_family(const struct sockaddr_storage& sockaddr) {
+  switch (sockaddr.ss_family) {
+    case AF_INET:
+      return Address::Family::IPV4;
+    case AF_INET6:
+      return Address::Family::IPV6;
+    default:
+      return Address::Family::UNKNOWN;
+  }
+}
+
+static const uint8_t* get_raw_address(const struct sockaddr_storage& sockaddr) {
+  switch (sockaddr.ss_family) {
+    case AF_INET:
+      return reinterpret_cast<const uint8_t*>(&reinterpret_cast<const struct sockaddr_in&>(sockaddr).sin_addr.s_addr);
+    case AF_INET6:
+      return reinterpret_cast<const uint8_t*>(reinterpret_cast<const struct sockaddr_in6&>(sockaddr).sin6_addr.s6_addr);
+    default:
+      return NULL;
+  }
+}
+
+std::optional<Address> Address::parse(const std::string& address_string) {
+  struct sockaddr_storage sockaddr;
+
+  if (parse_address(address_string.c_str(), sockaddr)) {
+    const uint8_t* raw_address = get_raw_address(sockaddr);
+    if (raw_address == NULL) {
+      return std::nullopt;
+    }
+    return Address(get_family(sockaddr), reinterpret_cast<const std::array<uint8_t, kMaxLen>&>(*raw_address));
+  }
+
+  return std::nullopt;
+}
+
+std::optional<IPNet> IPNet::parse(const std::string& ipnet_string) {
+  std::string_view address_string = ipnet_string;
+  unsigned int prefix_length = 0;
+
+  auto slash = address_string.find("/");
+
+  if (slash != std::string_view::npos) {
+    try {
+      prefix_length = std::stol(std::string(address_string.substr(slash + 1)));
+    } catch (...) {
+      return std::nullopt;
+    }
+    address_string.remove_suffix(address_string.size() - slash);
+  }
+
+  std::optional<Address> address = Address::parse(std::string(address_string));
+  if (!address) {
+    return std::nullopt;
+  }
+
+  return IPNet(address.value(), prefix_length, prefix_length != 0);
 }
 
 }  // namespace collector

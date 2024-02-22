@@ -29,18 +29,18 @@ jobs:
     needs:
       - benchmarks
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - uses: 'google-github-actions/auth@v1'
+      - uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
-      - uses: 'google-github-actions/setup-gcloud@v1'
+      - uses: 'google-github-actions/setup-gcloud@v2'
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: benchmark-logs
           path: ${{ github.workspace }}

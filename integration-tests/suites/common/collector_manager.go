@@ -46,11 +46,10 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 	}
 
 	env := map[string]string{
-		"GRPC_SERVER":                     "localhost:9999",
-		"COLLECTION_METHOD":               collectionMethod,
-		"COLLECTOR_PRE_ARGUMENTS":         collectorOptions.PreArguments,
-		"ENABLE_CORE_DUMP":                "false",
-		"ROX_COLLECTOR_CORE_BPF_HARDFAIL": "true",
+		"GRPC_SERVER":             "localhost:9999",
+		"COLLECTION_METHOD":       collectionMethod,
+		"COLLECTOR_PRE_ARGUMENTS": collectorOptions.PreArguments,
+		"ENABLE_CORE_DUMP":        "false",
 	}
 
 	if !collectorOptions.Offline {
@@ -221,8 +220,8 @@ func (c *CollectorManager) captureLogs(containerName string) (string, error) {
 }
 
 func (c *CollectorManager) killContainer(name string) error {
-	_, err1 := c.executor.Exec(RuntimeCommand, "kill", name)
-	_, err2 := c.executor.Exec(RuntimeCommand, "rm", "-fv", name)
+	_, err1 := c.executor.KillContainer(name)
+	_, err2 := c.executor.RemoveContainer(name)
 
 	var result error
 	if err1 != nil {
@@ -236,7 +235,7 @@ func (c *CollectorManager) killContainer(name string) error {
 }
 
 func (c *CollectorManager) stopContainer(name string) error {
-	_, err := c.executor.Exec(RuntimeCommand, "stop", name)
+	_, err := c.executor.StopContainer(name)
 	return err
 }
 

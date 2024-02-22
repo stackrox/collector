@@ -50,9 +50,9 @@ jobs:
         - ppc64le
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: docker/login-action@v2
+      - uses: docker/login-action@v3
         with:
           registry: brew.registry.redhat.io
           username: ${{ secrets.REDHAT_USERNAME }}
@@ -82,21 +82,21 @@ jobs:
           touch "${TMP_DIR}/FAILURES/.dummy"
 
       - name: Upload failure logs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: drivers-build-failures
+          name: drivers-build-failures-${{ matrix.platform }}
           if-no-files-found: ignore
           path: |
             ${{ env.FAILURES_DIR }}
           retention-days: 7
 
       - name: Authenticate with GCP
-        uses: 'google-github-actions/auth@v1'
+        uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
       - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v1'
+        uses: 'google-github-actions/setup-gcloud@v2'
 
       - name: Push drivers
         run : |
@@ -133,7 +133,7 @@ jobs:
           support-pkg-dir: ${{ env.SUPPORT_PACKAGE_TMP_DIR }}
 
       - name: Push support-packages
-        uses: 'google-github-actions/upload-cloud-storage@v1'
+        uses: 'google-github-actions/upload-cloud-storage@v2'
         if: matrix.platform != 'x86_64'
         with:
           path: ${{ env.SUPPORT_PACKAGE_TMP_DIR }}
@@ -141,28 +141,38 @@ jobs:
           destination: ${{ inputs.support-packages-bucket }}/${{ matrix.platform }}
 
       - name: Push support-packages to public bucket
-        uses: 'google-github-actions/upload-cloud-storage@v1'
+        uses: 'google-github-actions/upload-cloud-storage@v2'
         if: github.event_name != 'pull_request' && matrix.platform != 'x86_64'
         with:
           path: ${{ env.SUPPORT_PACKAGE_TMP_DIR }}
           parent: false
           destination: ${{ inputs.public-support-packages-bucket }}/${{ matrix.platform }}
 
+  merge-drivers-failures:
+    runs-on: ubuntu-latest
+    needs: sync-drivers
+    steps:
+      - name: Merge drivers failures
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: drivers-build-failures
+          pattern: drivers-build-failures-*
+
   update-index:
     runs-on: ubuntu-latest
     needs: sync-drivers
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Authenticate with GCP
-        uses: 'google-github-actions/auth@v1'
+        uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
       - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v1'
+        uses: 'google-github-actions/setup-gcloud@v2'
 
       - uses: ./.github/actions/support-package-metadata
         with:
@@ -175,14 +185,14 @@ jobs:
           output-path: /tmp/support-packages/output
 
       - name: Push index.html
-        uses: 'google-github-actions/upload-cloud-storage@v1'
+        uses: 'google-github-actions/upload-cloud-storage@v2'
         with:
           path: /tmp/support-packages/output/index.html
           parent: false
           destination: ${{ inputs.support-packages-index-bucket }}
 
       - name: Push index.html to public bucket
-        uses: 'google-github-actions/upload-cloud-storage@v1'
+        uses: 'google-github-actions/upload-cloud-storage@v2'
         if: github.event_name != 'pull_request'
         with:
           path: /tmp/support-packages/output/index.html
@@ -195,12 +205,12 @@ jobs:
     - sync-drivers
     steps:
       - name: Authenticate with GCP
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2
 
       - name: Copy files to merged bucket
         run: |

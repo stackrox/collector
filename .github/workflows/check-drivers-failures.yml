@@ -13,10 +13,10 @@ jobs:
   check-failures:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Restore failure files
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.logs-artifact }}
           path: /tmp/FAILURES

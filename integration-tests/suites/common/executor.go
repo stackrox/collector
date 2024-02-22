@@ -24,10 +24,15 @@ type Executor interface {
 	CopyFromHost(src string, dst string) (string, error)
 	PullImage(image string) error
 	IsContainerRunning(image string) (bool, error)
+	ContainerExists(container string) (bool, error)
 	ExitCode(container string) (int, error)
 	Exec(args ...string) (string, error)
+	ExecWithErrorCheck(errCheckFn func(string, error) error, args ...string) (string, error)
 	ExecWithStdin(pipedContent string, args ...string) (string, error)
-	ExecRetry(args ...string) (string, error)
+	ExecWithoutRetry(args ...string) (string, error)
+	KillContainer(name string) (string, error)
+	RemoveContainer(name string) (string, error)
+	StopContainer(name string) (string, error)
 }
 
 type CommandBuilder interface {
@@ -95,7 +100,7 @@ func NewExecutor() Executor {
 	return &e
 }
 
-// Execute provided command with retries on error.
+// Exec executes the provided command with retries on non-zero error from the command.
 func (e *executor) Exec(args ...string) (string, error) {
 	if args[0] == RuntimeCommand && RuntimeAsRoot {
 		args = append([]string{"sudo"}, args...)
@@ -105,25 +110,23 @@ func (e *executor) Exec(args ...string) (string, error) {
 	})
 }
 
-func (e *executor) ExecRetry(args ...string) (res string, err error) {
-	maxAttempts := 3
-	attempt := 0
-
+// ExecWithErrorCheck executes the provided command, retrying if an error occurs
+// and the command's output does not contain any of the accepted output contents.
+func (e *executor) ExecWithErrorCheck(errCheckFn func(string, error) error, args ...string) (string, error) {
 	if args[0] == RuntimeCommand && RuntimeAsRoot {
 		args = append([]string{"sudo"}, args...)
 	}
+	return RetryWithErrorCheck(errCheckFn, func() (string, error) {
+		return e.RunCommand(e.builder.ExecCommand(args...))
+	})
+}
 
-	for attempt < maxAttempts {
-		if attempt > 0 {
-			fmt.Printf("Retrying (%v) (%d of %d) Error: %v\n", args, attempt, maxAttempts, err)
-		}
-		attempt++
-		res, err = e.RunCommand(e.builder.ExecCommand(args...))
-		if err == nil {
-			break
-		}
+// ExecWithoutRetry executes provided command once, without retries.
+func (e *executor) ExecWithoutRetry(args ...string) (string, error) {
+	if args[0] == RuntimeCommand && RuntimeAsRoot {
+		args = append([]string{"sudo"}, args...)
 	}
-	return res, err
+	return e.RunCommand(e.builder.ExecCommand(args...))
 }
 
 func (e *executor) RunCommand(cmd *exec.Cmd) (string, error) {
@@ -188,16 +191,24 @@ func (e *executor) PullImage(image string) error {
 	if err == nil {
 		return nil
 	}
-	_, err = e.ExecRetry(RuntimeCommand, "pull", image)
+	_, err = e.Exec(RuntimeCommand, "pull", image)
 	return err
 }
 
 func (e *executor) IsContainerRunning(containerID string) (bool, error) {
-	result, err := e.Exec(RuntimeCommand, "inspect", containerID, "--format='{{.State.Running}}'")
+	result, err := e.ExecWithoutRetry(RuntimeCommand, "inspect", containerID, "--format='{{.State.Running}}'")
 	if err != nil {
 		return false, err
 	}
 	return strconv.ParseBool(strings.Trim(result, "\"'"))
+}
+
+func (e *executor) ContainerExists(container string) (bool, error) {
+	_, err := e.ExecWithoutRetry(RuntimeCommand, "inspect", container)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (e *executor) ExitCode(containerID string) (int, error) {
@@ -206,6 +217,42 @@ func (e *executor) ExitCode(containerID string) (int, error) {
 		return -1, err
 	}
 	return strconv.Atoi(strings.Trim(result, "\"'"))
+}
+
+// checkContainerCommandError returns nil if the output of the container
+// command indicates retries are not needed.
+func checkContainerCommandError(name string, cmd string, output string, err error) error {
+	for _, str := range []string{
+		"no such container",
+		"cannot " + cmd + " container",
+		"can only " + cmd + " running containers",
+	} {
+		if strings.Contains(strings.ToLower(output), strings.ToLower(str)) {
+			return nil
+		}
+	}
+	return err
+}
+
+func containerErrorCheckFunction(name string, cmd string) func(string, error) error {
+	return func(stdout string, err error) error {
+		return checkContainerCommandError(name, cmd, stdout, err)
+	}
+}
+
+// KillContainer runs the kill operation on the provided container name
+func (e *executor) KillContainer(name string) (string, error) {
+	return e.ExecWithErrorCheck(containerErrorCheckFunction(name, "kill"), RuntimeCommand, "kill", name)
+}
+
+// RemoveContainer runs the remove operation on the provided container name
+func (e *executor) RemoveContainer(name string) (string, error) {
+	return e.ExecWithErrorCheck(containerErrorCheckFunction(name, "remove"), RuntimeCommand, "rm", name)
+}
+
+// StopContainer runs the stop operation on the provided container name
+func (e *executor) StopContainer(name string) (string, error) {
+	return e.ExecWithErrorCheck(containerErrorCheckFunction(name, "stop"), RuntimeCommand, "stop", name)
 }
 
 func (e *localCommandBuilder) ExecCommand(execArgs ...string) *exec.Cmd {

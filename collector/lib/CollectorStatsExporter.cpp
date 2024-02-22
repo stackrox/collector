@@ -115,6 +115,7 @@ void CollectorStatsExporter::run() {
   auto& preemptions = collectorEventCounters.Add({{"type", "preemptions"}});
   auto& userspaceEvents = collectorEventCounters.Add({{"type", "userspace"}});
   auto& grpcSendFailures = collectorEventCounters.Add({{"type", "grpcSendFailures"}});
+  auto& threadTableSize = collectorEventCounters.Add({{"type", "threadCacheSize"}});
 
   auto& processSent = collectorEventCounters.Add({{"type", "processSent"}});
   auto& processSendFailures = collectorEventCounters.Add({{"type", "processSendFailures"}});
@@ -213,6 +214,7 @@ void CollectorStatsExporter::run() {
     kernel.Set(stats.nEvents);
     drops.Set(stats.nDrops);
     preemptions.Set(stats.nPreemptions);
+    threadTableSize.Set(stats.nThreadCacheSize);
 
     uint64_t nUserspace = 0;
     for (int i = 0; i < PPM_EVENT_MAX; i++) {

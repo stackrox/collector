@@ -28,6 +28,5 @@ func (s *ImageLabelJSONTestSuite) TestRunImageWithJSONLabel() {
 }
 
 func (s *ImageLabelJSONTestSuite) TearDownSuite() {
-	s.StopCollector()
-	s.cleanupContainers("json-label")
+	s.cleanupContainers("jsonlabel")
 }

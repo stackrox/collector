@@ -56,7 +56,7 @@ services:
     environment:
       - GRPC_SERVER=localhost:9999
       - COLLECTOR_CONFIG={"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}
-      - COLLECTION_METHOD=ebpf
+      - COLLECTION_METHOD=core-bpf
       - MODULE_DOWNLOAD_BASE_URL=https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656
       - MODULE_VERSION=b6745d795b8497aaf387843dc8aa07463c944d3ad67288389b754daaebea4b62
       - COLLECTOR_HOST_ROOT=/host
@@ -237,5 +237,3 @@ gdb -ex "target extended-remote localhost:40000"\
 
 You should now be attached to a debug session. If you need to restart the session, you will need to recreate
 both the collector pod and the port-forwarding process.
-
-## Profiling

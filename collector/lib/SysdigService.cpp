@@ -79,7 +79,7 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
     inspector_->set_import_users(config.ImportUsers());
     inspector_->set_thread_timeout_s(30);
     inspector_->set_thread_purge_interval_s(60);
-    inspector_->m_thread_manager->set_max_thread_table_size(524288);
+    inspector_->m_thread_manager->set_max_thread_table_size(config.GetSinspThreadCacheSize());
 
     // Connection status tracking is used in NetworkSignalHandler,
     // but only when trying to handle asynchronous connections
@@ -115,11 +115,11 @@ bool SysdigService::InitKernel(const CollectorConfig& config, const DriverCandid
 
 sinsp_evt* SysdigService::GetNext() {
   std::lock_guard<std::mutex> lock(libsinsp_mutex_);
-  sinsp_evt* event;
+  sinsp_evt* event = nullptr;
 
   auto parse_start = NowMicros();
   auto res = inspector_->next(&event);
-  if (res != SCAP_SUCCESS) return nullptr;
+  if (res != SCAP_SUCCESS || event == nullptr) return nullptr;
 
 #ifdef TRACE_SINSP_EVENTS
   // Do not allow to change sinsp events tracing at runtime, as the output
@@ -170,7 +170,9 @@ bool SysdigService::FilterEvent(const sinsp_threadinfo* tinfo) {
   }
 
   // exclude runc events
-  if (tinfo->m_exepath == "runc" && tinfo->m_comm == "6") {
+  if ((tinfo->m_exepath == "runc" ||
+       tinfo->m_exepath == "/usr/bin/runc") &&
+      tinfo->m_comm == "6") {
     return false;
   }
 
@@ -216,12 +218,12 @@ void LogUnreasonableEventTime(int64_t time_micros, sinsp_evt* evt) {
 
   time_diff = time_micros - evt_ts;
   if (time_diff > max_past_time) {
-    CLOG_THROTTLED(WARNING, std::chrono::seconds(10)) << "Event of type " << evt->get_type() << " is unreasonably old. It's timestamp is " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(evt_ts);
+    CLOG_THROTTLED(WARNING, std::chrono::seconds(1800)) << "Event of type " << evt->get_type() << " is unreasonably old. It's timestamp is " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(evt_ts);
     COUNTER_INC(CollectorStats::event_timestamp_distant_past);
   }
 
   if (time_diff < -max_future_time) {
-    CLOG_THROTTLED(WARNING, std::chrono::seconds(10)) << "Event of type " << evt->get_type() << " is in the future. It's timestamp is " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(evt_ts);
+    CLOG_THROTTLED(WARNING, std::chrono::seconds(1800)) << "Event of type " << evt->get_type() << " is in the future. It's timestamp is " << google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(evt_ts);
     COUNTER_INC(CollectorStats::event_timestamp_future);
   }
 }
@@ -328,6 +330,7 @@ bool SysdigService::GetStats(SysdigStats* stats) const {
   stats->nEvents = kernel_stats.n_evts;
   stats->nDrops = kernel_stats.n_drops;
   stats->nPreemptions = kernel_stats.n_preemptions;
+  stats->nThreadCacheSize = inspector_->m_thread_manager->get_thread_count();
 
   return true;
 }

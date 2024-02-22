@@ -37,7 +37,7 @@ jobs:
       KERNELS_FILE: ${{ github.workspace }}/kernel-modules/KERNEL_VERSIONS
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Patch files
         env:
@@ -60,12 +60,12 @@ jobs:
             /tmp
 
       - name: Authenticate with GCP
-        uses: 'google-github-actions/auth@v1'
+        uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
       - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v1'
+        uses: 'google-github-actions/setup-gcloud@v2'
 
       - name: Create a mock cache
         if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-cache') }}
@@ -122,7 +122,7 @@ jobs:
           ${{ github.workspace }}/kernel-modules/build/kernel-splitter.py
 
       - name: Store tasks and sources
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: tasks-and-sources
           if-no-files-found: ignore
@@ -144,18 +144,18 @@ jobs:
         builder: ${{ fromJSON(needs.split-tasks.outputs.parallel-array) }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Authenticate with GCP
-        uses: 'google-github-actions/auth@v1'
+        uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
       - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v1'
+        uses: 'google-github-actions/setup-gcloud@v2'
 
       - name: Restore tasks and sources
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: tasks-and-sources
           path: /tmp
@@ -225,7 +225,7 @@ jobs:
           done
 
       - name: Store built drivers
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: built-drivers
           path: /tmp/output
@@ -233,7 +233,7 @@ jobs:
           retention-days: 1
 
       - name: Store build failures
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: driver-build-failures
           path: /tmp/FAILURES

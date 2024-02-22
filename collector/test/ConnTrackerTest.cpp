@@ -154,6 +154,23 @@ TEST(ConnTrackerTest, TestUpdateIgnoredL4ProtoPortPairs) {
                          std::make_pair(conn_fe_normalized, ConnStatus(time_micros, true))));
 }
 
+TEST(ConnTrackerTest, TestUpdateIgnoredNetworks) {
+  Endpoint a(Address(192, 168, 1, 10), 9999);
+  Endpoint b(Address(169, 254, 0, 1), 80);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, false);
+
+  int64_t time_micros = 1000;
+
+  ConnectionTracker tracker;
+
+  tracker.UpdateIgnoredNetworks({IPNet(Address(169, 254, 0, 0), 16)});
+
+  tracker.Update({conn1}, {}, time_micros);
+
+  EXPECT_TRUE(tracker.FetchConnState().empty());
+}
+
 TEST(ConnTrackerTest, TestUpdateNormalized) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);

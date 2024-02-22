@@ -12,23 +12,23 @@ metadata:
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: collector-slim
+    appstudio.openshift.io/component: collector
     pipelines.appstudio.openshift.io/type: build
-  name: collector-slim-on-push
+  name: collector-on-push
   namespace: rh-acs-tenant
 
 spec:
 
   params:
   - name: dockerfile
-    value: collector/container/konflux-slim.Dockerfile
+    value: collector/container/konflux.Dockerfile
   - name: git-url
     value: '{{repo_url}}'
   - name: image-expires-after
     # TODO(ROX-20230): make release images not expire.
     value: '13w'
   - name: output-image
-    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/collector-slim:{{revision}}
+    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/collector:{{revision}}
   - name: path-context
     value: .
   - name: revision
@@ -41,6 +41,8 @@ spec:
   # No language dependencies are required for collector image.
   - name: prefetch-input
     value: ''
+  - name: clone-submodules
+    value: 'true'
   - name: build-source-image
     value: 'true'
 
@@ -59,6 +61,10 @@ spec:
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
+
+  # The pipeline regularly takes >1h to finish.
+  timeouts:
+    pipeline: 1h30m0s
 
   pipelineSpec:
 
@@ -95,7 +101,6 @@ spec:
         - name: kind
           value: task
         resolver: bundles
-
     params:
     - description: Source Repository URL
       name: git-url
@@ -141,12 +146,13 @@ spec:
       description: Image tag expiration time, time values could be something like
         1h, 2d, 3w for hours, days, and weeks, respectively.
       name: image-expires-after
-      type: string
     - default: "true"
+      description: Initialize and fetch git submodules during cloning of repository.
+      name: clone-submodules
+    - default: "false"
       description: Build a source image.
       name: build-source-image
       type: string
-
     results:
     - description: ""
       name: IMAGE_URL
@@ -192,6 +198,8 @@ spec:
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
+      - name: submodules
+        value: $(params.clone-submodules)
       runAfter:
       - init
       taskRef:
@@ -232,6 +240,24 @@ spec:
       - name: source
         workspace: workspace
 
+    - name: fetch-support-package
+      runAfter:
+      - init
+      - clone-repository
+      taskSpec:
+        steps:
+          - name: fetch-support-package
+            image: registry.access.redhat.com/ubi8-minimal:latest
+            script: |
+              #!/usr/bin/env bash
+
+              "$(workspaces.source.path)/source/collector/container/scripts/download-support-package.sh" \
+                "$(workspaces.source.path)/source/staging" \
+                "$(cat "$(workspaces.source.path)/source/kernel-modules/MODULE_VERSION")"
+      workspaces:
+      - name: source
+        workspace: workspace
+
     - name: build-container
       params:
       - name: IMAGE
@@ -250,6 +276,7 @@ spec:
         value: $(tasks.clone-repository.results.commit)
       runAfter:
       - prefetch-dependencies
+      - fetch-support-package
       taskRef:
         params:
         - name: name
@@ -324,8 +351,6 @@ spec:
       params:
       - name: BASE_IMAGES_DIGESTS
         value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
-      runAfter:
-      - build-container
       taskRef:
         params:
         - name: name
@@ -427,4 +452,3 @@ spec:
         values: [ "false" ]
 
 status: { }
-taskRunTemplate: { }

@@ -30,7 +30,7 @@ const (
 
 	containerStatsName = "container-stats"
 
-	defaultWaitTickSeconds = 30 * time.Second
+	defaultWaitTickSeconds = 5 * time.Second
 )
 
 type IntegrationTestSuiteBase struct {
@@ -84,7 +84,7 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *com
 		_, err := s.waitForContainerToBecomeHealthy(
 			"collector",
 			s.Collector().ContainerID,
-			defaultWaitTickSeconds, 1*time.Minute)
+			defaultWaitTickSeconds, 5*time.Minute)
 		s.Require().NoError(err)
 	} else {
 		fmt.Println("No HealthCheck found, do not wait for collector to become healthy")
@@ -164,7 +164,9 @@ func (s *IntegrationTestSuiteBase) RegisterCleanup(containers ...string) {
 		// if resources are already gone.
 		containers = append(containers, containerStatsName)
 		s.cleanupContainers(containers...)
-		if running, _ := s.Collector().IsRunning(); running {
+		// StopCollector is safe when collector isn't running, but the container must exist.
+		// This will ensure that logs are still written even when test setup fails
+		if exists, _ := s.Executor().ContainerExists("collector"); exists {
 			s.StopCollector()
 		}
 	})
@@ -259,9 +261,7 @@ func (s *IntegrationTestSuiteBase) launchContainer(name string, args ...string) 
 	cmd := []string{common.RuntimeCommand, "run", "-d", "--name", name}
 	cmd = append(cmd, args...)
 
-	output, err := common.Retry(func() (string, error) {
-		return s.Executor().Exec(cmd...)
-	})
+	output, err := s.Executor().Exec(cmd...)
 
 	outLines := strings.Split(output, "\n")
 	return outLines[len(outLines)-1], err
@@ -388,20 +388,20 @@ func (s *IntegrationTestSuiteBase) execContainerShellScript(containerName string
 
 func (s *IntegrationTestSuiteBase) cleanupContainers(containers ...string) {
 	for _, container := range containers {
-		s.Executor().Exec(common.RuntimeCommand, "kill", container)
-		s.Executor().Exec(common.RuntimeCommand, "rm", container)
+		s.Executor().KillContainer(container)
+		s.Executor().RemoveContainer(container)
 	}
 }
 
 func (s *IntegrationTestSuiteBase) stopContainers(containers ...string) {
 	for _, container := range containers {
-		s.Executor().Exec(common.RuntimeCommand, "stop", "-t", config.StopTimeout(), container)
+		s.Executor().StopContainer(container)
 	}
 }
 
 func (s *IntegrationTestSuiteBase) removeContainers(containers ...string) {
 	for _, container := range containers {
-		s.Executor().Exec(common.RuntimeCommand, "rm", container)
+		s.Executor().RemoveContainer(container)
 	}
 }
 
