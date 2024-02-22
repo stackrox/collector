@@ -158,10 +158,7 @@ COPY --from=builder ${BUILD_DIR}/collector/container/scripts /
 RUN mv /collector-wrapper.sh /usr/local/bin/ && \
     chmod 700 bootstrap.sh && \
     echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
-    ldconfig && \
-    mkdir /kernel-modules
-
-COPY --from=builder ${BUILD_DIR}/kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
+    ldconfig
 
 EXPOSE 8080 9090
 
