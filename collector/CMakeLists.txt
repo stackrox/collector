@@ -31,6 +31,10 @@ if(TRACE_SINSP_EVENTS)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTRACE_SINSP_EVENTS")
 endif()
 
+if(DETAILED_METRICS)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDETAILED_METRICS")
+endif()
+
 set(FALCO_DIR ${PROJECT_SOURCE_DIR}/../falcosecurity-libs)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/proto)

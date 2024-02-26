@@ -113,7 +113,6 @@ void CollectorStatsExporter::run() {
   auto& kernel = collectorEventCounters.Add({{"type", "kernel"}});
   auto& drops = collectorEventCounters.Add({{"type", "drops"}});
   auto& preemptions = collectorEventCounters.Add({{"type", "preemptions"}});
-  auto& userspaceEvents = collectorEventCounters.Add({{"type", "userspace"}});
   auto& grpcSendFailures = collectorEventCounters.Add({{"type", "grpcSendFailures"}});
   auto& threadTableSize = collectorEventCounters.Add({{"type", "threadCacheSize"}});
 
@@ -143,6 +142,8 @@ void CollectorStatsExporter::run() {
     collector_counters[ct] = &(collector_counters_gauge.Add({{"type", CollectorStats::counter_type_to_name[ct]}}));
   }
 
+#ifdef DETAILED_METRICS
+  auto& userspaceEvents = collectorEventCounters.Add({{"type", "userspace"}});
   auto& collectorTypedEventCounters = prometheus::BuildGauge()
                                           .Name("rox_collector_events_typed")
                                           .Help("Collector events by event type")
@@ -157,6 +158,7 @@ void CollectorStatsExporter::run() {
                                           .Name("rox_collector_event_times_us_avg")
                                           .Help("Collector event timings (average)")
                                           .Register(*registry_);
+#endif
 
   auto& collectorProcessLineageInfo = prometheus::BuildGauge()
                                           .Name("rox_collector_process_lineage_info")
@@ -168,6 +170,7 @@ void CollectorStatsExporter::run() {
   prometheus::Gauge* lineage_std_dev = &collectorProcessLineageInfo.Add({{"type", "std_dev"}});
   prometheus::Gauge* lineage_avg_string_len = &collectorProcessLineageInfo.Add({{"type", "lineage_avg_string_len"}});
 
+#ifdef DETAILED_METRICS
   struct {
     prometheus::Gauge* userspace = nullptr;
 
@@ -204,6 +207,7 @@ void CollectorStatsExporter::run() {
     typed[i].process_micros_avg = &collectorTypedEventTimesAvg.Add(
         std::map<std::string, std::string>{{"step", "process"}, {"event_type", event_name}, {"event_dir", event_dir}});
   }
+#endif
 
   while (thread_.Pause(std::chrono::seconds(5))) {
     SysdigStats stats;
@@ -216,6 +220,7 @@ void CollectorStatsExporter::run() {
     preemptions.Set(stats.nPreemptions);
     threadTableSize.Set(stats.nThreadCacheSize);
 
+#ifdef DETAILED_METRICS
     uint64_t nUserspace = 0;
     for (int i = 0; i < PPM_EVENT_MAX; i++) {
       auto& counters = typed[i];
@@ -235,6 +240,7 @@ void CollectorStatsExporter::run() {
     }
 
     userspaceEvents.Set(nUserspace);
+#endif
 
     grpcSendFailures.Set(stats.nGRPCSendFailures);
 

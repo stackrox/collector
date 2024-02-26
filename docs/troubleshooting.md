@@ -323,7 +323,7 @@ Prometheus name: rox_collector_events_typed
 Units: microseconds
 ```
 
-For each syscall, and in each direction, the total time consummed by every step ("process", "parse") is available, as well as the computed average duration in micro-second.
+For each syscall, and in each direction, the total time consummed by every step ("process", "parse") is available, as well as the computed average duration in micro-second. These metrics are enabled only when `DETAILED_METRICS` option is on.
 
 ```
 rox_collector_event_times_us_total{event_dir="<",event_type="accept",step="process"} 45994
