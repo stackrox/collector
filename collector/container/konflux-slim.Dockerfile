@@ -128,15 +128,19 @@ LABEL \
     com.redhat.component="rhacs-collector-slim-container" \
     com.redhat.license_terms="https://www.redhat.com/agreements" \
     description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
+    distribution-scope="public" \
     io.k8s.description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
     io.k8s.display-name="collector-slim" \
     io.openshift.tags="rhacs,collector,stackrox" \
     maintainer="Red Hat, Inc." \
     name="rhacs-collector-slim-rhel8" \
+    # TODO(ROX-20236): release label is required by EC, figure what to put in the release version on rebuilds.
+    release="0" \
     source-location="https://github.com/stackrox/collector" \
     summary="Runtime data collection for the StackRox Kubernetes Security Platform" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
-    version=${COLLECTOR_VERSION}
+    version=${COLLECTOR_VERSION} \
+    vendor="Red Hat, Inc."
 
 ARG BUILD_DIR
 ARG CMAKE_BUILD_DIR
