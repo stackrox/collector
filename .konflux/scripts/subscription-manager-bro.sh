@@ -8,7 +8,7 @@
 set -euo pipefail
 
 SCRIPT_NAME="$(basename -- "${BASH_SOURCE[0]}")"
-SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
 SECRET_NAME_IN_KONFLUX="subscription-manager-activation-key"
 SECRET_KONFLUX_WORKSPACE_PATH="/workspace/${SECRET_NAME_IN_KONFLUX}"
@@ -30,10 +30,9 @@ TARGET_BACKUP_PATHS=(
     var/cache/ldconfig
 )
 
-
 function main {
-    if [[ "$#" == "0" ]] ; then
-        >&2 echo "Error: command is missing. See the usage below."
+    if [[ "$#" == "0" ]]; then
+            echo >&2 "Error: command is missing. See the usage below."
         usage
         exit 2
     fi
@@ -44,26 +43,32 @@ function main {
     local fn
 
     case "$cmd" in
-    "help" | "--help" | "-h")
-        fn=usage ;;
-    "smuggle")
-        fn=smuggle ;;
-    "register")
-        fn=register ;;
-    "cleanup")
-        fn=cleanup ;;
-    "self-test")
-        fn=self_test ;;
-    "diff")
-        fn=assert_diff ;;
-    *)
-        >&2 echo "Error: unknown command '$1'; call '$SCRIPT_NAME help' to see the usage."
-        exit 2
-        ;;
+        "help" | "--help" | "-h")
+            fn=usage
+                 ;;
+        "smuggle")
+            fn=smuggle
+                   ;;
+        "register")
+            fn=register
+                    ;;
+        "cleanup")
+            fn=cleanup
+                   ;;
+        "self-test")
+            fn=self_test
+                     ;;
+        "diff")
+            fn=assert_diff
+                       ;;
+        *)
+            echo >&2 "Error: unknown command '$1'; call '$SCRIPT_NAME help' to see the usage."
+            exit 2
+            ;;
     esac
 
     if [[ "$#" -gt "0" && "$cmd" != "diff" && "$cmd" != "register" ]]; then
-        >&2 echo "Error: too many arguments; call '$SCRIPT_NAME help' to see the usage."
+            echo >&2 "Error: too many arguments; call '$SCRIPT_NAME help' to see the usage."
         exit 2
     fi
 
@@ -117,24 +122,24 @@ function usage {
 }
 
 function smuggle {
-    mkdir -p "$(dirname "${SECRET_LOCAL_PATH}" )"
+    mkdir -p "$(dirname "${SECRET_LOCAL_PATH}")"
     cp --verbose "${SECRET_KONFLUX_WORKSPACE_PATH}/${SECRET_KEY}" "${SECRET_LOCAL_PATH}"
 }
 
 function register {
     if [[ ! -s "${SECRET_LOCAL_PATH}" ]]; then
-        >&2 echo "Error: it does not look like the activation key is present in ${SECRET_LOCAL_PATH}"
+            echo >&2 "Error: it does not look like the activation key is present in ${SECRET_LOCAL_PATH}"
         exit 3
     fi
     local secret
     secret="$(cat "${SECRET_LOCAL_PATH}")"
 
     if [[ "$#" -lt 1 ]]; then
-        >&2 echo "Error: target path(s) must be provided for the 'register' command."
+            echo >&2 "Error: target path(s) must be provided for the 'register' command."
         exit 2
     fi
 
-    local target_dirs=( "$@" )
+    local target_dirs=("$@")
 
     check_targets_and_store_paths_for_cleanup "${target_dirs[@]}"
 
@@ -170,17 +175,17 @@ function register {
 }
 
 function check_targets_and_store_paths_for_cleanup {
-    local target_dirs=( "$@" )
+    local target_dirs=("$@")
 
     for target_dir in "${target_dirs[@]}"; do
         if [[ ! -d "${target_dir}/etc" ]]; then
-            >&2 echo "Error: Looks like the target system is not placed at ${target_dir}"
+                echo >&2 "Error: Looks like the target system is not placed at ${target_dir}"
             exit 4
         fi
     done
 
     if [[ -f "${TARGETS_LIST_FILE}" ]]; then
-        >&2 echo "Error: ${TARGETS_LIST_FILE} already exists. Are you trying to register again without doing a cleanup?"
+            echo >&2 "Error: ${TARGETS_LIST_FILE} already exists. Are you trying to register again without doing a cleanup?"
         exit 5
     fi
 
@@ -254,7 +259,7 @@ function self_test {
 
 function assert_diff {
     if [[ "$#" != "2" ]]; then
-        >&2 echo "Error: expecting two arguments: expected and actual paths"
+            echo >&2 "Error: expecting two arguments: expected and actual paths"
         exit 2
     fi
 
@@ -265,7 +270,7 @@ function assert_diff {
     failed_check_file="$(mktemp)"
 
     echo "Comparing /etc"
-    if ! diff --brief --recursive --no-dereference --exclude='ld.so.cache' "$expected/etc" "$actual/etc" ; then
+    if ! diff --brief --recursive --no-dereference --exclude='ld.so.cache' "$expected/etc" "$actual/etc"; then
         echo 1 >> "$failed_check_file"
     fi
 
@@ -284,8 +289,8 @@ function assert_diff {
         echo '/var/cache(: |/)dnf'
     } >> "$var_exclusions"
 
-    if { diff --brief --recursive --no-dereference "$expected/var" "$actual/var" || true; } | \
-        grep -vEf "$var_exclusions" | { grep '.'; }; then
+    if { diff --brief --recursive --no-dereference "$expected/var" "$actual/var" || true; } \
+                                                                                            | grep -vEf "$var_exclusions" | { grep '.'; }; then
         echo 2 >> "$failed_check_file"
     fi
 
@@ -299,7 +304,7 @@ function assert_diff {
     done
 
     if [[ -s "$failed_check_file" ]]; then
-        >&2 echo "Error: differences detected"
+            echo >&2 "Error: differences detected"
         exit 6
     fi
 
