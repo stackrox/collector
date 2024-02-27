@@ -10,10 +10,10 @@ FROM registry.access.redhat.com/ubi8/ubi:latest AS ubi-normal
 FROM registry.access.redhat.com/ubi8/ubi:latest AS rpm-implanter-builder
 
 COPY --from=ubi-normal / /mnt
-COPY ./.rhtap /tmp/.rhtap
+COPY ./.konflux /tmp/.konflux
 
 # TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
-RUN /tmp/.rhtap/scripts/subscription-manager-bro.sh register /mnt && \
+RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
     dnf -y --installroot=/mnt upgrade --nobest && \
     dnf -y --installroot=/mnt install --nobest \
         make \
@@ -35,11 +35,8 @@ RUN /tmp/.rhtap/scripts/subscription-manager-bro.sh register /mnt && \
         tbb-devel \
         jq-devel \
         c-ares-devel && \
-    /tmp/.rhtap/scripts/subscription-manager-bro.sh cleanup && \
-    # We can do usual cleanup while we're here: remove packages that would trigger violations. \
-    dnf -y --installroot=/mnt clean all && \
-    rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
+    /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
+    dnf -y --installroot=/mnt clean all
 
 FROM scratch as builder
 
@@ -99,17 +96,17 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS ubi-minimal
 FROM ubi-normal AS rpm-implanter-app
 
 COPY --from=ubi-minimal / /mnt
-COPY ./.rhtap /tmp/.rhtap
+COPY ./.konflux /tmp/.konflux
 
 # TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
-RUN /tmp/.rhtap/scripts/subscription-manager-bro.sh register /mnt && \
+RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
     dnf -y --installroot=/mnt upgrade --nobest && \
     dnf -y --installroot=/mnt install --nobest \
       kmod \
       tbb \
       jq \
       c-ares && \
-    /tmp/.rhtap/scripts/subscription-manager-bro.sh cleanup && \
+    /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
     # We can do usual cleanup while we're here: remove packages that would trigger violations. \
     dnf -y --installroot=/mnt clean all && \
     rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
