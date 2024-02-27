@@ -276,7 +276,6 @@ spec:
       - name: COMMIT_SHA
         value: $(tasks.clone-repository.results.commit)
       runAfter:
-      - fetch-support-package
       - prefetch-dependencies
       - prepare-rhel-rpm-subscriptions
       taskRef:
