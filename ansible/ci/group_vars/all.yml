@@ -10,6 +10,7 @@ gcp_available_zones:
   - us-central1-c
   - us-central1-f
 ansible_user: runner
+gcp_network_name: collector-ci
 
 gcp_default_labels:
   stackrox-ci: "true"

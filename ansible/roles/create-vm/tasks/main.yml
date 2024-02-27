@@ -70,7 +70,7 @@
           source_image: "{{ gcp_source_image }}"
     network_interfaces:
       - network:
-          name: "default"
+          name: "{{ gcp_network_name }}"
         access_configs:
           - name: External NAT
             type: ONE_TO_ONE_NAT
