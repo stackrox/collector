@@ -3,9 +3,7 @@ ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
 
 # Builder
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-# TODO(ROX-20651): Use RHEL/ubi base image when entitlement is solved.
-# RPMs requiring entitlement: bpftool, cmake-3.18.2-9.el8, elfutils-libelf-devel, tbb-devel, c-ares-devel, jq-devel
-# FROM registry.access.redhat.com/ubi8/ubi:latest AS builder
+# TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available.
 FROM registry.access.redhat.com/ubi8/ubi:latest AS ubi-normal
 FROM registry.access.redhat.com/ubi8/ubi:latest AS rpm-implanter-builder
 
@@ -14,45 +12,27 @@ COPY ./.konflux /tmp/.konflux
 
 # TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
 RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
-    dnf upgrade -y --installroot=/mnt --nobest && \
+    dnf -y --installroot=/mnt upgrade --nobest && \
     dnf -y --installroot=/mnt install --nobest \
-        autoconf \
-        automake \
-        binutils-devel \
-        bison \
-        ca-certificates \
-        clang-15.0.7 \
-        cmake \
-        cracklib-dicts \
-        diffutils \
-        elfutils-libelf-devel \
-        file \
-        flex \
-        gcc \
-        gcc-c++ \
-        gdb \
-        gettext \
-        git \
-        glibc-devel \
-        libasan \
-        libubsan \
-        libcap-ng-devel \
-        libcurl-devel \
-        libtool \
-        libuuid-devel \
         make \
-        openssh-server \
-        openssl-devel \
-        patchutils \
-        passwd \
-        pkgconfig \
-        rsync \
-        tar \
-        unzip \
-        valgrind \
         wget \
-        which \
-        bpftool && \
+        unzip \
+        clang \
+        bpftool \
+        cmake-3.18.2-9.el8 \
+        gcc-c++ \
+        openssl-devel \
+        ncurses-devel \
+        curl-devel \
+        libuuid-devel \
+        libcap-ng-devel \
+        autoconf \
+        libtool \
+        git \
+        elfutils-libelf-devel \
+        tbb-devel \
+        jq-devel \
+        c-ares-devel && \
     /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
     dnf -y --installroot=/mnt clean all
 
@@ -157,8 +137,9 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
     dnf -y --installroot=/mnt upgrade --nobest && \
     dnf -y --installroot=/mnt install --nobest \
       kmod \
-      findutils \
-      elfutils-libelf && \
+      tbb \
+      jq \
+      c-ares && \
     /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
     # We can do usual cleanup while we're here: remove packages that would trigger violations. \
     dnf -y --installroot=/mnt clean all && \
@@ -169,40 +150,44 @@ FROM scratch
 
 COPY --from=rpm-implanter-app /mnt /
 
-ARG BUILD_DIR
-ARG CMAKE_BUILD_DIR
-
 # TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
 ARG COLLECTOR_VERSION=0.0.1-todo
 
-ENV COLLECTOR_HOST_ROOT=/host
+WORKDIR /
 
 LABEL \
     com.redhat.component="rhacs-collector-container" \
     com.redhat.license_terms="https://www.redhat.com/agreements" \
     description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
+    distribution-scope="public" \
     io.k8s.description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
     io.k8s.display-name="collector" \
     io.openshift.tags="rhacs,collector,stackrox" \
     maintainer="Red Hat, Inc." \
     name="rhacs-collector-rhel8" \
+    # TODO(ROX-20236): release label is required by EC, figure what to put in the release version on rebuilds.
+    release="0" \
     source-location="https://github.com/stackrox/collector" \
     summary="Runtime data collection for the StackRox Kubernetes Security Platform" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
-    version=${COLLECTOR_VERSION}
+    version=${COLLECTOR_VERSION} \
+    vendor="Red Hat, Inc."
 
-WORKDIR /
+ARG BUILD_DIR
+ARG CMAKE_BUILD_DIR
 
-COPY collector/container/scripts/collector-wrapper.sh /usr/local/bin/
-COPY collector/container/scripts/bootstrap.sh /
+ENV COLLECTOR_HOST_ROOT=/host
+
 COPY --from=unpacker /kernel-modules /kernel-modules
 COPY kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
+COPY --from=builder ${BUILD_DIR}/collector/container/scripts /
 
-RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
-    ldconfig && \
-    chmod 700 bootstrap.sh
+RUN mv /collector-wrapper.sh /usr/local/bin/ && \
+    chmod 700 bootstrap.sh && \
+    echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
+    ldconfig
 
 EXPOSE 8080 9090
 
