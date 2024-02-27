@@ -3,19 +3,15 @@ ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
 
 # Builder
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-# TODO(ROX-20651): Use RHEL/ubi base image when entitlement is solved.
-# RPMs requiring entitlement: bpftool, cmake-3.18.2-9.el8, elfutils-libelf-devel, tbb-devel, c-ares-devel, jq-devel
-# FROM registry.access.redhat.com/ubi8/ubi:latest AS builder
-FROM registry.access.redhat.com/ubi8/ubi:latest AS ubi-normal
-FROM registry.access.redhat.com/ubi8/ubi:latest AS rpm-implanter-builder
+# TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available.
+FROM registry.access.redhat.com/ubi8/ubi:latest AS builder
 
-COPY --from=ubi-normal / /mnt
-COPY ./.konflux /tmp/.konflux
+COPY . .
 
 # TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
-RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
-    dnf -y --installroot=/mnt upgrade --nobest && \
-    dnf -y --installroot=/mnt install --nobest \
+RUN ./.konflux/scripts/subscription-manager-bro.sh register && \
+    dnf -y upgrade --nobest && \
+    dnf -y install --nobest \
         make \
         wget \
         unzip \
@@ -35,14 +31,8 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
         tbb-devel \
         jq-devel \
         c-ares-devel && \
-    /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
-    dnf -y --installroot=/mnt clean all
-
-FROM scratch as builder
-
-COPY --from=rpm-implanter-builder /mnt /
-
-COPY . .
+    ./.konflux/scripts/subscription-manager-bro.sh cleanup && \
+    dnf -y clean all
 
 ARG BUILD_DIR
 ARG SRC_ROOT_DIR=${BUILD_DIR}
@@ -93,7 +83,7 @@ RUN ./builder/install/install-dependencies.sh && \
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS ubi-minimal
 # The installer must be ubi (not minimal) and must be 8.9 or later since the earlier versions complain:
 #  subscription-manager is disabled when running inside a container. Please refer to your host system for subscription management.
-FROM ubi-normal AS rpm-implanter-app
+FROM registry.access.redhat.com/ubi8/ubi:latest AS rpm-implanter-app
 
 COPY --from=ubi-minimal / /mnt
 COPY ./.konflux /tmp/.konflux
