@@ -13,8 +13,9 @@ COPY --from=ubi-normal / /mnt
 COPY ./.konflux /tmp/.konflux
 
 # TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
-RUN dnf upgrade -y --installroot=/mnt --nobest \
-    && dnf -y --installroot=/mnt install --nobest \
+RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
+    dnf upgrade -y --installroot=/mnt --nobest && \
+    dnf -y --installroot=/mnt install --nobest \
         autoconf \
         automake \
         binutils-devel \
