@@ -62,7 +62,6 @@ ARG COLLECTOR_APPEND_CID=false
 ARG USE_VALGRIND=false
 ARG ADDRESS_SANITIZER=false
 ARG TRACE_SINSP_EVENTS=false
-ARG DETAILED_METRICS=true
 
 WORKDIR ${BUILD_DIR}
 
@@ -92,8 +91,7 @@ RUN ./builder/install/install-dependencies.sh && \
            -DCOLLECTOR_APPEND_CID=${COLLECTOR_APPEND_CID} \
            -DUSE_VALGRIND=${USE_VALGRIND} \
            -DADDRESS_SANITIZER=${ADDRESS_SANITIZER} \
-           -DTRACE_SINSP_EVENTS=${TRACE_SINSP_EVENTS} \
-           -DDETAILED_METRICS=${DETAILED_METRICS} && \
+           -DTRACE_SINSP_EVENTS=${TRACE_SINSP_EVENTS} && \
     cmake --build ${CMAKE_BUILD_DIR} --target all -- -j "${NPROCS:-2}" && \
     ctest -V --test-dir ${CMAKE_BUILD_DIR} && \
     strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"

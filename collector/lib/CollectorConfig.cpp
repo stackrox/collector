@@ -44,6 +44,8 @@ BoolEnvVar enable_external_ips("ROX_ENABLE_EXTERNAL_IPS", false);
 
 BoolEnvVar enable_connection_stats("ROX_COLLECTOR_ENABLE_CONNECTION_STATS", true);
 
+BoolEnvVar enable_detailed_metrics("ROX_COLLECTOR_ENABLE_DETAILED_METRICS", true);
+
 }  // namespace
 
 constexpr bool CollectorConfig::kTurnOffScrape;
@@ -68,6 +70,7 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   collect_connection_status_ = collect_connection_status.value();
   enable_external_ips_ = enable_external_ips.value();
   enable_connection_stats_ = enable_connection_stats.value();
+  enable_detailed_metrics_ = enable_detailed_metrics.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.push_back(syscall);
@@ -353,6 +356,7 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << ", logLevel:" << c.LogLevel()
          << ", set_import_users:" << c.ImportUsers()
          << ", collect_connection_status:" << c.CollectConnectionStatus()
+         << ", enable_detailed_metrics:" << c.EnableDetailedMetrics()
          << ", enable_external_ips:" << c.EnableExternalIPs();
 }
 
