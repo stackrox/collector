@@ -217,7 +217,7 @@ spec:
       - name: basic-auth
         workspace: git-auth
 
-    - name: download-external-content
+    - name: prepare-rhel-rpm-subscriptions
       runAfter:
       - clone-repository
       workspaces:
@@ -237,7 +237,7 @@ spec:
       - name: input
         value: $(params.prefetch-input)
       runAfter:
-      - download-external-content
+      - prepare-rhel-rpm-subscriptions
       taskRef:
         params:
         - name: name
