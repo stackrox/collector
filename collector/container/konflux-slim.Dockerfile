@@ -3,9 +3,7 @@ ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
 
 # Builder
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-# TODO(ROX-20651): Use RHEL/ubi base image when entitlement is solved.
-# RPMs requiring entitlement: bpftool, cmake-3.18.2-9.el8, elfutils-libelf-devel, tbb-devel, c-ares-devel, jq-devel
-# FROM registry.access.redhat.com/ubi8/ubi:latest AS builder
+# TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available.
 FROM registry.access.redhat.com/ubi8/ubi:latest AS ubi-normal
 FROM registry.access.redhat.com/ubi8/ubi:latest AS rpm-implanter-builder
 
@@ -67,8 +65,6 @@ RUN mkdir kernel-modules \
     && cp -a /CMakeLists.txt CMakeLists.txt
 
 # WITH_RHEL_RPMS controls for dependency installation, ie if they were already installed as RPMs.
-# Setting the value to empty will cause dependencies to be downloaded from repositories or accessed in submodules and compiled.
-# TODO(ROX-20651): Set ENV WITH_RHEL_RPMS=true when RHEL RPMs can be installed to enable hermetic builds.
 ENV WITH_RHEL_RPMS=true
 
 # Build with gperftools (DISABLE_PROFILING=OFF) only for supported

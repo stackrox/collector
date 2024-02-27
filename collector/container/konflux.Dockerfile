@@ -1,17 +1,20 @@
 ARG BUILD_DIR=/build
 ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
 
+# Builder
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 # TODO(ROX-20651): Use RHEL/ubi base image when entitlement is solved.
 # RPMs requiring entitlement: bpftool, cmake-3.18.2-9.el8, elfutils-libelf-devel, tbb-devel, c-ares-devel, jq-devel
 # FROM registry.access.redhat.com/ubi8/ubi:latest AS builder
-FROM quay.io/centos/centos:stream8 AS builder
+FROM registry.access.redhat.com/ubi8/ubi:latest AS ubi-normal
+FROM registry.access.redhat.com/ubi8/ubi:latest AS rpm-implanter-builder
 
-COPY . .
+COPY --from=ubi-normal / /mnt
+COPY ./.konflux /tmp/.konflux
 
 # TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
-RUN dnf upgrade -y --nobest \
-    && dnf -y install --nobest \
+RUN dnf upgrade -y --installroot=/mnt --nobest \
+    && dnf -y --installroot=/mnt install --nobest \
         autoconf \
         automake \
         binutils-devel \
@@ -48,8 +51,15 @@ RUN dnf upgrade -y --nobest \
         valgrind \
         wget \
         which \
-        bpftool \
-    && dnf clean all
+        bpftool && \
+    /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
+    dnf -y --installroot=/mnt clean all
+
+FROM scratch as builder
+
+COPY --from=rpm-implanter-builder /mnt /
+
+COPY . .
 
 ARG BUILD_DIR
 ARG SRC_ROOT_DIR=${BUILD_DIR}
@@ -74,9 +84,7 @@ RUN mkdir kernel-modules \
     && cp -a /CMakeLists.txt CMakeLists.txt
 
 # WITH_RHEL_RPMS controls for dependency installation, ie if they were already installed as RPMs.
-# Setting the value to empty will cause dependencies to be downloaded from repositories or accessed in submodules and compiled.
-# TODO(ROX-20651): Set ENV WITH_RHEL_RPMS=true when RHEL RPMs can be installed to enable hermetic builds.
-# ENV WITH_RHEL_RPMS=true
+ENV WITH_RHEL_RPMS=true
 
 # Build with gperftools (DISABLE_PROFILING=OFF) only for supported
 # architectures, at the moment x86_64 only
@@ -134,7 +142,31 @@ RUN if [[ "$(ls -A /kernel-modules)" == "" ]]; then \
         exit 1; \
     fi
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+# Application
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS ubi-minimal
+# The installer must be ubi (not minimal) and must be 8.9 or later since the earlier versions complain:
+#  subscription-manager is disabled when running inside a container. Please refer to your host system for subscription management.
+FROM ubi-normal AS rpm-implanter-app
+
+COPY --from=ubi-minimal / /mnt
+COPY ./.konflux /tmp/.konflux
+
+# TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
+RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
+    dnf -y --installroot=/mnt upgrade --nobest && \
+    dnf -y --installroot=/mnt install --nobest \
+      kmod \
+      findutils \
+      elfutils-libelf && \
+    /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
+    # We can do usual cleanup while we're here: remove packages that would trigger violations. \
+    dnf -y --installroot=/mnt clean all && \
+    rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
+
+FROM scratch
+
+COPY --from=rpm-implanter-app /mnt /
 
 ARG BUILD_DIR
 ARG CMAKE_BUILD_DIR
@@ -159,9 +191,6 @@ LABEL \
     version=${COLLECTOR_VERSION}
 
 WORKDIR /
-
-COPY collector/container/rhel/install.sh /
-RUN ./install.sh && rm -f install.sh
 
 COPY collector/container/scripts/collector-wrapper.sh /usr/local/bin/
 COPY collector/container/scripts/bootstrap.sh /
