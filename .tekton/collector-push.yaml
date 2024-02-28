@@ -245,7 +245,7 @@ spec:
       - name: input
         value: $(params.prefetch-input)
       runAfter:
-      - prepare-rhel-rpm-subscriptions
+      - clone-repository
       taskRef:
         params:
         - name: name
@@ -261,7 +261,6 @@ spec:
 
     - name: fetch-support-package
       runAfter:
-      - init
       - clone-repository
       taskSpec:
         steps:
@@ -294,8 +293,9 @@ spec:
       - name: COMMIT_SHA
         value: $(tasks.clone-repository.results.commit)
       runAfter:
-      - prefetch-dependencies
       - fetch-support-package
+      - prefetch-dependencies
+      - prepare-rhel-rpm-subscriptions
       taskRef:
         params:
         - name: name
