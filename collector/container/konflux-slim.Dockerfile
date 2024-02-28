@@ -60,7 +60,7 @@ RUN mkdir kernel-modules \
     && cp -a /builder builder \
     && cp -a /collector collector \
     && cp -a /falcosecurity-libs falcosecurity-libs \
-    && cp -a /builder/third_party third_party \
+    && ln -s /builder/third_party third_party \
     && cp -a /kernel-modules/MODULE_VERSION kernel-modules/MODULE_VERSION \
     && cp -a /CMakeLists.txt CMakeLists.txt
 
@@ -87,8 +87,6 @@ RUN ./builder/install/install-dependencies.sh && \
 
 # Application
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS ubi-minimal
-# The installer must be ubi (not minimal) and must be 8.9 or later since the earlier versions complain:
-#  subscription-manager is disabled when running inside a container. Please refer to your host system for subscription management.
 FROM ubi-normal AS rpm-implanter-app
 
 COPY --from=ubi-minimal / /mnt
