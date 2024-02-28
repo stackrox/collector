@@ -40,7 +40,9 @@ FROM scratch as builder
 
 COPY --from=rpm-implanter-builder /mnt /
 
-COPY . .
+ARG SOURCES_DIR=/staging
+
+COPY . ${SOURCES_DIR}
 
 ARG BUILD_DIR
 ARG SRC_ROOT_DIR=${BUILD_DIR}
@@ -57,12 +59,12 @@ ARG TRACE_SINSP_EVENTS=false
 WORKDIR ${BUILD_DIR}
 
 RUN mkdir kernel-modules \
-    && cp -a /builder builder \
-    && cp -a /collector collector \
-    && cp -a /falcosecurity-libs falcosecurity-libs \
-    && ln -s /builder/third_party third_party \
-    && cp -a /kernel-modules/MODULE_VERSION kernel-modules/MODULE_VERSION \
-    && cp -a /CMakeLists.txt CMakeLists.txt
+    && cp -a ${SOURCES_DIR}/builder builder \
+    && ln -s builder/third_party third_party \
+    && cp -a ${SOURCES_DIR}/collector collector \
+    && cp -a ${SOURCES_DIR}/falcosecurity-libs falcosecurity-libs \
+    && cp -a ${SOURCES_DIR}/kernel-modules/MODULE_VERSION kernel-modules/MODULE_VERSION \
+    && cp -a ${SOURCES_DIR}/CMakeLists.txt CMakeLists.txt
 
 # WITH_RHEL_RPMS controls for dependency installation, ie if they were already installed as RPMs.
 ENV WITH_RHEL_RPMS=true
