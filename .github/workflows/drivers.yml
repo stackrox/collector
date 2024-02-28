@@ -73,7 +73,7 @@ jobs:
       - name: Authenticate with GCP
         uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT_ACS }}'
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v2'
@@ -160,7 +160,7 @@ jobs:
       - name: Authenticate with GCP
         uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT_ACS }}'
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v2'
