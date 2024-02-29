@@ -61,6 +61,9 @@ spec:
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
+  - name: subscription-manager-activation-key
+    secret:
+      secretName: subscription-manager-activation-key
 
   # The pipeline regularly takes >1h to finish.
   timeouts:
@@ -173,6 +176,7 @@ spec:
     workspaces:
     - name: workspace
     - name: git-auth
+    - name: subscription-manager-activation-key
 
     tasks:
 
@@ -221,6 +225,21 @@ spec:
       - name: basic-auth
         workspace: git-auth
 
+    - name: prepare-rhel-rpm-subscriptions
+      runAfter:
+      - clone-repository
+      workspaces:
+      - name: source
+        workspace: workspace
+      - name: subscription-manager-activation-key
+        workspace: subscription-manager-activation-key
+      taskSpec:
+        steps:
+        # TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available.
+        - name: smuggle-activation-key
+          image: registry.access.redhat.com/ubi8/ubi:latest
+          script: exec "$(workspaces.source.path)/source/.konflux/scripts/subscription-manager-bro.sh" smuggle
+
     - name: prefetch-dependencies
       params:
       - name: input
@@ -242,7 +261,6 @@ spec:
 
     - name: fetch-support-package
       runAfter:
-      - init
       - clone-repository
       taskSpec:
         steps:
@@ -275,8 +293,9 @@ spec:
       - name: COMMIT_SHA
         value: $(tasks.clone-repository.results.commit)
       runAfter:
-      - prefetch-dependencies
       - fetch-support-package
+      - prefetch-dependencies
+      - prepare-rhel-rpm-subscriptions
       taskRef:
         params:
         - name: name
