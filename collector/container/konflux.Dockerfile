@@ -100,11 +100,8 @@ WORKDIR /staging
 COPY kernel-modules/MODULE_VERSION MODULE_VERSION.txt
 RUN mkdir -p "/staging/kernel-modules/$(cat MODULE_VERSION.txt)"
 
-# Next, import modules from downstream build, which take priority over upstream, on non-x86 architectures
-COPY --from=drivers-build /kernel-modules /staging/downstream
-RUN if [[ "$(uname -m)" != x86_64 ]]; then \
-      cp -r /staging/downstream/. /staging/kernel-modules/ ; \
-    fi
+# import modules from downstream build.
+COPY --from=drivers-build /kernel-modules /staging/kernel-modules
 
 # Create destination for drivers.
 RUN mkdir /kernel-modules
