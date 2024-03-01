@@ -102,6 +102,8 @@ void CollectorService::RunForever() {
   sysdig_.Init(config_, conn_tracker);
   sysdig_.Start();
 
+  CLOG(INFO) << "Collector is Ready.";
+
   ControlValue cv;
   while ((cv = control_->load(std::memory_order_relaxed)) != STOP_COLLECTOR) {
     sysdig_.Run(*control_);

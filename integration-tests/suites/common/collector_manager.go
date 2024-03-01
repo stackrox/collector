@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"golang.org/x/exp/maps"
 
@@ -201,6 +202,25 @@ func (c *CollectorManager) launchCollector() error {
 	outLines := strings.Split(output, "\n")
 	c.ContainerID = ContainerShortID(string(outLines[len(outLines)-1]))
 	return err
+}
+
+func (c *CollectorManager) WaitUntilReady(tickSeconds time.Duration, maxWait time.Duration) error {
+
+	start := time.Now()
+	timeout := time.After(maxWait)
+	tick := time.Tick(tickSeconds)
+	for {
+		select {
+		case <-tick:
+			logs, _ := c.captureLogs("collector")
+			if strings.Contains(logs, "Collector is Ready") {
+				return nil
+			}
+		case <-timeout:
+			fmt.Printf("Timed out waiting for collector to be ready, elapsed Time: %s\n", time.Since(start))
+			return fmt.Errorf("Timed out waiting for collector to be ready, elapsed Time: %s\n", time.Since(start))
+		}
+	}
 }
 
 func (c *CollectorManager) captureLogs(containerName string) (string, error) {
