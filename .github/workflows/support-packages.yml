@@ -34,6 +34,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Cleanup runner disk space
+        run: |
+          # From https://github.com/actions/runner-images/issues/2840#issuecomment-790492173
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
