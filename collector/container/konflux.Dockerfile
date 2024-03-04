@@ -94,7 +94,7 @@ FROM brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0 AS drivers-
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS unpacker
 
-RUN microdnf install -y unzip findutils
+RUN microdnf install -y findutils
 WORKDIR /staging
 
 COPY kernel-modules/MODULE_VERSION MODULE_VERSION.txt
