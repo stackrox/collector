@@ -259,23 +259,6 @@ spec:
       - name: source
         workspace: workspace
 
-    - name: fetch-support-package
-      runAfter:
-      - clone-repository
-      taskSpec:
-        steps:
-          - name: fetch-support-package
-            image: registry.access.redhat.com/ubi8-minimal:latest
-            script: |
-              #!/usr/bin/env bash
-
-              "$(workspaces.source.path)/source/collector/container/scripts/download-support-package.sh" \
-                "$(workspaces.source.path)/source/staging" \
-                "$(cat "$(workspaces.source.path)/source/kernel-modules/MODULE_VERSION")"
-      workspaces:
-      - name: source
-        workspace: workspace
-
     - name: build-container
       params:
       - name: IMAGE
@@ -293,7 +276,6 @@ spec:
       - name: COMMIT_SHA
         value: $(tasks.clone-repository.results.commit)
       runAfter:
-      - fetch-support-package
       - prefetch-dependencies
       - prepare-rhel-rpm-subscriptions
       taskRef:

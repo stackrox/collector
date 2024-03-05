@@ -94,26 +94,14 @@ FROM brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0 AS drivers-
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS unpacker
 
-RUN microdnf install -y unzip findutils
+RUN microdnf install -y findutils
 WORKDIR /staging
 
-COPY staging/support-pkg.zip /staging/
 COPY kernel-modules/MODULE_VERSION MODULE_VERSION.txt
 RUN mkdir -p "/staging/kernel-modules/$(cat MODULE_VERSION.txt)"
 
-# First, unpack upstream support package, only on x86_64
-RUN if [[ "$(uname -m)" == x86_64 ]]; then unzip support-pkg.zip ; fi
-# Fail build if there were no drivers in the support package matching the module version.
-RUN if [[ "$(uname -m)" == x86_64 && "$(ls -A /staging/kernel-modules/$(cat MODULE_VERSION.txt))" == "" ]] ; then \
-      >&2 echo "Did not find any kernel drivers for the module version $(cat MODULE_VERSION.txt) in the support package"; \
-      exit 1; \
-    fi
-
-# Next, import modules from downstream build, which take priority over upstream, on non-x86 architectures
-COPY --from=drivers-build /kernel-modules /staging/downstream
-RUN if [[ "$(uname -m)" != x86_64 ]]; then \
-      cp -r /staging/downstream/. /staging/kernel-modules/ ; \
-    fi
+# import modules from downstream build.
+COPY --from=drivers-build /kernel-modules /staging/kernel-modules
 
 # Create destination for drivers.
 RUN mkdir /kernel-modules
