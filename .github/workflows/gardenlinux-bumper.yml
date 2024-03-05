@@ -3,7 +3,6 @@ name: Garden Linux VM bumper
 on:
   schedule:
     - cron: '0 6 * * *'
-  pull_request:
 
 jobs:
   run-bumper:
@@ -34,7 +33,6 @@ jobs:
           committer: RoxBot <roxbot@stackrox.com>
           author: RoxBot <roxbot@stackrox.com>
           branch: roxbot/gardenlinux-bump
-          base: master
           signoff: false
           delete-branch: true
           title: Update Garden Linux VM
