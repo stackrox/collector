@@ -108,7 +108,9 @@ jobs:
       - name: Teardown VMs
         if: always()
         run: |
-          make -C "${{ github.workspace }}/ansible" list-inventory
+          if [[ "${RUNNER_DEBUG}" == "1" ]]; then
+            make -C "${{ github.workspace }}/ansible" list-inventory
+          fi
           make -C "${{ github.workspace }}/ansible" destroy-vms
 
       - name: Store artifacts
