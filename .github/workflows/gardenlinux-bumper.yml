@@ -34,6 +34,7 @@ jobs:
           committer: RoxBot <roxbot@stackrox.com>
           author: RoxBot <roxbot@stackrox.com>
           branch: roxbot/gardenlinux-bump
+          base: master
           signoff: false
           delete-branch: true
           title: Update Garden Linux VM
