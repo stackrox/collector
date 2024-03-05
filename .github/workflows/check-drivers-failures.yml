@@ -24,6 +24,7 @@ jobs:
 
       - name: Check build failures
         run: |
+          ls -alh /tmp/FAILURES
           FAILURES_DIR=/tmp/FAILURES/ ${{ github.workspace }}/kernel-modules/build/drivers-build-failures.sh
 
       - name: Slack notification
