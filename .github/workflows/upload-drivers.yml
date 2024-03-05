@@ -44,6 +44,8 @@ jobs:
          shopt -s nullglob
          shopt -s dotglob
 
+         ls -alh /tmp/output/
+
           # We use gsutil here because we need to ignore files that already
           # exist in the bucket, if they are there it means downstream
           # built it and has prevalence over this set of drivers.
