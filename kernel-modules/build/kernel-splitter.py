@@ -108,12 +108,14 @@ class ModBuilder(Builder):
 
 def main(task_file):
     oracle_kernels = r"(?:.*el7uek.*)"
-    fc36_kernels = r"(?:(?:5\.[1-9]\d+\..*)|(:?[6-9]\.\d+\..*))"
+    fc39_kernels = r"(?:(?:6\.[7-9]\..*)|(?:6\.[1-9][0-9]\..*)|(:?[7-9]\.\d+\..*))"
+    fc36_kernels = r"(?:(?:5\.[1-9]\d+\..*)|(?:6\.[0-6]\..*))"
     rhel8_kernels = r"(?:(?:4|5)\.\d+\..*)"
     rhel7_kernels = r"(?:3\.\d+\..*)"
     rhel7_ebpf_kernels = r"(?:(?:3|4|5)\.\d+\..*)"
 
     oracle = Builder("oracle", rf"^{oracle_kernels}", {})
+    fc39 = Builder("fc39", rf"^{fc39_kernels}", {})
     fc36 = Builder("fc36", rf"^{fc36_kernels}", {})
     rhel7_ebpf = EBPFBuilder("rhel7", rf"^{rhel7_ebpf_kernels}", {})
     rhel8 = Builder("rhel8", rf"^{rhel8_kernels}", {})
@@ -122,6 +124,7 @@ def main(task_file):
 
     builders = [
         oracle,
+        fc39,
         fc36,
         rhel7_ebpf,
         rhel8,
@@ -156,9 +159,11 @@ def main(task_file):
     rhel7_ebpf_builders = rhel7_ebpf.split(driver_builders)
     rhel7_builders = rhel7.split(driver_builders)
     fc36_builders = fc36.split(driver_builders)
+    fc39_builders = fc39.split(driver_builders)
 
     builders = [
         *oracle_builders,
+        *fc39_builders,
         *fc36_builders,
         *rhel8_builders,
         *rhel7_ebpf_builders,
