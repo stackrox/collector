@@ -130,6 +130,7 @@ void initialChecks() {
 }
 
 int main(int argc, char** argv) {
+  abort();
   initialChecks();
 
   CollectorArgs* args = CollectorArgs::getInstance();

@@ -49,7 +49,7 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 		"GRPC_SERVER":             "localhost:9999",
 		"COLLECTION_METHOD":       collectionMethod,
 		"COLLECTOR_PRE_ARGUMENTS": collectorOptions.PreArguments,
-		"ENABLE_CORE_DUMP":        "false",
+		"ENABLE_CORE_DUMP":        "true",
 	}
 
 	if !collectorOptions.Offline {
