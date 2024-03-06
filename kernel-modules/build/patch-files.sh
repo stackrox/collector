@@ -84,7 +84,7 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
     M_VERSION="$(get_module_version)" \
         "${PREPARE_SRC_SH}"
 
-done < <(grep -v '^#' < "${SRC_DIR}/RELEASED_VERSIONS" | awk -F'#' '{print $1}' | awk 'NF==2 {print $1}' | sort | uniq)
+done < <(grep -v '^#' <(git -C "${SRC_DIR}" show master:RELEASED_VERSIONS) | awk -F'#' '{print $1}' | awk 'NF==2 {print $1}' | sort | uniq)
 
 # Leave the collector repo as clean as possible
 checkout_branch "$WORK_BRANCH"
