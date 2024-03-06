@@ -127,6 +127,12 @@
         dest: "{{ logs_root }}/integration-test.log"
       delegate_to: localhost
 
+    - name: Fetch core dump
+      fetch:
+        src: "/tmp/core.out"
+        dest: "{{ logs_root }}/"
+        flat: true
+
     - name: Report
       community.general.make:
         chdir: "{{ integration_tests_root }}"

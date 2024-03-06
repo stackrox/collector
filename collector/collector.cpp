@@ -130,7 +130,6 @@ void initialChecks() {
 }
 
 int main(int argc, char** argv) {
-  abort();
   initialChecks();
 
   CollectorArgs* args = CollectorArgs::getInstance();
@@ -146,6 +145,7 @@ int main(int argc, char** argv) {
   config.InitCollectorConfig(args);
 
   setCoreDumpLimit(config.IsCoreDumpEnabled());
+  abort();
 
   auto& startup_diagnostics = StartupDiagnostics::GetInstance();
 
