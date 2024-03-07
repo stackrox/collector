@@ -18,7 +18,8 @@ jobs:
       - name: Restore failure files
         uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.logs-artifact }}
+          pattern: ${{ inputs.logs-artifact }}
+          merge-multiple: true
           path: /tmp/FAILURES
 
       - name: Check build failures
