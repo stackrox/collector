@@ -313,6 +313,7 @@ void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::Netwo
         return;
       }
     }
+    abort();
   }
 }
 

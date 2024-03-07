@@ -145,7 +145,6 @@ int main(int argc, char** argv) {
   config.InitCollectorConfig(args);
 
   setCoreDumpLimit(config.IsCoreDumpEnabled());
-  abort();
 
   auto& startup_diagnostics = StartupDiagnostics::GetInstance();
 
