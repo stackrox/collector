@@ -76,6 +76,9 @@ jobs:
   integration-tests:
     if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests')
     uses: ./.github/workflows/integration-tests.yml
+    needs:
+      # ensure this happens at the end
+      - build-support-packages
     with:
       collector-tag: 3.18.0-slim
       collector-qa-tag: 3.18.0
