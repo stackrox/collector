@@ -165,3 +165,7 @@ $(eval $(call linter,shfmt))
 .PHONY: linters
 linters:
 	@$(CURDIR)/utilities/lint.sh
+
+.PHONY: dhall-generate
+dhall-generate:
+	@$(CURDIR)/.github/dhall/init.dhall > $(CURDIR)/.github/generated/init.yaml

@@ -1,0 +1,28 @@
+jobs:
+  control-vars:
+    name: Collect control variables
+    outputs:
+      benchmarks_calculate-baseline_enable: "${{ steps.set_benchmarks_calculate-baseline_enable.outputs.benchmarks_calculate-baseline_enable }}"
+      memory-checked-unit-tests_enable: "${{ steps.set_memory-checked-unit-tests_enable.outputs.memory-checked-unit-tests_enable }}"
+    runs-on: ubuntu-latest
+    steps:
+      - id: set_benchmarks_calculate-baseline_enable
+        run: |
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'benchmarks_calculate-baseline_enable') }}" == "true" ]]; then
+              echo "benchmarks_calculate-baseline_enable=true" > "${GITHUB_OUTPUT}"
+          fi
+      - id: set_memory-checked-unit-tests_enable
+        run: |
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'memory-checked-unit-tests_enable') }}" == "true" ]]; then
+              echo "memory-checked-unit-tests_enable=true" > "${GITHUB_OUTPUT}"
+          fi
+name: Init control variables
+on:
+  workflow_call:
+    outputs:
+      benchmarks_calculate-baseline_enable:
+        description: Controls baseline step in benchmarks job
+        value: jobs.control-vars.outputs.benchmarks_calculate-baseline_enable
+      memory-checked-unit-tests_enable:
+        description: Controls job memory checked unit tests
+        value: jobs.control-vars.outputs.memory-checked-unit-tests_enable
