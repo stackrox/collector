@@ -78,6 +78,6 @@ jobs:
     uses: ./.github/workflows/integration-tests.yml
     with:
       collector-tag: 3.18.0-slim
-      collector-qa-tag: collector-tests-3.18.0
+      collector-qa-tag: 3.18.0
     secrets: inherit
 
