@@ -267,6 +267,14 @@ func (c *CollectorManager) SetCoreDumpPath(coreDumpFile string) error {
 		return err
 	}
 	// }
+
+	cmdCat := []string{"cat", corePatternFile}
+	catResult, err := c.executor.Exec(cmdCat...)
+	if err != nil {
+		fmt.Print("Unable to read corePatternFile")
+	}
+	fmt.Println(catResult)
+
 	return nil
 }
 
