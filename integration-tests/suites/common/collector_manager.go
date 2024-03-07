@@ -243,28 +243,28 @@ func (c *CollectorManager) stopContainer(name string) error {
 // The core_pattern file is backed up, because we don't want to permanently change it
 func (c *CollectorManager) SetCoreDumpPath(coreDumpFile string) error {
 	fmt.Println("In SetCoreDumpPath")
-	if !config.HostInfo().IsLocal() {
-		corePatternFile := "/proc/sys/kernel/core_pattern"
-		corePatternBackupFile := "/tmp/core_pattern_backup"
-		cmdBackupCorePattern := []string{"sudo", "cp", corePatternFile, corePatternBackupFile}
-		cmdSetCoreDumpPath := []string{"echo", "'" + coreDumpFile + "'", "|", "sudo", "tee", corePatternFile}
+	// if !config.HostInfo().IsLocal() {
+	corePatternFile := "/proc/sys/kernel/core_pattern"
+	corePatternBackupFile := "/tmp/core_pattern_backup"
+	cmdBackupCorePattern := []string{"sudo", "cp", corePatternFile, corePatternBackupFile}
+	cmdSetCoreDumpPath := []string{"echo", "'" + coreDumpFile + "'", "|", "sudo", "tee", corePatternFile}
 
-		fmt.Println(corePatternFile)
-		fmt.Println(corePatternBackupFile)
-		fmt.Println(cmdBackupCorePattern)
-		fmt.Println(cmdSetCoreDumpPath)
-		var err error
-		_, err = c.executor.Exec(cmdBackupCorePattern...)
-		if err != nil {
-			fmt.Printf("Error: Unable to backup core_pattern file. %v\n", err)
-			return err
-		}
-		_, err = c.executor.Exec(cmdSetCoreDumpPath...)
-		if err != nil {
-			fmt.Printf("Error: Unable to set core dump file path in core_pattern. %v\n", err)
-			return err
-		}
+	fmt.Println(corePatternFile)
+	fmt.Println(corePatternBackupFile)
+	fmt.Println(cmdBackupCorePattern)
+	fmt.Println(cmdSetCoreDumpPath)
+	var err error
+	_, err = c.executor.Exec(cmdBackupCorePattern...)
+	if err != nil {
+		fmt.Printf("Error: Unable to backup core_pattern file. %v\n", err)
+		return err
 	}
+	_, err = c.executor.Exec(cmdSetCoreDumpPath...)
+	if err != nil {
+		fmt.Printf("Error: Unable to set core dump file path in core_pattern. %v\n", err)
+		return err
+	}
+	// }
 	return nil
 }
 
