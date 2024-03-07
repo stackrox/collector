@@ -287,6 +287,8 @@ func (c *CollectorManager) RestoreCoreDumpPath() error {
 // to the local maching
 func (c *CollectorManager) GetCoreDump(coreDumpFile string) error {
 	fmt.Println("In GetCoreDump")
+	fmt.Println(c.env["ENABLE_CORE_DUMP"])
+	fmt.Println(config.HostInfo().IsLocal())
 	if c.env["ENABLE_CORE_DUMP"] == "true" && !config.HostInfo().IsLocal() {
 		fmt.Println("Getting core dump")
 		cmd := []string{"sudo", "chmod", "755", coreDumpFile}
