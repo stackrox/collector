@@ -246,8 +246,10 @@ func (c *CollectorManager) SetCoreDumpPath(coreDumpFile string) error {
 	// if !config.HostInfo().IsLocal() {
 	corePatternFile := "/proc/sys/kernel/core_pattern"
 	corePatternBackupFile := "/tmp/core_pattern_backup"
-	cmdBackupCorePattern := []string{"sudo", "cp", corePatternFile, corePatternBackupFile}
-	cmdSetCoreDumpPath := []string{"echo", "'" + coreDumpFile + "'", "|", "sudo", "tee", corePatternFile}
+	cmdBackupCorePattern := []string{"cp", corePatternFile, corePatternBackupFile}
+	//cmdBackupCorePattern := []string{"sudo", "cp", corePatternFile, corePatternBackupFile}
+	cmdSetCoreDumpPath := []string{"echo", "'" + coreDumpFile + "'", "|", "tee", corePatternFile}
+	//cmdSetCoreDumpPath := []string{"echo", "'" + coreDumpFile + "'", "|", "sudo", "tee", corePatternFile}
 
 	fmt.Println(corePatternFile)
 	fmt.Println(corePatternBackupFile)
