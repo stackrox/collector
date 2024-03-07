@@ -20,7 +20,8 @@ jobs:
       - name: Restore built drivers
         uses: actions/download-artifact@v4
         with:
-          name: built-drivers
+          pattern: built-drivers-*
+          merge-multiple: true
           path: /tmp/output/
 
       - name: Authenticate with GCP
