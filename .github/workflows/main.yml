@@ -5,6 +5,9 @@ on:
     branches:
       - drivers
   pull_request:
+    branches:
+      - drivers
+      - master # remove before finalising
     types:
       - labeled
       - unlabeled
