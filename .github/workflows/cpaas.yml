@@ -34,6 +34,26 @@ jobs:
     with:
       cpaas-workflow: true
 
+  sync-drivers-and-support-packages:
+    uses: ./.github/workflows/cpaas-sync-drivers.yml
+    needs: init
+    secrets: inherit
+    with:
+      support-packages-bucket: ${{ needs.init.outputs.cpaas-support-packages-bucket }}
+      support-packages-index-bucket: ${{ needs.init.outputs.support-packages-index-bucket }}
+      public-support-packages-bucket: ${{ needs.init.outputs.public-support-packages-bucket }}
+      drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
+      merged-drivers-bucket: ${{ needs.init.outputs.merged-drivers-bucket }}
+      all-archs-drivers-bucket: ${{ needs.init.outputs.cpaas-all-archs-drivers-bucket }}
+      branch-name: ${{ needs.init.outputs.branch-name }}
+
+  check-drivers-failures:
+    uses: ./.github/workflows/check-drivers-failures.yml
+    needs: sync-drivers-and-support-packages
+    with:
+      logs-artifact:
+        drivers-build-failures
+
   build-collector-slim:
     runs-on: ubuntu-latest
     needs: init
@@ -73,6 +93,7 @@ jobs:
     needs:
     - init
     - build-collector-slim
+    - sync-drivers-and-support-packages
 
   build-test-containers:
     uses: ./.github/workflows/integration-test-containers.yml
@@ -136,6 +157,8 @@ jobs:
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name == 'schedule'
     needs:
     - init
+    - sync-drivers-and-support-packages
+    - build-collector-slim
     - build-collector-full
     - integration-tests
     - multiarch-integration-tests
