@@ -94,16 +94,6 @@
     # ensure that this is printed
     tags: [print_action]
 
-  - name: Check if the file exists
-    ansible.builtin.stat:
-      path: /tmp/core.out
-    register: file_stat
-
-  - name: Change permissions if the file exists
-    ansible.builtin.file:
-      path: /tmp/core.out
-      mode: "u+r"
-    when: file_stat.stat.exists
 
   rescue:
     - name: Set tests as failed
@@ -141,6 +131,17 @@
         content: "{{ test_result.stdout }}"
         dest: "{{ logs_root }}/integration-test.log"
       delegate_to: localhost
+
+    - name: Check if the file exists
+      ansible.builtin.stat:
+        path: /tmp/core.out
+      register: file_stat
+
+    - name: Change permissions if the file exists
+      ansible.builtin.file:
+        path: /tmp/core.out
+        mode: "u+r"
+      when: file_stat.stat.exists
 
     - name: Fetch core dump
       fetch:
