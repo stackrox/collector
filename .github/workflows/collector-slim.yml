@@ -35,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, ppc64le, arm64]
+        arch: [amd64, arm64]
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
@@ -125,6 +125,8 @@ jobs:
       - name: Create Build VMs
         run: |
           make -C "${{ github.workspace }}/ansible" create-build-vms
+        env:
+          VM_TYPE: rhel-${{ matrix.arch }}
 
       - name: Create ansible vars
         run: |
@@ -137,7 +139,7 @@ jobs:
           collector_git_ref: ${{ github.ref }}
           collector_git_sha: ${{ github.sha }}
           collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}
-          disable_profiling: ${{ matrix.arch != 'amd64' && matrix.arch != 'arm64' }}
+          disable_profiling: true
           rhacs_eng_image: ${{ env.RHACS_ENG_IMAGE }}
           collector_image: ${{ inputs.collector-image }}
           collector_tag: ${{ inputs.collector-tag }}
