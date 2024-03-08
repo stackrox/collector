@@ -82,6 +82,7 @@
         {{ run_args }} -test.v 2>&1
 
       ls -lrt /tmp
+
     environment:
       COLLECTION_METHOD: "{{ collection_method }}"
       VM_CONFIG: "{{ vm_config }}"
@@ -92,6 +93,17 @@
     register: test_result
     # ensure that this is printed
     tags: [print_action]
+
+  - name: Check if the file exists
+    ansible.builtin.stat:
+      path: /tmp/core.out
+    register: file_stat
+
+  - name: Change permissions if the file exists
+    ansible.builtin.file:
+      path: /tmp/core.out
+      mode: "u+r"
+    when: file_stat.stat.exists
 
   rescue:
     - name: Set tests as failed
