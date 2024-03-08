@@ -143,6 +143,10 @@
         mode: "u+r"
       when: file_stat.stat.exists
 
+    - name: Check tmp directory
+      become: "{{ runtime_as_root }}"
+      shell: "ls -l /tmp"
+
     - name: Fetch core dump
       fetch:
         src: "/tmp/core.out"
