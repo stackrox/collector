@@ -55,7 +55,7 @@ jobs:
     if: ${{ needs.build-drivers.outputs.parallel-jobs > 0 }}
     secrets: inherit
     with:
-      logs-artifact: driver-build-failures
+      logs-artifact: driver-build-failures-*
 
   build-builder-image:
     uses: ./.github/workflows/collector-builder.yml

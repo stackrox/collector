@@ -71,7 +71,8 @@ jobs:
         uses: actions/download-artifact@v4
         if: matrix.arch == 'amd64' && !inputs.skip-built-drivers
         with:
-          name: built-drivers
+          pattern: built-drivers-*
+          merge-multiple: true
           path: /tmp/built-drivers/
 
       - name: Set environment variables
