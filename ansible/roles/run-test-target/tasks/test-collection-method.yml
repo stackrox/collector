@@ -152,12 +152,13 @@
       debug:
         var: ls_tmp_output.stdout_lines
 
-
     - name: Fetch core dump
+      become: yes
       fetch:
         src: "/tmp/core.out"
         dest: "{{ logs_root }}/"
         flat: true
+      when: file_stat.stat.exists
 
     - name: Report
       community.general.make:
