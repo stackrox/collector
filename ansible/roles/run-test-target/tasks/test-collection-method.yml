@@ -146,6 +146,12 @@
     - name: Check tmp directory
       become: "{{ runtime_as_root }}"
       shell: "ls -l /tmp"
+      register: ls_tmp_output
+    
+    - name: Print tmp directory contents
+      debug:
+        var: ls_tmp_output.stdout_lines
+
 
     - name: Fetch core dump
       fetch:
