@@ -242,72 +242,17 @@ func (c *CollectorManager) stopContainer(name string) error {
 // Sets the path to where core dumps are saved to. This is specified in the core_pattern file
 // The core_pattern file is backed up, because we don't want to permanently change it
 func (c *CollectorManager) SetCoreDumpPath(coreDumpFile string) error {
-	fmt.Println("In SetCoreDumpPath")
-	// if !config.HostInfo().IsLocal() {
-	corePatternFile := "/proc/sys/kernel/core_pattern"
-	corePatternBackupFile := "/tmp/core_pattern_backup"
-	cmdBackupCorePattern := []string{"cp", corePatternFile, corePatternBackupFile}
-	//cmdBackupCorePattern := []string{"sudo", "cp", corePatternFile, corePatternBackupFile}
-	cmdSetCoreDumpPath := []string{"echo", "'" + coreDumpFile + "'", "|", "tee", corePatternFile}
-	//cmdSetCoreDumpPath := []string{"echo", "'" + coreDumpFile + "'", "|", "sudo", "tee", corePatternFile}
-
-	fmt.Println(corePatternFile)
-	fmt.Println(corePatternBackupFile)
-	fmt.Println(cmdBackupCorePattern)
-	fmt.Println(cmdSetCoreDumpPath)
-	var err error
-	_, err = c.executor.Exec(cmdBackupCorePattern...)
-	if err != nil {
-		fmt.Printf("Error: Unable to backup core_pattern file. %v\n", err)
-		return err
-	}
-	_, err = c.executor.Exec(cmdSetCoreDumpPath...)
-	if err != nil {
-		fmt.Printf("Error: Unable to set core dump file path in core_pattern. %v\n", err)
-		return err
-	}
-	// }
-
-	cmdCat := []string{"cat", corePatternFile}
-	catResult, err := c.executor.Exec(cmdCat...)
-	if err != nil {
-		fmt.Print("Unable to read corePatternFile")
-	}
-	fmt.Println(catResult)
 
 	return nil
 }
 
 // Restores the backed up core_pattern file, which sets the location where core dumps are written to.
 func (c *CollectorManager) RestoreCoreDumpPath() error {
-	fmt.Println("In RestoreCoreDumpPath")
-	corePatternFile := "/proc/sys/kernel/core_pattern"
-	corePatternBackupFile := "/tmp/core_pattern_backup"
-	// cat is used to restore the backup instead of mv, becuase mv is not allowed.
-	cmdRestoreCorePattern := []string{"cat", corePatternBackupFile, "|", "sudo", "tee", corePatternFile}
-	_, err := c.executor.Exec(cmdRestoreCorePattern...)
-	if err != nil {
-		fmt.Printf("Error: Unable to restore core dump path. %v\n", err)
-		return err
-	}
 	return nil
 }
 
 // If the integration test is run on a remote host the core dump needs to be copied from the remote host
 // to the local maching
 func (c *CollectorManager) GetCoreDump(coreDumpFile string) error {
-	fmt.Println("In GetCoreDump")
-	fmt.Println(c.env["ENABLE_CORE_DUMP"])
-	fmt.Println(config.HostInfo().IsLocal())
-	if c.env["ENABLE_CORE_DUMP"] == "true" && !config.HostInfo().IsLocal() {
-		fmt.Println("Getting core dump")
-		cmd := []string{"sudo", "chmod", "755", coreDumpFile}
-		c.executor.Exec(cmd...)
-		c.executor.CopyFromHost(coreDumpFile, coreDumpFile)
-		err := c.RestoreCoreDumpPath()
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }

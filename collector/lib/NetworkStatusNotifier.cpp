@@ -316,6 +316,12 @@ void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::Netwo
     // abort();
     int* ptr = nullptr;
     *ptr = 10;
+    // int a[100];
+
+    // for (int i=0; i < 10000; i++) {
+    //         CLOG(INFO) << "i= " << i;
+    //         a[i] = i;
+    // }
   }
 }
 
