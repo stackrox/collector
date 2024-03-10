@@ -152,12 +152,24 @@
       debug:
         var: ls_tmp_output.stdout_lines
 
-    - name: Fetch core dump
+    - name: Get core dump file paths
       become: yes
+      shell: "ls /tmp/core.out*"
+      register: core_files
+
+    - name: Fetch each core dump file
       fetch:
-        src: "/tmp/core.out*"
+        src: "{{ item }}"
         dest: "{{ logs_root }}/"
         flat: true
+      with_items: "{{ core_files.stdout_lines }}"
+
+        #- name: Fetch core dump
+        #  become: yes
+        #  fetch:
+        #    src: "/tmp/core.out*"
+        #    dest: "{{ logs_root }}/"
+        #    flat: true
 
     - name: Report
       community.general.make:
