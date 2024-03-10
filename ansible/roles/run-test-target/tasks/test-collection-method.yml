@@ -152,20 +152,45 @@
       debug:
         var: ls_tmp_output.stdout_lines
 
+        #- name: Get core dump file paths
+        #  become: yes
+        #  shell: "ls /tmp/core.out*"
+        #  register: core_files
+
     - name: Get core dump file paths
       become: yes
-      shell: "ls /tmp/core.out*"
+      find:
+        paths: "/tmp/core.out*"
       register: core_files
 
     - name: Fetch each core dump file
       become: yes
       fetch:
-        src: "{{ item }}"
+        src: "{{ core_file }}"
         dest: "{{ logs_root }}/"
         flat: true
-      with_items: "{{ core_files.stdout_lines }}"
+      loop: "{{ core_files.files | map(attribute='path') | list }}"
       loop_control:
         loop_var: core_file
+
+    - name: Check tmp directory 2
+      become: "{{ runtime_as_root }}"
+      shell: "ls -l /tmp"
+      register: ls_tmp_output_2
+    
+    - name: Print tmp directory contents 2
+      debug:
+        var: ls_tmp_output_2.stdout_lines
+
+        #    - name: Fetch each core dump file
+        #      become: yes
+        #      fetch:
+        #        src: "{{ item }}"
+        #        dest: "{{ logs_root }}/"
+        #        flat: true
+        #      with_items: "{{ core_files.stdout_lines }}"
+        #      loop_control:
+        #        loop_var: core_file
 
       #    - name: Fetch each core dump file
       #      fetch:
