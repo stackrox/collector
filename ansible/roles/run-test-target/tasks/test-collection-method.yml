@@ -81,8 +81,6 @@
         {{ integration_tests_image }} \
         {{ run_args }} -test.v 2>&1
 
-      ls -lrt /tmp
-
     environment:
       COLLECTION_METHOD: "{{ collection_method }}"
       VM_CONFIG: "{{ vm_config }}"
@@ -132,20 +130,26 @@
         dest: "{{ logs_root }}/integration-test.log"
       delegate_to: localhost
 
+    - name: Move core dump files to core dump directory
+      become: yes
+      shell: |
+        mkdir /tmp/core_dumps
+        mv /tmp/core.out* /tmp/core_dumps || true
+
     - name: Check if the file exists
       ansible.builtin.stat:
         path: /tmp/core.out
       register: file_stat
 
-    - name: Change permissions if the file exists
-      ansible.builtin.file:
-        path: /tmp/core.out
-        mode: "u+r"
-      when: file_stat.stat.exists
+      #- name: Change permissions if the file exists
+      #  ansible.builtin.file:
+      #    path: /tmp/core.out
+      #    mode: "u+r"
+      #  when: file_stat.stat.exists
 
     - name: Check tmp directory
       become: "{{ runtime_as_root }}"
-      shell: "ls -l /tmp"
+      shell: "ls -l /tmp/core_dumps"
       register: ls_tmp_output
     
     - name: Print tmp directory contents
@@ -160,7 +164,7 @@
     - name: Get core dump file paths
       become: yes
       find:
-        paths: "/tmp/core.out*"
+        paths: "/tmp/core_dumps/"
       register: core_files
 
     - name: Fetch each core dump file
@@ -175,7 +179,7 @@
 
     - name: Check tmp directory 2
       become: "{{ runtime_as_root }}"
-      shell: "ls -l /tmp"
+      shell: "ls -l /tmp/core_dumps"
       register: ls_tmp_output_2
     
     - name: Print tmp directory contents 2
