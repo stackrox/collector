@@ -157,12 +157,21 @@
       shell: "ls /tmp/core.out*"
       register: core_files
 
+      #    - name: Fetch each core dump file
+      #      fetch:
+      #        src: "{{ item }}"
+      #        dest: "{{ logs_root }}/"
+      #        flat: true
+      #      with_items: "{{ core_files.stdout_lines }}"
+
     - name: Fetch each core dump file
       fetch:
         src: "{{ item }}"
         dest: "{{ logs_root }}/"
         flat: true
       with_items: "{{ core_files.stdout_lines }}"
+      loop_control:
+        loop_var: core_file
 
         #- name: Fetch core dump
         #  become: yes
