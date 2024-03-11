@@ -117,4 +117,3 @@ jobs:
           path: |
             ${{ github.workspace }}/integration-tests/container-logs/**/*
             ${{ github.workspace }}/integration-tests/performance-logs/**/*
-            ${{ github.workspace }}/integration-tests/core.out
