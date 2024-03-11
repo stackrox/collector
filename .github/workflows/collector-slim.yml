@@ -124,8 +124,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: true
 
       - uses: actions/setup-python@v5
         with:
@@ -148,7 +146,7 @@ jobs:
           ppc64le-key: ${{ secrets.IBM_CLOUD_POWER_API_KEY }}
           redhat-username: ${{ secrets.REDHAT_USERNAME }}
           redhat-password: ${{ secrets.REDHAT_PASSWORD }}
-          vm-type: all
+          vm-type: rhel-${{ matrix.arch }}
           job-tag: builder
 
       - name: Create Build VMs
@@ -181,8 +179,6 @@ jobs:
             -e build_hosts='job_id_${{ env.JOB_ID }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-collector.yml
-        env:
-          VM_TYPE: rhel-${{ matrix.arch }}
 
       - name: Destroy Build VMs
         if: always()
