@@ -134,9 +134,15 @@
 
     - name: Write integration test log
       copy:
-        content: "{{ test_result.stdout }}"
+        content: "{{ test_result.results | map(attribute='stdout') | join('\n') }}"
         dest: "{{ logs_root }}/integration-test.log"
       delegate_to: localhost
+
+      #    - name: Write integration test log
+      #      copy:
+      #        content: "{{ test_result.stdout }}"
+      #        dest: "{{ logs_root }}/integration-test.log"
+      #      delegate_to: localhost
 
     - name: Move core dump files to core dump directory
       become: yes
