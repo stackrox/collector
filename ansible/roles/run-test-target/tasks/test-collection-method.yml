@@ -80,7 +80,6 @@
         -e COLLECTOR_LOG_LEVEL \
         {{ integration_tests_image }} \
         {{ run_args }} -test.v 2>&1
-
     environment:
       COLLECTION_METHOD: "{{ collection_method }}"
       VM_CONFIG: "{{ vm_config }}"
@@ -91,7 +90,6 @@
     register: test_result
     # ensure that this is printed
     tags: [print_action]
-
 
   rescue:
     - name: Set tests as failed
