@@ -11,7 +11,7 @@ on:
     outputs:
       collector-builder-tag:
         description: The builder tag used by the build
-        value: ${{ jobs.build-builder-image.outputs.collector-builder-tag || 'master' }}
+        value: ${{ jobs.builder-setup-environment.outputs.collector-builder-tag }}
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
@@ -38,6 +38,23 @@ jobs:
               - builder/Dockerfile
               - .github/workflows/collector-builder.yml
 
+  builder-setup-environment:
+    name: Setup environment
+    runs-on: ubuntu-latest
+    outputs:
+      collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag }}
+    steps:
+      - name: Define builder tag
+        id: builder-tag
+        run: |
+          COLLECTOR_BUILDER_TAG="${DEFAULT_BUILDER_TAG}"
+          if [[ "${{ github.event_name }}" == 'pull_request' || \
+                "${{ github.ref_type }}" == 'tag' || \
+                "${{ github.ref_name }}" =~ ^release- ]]; then
+            COLLECTOR_BUILDER_TAG="${{ inputs.collector-tag }}"
+          fi
+          echo "collector-builder-tag=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
+
   build-builder-image:
     name: Build the builder image
     runs-on: ubuntu-latest
@@ -45,22 +62,22 @@ jobs:
     timeout-minutes: 480
     needs:
     - builder-needs-rebuilding
+    - builder-setup-environment
     if: |
       needs.builder-needs-rebuilding.outputs.build-image == 'true' ||
       (github.event_name == 'push' && (
         github.ref_type == 'tag' || startsWith(github.ref_name, 'release-')
       )) ||
       contains(github.event.pull_request.labels.*.name, 'build-builder-image')
-    outputs:
-      collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag }}
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, ppc64le, s390x, arm64]
+        arch: [amd64, arm64]
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
       BUILD_TYPE: ci
+      COLLECTOR_BUILDER_TAG: ${{ needs.builder-setup-environment.outputs.collector-builder-tag }}
 
     steps:
       - uses: actions/checkout@v4
@@ -156,58 +173,23 @@ jobs:
           job-tag: builder
 
       - name: Create Build VMs
-        if: |
-          matrix.arch == 's390x' &&
-          (github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds'))
         run: |
           make -C "${{ github.workspace }}/ansible" create-build-vms
 
-      - name: Define builder tag
-        id: builder-tag
-        run: |
-          COLLECTOR_BUILDER_TAG="${DEFAULT_BUILDER_TAG}"
-          if [[ "${{ github.event_name }}" == 'pull_request' || \
-                "${{ github.ref_type }}" == 'tag' || \
-                "${{ github.ref_name }}" =~ ^release- ]]; then
-            COLLECTOR_BUILDER_TAG="${{ inputs.collector-tag }}"
-          fi
-
-          echo "COLLECTOR_BUILDER_TAG=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_ENV"
-          echo "collector-builder-tag=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
-
       - name: Create ansible vars
         run: |
-          {
-            echo "---"
-            echo "stackrox_io_username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}"
-            echo "stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}"
-            echo "rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}"
-            echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
-            echo "collector_git_ref: ${{ github.ref }}"
-            echo "collector_git_sha: ${{ github.sha }}"
-            echo "collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}"
-          } > ${{ github.workspace }}/ansible/secrets.yml
+          cat << EOF > ${{ github.workspace }}/ansible/secrets.yml
+          ---
+          stackrox_io_username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+          rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          collector_git_ref: ${{ github.ref }}
+          collector_git_sha: ${{ github.sha }}
+          collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}
+          EOF
 
       - name: Build images
-        if: |
-          (github.event_name == 'push' && matrix.arch != 's390x') ||
-          matrix.arch == 'amd64' ||
-          (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch != 's390x')
-        timeout-minutes: 480
-        run: |
-          ansible-galaxy install -r ansible/requirements.yml
-          ansible-playbook \
-            --connection local \
-            -i localhost, \
-            --limit localhost \
-            -e arch='${{ matrix.arch }}' \
-            -e @'${{ github.workspace }}/ansible/secrets.yml' \
-            ansible/ci-build-builder.yml
-
-      - name: Build s390x images
-        if: |
-          (github.event_name == 'push' && matrix.arch == 's390x') ||
-          (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch == 's390x')
         timeout-minutes: 480
         run: |
           ansible-playbook \
@@ -218,21 +200,24 @@ jobs:
             ansible/ci-build-builder.yml
 
       - name: Destroy VMs
-        if: always() && matrix.arch == 's390x'
+        if: always()
         run: |
           make -C ansible destroy-vms
 
   create-multiarch-manifest:
     needs:
+    - builder-setup-environment
     - build-builder-image
+    - build-builder-image-remote-vm
     name: Create Multiarch manifest
     runs-on: ubuntu-latest
     if: |
-      github.event_name == 'push' ||
-      (needs.build-builder-image.outputs.collector-builder-tag != 'cache' &&
-       contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds'))
+      github.event_name == 'push' || (
+        needs.builder-setup-environment.outputs.collector-builder-tag != 'master' &&
+       contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+      )
     env:
-      COLLECTOR_BUILDER_TAG: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
+      COLLECTOR_BUILDER_TAG: ${{ needs.builder-setup-environment.outputs.collector-builder-tag }}
       ARCHS: amd64 ppc64le s390x arm64
 
     steps:
@@ -266,15 +251,16 @@ jobs:
 
   retag-x86-image:
     needs:
+    - builder-setup-environment
     - build-builder-image
     name: Retag x86 builder image
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'pull_request' &&
-      needs.build-builder-image.outputs.collector-builder-tag != 'cache' &&
+      needs.builder-setup-environment.outputs.collector-builder-tag != 'master' &&
       !contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     env:
-      COLLECTOR_BUILDER_TAG: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
+      COLLECTOR_BUILDER_TAG: ${{ needs.builder-setup-environment.outputs.collector-builder-tag }}
     steps:
       - name: Pull image to retag
         run: |
