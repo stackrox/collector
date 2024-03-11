@@ -13,6 +13,11 @@ on:
           Tag used for QA containers
         type: string
         required: true
+      collector-test-tag:
+        description: |
+          Tag used for the test image
+        type: string
+        required: true
       job-tag:
         description: |
           Used to differentiate between different sources when creating
@@ -35,6 +40,7 @@ jobs:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ inputs.collector-tag }}
       collector-qa-tag: ${{ inputs.collector-qa-tag }}
+      collector-test-tag: ${{ inputs.collector-test-tag }}
       job-tag: ${{ inputs.job-tag }}
     secrets: inherit
 
@@ -58,6 +64,7 @@ jobs:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ inputs.collector-tag }}
       collector-qa-tag: ${{ inputs.collector-qa-tag }}
+      collector-test-tag: ${{ inputs.collector-test-tag }}
       job-tag: ${{ inputs.job-tag }}
     secrets: inherit
 
@@ -79,6 +86,7 @@ jobs:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ inputs.collector-tag }}
       collector-qa-tag: ${{ inputs.collector-qa-tag }}
+      collector-test-tag: ${{ inputs.collector-test-tag }}
       job-tag: ${{ inputs.job-tag }}
     secrets: inherit
 
@@ -89,6 +97,7 @@ jobs:
       vm_type: rhel-s390x
       collector-tag: ${{ inputs.collector-tag }}
       collector-qa-tag: ${{ inputs.collector-qa-tag }}
+      collector-test-tag: ${{ inputs.collector-test-tag }}
       job-tag: ${{ inputs.job-tag }}
     secrets: inherit
 
@@ -99,6 +108,7 @@ jobs:
       vm_type: rhel-ppc64le
       collector-tag: ${{ inputs.collector-tag }}
       collector-qa-tag: ${{ inputs.collector-qa-tag }}
+      collector-test-tag: ${{ inputs.collector-test-tag }}
       job-tag: ${{ inputs.job-tag }}
     secrets: inherit
 

@@ -107,6 +107,7 @@ jobs:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas-amd64-slim
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      collector-test-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
       offline-mode: true
       job-tag: cpaas
     needs:
@@ -122,6 +123,7 @@ jobs:
       vm_type: rhel-s390x
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas-s390x-slim
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      collector-test-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
       offline-mode: true
       job-tag: cpaas
     needs:
@@ -137,6 +139,7 @@ jobs:
       vm_type: rhel-ppc64le
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas-ppc64le-slim
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      collector-test-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
       offline-mode: true
       job-tag: cpaas
     needs:
