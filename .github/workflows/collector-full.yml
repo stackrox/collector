@@ -148,6 +148,9 @@ jobs:
 
   multiarch-manifests:
     runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     needs:
     - build-collector-full
     env:
