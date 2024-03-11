@@ -72,7 +72,7 @@
   - name: Run integration tests
     become: "{{ runtime_as_root }}"
     shell: |
-      echo '/tmp/core.{{ collector_test }}.out' | sudo tee /proc/sys/kernel/core_pattern
+      echo '/tmp/core.{{ test_to_run.collector_test }}.out' | sudo tee /proc/sys/kernel/core_pattern
       {{ runtime_command }} run -it --rm \
         -v {{ remote_log_mount }}:{{ container_logs_root }} \
         -v ~/.docker:/root/.docker \
@@ -86,7 +86,7 @@
         -e COLLECTOR_QA_TAG \
         -e COLLECTOR_LOG_LEVEL \
         {{ integration_tests_image }} \
-        {{ item.run_args }} -test.v 2>&1
+        {{ test_to_run.run_args }} -test.v 2>&1
     environment:
       COLLECTION_METHOD: "{{ collection_method }}"
       VM_CONFIG: "{{ vm_config }}"
@@ -99,7 +99,7 @@
     tags: [print_action]
     loop: "{{ tests_to_run }}"
     loop_control:
-      loop_var: item
+      loop_var: test_to_run
 
   rescue:
     - name: Set tests as failed
