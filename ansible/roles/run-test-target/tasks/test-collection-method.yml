@@ -39,13 +39,6 @@
         run_args: "-test.timeout 120m -test.short"
   when: collector_test == "ci-integration-tests"
 
-  #- set_fact:
-  #    run_args: -test.run {{ collector_test }} -test.timeout 60m -test.count=1
-  #  when: collector_test != "ci-integration-tests"
-  #
-  #- set_fact:
-  #    run_args: -test.timeout 120m -test.short
-  #  when: collector_test == "ci-integration-tests"
 
 - name: Make logs directory
   file:
@@ -104,9 +97,9 @@
     register: test_result
     # ensure that this is printed
     tags: [print_action]
-  loop: "{{ tests_to_run }}"
-  loop_control:
-    loop_var: item
+    loop: "{{ tests_to_run }}"
+    loop_control:
+      loop_var: item
 
   rescue:
     - name: Set tests as failed
