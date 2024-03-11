@@ -313,6 +313,8 @@ void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::Netwo
         return;
       }
     }
+    int* ptr = nullptr;
+    *ptr = 10;
   }
 }
 
