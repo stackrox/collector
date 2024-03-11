@@ -187,12 +187,13 @@ jobs:
           base-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
           archs: ${{ env.ARCHS }}
 
-      - name: Create and push multiarch manifest for stackrox-io -slim
-        uses: ./.github/actions/create-multiarch-manifest
+      - name: Retag -slim manifest
+        uses: stackrox/actions/images/retag-and-push@v1
         with:
-          base-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
-          archs: ${{ env.ARCHS }}
-          suffix: -slim
+          src-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+          dst-image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
       - name: Create and push multiarch manifest for stackrox-io -base
         uses: ./.github/actions/create-multiarch-manifest
@@ -214,12 +215,13 @@ jobs:
           base-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
           archs: ${{ env.ARCHS }}
 
-      - name: Create and push multiarch manifest for stackrox-io -slim
-        uses: ./.github/actions/create-multiarch-manifest
+      - name: Retag -slim manifest
+        uses: stackrox/actions/images/retag-and-push@v1
         with:
-          base-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
-          archs: ${{ env.ARCHS }}
-          suffix: -slim
+          src-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+          dst-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-slim
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
       - name: Create and push multiarch manifest for rhacs-eng -base
         uses: ./.github/actions/create-multiarch-manifest
