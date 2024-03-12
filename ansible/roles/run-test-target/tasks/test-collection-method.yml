@@ -27,18 +27,17 @@
 
 - set_fact:
     tests_to_run:
-      - collector_test: "TestProcessNetwork"
-        run_args: "-test.run TestProcessNetwork -test.timeout 60m -test.count=1"
-      - collector_test: "TestImageLabelJSON"
-        run_args: "-test.run TestImageLabelJSON -test.timeout 60m -test.count=1"
+      - collector_test: "{{ collector_test }}"
+        run_args: "-test.run {{ collector_test }} -test.timeout 120m -test.short"
   when: collector_test != "ci-integration-tests"
 
 - set_fact:
     tests_to_run:
-      - collector_test: "ci-integration-tests"
-        run_args: "-test.timeout 120m -test.short"
+      - collector_test: "TestProcessNetwork"
+        run_args: "-test.run TestProcessNetwork -test.timeout 60m -test.count=1"
+      - collector_test: "TestImageLabelJSON"
+        run_args: "-test.run TestImageLabelJSON -test.timeout 60m -test.count=1"
   when: collector_test == "ci-integration-tests"
-
 
 - name: Make logs directory
   file:
@@ -147,13 +146,6 @@
         content: "{{ test_result.results | map(attribute='stdout') | join('\n') }}"
         dest: "{{ logs_root }}/integration-test.log"
       delegate_to: localhost
-
-      #    - name: Write integration test log
-      #      copy:
-      #        content: "{{ test_result.stdout }}"
-      #        dest: "{{ logs_root }}/integration-test.log"
-      #      delegate_to: localhost
-
 
     - name: Get core dump file paths
       become: yes
