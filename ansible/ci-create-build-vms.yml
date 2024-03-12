@@ -9,6 +9,10 @@
         name: create-all-vms
       vars:
         vm_list: "{{ virtual_machines }}"
+  post_tasks:
+    # We have all the VMs created now, so refresh the inventory - this allows
+    # us to use the provisioning role on the VMs we just created
+    - meta: refresh_inventory
 
 - name: Provision Build VMs
   hosts: "job_id_{{ job_id }}"

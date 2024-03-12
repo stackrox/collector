@@ -20,7 +20,7 @@
         version: "{{ collector_git_sha }}"
         refspec: "+{{ collector_git_ref | replace('refs/', '') }}"
         recursive: true
-      when: arch == "s390x" or arch == "ppc64le"
+      when: arch != "amd64"
 
     - name: Run the builder image
       community.general.make:
