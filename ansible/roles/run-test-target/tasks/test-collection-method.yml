@@ -57,6 +57,11 @@
     creates: ~/.docker/config.json
   when: runtime_command == "podman"
 
+- name: Make core dumps directory
+  become: yes
+  shell: |
+    mkdir /tmp/core_dumps
+
 - block:
 
     # Some considerations for running the test container:
@@ -72,7 +77,7 @@
   - name: Run integration tests
     become: "{{ runtime_as_root }}"
     shell: |
-      echo '/tmp/core.{{ test_to_run.collector_test }}.out' | sudo tee /proc/sys/kernel/core_pattern
+      echo '/tmp/core_dumps/core-{{ test_to_run.collector_test }}.out' | sudo tee /proc/sys/kernel/core_pattern
       {{ runtime_command }} run -it --rm \
         -v {{ remote_log_mount }}:{{ container_logs_root }} \
         -v ~/.docker:/root/.docker \
@@ -108,8 +113,13 @@
 
     - name: Output test log
       debug:
-        msg: "{{ test_result.stdout }}"
+        msg: "{{ test_result.results | map(attribute='stdout') | join('\n') }}"
       tags: [print_action]
+
+      #- name: Output test log
+      #  debug:
+      #    msg: "{{ test_result.stdout }}"
+      #  tags: [print_action]
 
   always:
     - name: Make logs directories
@@ -144,11 +154,6 @@
       #        dest: "{{ logs_root }}/integration-test.log"
       #      delegate_to: localhost
 
-    - name: Move core dump files to core dump directory
-      become: yes
-      shell: |
-        mkdir /tmp/core_dumps
-        mv /tmp/core.out* /tmp/core_dumps || true
 
     - name: Get core dump file paths
       become: yes
