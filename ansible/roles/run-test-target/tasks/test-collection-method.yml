@@ -59,7 +59,9 @@
 - name: Make core dumps directory
   become: yes
   shell: |
-    mkdir /tmp/core_dumps
+    if [[ ! -d "/tmp/core_dumps" ]]; then
+      mkdir /tmp/core_dumps
+    fi
 
 - block:
 
