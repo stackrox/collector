@@ -26,9 +26,11 @@
     integration_tests_image: "{{ lookup('env', 'TEST_IMAGE', default='quay.io/rhacs-eng/qa-multi-arch:collector-tests-' + collector_tag_result.stdout) }}"
 
 - name: Get list of tests
+  become: "{{ runtime_as_root }}"
   shell: |
     cd {{ collector_root }}/integration-tests
-    go test -list Test -test.run=^$
+    grep func\ Test integration_test.go | awk '{print $2}' | sed 's|(.*||'
+    #go test -list Test -test.run=^$
   register: test_list
   changed_when: false
 
