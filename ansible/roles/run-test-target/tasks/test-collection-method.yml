@@ -32,12 +32,6 @@
   register: test_list
   changed_when: false
 
-  #- set_fact:
-  #    tests_to_run:
-  #      - collector_test: "{{ collector_test }}"
-  #        run_args: "-test.run {{ collector_test }} -test.timeout 120m -test.short"
-  #  when: collector_test != "ci-integration-tests"
-
 - set_fact:
     tests_to_run:
       - "{{ collector_test }}"
@@ -46,69 +40,6 @@
 - set_fact:
     tests_to_run: "{{ test_list.stdout_lines | select('regex', '^(Test\\w+)$') | map('regex_replace', '^(Test\\w+)$', '\\1') | list }}"
     when: collector_test == "ci-integration-tests"
-
-  #- set_fact:
-  #    tests_to_run: "{{ test_output.stdout_lines | select('regex', '^(Test\\w+)$') | map('regex_replace', '^(Test\\w+)$', '\\1') | map('regex_replace', '^(Test\\w+)', {'collector_test': '\\1', 'run_args': '-test.run \\1 -test.timeout 60m -test.count=1'}) | list }}"
-  #    when: collector_test == "ci-integration-tests"
-
-
-    #- set_fact:
-    #    tests_to_run: "{{ test_output.stdout_lines | select('regex', '^(Test\\w+)$') | map('regex_replace', '^(Test\\w+)$', '\\1') | list }}"
-    #    when: collector_test == "ci-integration-tests"
-
-    #- set_fact:
-    #    tests_to_run: "{{ test_output.stdout_lines | select('regex', '^(Test\\w+)$') | map('regex_replace', '^(Test\\w+)$', '\\1') | list }}"
-    #    when: collector_test == "ci-integration-tests"
-
-  #- set_fact:
-  #    tests_to_run:
-  #      - collector_test: "TestProcessNetwork"
-  #        run_args: "-test.run TestProcessNetwork -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestImageLabelJSON"
-  #        run_args: "-test.run TestImageLabelJSON -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestMissingProcScrape"
-  #        run_args: "-test.run TestMissingProcScrape -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestRepeatedNetworkFlow"
-  #        run_args: "-test.run TestRepeatedNetworkFlow -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestProcfsScraper"
-  #        run_args: "-test.run TestProcfsScraper -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestProcessListeningOnPort"
-  #        run_args: "-test.run TestProcessListeningOnPort -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestSymbolicLinkProcess"
-  #        run_args: "-test.run TestSymbolicLinkProcess -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestSocat"
-  #        run_args: "-test.run TestSocat -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestDuplicateEndpoints"
-  #        run_args: "-test.run TestDuplicateEndpoints -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestConnectionsAndEndpointsNormal"
-  #        run_args: "-test.run TestConnectionsAndEndpointsNormal -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestConnectionsAndEndpointsHighLowPorts"
-  #        run_args: "-test.run TestConnectionsAndEndpointsHighLowPorts -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestConnectionsAndEndpointsServerHigh"
-  #        run_args: "-test.run TestConnectionsAndEndpointsServerHigh -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestConnectionsAndEndpointsSourcePort"
-  #        run_args: "-test.run TestConnectionsAndEndpointsSourcePort -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestConnectionsAndEndpointsUDPNormal"
-  #        run_args: "-test.run TestConnectionsAndEndpointsUDPNormal -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestConnectionsAndEndpointsUDPNoReuseaddr"
-  #        run_args: "-test.run TestConnectionsAndEndpointsUDPNoReuseaddr -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestConnectionsAndEndpointsUDPNoFork"
-  #        run_args: "-test.run TestConnectionsAndEndpointsUDPNoFork -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestAsyncConnectionBlocked"
-  #        run_args: "-test.run TestAsyncConnectionBlocked -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestAsyncConnectionSuccess"
-  #        run_args: "-test.run TestAsyncConnectionSuccess -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestAsyncConnectionBlockedWithDisableTracking"
-  #        run_args: "-test.run TestAsyncConnectionBlockedWithDisableTracking -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestAsyncConnectionSuccessWithDisableTracking"
-  #        run_args: "-test.run TestAsyncConnectionSuccessWithDisableTracking -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestCollectorStartup"
-  #        run_args: "-test.run TestCollectorStartup -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestPerfEvent"
-  #        run_args: "-test.run TestPerfEvent -test.timeout 60m -test.count=1"
-  #      - collector_test: "TestGperftools"
-  #        run_args: "-test.run TestGperftools -test.timeout 60m -test.count=1"
-  #  when: collector_test == "ci-integration-tests"
 
 - name: Make logs directory
   file:
@@ -131,9 +62,6 @@
   become: yes
   shell: |
     mkdir /tmp/core_dumps || true
-          #if [[ ! -d "/tmp/core_dumps" ]]; then
-          #  mkdir /tmp/core_dumps
-          #fi
 
 - block:
 
@@ -188,11 +116,6 @@
       debug:
         msg: "{{ test_result.results | map(attribute='stdout') | join('\n') }}"
       tags: [print_action]
-
-      #- name: Output test log
-      #  debug:
-      #    msg: "{{ test_result.stdout }}"
-      #  tags: [print_action]
 
   always:
     - name: Make logs directories
