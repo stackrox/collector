@@ -97,8 +97,8 @@ class SysdigEventExtractor {
   TINFO_FIELD(exe);
   TINFO_FIELD(exepath);
   TINFO_FIELD(pid);
-  TINFO_FIELD_RAW(uid, user.uid, uint32_t);
-  TINFO_FIELD_RAW(gid, group.gid, uint32_t);
+  TINFO_FIELD_RAW(uid, user_uid, uint32_t);
+  TINFO_FIELD_RAW(gid, group_gid, uint32_t);
   FIELD_CSTR(proc_args, "proc.args");
 
   // General event information

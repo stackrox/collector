@@ -50,7 +50,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithoutParentTest) {
   tinfo->m_tid = 0;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 2;
-  tinfo->m_user.uid = 7;
+  tinfo->m_user_uid = 7;
   tinfo->m_exepath = "qwerty";
 
   inspector->add_thread(tinfo);
@@ -84,14 +84,14 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentTest) {
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.uid = 42;
+  tinfo->m_user_uid = 42;
   tinfo->m_exepath = "asdf";
   auto* tinfo2 = new sinsp_threadinfo(inspector.get());
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.uid = 7;
+  tinfo2->m_user_uid = 7;
   tinfo2->m_exepath = "qwerty";
   inspector->add_thread(tinfo);
   inspector->add_thread(tinfo2);
@@ -110,7 +110,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentTest) {
 
   EXPECT_EQ(lineage.size(), 1);
 
-  EXPECT_EQ(lineage[0].parent_uid(), tinfo->m_user.uid);
+  EXPECT_EQ(lineage[0].parent_uid(), tinfo->m_user_uid);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), tinfo->m_exepath);
 
   CollectorStats::Reset();
@@ -165,14 +165,14 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithSameNameTest) {
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.uid = 43;
+  tinfo->m_user_uid = 43;
   tinfo->m_exepath = "asdf";
   auto* tinfo2 = new sinsp_threadinfo(inspector.get());
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.uid = 42;
+  tinfo2->m_user_uid = 42;
   tinfo2->m_exepath = "asdf";
   inspector->add_thread(tinfo);
   inspector->add_thread(tinfo2);
@@ -191,7 +191,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithSameNameTest) {
 
   EXPECT_EQ(lineage.size(), 1);
 
-  EXPECT_EQ(lineage[0].parent_uid(), tinfo->m_user.uid);
+  EXPECT_EQ(lineage[0].parent_uid(), tinfo->m_user_uid);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), tinfo->m_exepath);
 
   CollectorStats::Reset();
@@ -208,7 +208,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.uid = 42;
+  tinfo->m_user_uid = 42;
   tinfo->m_exepath = "asdf";
 
   auto* tinfo2 = new sinsp_threadinfo(inspector.get());
@@ -216,7 +216,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.uid = 7;
+  tinfo2->m_user_uid = 7;
   tinfo2->m_exepath = "qwerty";
 
   auto* tinfo3 = new sinsp_threadinfo(inspector.get());
@@ -224,7 +224,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 9;
-  tinfo3->m_user.uid = 8;
+  tinfo3->m_user_uid = 8;
   tinfo3->m_exepath = "uiop";
 
   inspector->add_thread(tinfo);
@@ -246,10 +246,10 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
 
   EXPECT_EQ(lineage.size(), 2);
 
-  EXPECT_EQ(lineage[0].parent_uid(), tinfo2->m_user.uid);
+  EXPECT_EQ(lineage[0].parent_uid(), tinfo2->m_user_uid);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), tinfo2->m_exepath);
 
-  EXPECT_EQ(lineage[1].parent_uid(), tinfo->m_user.uid);
+  EXPECT_EQ(lineage[1].parent_uid(), tinfo->m_user_uid);
   EXPECT_EQ(lineage[1].parent_exec_file_path(), tinfo->m_exepath);
 
   CollectorStats::Reset();
@@ -266,7 +266,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.uid = 42;
+  tinfo->m_user_uid = 42;
   tinfo->m_exepath = "asdf";
 
   auto* tinfo2 = new sinsp_threadinfo(inspector.get());
@@ -274,7 +274,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.uid = 7;
+  tinfo2->m_user_uid = 7;
   tinfo2->m_exepath = "asdf";
 
   auto* tinfo3 = new sinsp_threadinfo(inspector.get());
@@ -282,7 +282,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 9;
-  tinfo3->m_user.uid = 8;
+  tinfo3->m_user_uid = 8;
   tinfo3->m_exepath = "asdf";
 
   inspector->add_thread(tinfo);
@@ -304,7 +304,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
 
   EXPECT_EQ(lineage.size(), 1);
 
-  EXPECT_EQ(lineage[0].parent_uid(), tinfo2->m_user.uid);
+  EXPECT_EQ(lineage[0].parent_uid(), tinfo2->m_user_uid);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), tinfo2->m_exepath);
 
   CollectorStats::Reset();
@@ -321,7 +321,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.uid = 42;
+  tinfo->m_user_uid = 42;
   tinfo->m_exepath = "asdf";
 
   auto* tinfo2 = new sinsp_threadinfo(inspector.get());
@@ -329,7 +329,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.uid = 7;
+  tinfo2->m_user_uid = 7;
   tinfo2->m_exepath = "asdf";
 
   auto* tinfo3 = new sinsp_threadinfo(inspector.get());
@@ -337,7 +337,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 9;
-  tinfo3->m_user.uid = 8;
+  tinfo3->m_user_uid = 8;
   tinfo3->m_exepath = "asdf";
 
   auto* tinfo4 = new sinsp_threadinfo(inspector.get());
@@ -345,7 +345,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
   tinfo4->m_tid = 5;
   tinfo4->m_ptid = 4;
   tinfo4->m_vpid = 10;
-  tinfo4->m_user.uid = 9;
+  tinfo4->m_user_uid = 9;
   tinfo4->m_exepath = "qwerty";
 
   inspector->add_thread(tinfo);
@@ -368,7 +368,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
 
   EXPECT_EQ(lineage.size(), 1);
 
-  EXPECT_EQ(lineage[0].parent_uid(), tinfo3->m_user.uid);
+  EXPECT_EQ(lineage[0].parent_uid(), tinfo3->m_user_uid);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), tinfo3->m_exepath);
 
   CollectorStats::Reset();
@@ -385,7 +385,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.uid = 42;
+  tinfo->m_user_uid = 42;
   tinfo->m_exepath = "qwerty";
 
   auto* tinfo2 = new sinsp_threadinfo(inspector.get());
@@ -393,7 +393,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.uid = 7;
+  tinfo2->m_user_uid = 7;
   tinfo2->m_exepath = "asdf";
 
   auto* tinfo3 = new sinsp_threadinfo(inspector.get());
@@ -401,7 +401,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 9;
-  tinfo3->m_user.uid = 8;
+  tinfo3->m_user_uid = 8;
   tinfo3->m_exepath = "asdf";
 
   auto* tinfo4 = new sinsp_threadinfo(inspector.get());
@@ -409,7 +409,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   tinfo4->m_tid = 5;
   tinfo4->m_ptid = 4;
   tinfo4->m_vpid = 10;
-  tinfo4->m_user.uid = 9;
+  tinfo4->m_user_uid = 9;
   tinfo4->m_exepath = "asdf";
 
   inspector->add_thread(tinfo);
@@ -432,10 +432,10 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
 
   EXPECT_EQ(lineage.size(), 2);
 
-  EXPECT_EQ(lineage[0].parent_uid(), tinfo3->m_user.uid);
+  EXPECT_EQ(lineage[0].parent_uid(), tinfo3->m_user_uid);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), tinfo3->m_exepath);
 
-  EXPECT_EQ(lineage[1].parent_uid(), tinfo->m_user.uid);
+  EXPECT_EQ(lineage[1].parent_uid(), tinfo->m_user_uid);
   EXPECT_EQ(lineage[1].parent_exec_file_path(), tinfo->m_exepath);
 
   CollectorStats::Reset();
@@ -452,7 +452,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.uid = 42;
+  tinfo->m_user_uid = 42;
   tinfo->m_exepath = "qwerty";
 
   auto* tinfo2 = new sinsp_threadinfo(inspector.get());
@@ -460,7 +460,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.uid = 7;
+  tinfo2->m_user_uid = 7;
   tinfo2->m_exepath = "asdf";
 
   auto* tinfo3 = new sinsp_threadinfo(inspector.get());
@@ -468,7 +468,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 9;
-  tinfo3->m_user.uid = 8;
+  tinfo3->m_user_uid = 8;
   tinfo3->m_exepath = "uiop";
 
   auto* tinfo4 = new sinsp_threadinfo(inspector.get());
@@ -476,7 +476,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   tinfo4->m_tid = 5;
   tinfo4->m_ptid = 555;
   tinfo4->m_vpid = 10;
-  tinfo4->m_user.uid = 9;
+  tinfo4->m_user_uid = 9;
   tinfo4->m_exepath = "jkl;";
 
   inspector->add_thread(tinfo);
@@ -499,10 +499,10 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
 
   EXPECT_EQ(lineage.size(), 2);
 
-  EXPECT_EQ(lineage[0].parent_uid(), tinfo2->m_user.uid);
+  EXPECT_EQ(lineage[0].parent_uid(), tinfo2->m_user_uid);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), tinfo2->m_exepath);
 
-  EXPECT_EQ(lineage[1].parent_uid(), tinfo->m_user.uid);
+  EXPECT_EQ(lineage[1].parent_uid(), tinfo->m_user_uid);
   EXPECT_EQ(lineage[1].parent_exec_file_path(), tinfo->m_exepath);
 
   CollectorStats::Reset();
@@ -519,7 +519,7 @@ TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
   tinfo->m_tid = 1;
   tinfo->m_ptid = 555;
   tinfo->m_vpid = 10;
-  tinfo->m_user.uid = 9;
+  tinfo->m_user_uid = 9;
   tinfo->m_exepath = "jkl;";
 
   inspector->add_thread(tinfo);
@@ -532,7 +532,7 @@ TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
   tinfo2->m_tid = 2;
   tinfo2->m_ptid = 555;
   tinfo2->m_vpid = 10;
-  tinfo2->m_user.uid = 9;
+  tinfo2->m_user_uid = 9;
   tinfo2->m_exepath = "jkl;";
 
   inspector->add_thread(tinfo2);
@@ -566,7 +566,7 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 0;
-  tinfo->m_user.uid = 42;
+  tinfo->m_user_uid = 42;
   tinfo->m_container_id = "";
   tinfo->m_exepath = "qwerty";
 
@@ -575,7 +575,7 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 0;
-  tinfo2->m_user.uid = 7;
+  tinfo2->m_user_uid = 7;
   tinfo2->m_container_id = "id";
   tinfo2->m_exepath = "asdf";
 
@@ -584,7 +584,7 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 0;
-  tinfo3->m_user.uid = 8;
+  tinfo3->m_user_uid = 8;
   tinfo3->m_container_id = "id";
   tinfo3->m_exepath = "uiop";
 
@@ -607,7 +607,7 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
 
   EXPECT_EQ(lineage.size(), 1);
 
-  EXPECT_EQ(lineage[0].parent_uid(), tinfo2->m_user.uid);
+  EXPECT_EQ(lineage[0].parent_uid(), tinfo2->m_user_uid);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), tinfo2->m_exepath);
 
   CollectorStats::Reset();
