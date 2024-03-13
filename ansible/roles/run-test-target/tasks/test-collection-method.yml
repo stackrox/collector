@@ -29,14 +29,33 @@
   become: "{{ runtime_as_root }}"
   shell: |
     cd {{ collector_root }}/integration-tests
-    grep func\ Test integration_test.go | awk '{print $2}' | sed 's|(.*||'
+    grep "func Test" integration_test.go | awk '{print $2}' | sed 's|(.*||'
+    #grep func\ Test integration_test.go | awk '{print $2}' | sed 's|(.*||'
     #go test -list Test -test.run=^$
   register: test_list
-  changed_when: false
+
+- name: Get contents of integration_test.go
+  become: "{{ runtime_as_root }}"
+  shell: |
+    cd {{ collector_root }}/integration-tests
+    cat integration_test.go
+  register: test_contents
+
+- name: Output test contents
+  debug:
+    msg: "{{ test_contents.stdout_lines }}"
+
+- name: Output test contents 2
+  debug:
+    msg: "{{ test_contents.stdout }}"
 
 - name: Output list of tests
   debug:
     msg: "{{ test_list.stdout_lines }}"
+
+- name: Output list of tests 2
+  debug:
+    msg: "{{ test_list.stdout }}"
 
 - set_fact:
     tests_to_run:
