@@ -34,6 +34,10 @@
   register: test_list
   changed_when: false
 
+- name: Output list of tests
+  debug:
+    msg: "{{ test_list.stdout_lines }}"
+
 - set_fact:
     tests_to_run:
       - "{{ collector_test }}"
