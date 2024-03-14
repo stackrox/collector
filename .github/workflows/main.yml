@@ -127,6 +127,37 @@ jobs:
         run: |
           ctest -V --test-dir cmake-build
 
+  scan-build:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/collector-builder:${{ needs.build-builder-image.outputs.collector-builder-tag }}
+    needs: build-builder-image
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Run scan build
+        id: scan-build
+        run: |
+          scan-build cmake -S . -B cmake-build/
+          scan-build --exclude falcosecurity-libs \
+              --exclude cmake-build/skel_dir \
+              --status-bugs \
+              -no-failure-reports \
+              -maxloop 50 \
+              -o cmake-build/scan-build \
+              make -C cmake-build/ -j"$(nproc)" collector connscrape
+
+      - name: Store report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: scan-build-report
+          if-no-files-found: ignore
+          path: |
+            ${{ github.workspace }}/cmake-build/scan-build
+
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml
     with:

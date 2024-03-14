@@ -249,7 +249,7 @@ void SysdigService::Run(const std::atomic<ControlValue>& control) {
         if (!SendExistingProcesses(signal_handler.handler.get())) {
           continue;
         }
-        result = signal_handler.handler->HandleSignal(evt);
+        signal_handler.handler->HandleSignal(evt);
       } else if (result == SignalHandler::FINISHED) {
         // This signal handler has finished processing events,
         // so remove it from the signal handler list.
