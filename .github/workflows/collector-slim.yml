@@ -66,6 +66,7 @@ jobs:
           rhacs_eng_image: ${{ env.RHACS_ENG_IMAGE }}
           collector_image: ${{ inputs.collector-image }}
           collector_tag: ${{ inputs.collector-tag }}
+          clone_repository: false
           EOF
 
       - name: Build images
@@ -90,7 +91,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [ppc64le, s390x, arm64]
+        arch: [s390x, arm64]
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
@@ -141,6 +142,7 @@ jobs:
           rhacs_eng_image: ${{ env.RHACS_ENG_IMAGE }}
           collector_image: ${{ inputs.collector-image }}
           collector_tag: ${{ inputs.collector-tag }}
+          clone_repository: true
           EOF
 
       - name: Build ${{ matrix.arch }} image

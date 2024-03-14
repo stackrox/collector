@@ -18,7 +18,7 @@
         version: "{{ collector_git_sha }}"
         refspec: "+{{ collector_git_ref | replace('refs/', '') }}"
         recursive: true
-      when: arch != "amd64"
+      when: clone_repository
 
     - name: Build the collector builder image
       community.general.make:

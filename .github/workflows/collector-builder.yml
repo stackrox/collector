@@ -101,6 +101,7 @@ jobs:
           collector_git_ref: ${{ github.ref }}
           collector_git_sha: ${{ github.sha }}
           collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}
+          clone_repository: false
           EOF
 
       - name: Build images
@@ -182,6 +183,7 @@ jobs:
           collector_git_ref: ${{ github.ref }}
           collector_git_sha: ${{ github.sha }}
           collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}
+          clone_repository: true
           EOF
 
       - name: Build images
