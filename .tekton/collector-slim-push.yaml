@@ -21,7 +21,7 @@ spec:
 
   params:
   - name: dockerfile
-    value: collector/container/konflux-slim.Dockerfile
+    value: collector/container/konflux.Dockerfile
   - name: git-url
     value: '{{repo_url}}'
   - name: image-expires-after
@@ -43,6 +43,8 @@ spec:
     value: ''
   - name: build-source-image
     value: 'true'
+  - name: build-target-stage
+    value: collector-slim
 
   workspaces:
   - name: workspace
@@ -151,6 +153,10 @@ spec:
     - default: "true"
       description: Build a source image.
       name: build-source-image
+      type: string
+    - default: ""
+      description: Build stage to target in container build
+      name: build-target-stage
       type: string
 
     results:
@@ -270,6 +276,8 @@ spec:
         value: $(params.image-expires-after)
       - name: COMMIT_SHA
         value: $(tasks.clone-repository.results.commit)
+      - name: TARGET_STAGE
+        value: $(params.build-target-stage)
       runAfter:
       - prefetch-dependencies
       taskRef:
