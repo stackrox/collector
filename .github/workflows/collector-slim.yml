@@ -24,33 +24,14 @@ env:
   COLLECTOR_BUILDER_TAG: ${{ inputs.collector-builder-tag }}
   RHACS_ENG_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
   ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
+  COLLECTOR_APPEND_CID: ${{ github.event_name == 'pull_request' }}
+  TRACE_SINSP_EVENTS: ${{ github.event_name == 'pull_request' }}
+  ADDRESS_SANITIZER: ${{ contains(github.event.pull_request.labels.*.name, 'address-sanitizer') }}
 
 jobs:
-  setup-environment:
-    name: Setup environment
-    runs-on: ubuntu-latest
-    outputs:
-      collector-append-cid: ${{ steps.vars.outputs.collector-append-cid || false }}
-      trace-sinsp-events: ${{ steps.vars.outputs.trace-sinsp-events || false }}
-      address-sanitizer: ${{ steps.vars.outputs.address-sanitizer || false }}
-    steps:
-      - name: Checks PR, main and release branches
-        id: vars
-        run: |
-          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
-            echo "collector-append-cid=true" >> "$GITHUB_OUTPUT"
-            echo "trace-sinsp-events=1" >> "$GITHUB_OUTPUT"
-
-            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'address-sanitizer') }}" == "true" ]]; then
-              echo "address-sanitizer=true" >> "$GITHUB_OUTPUT"
-            fi
-          fi
-
   build-collector-image:
     name: Build the collector slim image
     runs-on: ubuntu-latest
-    needs:
-    - setup-environment
     strategy:
       fail-fast: false
       matrix:
@@ -58,9 +39,6 @@ jobs:
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
-      COLLECTOR_APPEND_CID: ${{ needs.setup-environment.outputs.collector-append-cid }}
-      TRACE_SINSP_EVENTS: ${{ needs.setup-environment.outputs.trace-sinsp-events }}
-      ADDRESS_SANITIZER: ${{ needs.setup-environment.outputs.address-sanitizer }}
 
     steps:
       - uses: actions/checkout@v4
@@ -109,8 +87,6 @@ jobs:
     name: Build the collector slim image on a remote VM
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
-    needs:
-    - setup-environment
     strategy:
       fail-fast: false
       matrix:
@@ -118,9 +94,6 @@ jobs:
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
-      COLLECTOR_APPEND_CID: ${{ needs.setup-environment.outputs.collector-append-cid }}
-      TRACE_SINSP_EVENTS: ${{ needs.setup-environment.outputs.trace-sinsp-events }}
-      ADDRESS_SANITIZER: ${{ needs.setup-environment.outputs.address-sanitizer }}
 
     steps:
       - uses: actions/checkout@v4
@@ -184,7 +157,6 @@ jobs:
         if: always()
         run: |
           make -C ansible destroy-vms
-
 
   create-multiarch-manifest:
     needs:
