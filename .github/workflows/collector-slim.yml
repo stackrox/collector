@@ -24,6 +24,9 @@ env:
   COLLECTOR_BUILDER_TAG: ${{ inputs.collector-builder-tag }}
   RHACS_ENG_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
   ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
+  COLLECTOR_APPEND_CID: ${{ github.event_name == 'pull_request' }}
+  TRACE_SINSP_EVENTS: ${{ github.event_name == 'pull_request' }}
+  ADDRESS_SANITIZER: ${{ contains(github.event.pull_request.labels.*.name, 'address-sanitizer') }}
 
 jobs:
   build-collector-image:
@@ -32,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, ppc64le, s390x, arm64]
+        arch: [amd64, ppc64le, arm64]
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
@@ -47,6 +50,53 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Create ansible vars
+        run: |
+          cat << EOF > ${{ github.workspace }}/ansible/secrets.yml
+          ---
+          stackrox_io_username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+          rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          collector_git_ref: ${{ github.ref }}
+          collector_git_sha: ${{ github.sha }}
+          collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}
+          disable_profiling: ${{ matrix.arch != 'amd64' && matrix.arch != 'arm64' }}
+          rhacs_eng_image: ${{ env.RHACS_ENG_IMAGE }}
+          collector_image: ${{ inputs.collector-image }}
+          collector_tag: ${{ inputs.collector-tag }}
+          EOF
+
+      - name: Build images
+        if: |
+          github.event_name == 'push' ||
+          matrix.arch == 'amd64' ||
+          contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+        timeout-minutes: 480
+        run: |
+          ansible-playbook \
+            --connection local \
+            -i localhost, \
+            --limit localhost \
+            -e arch='${{ matrix.arch }}' \
+            -e @'${{ github.workspace }}/ansible/secrets.yml' \
+            ansible/ci-build-collector.yml
+
+  build-collector-image-remote-vm:
+    name: Build the collector slim image on a remote VM
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [s390x]
+
+    env:
+      PLATFORM: linux/${{ matrix.arch }}
+
+    steps:
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
@@ -69,71 +119,31 @@ jobs:
           ppc64le-key: ${{ secrets.IBM_CLOUD_POWER_API_KEY }}
           redhat-username: ${{ secrets.REDHAT_USERNAME }}
           redhat-password: ${{ secrets.REDHAT_PASSWORD }}
-          vm-type: all
+          vm-type: rhel-${{ matrix.arch }}
           job-tag: builder
 
       - name: Create Build VMs
-        if: |
-          matrix.arch == 's390x' &&
-          (github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds'))
         run: |
           make -C "${{ github.workspace }}/ansible" create-build-vms
 
-      - name: Checks PR, main and release branches
-        run: |
-          if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
-            echo "COLLECTOR_APPEND_CID=true" >> "$GITHUB_ENV"
-            echo "TRACE_SINSP_EVENTS=1" >> "$GITHUB_ENV"
-
-            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'address-sanitizer') }}" == "true" ]]; then
-              echo "ADDRESS_SANITIZER=true" >> "$GITHUB_ENV"
-            fi
-          fi
-
       - name: Create ansible vars
         run: |
-          {
-            echo "---"
-            echo "stackrox_io_username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}"
-            echo "stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}"
-            echo "rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}"
-            echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
-            echo "collector_git_ref: ${{ github.ref }}"
-            echo "collector_git_sha: ${{ github.sha }}"
-            echo "collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}"
-            echo "disable_profiling: ${{ matrix.arch != 'amd64' && matrix.arch != 'arm64' }}"
-            echo "rhacs_eng_image: ${{ env.RHACS_ENG_IMAGE }}"
-            echo "collector_image: ${{ inputs.collector-image }}"
-            echo "collector_tag: ${{ inputs.collector-tag }}"
-          } > ${{ github.workspace }}/ansible/secrets.yml
+          cat << EOF > ${{ github.workspace }}/ansible/secrets.yml
+          ---
+          stackrox_io_username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+          rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          collector_git_ref: ${{ github.ref }}
+          collector_git_sha: ${{ github.sha }}
+          collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}
+          disable_profiling: ${{ matrix.arch != 'amd64' && matrix.arch != 'arm64' }}
+          rhacs_eng_image: ${{ env.RHACS_ENG_IMAGE }}
+          collector_image: ${{ inputs.collector-image }}
+          collector_tag: ${{ inputs.collector-tag }}
+          EOF
 
-      - name: Authenticate with GCP
-        uses: 'google-github-actions/auth@v2'
-        with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
-
-      - name: Setup GCP
-        uses: 'google-github-actions/setup-gcloud@v2'
-
-      - name: Build images
-        if: |
-          (github.event_name == 'push' && matrix.arch != 's390x') ||
-          matrix.arch == 'amd64' ||
-          (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch != 's390x')
-        timeout-minutes: 480
-        run: |
-          ansible-playbook \
-            --connection local \
-            -i localhost, \
-            --limit localhost \
-            -e arch='${{ matrix.arch }}' \
-            -e @'${{ github.workspace }}/ansible/secrets.yml' \
-            ansible/ci-build-collector.yml
-
-      - name: Build s390x image
-        if: |
-          (github.event_name == 'push' && matrix.arch == 's390x') ||
-          (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch == 's390x')
+      - name: Build ${{ matrix.arch }} image
         timeout-minutes: 480
         run: |
           ansible-playbook \
@@ -142,17 +152,16 @@ jobs:
             -e build_hosts='job_id_${{ env.JOB_ID }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-collector.yml
-        env:
-          VM_TYPE: rhel-s390x
 
       - name: Destroy Build VMs
-        if: always() && matrix.arch == 's390x'
+        if: always()
         run: |
           make -C ansible destroy-vms
 
   create-multiarch-manifest:
     needs:
     - build-collector-image
+    - build-collector-image-remote-vm
     name: Create Multiarch manifest
     runs-on: ubuntu-latest
     if: |
