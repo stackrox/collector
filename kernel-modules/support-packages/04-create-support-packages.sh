@@ -58,17 +58,17 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
         gsutil -m cp "${DOWNSTREAM_MODULES_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
     fi
 
-    package_out_dir="${OUT_DIR}/${mod_ver}"
-    mkdir -p "$package_out_dir"
-    filename="support-pkg-${mod_ver}-$(date '+%Y%m%d%H%M%S').zip"
-    latest_filename="support-pkg-${mod_ver}-latest.zip"
-
     if [[ -z "$(ls -A "$probe_dir")" ]]; then
         # non-fatal here to ensure all module versions are processed
         echo >&2 "[WARNING] no probes downloaded for ${mod_ver}"
         echo "${mod_ver}" >> "${OUT_DIR}/empty"
         continue
     fi
+
+    package_out_dir="${OUT_DIR}/${mod_ver}"
+    mkdir -p "$package_out_dir"
+    filename="support-pkg-${mod_ver}-$(date '+%Y%m%d%H%M%S').zip"
+    latest_filename="support-pkg-${mod_ver}-latest.zip"
 
     cp "${LICENSE_FILE}" "${probe_dir}"/LICENSE
 
