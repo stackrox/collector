@@ -48,7 +48,12 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     # For now we create *full* kernel support packages, not only deltas, in order to
     # support the slim collector use-case.
     # Remains to be clarified; we might provide more fine granular download options in the future.
-    gsutil -m cp "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
+
+    # From 2.9.0 support packages only include downstream built drivers
+    if ! use_downstream_only "$mod_ver"; then
+        gsutil -m cp "${COLLECTOR_MODULES_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
+    fi
+
     if use_downstream "$mod_ver" && bucket_has_drivers "${DOWNSTREAM_MODULES_BUCKET}/${mod_ver}/*.gz"; then
         gsutil -m cp "${DOWNSTREAM_MODULES_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
     fi
