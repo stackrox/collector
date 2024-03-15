@@ -39,8 +39,6 @@ DOWNSTREAM_MODULES_BUCKET="$5"
 
 mkdir -p "${OUT_DIR}" || die "Failed to create output directory '${OUT_DIR}'"
 
-empty_mod_vers=()
-
 for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     mod_ver="$(basename "$mod_ver_dir")"
 
@@ -60,17 +58,15 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
         gsutil -m cp "${DOWNSTREAM_MODULES_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
     fi
 
-    if [[ -z "$(ls -A "$probe_dir")" ]]; then
-        # non-fatal here to ensure all module versions are processed
-        # an error is thrown when the processing is complete
-        echo >&2 "[WARNING] no probes downloaded for ${mod_ver}"
-        empty_mod_vers+=("${mod_ver}")
-    fi
-
     package_out_dir="${OUT_DIR}/${mod_ver}"
     mkdir -p "$package_out_dir"
     filename="support-pkg-${mod_ver}-$(date '+%Y%m%d%H%M%S').zip"
     latest_filename="support-pkg-${mod_ver}-latest.zip"
+
+    if [[ -z "$(ls -A "$probe_dir")" ]]; then
+        # non-fatal here to ensure all module versions are processed
+        echo >&2 "[WARNING] no probes downloaded for ${mod_ver}"
+    fi
 
     cp "${LICENSE_FILE}" "${probe_dir}"/LICENSE
 
@@ -84,8 +80,3 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     generate_checksum "${package_out_dir}" "${latest_filename}"
     rm -rf "$package_root" || true
 done
-
-if ((${#empty_mod_vers[@]})); then
-    # some module versions were empty
-    die "No probes downloaded for module versions: ${empty_mod_vers[*]}"
-fi

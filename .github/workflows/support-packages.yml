@@ -68,6 +68,28 @@ jobs:
             /tmp/support-packages/output \
             gs://${{ inputs.downstream-drivers-bucket }}
 
+      - name: Check empty support packages
+        id: empty-check
+        run: |
+          empty=()
+          for mod_ver_dir in /tmp/support-packages/output/*; do
+            mod_ver="$(basename "$mod_ver_dir")"
+            for pkg in "$mod_ver_dir"/*.zip; do
+              if ! unzip -l "$pkg" | grep -q "\.gz$"; then
+                empty+=("$mod_ver")
+                rm -rf "$mod_ver_dir"
+                break
+              fi
+            done
+          done
+
+          if ((${#empty[@]})); then
+            echo 2>&1 "Found empty support packages for module versions: ${empty[*]}"
+            echo "has-empty-packages=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-empty-packages=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create metadata.json
         uses: ./.github/actions/support-package-metadata-json
         with:
@@ -123,6 +145,12 @@ jobs:
           path: /tmp/driver-matrix.json
           parent: false
           destination: ${{ inputs.public-support-packages-bucket }}
+
+      - name: Fail if empty support packages
+        run: |
+          if [[ "${{ steps.empty-check.outputs.has-empty-packages }}" == "true" ]]; then
+            exit 1
+          fi
 
       - name: Slack notification
         if: failure() && github.event_name == 'push'
