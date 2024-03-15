@@ -16,7 +16,7 @@
         repo: https://github.com/stackrox/collector
         dest: "{{ collector_root }}"
         version: "{{ collector_git_sha }}"
-        refspec: "+{{ collector_git_ref | replace('refs/', '') }}"
+        refspec: "+{{ collector_git_ref }}"
         recursive: true
       when: clone_repository
 
