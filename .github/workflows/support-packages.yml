@@ -68,25 +68,6 @@ jobs:
             /tmp/support-packages/output \
             gs://${{ inputs.downstream-drivers-bucket }}
 
-      - name: Check empty support packages
-        id: empty-check
-        run: |
-          empty=()
-          for mod_ver_dir in /tmp/support-packages/output/*; do
-            mod_ver="$(basename "$mod_ver_dir")"
-            if [[ -e "$mod_ver_dir/empty" ]]; then
-              empty+=("$mod_ver")
-              rm -rf "$mod_ver_dir"
-            fi
-          done
-
-          if ((${#empty[@]})); then
-            echo 2>&1 "Found empty support packages for module versions: ${empty[*]}"
-            echo "has-empty-packages=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has-empty-packages=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Create metadata.json
         uses: ./.github/actions/support-package-metadata-json
         with:
@@ -145,7 +126,8 @@ jobs:
 
       - name: Fail if empty support packages
         run: |
-          if [[ "${{ steps.empty-check.outputs.has-empty-packages }}" == "true" ]]; then
+          if [[ -e /tmp/support-packages/output/empty ]]; then
+            awk '{ print "[ERROR] found empty support package: ", $0 }' /tmp/support-packages/output/empty
             exit 1
           fi
 
