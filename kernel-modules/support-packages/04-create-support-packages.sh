@@ -58,6 +58,10 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
         gsutil -m cp "${DOWNSTREAM_MODULES_BUCKET}/${mod_ver}/*.gz" "$probe_dir"
     fi
 
+    if [[ -z "$(ls -A "$probe_dir")" ]]; then
+        die "No probes downloaded for ${mod_ver}"
+    fi
+
     package_out_dir="${OUT_DIR}/${mod_ver}"
     mkdir -p "$package_out_dir"
     filename="support-pkg-${mod_ver}-$(date '+%Y%m%d%H%M%S').zip"
