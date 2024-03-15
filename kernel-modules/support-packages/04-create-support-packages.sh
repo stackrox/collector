@@ -66,17 +66,19 @@ for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     if [[ -z "$(ls -A "$probe_dir")" ]]; then
         # non-fatal here to ensure all module versions are processed
         echo >&2 "[WARNING] no probes downloaded for ${mod_ver}"
+        touch "${package_out_dir}/empty"
+    else
+        cp "${LICENSE_FILE}" "${probe_dir}"/LICENSE
+
+        compress_files "$package_root" "${package_out_dir}/${filename}"
+        generate_checksum "${package_out_dir}" "${filename}"
+
+        # Export the latest build filename
+        echo "${filename}" > "${package_out_dir}/latest"
+
+        cp "${package_out_dir}/${filename}" "${package_out_dir}/${latest_filename}"
+        generate_checksum "${package_out_dir}" "${latest_filename}"
     fi
 
-    cp "${LICENSE_FILE}" "${probe_dir}"/LICENSE
-
-    compress_files "$package_root" "${package_out_dir}/${filename}"
-    generate_checksum "${package_out_dir}" "${filename}"
-
-    # Export the latest build filename
-    echo "${filename}" > "${package_out_dir}/latest"
-
-    cp "${package_out_dir}/${filename}" "${package_out_dir}/${latest_filename}"
-    generate_checksum "${package_out_dir}" "${latest_filename}"
     rm -rf "$package_root" || true
 done

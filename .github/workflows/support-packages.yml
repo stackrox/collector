@@ -74,13 +74,10 @@ jobs:
           empty=()
           for mod_ver_dir in /tmp/support-packages/output/*; do
             mod_ver="$(basename "$mod_ver_dir")"
-            for pkg in "$mod_ver_dir"/*.zip; do
-              if ! unzip -l "$pkg" | grep -q "\.gz$"; then
-                empty+=("$mod_ver")
-                rm -rf "$mod_ver_dir"
-                break
-              fi
-            done
+            if [[ -e "$mod_ver_dir/empty" ]]; then
+              empty+=("$mod_ver")
+              rm -rf "$mod_ver_dir"
+            fi
           done
 
           if ((${#empty[@]})); then
