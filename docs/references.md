@@ -69,6 +69,10 @@ workloads it's the main part of memory consumption, this value effectively
 translates into the upper limit for memory usage. Note, that Falco puts it's
 own upper limit on top of that, which is 2^17.
 
+* `ROX_COLLECTOR_ENABLE_DETAILED_METRICS`: Specified whether to expose per-syscall metrics. This
+information could be useful for troubleshooting, but under normal functioning
+is quite verbose. The default is true.
+
 NOTE: Using environment variables is a preferred way of configuring Collector,
 so if you're adding a new configuration knob, keep this in mind.
 

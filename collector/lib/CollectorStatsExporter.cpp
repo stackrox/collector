@@ -113,7 +113,6 @@ void CollectorStatsExporter::run() {
   auto& kernel = collectorEventCounters.Add({{"type", "kernel"}});
   auto& drops = collectorEventCounters.Add({{"type", "drops"}});
   auto& preemptions = collectorEventCounters.Add({{"type", "preemptions"}});
-  auto& userspaceEvents = collectorEventCounters.Add({{"type", "userspace"}});
   auto& grpcSendFailures = collectorEventCounters.Add({{"type", "grpcSendFailures"}});
   auto& threadTableSize = collectorEventCounters.Add({{"type", "threadCacheSize"}});
 
@@ -143,21 +142,6 @@ void CollectorStatsExporter::run() {
     collector_counters[ct] = &(collector_counters_gauge.Add({{"type", CollectorStats::counter_type_to_name[ct]}}));
   }
 
-  auto& collectorTypedEventCounters = prometheus::BuildGauge()
-                                          .Name("rox_collector_events_typed")
-                                          .Help("Collector events by event type")
-                                          .Register(*registry_);
-
-  auto& collectorTypedEventTimesTotal = prometheus::BuildGauge()
-                                            .Name("rox_collector_event_times_us_total")
-                                            .Help("Collector event timings (total)")
-                                            .Register(*registry_);
-
-  auto& collectorTypedEventTimesAvg = prometheus::BuildGauge()
-                                          .Name("rox_collector_event_times_us_avg")
-                                          .Help("Collector event timings (average)")
-                                          .Register(*registry_);
-
   auto& collectorProcessLineageInfo = prometheus::BuildGauge()
                                           .Name("rox_collector_process_lineage_info")
                                           .Help("Collector process lineage info")
@@ -167,6 +151,12 @@ void CollectorStatsExporter::run() {
   prometheus::Gauge* lineage_avg = &collectorProcessLineageInfo.Add({{"type", "lineage_avg"}});
   prometheus::Gauge* lineage_std_dev = &collectorProcessLineageInfo.Add({{"type", "std_dev"}});
   prometheus::Gauge* lineage_avg_string_len = &collectorProcessLineageInfo.Add({{"type", "lineage_avg_string_len"}});
+
+  // Following counters are used for detailed metrics
+  prometheus::Gauge* userspaceEvents = nullptr;
+  prometheus::Family<prometheus::Gauge>* collectorTypedEventCounters = nullptr;
+  prometheus::Family<prometheus::Gauge>* collectorTypedEventTimesTotal = nullptr;
+  prometheus::Family<prometheus::Gauge>* collectorTypedEventTimesAvg = nullptr;
 
   struct {
     prometheus::Gauge* userspace = nullptr;
@@ -182,27 +172,47 @@ void CollectorStatsExporter::run() {
   UnorderedSet<std::string> syscall_set(active_syscalls.begin(), active_syscalls.end());
 
   const auto& event_names = EventNames::GetInstance();
-  for (int i = 0; i < PPM_EVENT_MAX; i++) {
-    const auto& event_name = event_names.GetEventName(i);
 
-    if (!Contains(syscall_set, event_name)) {
-      continue;
+  if (config_->EnableDetailedMetrics()) {
+    userspaceEvents = &collectorEventCounters.Add({{"type", "userspace"}});
+
+    collectorTypedEventCounters = &prometheus::BuildGauge()
+                                       .Name("rox_collector_events_typed")
+                                       .Help("Collector events by event type")
+                                       .Register(*registry_);
+
+    collectorTypedEventTimesTotal = &prometheus::BuildGauge()
+                                         .Name("rox_collector_event_times_us_total")
+                                         .Help("Collector event timings (total)")
+                                         .Register(*registry_);
+
+    collectorTypedEventTimesAvg = &prometheus::BuildGauge()
+                                       .Name("rox_collector_event_times_us_avg")
+                                       .Help("Collector event timings (average)")
+                                       .Register(*registry_);
+
+    for (int i = 0; i < PPM_EVENT_MAX; i++) {
+      const auto& event_name = event_names.GetEventName(i);
+
+      if (!Contains(syscall_set, event_name)) {
+        continue;
+      }
+
+      const char* event_dir = PPME_IS_ENTER(i) ? ">" : "<";
+
+      typed[i].userspace = &collectorTypedEventCounters->Add(
+          std::map<std::string, std::string>{{"quantity", "userspace"}, {"event_type", event_name}, {"event_dir", event_dir}});
+
+      typed[i].parse_micros_total = &collectorTypedEventTimesTotal->Add(
+          std::map<std::string, std::string>{{"step", "parse"}, {"event_type", event_name}, {"event_dir", event_dir}});
+      typed[i].process_micros_total = &collectorTypedEventTimesTotal->Add(
+          std::map<std::string, std::string>{{"step", "process"}, {"event_type", event_name}, {"event_dir", event_dir}});
+
+      typed[i].parse_micros_avg = &collectorTypedEventTimesAvg->Add(
+          std::map<std::string, std::string>{{"step", "parse"}, {"event_type", event_name}, {"event_dir", event_dir}});
+      typed[i].process_micros_avg = &collectorTypedEventTimesAvg->Add(
+          std::map<std::string, std::string>{{"step", "process"}, {"event_type", event_name}, {"event_dir", event_dir}});
     }
-
-    const char* event_dir = PPME_IS_ENTER(i) ? ">" : "<";
-
-    typed[i].userspace = &collectorTypedEventCounters.Add(
-        std::map<std::string, std::string>{{"quantity", "userspace"}, {"event_type", event_name}, {"event_dir", event_dir}});
-
-    typed[i].parse_micros_total = &collectorTypedEventTimesTotal.Add(
-        std::map<std::string, std::string>{{"step", "parse"}, {"event_type", event_name}, {"event_dir", event_dir}});
-    typed[i].process_micros_total = &collectorTypedEventTimesTotal.Add(
-        std::map<std::string, std::string>{{"step", "process"}, {"event_type", event_name}, {"event_dir", event_dir}});
-
-    typed[i].parse_micros_avg = &collectorTypedEventTimesAvg.Add(
-        std::map<std::string, std::string>{{"step", "parse"}, {"event_type", event_name}, {"event_dir", event_dir}});
-    typed[i].process_micros_avg = &collectorTypedEventTimesAvg.Add(
-        std::map<std::string, std::string>{{"step", "process"}, {"event_type", event_name}, {"event_dir", event_dir}});
   }
 
   while (thread_.Pause(std::chrono::seconds(5))) {
@@ -216,25 +226,27 @@ void CollectorStatsExporter::run() {
     preemptions.Set(stats.nPreemptions);
     threadTableSize.Set(stats.nThreadCacheSize);
 
-    uint64_t nUserspace = 0;
-    for (int i = 0; i < PPM_EVENT_MAX; i++) {
-      auto& counters = typed[i];
+    if (config_->EnableDetailedMetrics()) {
+      uint64_t nUserspace = 0;
+      for (int i = 0; i < PPM_EVENT_MAX; i++) {
+        auto& counters = typed[i];
 
-      auto userspace = stats.nUserspaceEvents[i];
-      auto parse_micros_total = stats.event_parse_micros[i];
-      auto process_micros_total = stats.event_process_micros[i];
+        auto userspace = stats.nUserspaceEvents[i];
+        auto parse_micros_total = stats.event_parse_micros[i];
+        auto process_micros_total = stats.event_process_micros[i];
 
-      nUserspace += userspace;
+        nUserspace += userspace;
 
-      if (counters.userspace) counters.userspace->Set(userspace);
+        if (counters.userspace) counters.userspace->Set(userspace);
 
-      if (counters.parse_micros_total) counters.parse_micros_total->Set(parse_micros_total);
-      if (counters.process_micros_total) counters.process_micros_total->Set(process_micros_total);
+        if (counters.parse_micros_total) counters.parse_micros_total->Set(parse_micros_total);
+        if (counters.process_micros_total) counters.process_micros_total->Set(process_micros_total);
 
-      if (counters.parse_micros_avg) counters.parse_micros_avg->Set(userspace ? parse_micros_total / userspace : 0);
+        if (counters.parse_micros_avg) counters.parse_micros_avg->Set(userspace ? parse_micros_total / userspace : 0);
+      }
+
+      userspaceEvents->Set(nUserspace);
     }
-
-    userspaceEvents.Set(nUserspace);
 
     grpcSendFailures.Set(stats.nGRPCSendFailures);
 
