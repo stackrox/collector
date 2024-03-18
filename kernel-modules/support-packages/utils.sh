@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
 
-use_downstream() {
-    if [[ ! "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+(:?-rc?[0-9]+)?$ ]]; then
+_check_min_version() {
+    local version_re="^[0-9]+\.[0-9]+\.[0-9]+(:?-rc?[0-9]+)?$"
+
+    if [[ ! "$1" =~ $version_re ]]; then
         echo >&2 "Error: Invalid version number format '$1'"
         exit 1
     fi
 
+    if [[ ! "$1" =~ $version_re ]]; then
+        echo >&2 "Error: Invalid version number format '$2'"
+        exit 1
+    fi
+
     IFS='.' read -ra version <<< "${1%-*}"
-    min_version=(2 6 0)
+    IFS='.' read -ra min_version <<< "${1%-*}"
 
     for ((i = 0; i < ${#min_version[@]}; i++)); do
         if ((version[i] < min_version[i])); then
@@ -16,6 +23,14 @@ use_downstream() {
     done
 
     return 0
+}
+
+use_downstream() {
+    _check_min_version "$1" "2.6.0"
+}
+
+use_downstream_only() {
+    _check_min_version "$1" "2.9.0"
 }
 
 bucket_has_drivers() {

@@ -124,6 +124,13 @@ jobs:
           parent: false
           destination: ${{ inputs.public-support-packages-bucket }}
 
+      - name: Fail if empty support packages
+        run: |
+          if [[ -e /tmp/support-packages/output/empty ]]; then
+            awk '{ print "[ERROR] found empty support package: ", $0 }' /tmp/support-packages/output/empty
+            exit 1
+          fi
+
       - name: Slack notification
         if: failure() && github.event_name == 'push'
         uses: rtCamp/action-slack-notify@v2
