@@ -325,7 +325,7 @@ Units: microseconds
 
 For each syscall, and in each direction, the total time consumed by every step
 ("process", "parse") is available, as well as the computed average duration in
-micro-second. These metrics are enabled via `DETAILED_METRICS` environment
+micro-second. These metrics are enabled via `ROX_COLLECTOR_ENABLE_DETAILED_METRICS` environment
 variable.
 
 ```
