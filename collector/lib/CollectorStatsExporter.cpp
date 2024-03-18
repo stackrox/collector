@@ -153,10 +153,10 @@ void CollectorStatsExporter::run() {
   prometheus::Gauge* lineage_avg_string_len = &collectorProcessLineageInfo.Add({{"type", "lineage_avg_string_len"}});
 
   // Following counters are used for detailed metrics
-  prometheus::Gauge* userspaceEvents;
-  prometheus::Family<prometheus::Gauge>* collectorTypedEventCounters;
-  prometheus::Family<prometheus::Gauge>* collectorTypedEventTimesTotal;
-  prometheus::Family<prometheus::Gauge>* collectorTypedEventTimesAvg;
+  prometheus::Gauge* userspaceEvents = nullptr;
+  prometheus::Family<prometheus::Gauge>* collectorTypedEventCounters = nullptr;
+  prometheus::Family<prometheus::Gauge>* collectorTypedEventTimesTotal = nullptr;
+  prometheus::Family<prometheus::Gauge>* collectorTypedEventTimesAvg = nullptr;
 
   struct {
     prometheus::Gauge* userspace = nullptr;
