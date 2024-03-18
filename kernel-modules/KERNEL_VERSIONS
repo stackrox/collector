@@ -2138,6 +2138,7 @@
 4.15.0-220-generic~16.04
 4.15.0-221-generic~16.04
 4.15.0-222-generic~16.04
+4.15.0-223-generic~16.04
 4.15.0-23-generic
 4.15.0-24-generic
 4.15.0-29-generic
@@ -7562,6 +7563,7 @@
 6.5.0-1015-gcp
 6.5.0-1016-azure
 6.5.0-1016-gcp
+6.5.0-1017-azure
 6.5.0-1017-gcp
 6.5.0-12-generic
 6.5.0-13-generic
@@ -7572,6 +7574,7 @@
 6.5.0-2-generic
 6.5.0-21-generic
 6.5.0-25-generic
+6.5.0-26-generic
 6.5.0-27-generic
 6.5.0-4-generic
 6.5.0-5-generic
