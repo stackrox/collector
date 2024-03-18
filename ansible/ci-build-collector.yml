@@ -7,6 +7,7 @@
     PLATFORM: "linux/{{ arch }}"
     COLLECTOR_TAG: "{{ collector_tag }}"
     DISABLE_PROFILING: "{{ disable_profiling }}"
+    CMAKE_BUILD_TYPE: "{{ 'Debug' if debug_mode else 'Release' }}"
 
   vars:
     collector_root: "{{ ansible_env.HOME }}/collector"
