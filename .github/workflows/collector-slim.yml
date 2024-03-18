@@ -35,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, ppc64le, arm64]
+        arch: [amd64, ppc64le]
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
@@ -62,18 +62,19 @@ jobs:
           collector_git_ref: ${{ github.ref }}
           collector_git_sha: ${{ github.sha }}
           collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}
-          disable_profiling: ${{ matrix.arch != 'amd64' && matrix.arch != 'arm64' }}
+          disable_profiling: ${{ matrix.arch == 'amd64' }}
           rhacs_eng_image: ${{ env.RHACS_ENG_IMAGE }}
           collector_image: ${{ inputs.collector-image }}
           collector_tag: ${{ inputs.collector-tag }}
+          clone_repository: false
           EOF
 
       - name: Build images
+        timeout-minutes: 480
         if: |
           github.event_name == 'push' ||
           matrix.arch == 'amd64' ||
           contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
-        timeout-minutes: 480
         run: |
           ansible-playbook \
             --connection local \
@@ -90,7 +91,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [s390x]
+        arch: [s390x, arm64]
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
@@ -137,10 +138,11 @@ jobs:
           collector_git_ref: ${{ github.ref }}
           collector_git_sha: ${{ github.sha }}
           collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}
-          disable_profiling: ${{ matrix.arch != 'amd64' && matrix.arch != 'arm64' }}
+          disable_profiling: ${{ matrix.arch == 'arm64' }}
           rhacs_eng_image: ${{ env.RHACS_ENG_IMAGE }}
           collector_image: ${{ inputs.collector-image }}
           collector_tag: ${{ inputs.collector-tag }}
+          clone_repository: true
           EOF
 
       - name: Build ${{ matrix.arch }} image
