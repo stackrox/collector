@@ -142,6 +142,7 @@ jobs:
           rhacs_eng_image: ${{ env.RHACS_ENG_IMAGE }}
           collector_image: ${{ inputs.collector-image }}
           collector_tag: ${{ inputs.collector-tag }}
+          debug_mode: ${{ github.event_name == 'pull_request' }}
           EOF
 
       - name: Build ${{ matrix.arch }} image
