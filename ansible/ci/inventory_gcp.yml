@@ -2,7 +2,7 @@
 
 plugin: gcp_compute
 projects:
-  - stackrox-ci
+  - acs-san-stackroxci
 filters:
   - name = collector-ci-*
 keyed_groups:

@@ -1,6 +1,6 @@
 ---
 
-gcp_project: "stackrox-ci"
+gcp_project: "acs-san-stackroxci"
 gcp_auth_kind: "serviceaccount"
 gcp_service_account_file: /tmp/secret/stackrox-collector-e2e-tests/GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT
 gcp_instance_prefix: collector-ci
@@ -9,7 +9,8 @@ gcp_available_zones:
   - us-central1-b
   - us-central1-c
   - us-central1-f
-ansible_user: deadbeef
+ansible_user: runner
+gcp_network_name: collector-ci
 
 gcp_default_labels:
   stackrox-ci: "true"

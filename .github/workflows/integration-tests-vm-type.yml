@@ -57,7 +57,7 @@ jobs:
       - name: Authenticate with GCP
         uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_CI_VM_SVC_ACCT }}'
 
       - name: Setup GCP
         uses: 'google-github-actions/setup-gcloud@v2'
@@ -107,7 +107,11 @@ jobs:
 
       - name: Teardown VMs
         if: always()
-        run: make -C "${{ github.workspace }}/ansible" destroy-vms
+        run: |
+          if [[ "${RUNNER_DEBUG}" == "1" ]]; then
+            make -C "${{ github.workspace }}/ansible" list-inventory
+          fi
+          make -C "${{ github.workspace }}/ansible" destroy-vms
 
       - name: Store artifacts
         if: always()

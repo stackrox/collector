@@ -11,6 +11,7 @@ gcp_available_zones:
   - us-central1-c
   - us-central1-f
 ansible_user: "{{ lookup('env', 'USER') }}"
+gcp_network_name: default
 
 gcp_default_labels:
   stackrox-ci: "false"

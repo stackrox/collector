@@ -72,6 +72,7 @@ virtual_machines:
     images:
       - rhcos-412-86-202303211731-0-gcp-x86-64
       - rhcos-413-86-202303151429-0-gcp-x86-64
+    username: core
     ignition:
       ignition:
         version: 3.2.0
@@ -125,11 +126,13 @@ virtual_machines:
 
   flatcar:
     project: kinvolk-public
+    username: core
     families:
       - flatcar-stable
 
   fedora-coreos:
     project: fedora-coreos-cloud
+    username: core
     families:
       - fedora-coreos-stable
 
@@ -139,6 +142,7 @@ virtual_machines:
     project: fedora-coreos-cloud
     arch: arm64
     machine_type: t2a-standard-2
+    username: core
     families:
       - fedora-coreos-stable-arm64
 

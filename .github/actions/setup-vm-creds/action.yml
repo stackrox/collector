@@ -89,6 +89,7 @@ runs:
           echo "IBM_CLOUD_POWER_API_KEY=${{ inputs.ppc64le-key }}"
           echo "IBM_CLOUD_S390X_API_KEY=${{ inputs.s390x-key }}"
           echo "IBM_CLOUD_POWER_SSH_PUBLIC_KEY=${{ inputs.ppc64le-ssh-key-pub }}"
+          echo "GCP_SSH_KEY_FILE=$HOME/.ssh/google_compute_engine"
           echo "JOB_ID=${NORM_JOB_ID}"
           echo "BUILD_TYPE=ci"
           echo "VM_TYPE=${{ inputs.vm-type }}"
