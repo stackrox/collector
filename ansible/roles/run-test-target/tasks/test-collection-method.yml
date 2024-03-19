@@ -39,9 +39,10 @@
     state: directory
     mode: '0777'
 
-- name: Make core dumps directory
+- name: Set core dump path
   become: yes
   shell: |
+    echo '/tmp/core_dumps/core_%t' | sudo tee /proc/sys/kernel/core_pattern
     mkdir /tmp/core_dumps || true
 
 - name: Copy podman auth
@@ -70,7 +71,6 @@
   - name: Run integration tests
     become: "{{ runtime_as_root }}"
     shell: |
-      echo '/tmp/core_dumps/core_%t' | sudo tee /proc/sys/kernel/core_pattern
       {{ runtime_command }} run -it --rm \
         -v {{ remote_log_mount }}:{{ container_logs_root }} \
         -v ~/.docker:/root/.docker \
