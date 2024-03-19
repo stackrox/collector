@@ -62,14 +62,33 @@
         username: "{{ stackrox_io_username }}"
         password: "{{ stackrox_io_password }}"
 
-    - block:
-      - name: Push to quay.io/stackrox-io
-        community.docker.docker_image:
-          name: "{{ collector_image }}-{{ arch }}"
-          repository: "{{ collector_image }}-{{ arch }}{{ item }}"
-          push: true
-          source: local
-      loop: "{{ suffixes }}"
+    - name: Push to quay.io/stackrox-io
+      community.docker.docker_image:
+        name: "{{ collector_image }}-{{ arch }}"
+        repository: "{{ collector_image }}-{{ arch }}"
+        push: true
+        source: local
+
+    - name: Push to quay.io/stackrox-io -latest
+      community.docker.docker_image:
+        name: "{{ collector_image }}-{{ arch }}"
+        repository: "{{ collector_image }}-{{ arch }}-latest"
+        push: true
+        source: local
+
+    - name: Push to quay.io/stackrox-io -slim
+      community.docker.docker_image:
+        name: "{{ collector_image }}-{{ arch }}"
+        repository: "{{ collector_image }}-{{ arch }}-slim"
+        push: true
+        source: local
+
+    - name: Push to quay.io/stackrox-io -base
+      community.docker.docker_image:
+        name: "{{ collector_image }}-{{ arch }}"
+        repository: "{{ collector_image }}-{{ arch }}-base"
+        push: true
+        source: local
 
     - name: Login to quay.io
       community.docker.docker_login:
@@ -77,14 +96,33 @@
         username: "{{ rhacs_eng_username }}"
         password: "{{ rhacs_eng_password }}"
 
-    - block:
-      - name: Push to quay.io/rhacs-eng
-        community.docker.docker_image:
-          name: "{{ collector_image }}-{{ arch }}"
-          repository: "{{ rhacs_eng_image }}-{{ arch }}{{ item }}"
-          push: true
-          source: local
-      loop: "{{ suffixes }}"
+    - name: Push to quay.io/rhacs-eng
+      community.docker.docker_image:
+        name: "{{ collector_image }}-{{ arch }}"
+        repository: "{{ rhacs_eng_image }}-{{ arch }}"
+        push: true
+        source: local
+
+    - name: Push to quay.io/rhacs-eng -latest
+      community.docker.docker_image:
+        name: "{{ collector_image }}-{{ arch }}"
+        repository: "{{ rhacs_eng_image }}-{{ arch }}-latest"
+        push: true
+        source: local
+
+    - name: Push to quay.io/rhacs-eng -slim
+      community.docker.docker_image:
+        name: "{{ collector_image }}-{{ arch }}"
+        repository: "{{ rhacs_eng_image }}-{{ arch }}-slim"
+        push: true
+        source: local
+
+    - name: Push to quay.io/rhacs-eng -base
+      community.docker.docker_image:
+        name: "{{ collector_image }}-{{ arch }}"
+        repository: "{{ rhacs_eng_image }}-{{ arch }}-base"
+        push: true
+        source: local
 
     - name: Print images pushed
       debug:
