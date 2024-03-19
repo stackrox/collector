@@ -177,7 +177,7 @@ jobs:
           MULTIARCH: ${{ contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') || github.event_name == 'push' }}
         run: |
           if [[ "$MULTIARCH" == "true" ]]; then
-            echo "ARCHS='amd64 ppc64le s390x arm64'" >> "$GITHUB_ENV"
+            echo "ARCHS=amd64 ppc64le s390x arm64" >> "$GITHUB_ENV"
           else
             echo "ARCHS=amd64" >> "$GITHUB_ENV"
           fi
