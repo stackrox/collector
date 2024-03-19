@@ -83,7 +83,7 @@ jobs:
       # ensure this happens at the end
       - build-support-packages
     with:
-      collector-tag: 3.18.0-slim
+      collector-tag: 3.18.0
       collector-qa-tag: 1.1.2
     secrets: inherit
 
