@@ -7,6 +7,7 @@
 
 #include "CollectorStats.h"
 #include "EventNames.h"
+#include "K8s.h"
 #include "ProtoSignalFormatter.h"
 #include "system-inspector/EventExtractor.h"
 
@@ -14,7 +15,7 @@ namespace collector {
 
 class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
  public:
-  ProcessSignalFormatter(sinsp* inspector) : event_names_(EventNames::GetInstance()) {
+  ProcessSignalFormatter(sinsp* inspector) : event_names_(EventNames::GetInstance()), k8s_(inspector) {
     event_extractor_.Init(inspector);
   }
 
@@ -41,6 +42,7 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
 
   const EventNames& event_names_;
   system_inspector::EventExtractor event_extractor_;
+  K8s k8s_;
 };
 
 }  // namespace collector
