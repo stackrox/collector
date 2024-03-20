@@ -10,10 +10,7 @@
         name: create-all-vms
       vars:
         vm_list: "{{ virtual_machines }}"
-        collection_method: "{{ method }}"
-      loop: "{{ lookup('env', 'COLLECTION_METHODS', default='core_bpf') | split(',') }}"
-      loop_control:
-        loop_var: method
+        collection_method: "{{ lookup('env', 'COLLECTION_METHOD', default='core_bpf') }}"
   post_tasks:
     # We have all the VMs created now, so refresh the inventory - this allows
     # us to use the provisioning role on the VMs we just created

@@ -33,9 +33,7 @@
 - name: Run Integration Tests
   include_tasks: test-collection-method.yml
   vars:
-    collection_method: "{{ item }}"
-  with_items:
-    "{{ lookup('env', 'COLLECTION_METHODS', default='core_bpf') | split(',') }}"
+    collection_method: "{{ lookup('env', 'COLLECTION_METHOD', default='core_bpf') }}"
 
 - name: Check results
   ansible.builtin.fail:
