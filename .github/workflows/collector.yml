@@ -165,6 +165,9 @@ jobs:
     - build-collector-image-remote-vm
     name: Create Multiarch manifest
     runs-on: ubuntu-latest
+    # Force this to run unless the dependencies fail (not skipped) because
+    # when multiarch native builds are run, this job can be accidentally skipped.
+    if: always() && !contains(join(needs.*.result, ','), 'failure')
     env:
       ARCHS: amd64 ppc64le s390x arm64
 
