@@ -133,12 +133,6 @@
         dest: "{{ logs_root }}/integration-test.log"
       delegate_to: localhost
 
-    - name: Move core dump files to core dump directory
-      become: yes
-      shell: |
-        mkdir /tmp/core_dumps
-        mv /tmp/core.out* /tmp/core_dumps || true
-
     - name: Get core dump file paths
       become: yes
       find:
