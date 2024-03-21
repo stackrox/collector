@@ -13,6 +13,7 @@
 
 #include "Control.h"
 #include "DriverCandidates.h"
+#include "K8s.h"
 #include "SignalHandler.h"
 #include "SignalServiceClient.h"
 #include "SystemInspector.h"
@@ -44,6 +45,8 @@ class Service : public SystemInspector {
 
   void GetProcessInformation(uint64_t pid, ProcessInfoCallbackRef callback);
 
+  std::shared_ptr<K8s> GetK8sInspector() { return k8s_inspector_; };
+
  private:
   FRIEND_TEST(SystemInspectorServiceTest, FilterEvent);
 
@@ -69,6 +72,7 @@ class Service : public SystemInspector {
 
   mutable std::mutex libsinsp_mutex_;
   std::unique_ptr<sinsp> inspector_;
+  std::shared_ptr<K8s> k8s_inspector_;
   std::unique_ptr<sinsp_evt_formatter> default_formatter_;
   std::unique_ptr<ISignalServiceClient> signal_client_;
   std::vector<SignalHandlerEntry> signal_handlers_;
