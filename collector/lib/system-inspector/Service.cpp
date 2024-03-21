@@ -14,6 +14,7 @@
 #include "CollectorException.h"
 #include "CollectorStats.h"
 #include "ContainerEngine.h"
+#include "ContainerMetadata.h"
 #include "EventNames.h"
 #include "HostInfo.h"
 #include "KernelDriver.h"
@@ -88,6 +89,8 @@ bool Service::InitKernel(const CollectorConfig& config, const DriverCandidate& c
     if (config.CollectConnectionStatus()) {
       inspector_->get_parser()->set_track_connection_status(true);
     }
+
+    container_metadata_inspector_.reset(new ContainerMetadata(inspector_.get()));
 
     if (config.EnableRuntimeFilters()) {
       uint64_t mask = 1 << CT_CRI |
