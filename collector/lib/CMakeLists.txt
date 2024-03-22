@@ -1,43 +1,8 @@
-set(COLLECTOR_LIB_SRC_FILES
-    NetworkConnection.cpp
-    CollectorConfig.cpp
-    CollectorArgs.cpp
-    SignalServiceClient.cpp
-    RateLimit.cpp
-    Process.cpp
-    ProtoUtil.cpp
-    Logging.cpp
-    HostInfo.cpp
-    ProfilerHandler.cpp
-    GetStatus.cpp
-    FileDownloader.cpp
-    AbortHandler.cpp
-    ProcfsScraper.cpp
-    EventNames.cpp
-    CollectorService.cpp
-    NetworkSignalHandler.cpp
-    CollectionMethod.cpp
-    GRPCUtil.cpp
-    NetworkStatusNotifier.cpp
-    NRadix.cpp
-    GRPC.cpp
-    GetKernelObject.cpp
-    HostHeuristics.cpp
-    DriverCandidates.cpp
-    CollectorStatsExporter.cpp
-    SelfCheckHandler.cpp
-    CollectorStats.cpp
-    ConnTracker.cpp
-    StoppableThread.cpp
-    Utility.cpp
-    ProcessSignalHandler.cpp
-    ProcessSignalFormatter.cpp
-    NetworkConnectionInfoServiceComm.cpp
-    SelfChecks.cpp
-    LogLevel.cpp
-    system-inspector/Service.cpp
-    system-inspector/EventExtractor.cpp
+file(GLOB COLLECTOR_LIB_SRC_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/system-inspector/*.cpp
 )
+
 add_library(collector_lib ${DRIVER_HEADERS} ${COLLECTOR_LIB_SRC_FILES})
 add_dependencies(collector_lib sinsp)
 target_link_libraries(collector_lib sinsp)
