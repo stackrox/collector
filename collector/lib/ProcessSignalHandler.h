@@ -10,13 +10,13 @@
 #include "ProcessSignalFormatter.h"
 #include "RateLimit.h"
 #include "SignalHandler.h"
-#include "SysdigService.h"
+#include "system-inspector/Service.h"
 
 namespace collector {
 
 class ProcessSignalHandler : public SignalHandler {
  public:
-  ProcessSignalHandler(sinsp* inspector, ISignalServiceClient* client, SysdigStats* stats)
+  ProcessSignalHandler(sinsp* inspector, ISignalServiceClient* client, system_inspector::Stats* stats)
       : client_(client), formatter_(inspector), stats_(stats) {}
 
   bool Start() override;
@@ -29,7 +29,7 @@ class ProcessSignalHandler : public SignalHandler {
  private:
   ISignalServiceClient* client_;
   ProcessSignalFormatter formatter_;
-  SysdigStats* stats_;
+  system_inspector::Stats* stats_;
   RateLimitCache rate_limiter_;
 };
 

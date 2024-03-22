@@ -8,7 +8,7 @@
 #include "CollectorStats.h"
 #include "EventNames.h"
 #include "ProtoSignalFormatter.h"
-#include "SysdigEventExtractor.h"
+#include "system-inspector/EventExtractor.h"
 
 namespace collector {
 
@@ -40,7 +40,7 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
   void CountLineage(const std::vector<LineageInfo>& lineage);
 
   const EventNames& event_names_;
-  SysdigEventExtractor event_extractor_;
+  system_inspector::EventExtractor event_extractor_;
 };
 
 }  // namespace collector

@@ -17,9 +17,9 @@ extern "C" {
 #include "LogLevel.h"
 #include "NetworkStatusNotifier.h"
 #include "ProfilerHandler.h"
-#include "SysdigService.h"
 #include "Utility.h"
 #include "prometheus/exposer.h"
+#include "system-inspector/Service.h"
 
 extern unsigned char g_bpf_drop_syscalls[];  // defined in libscap
 
@@ -40,7 +40,7 @@ void CollectorService::RunForever() {
 
   std::shared_ptr<ConnectionTracker> conn_tracker;
 
-  GetStatus getStatus(config_.Hostname(), &sysdig_);
+  GetStatus getStatus(config_.Hostname(), &system_inspector_);
 
   std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
 
@@ -54,7 +54,7 @@ void CollectorService::RunForever() {
   prometheus::Exposer exposer("9090");
   exposer.RegisterCollectable(registry);
 
-  CollectorStatsExporter exporter(registry, &config_, &sysdig_);
+  CollectorStatsExporter exporter(registry, &config_, &system_inspector_);
 
   std::unique_ptr<NetworkStatusNotifier> net_status_notifier;
 
@@ -75,7 +75,7 @@ void CollectorService::RunForever() {
     // up and use stdout instead.
     std::shared_ptr<ProcessStore> process_store;
     if (config_.IsProcessesListeningOnPortsEnabled()) {
-      process_store = std::make_shared<ProcessStore>(&sysdig_);
+      process_store = std::make_shared<ProcessStore>(&system_inspector_);
     }
     std::shared_ptr<IConnScraper> conn_scraper = std::make_shared<ConnScraper>(config_.HostProc(), process_store);
     conn_tracker = std::make_shared<ConnectionTracker>();
@@ -99,12 +99,12 @@ void CollectorService::RunForever() {
     CLOG(FATAL) << "Unable to start collector stats exporter";
   }
 
-  sysdig_.Init(config_, conn_tracker);
-  sysdig_.Start();
+  system_inspector_.Init(config_, conn_tracker);
+  system_inspector_.Start();
 
   ControlValue cv;
   while ((cv = control_->load(std::memory_order_relaxed)) != STOP_COLLECTOR) {
-    sysdig_.Run(*control_);
+    system_inspector_.Run(*control_);
     CLOG(DEBUG) << "Interrupted collector!";
   }
 
@@ -117,15 +117,15 @@ void CollectorService::RunForever() {
   CLOG(INFO) << "Shutting down collector.";
 
   if (net_status_notifier) net_status_notifier->Stop();
-  // Shut down these first since they access the sysdig object.
+  // Shut down these first since they access the system inspector object.
   exporter.stop();
   server.close();
 
-  sysdig_.CleanUp();
+  system_inspector_.CleanUp();
 }
 
 bool CollectorService::InitKernel(const DriverCandidate& candidate) {
-  return sysdig_.InitKernel(config_, candidate);
+  return system_inspector_.InitKernel(config_, candidate);
 }
 
 bool CollectorService::WaitForGRPCServer() {

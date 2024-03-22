@@ -6,14 +6,14 @@
 #include "CollectorConfig.h"
 #include "CollectorStats.h"
 #include "StoppableThread.h"
-#include "SysdigService.h"
 #include "prometheus/registry.h"
+#include "system-inspector/Service.h"
 
 namespace collector {
 
 class CollectorStatsExporter {
  public:
-  CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig);
+  CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, system_inspector::Service* si);
 
   bool start();
   void run();
@@ -25,7 +25,7 @@ class CollectorStatsExporter {
  private:
   std::shared_ptr<prometheus::Registry> registry_;
   const CollectorConfig* config_;
-  SysdigService* sysdig_;
+  system_inspector::Service* system_inspector_;
   std::shared_ptr<CollectorConnectionStats<unsigned int>> connections_total_reporter_;
   std::shared_ptr<CollectorConnectionStats<float>> connections_rate_reporter_;
   StoppableThread thread_;

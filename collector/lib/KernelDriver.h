@@ -14,8 +14,8 @@ extern "C" {
 #include "EventNames.h"
 #include "FileSystem.h"
 #include "Logging.h"
-#include "SysdigService.h"
 #include "Utility.h"
+#include "system-inspector/Service.h"
 
 extern const struct syscall_evt_pair g_syscall_table[];  // defined in libscap
 static const unsigned long DRIVER_BUFFER_DIM = 16UL * 1024UL * 1024UL;
@@ -63,9 +63,9 @@ class KernelDriverEBPF : public IKernelDriver {
   KernelDriverEBPF() = default;
 
   bool Setup(const CollectorConfig& config, sinsp& inspector) override {
-    FDHandle fd = FDHandle(open(SysdigService::kProbePath, O_RDONLY));
+    FDHandle fd = FDHandle(open(system_inspector::Service::kProbePath, O_RDONLY));
     if (!fd.valid()) {
-      CLOG(ERROR) << "Cannot open eBPF probe at " << SysdigService::kProbePath;
+      CLOG(ERROR) << "Cannot open eBPF probe at " << system_inspector::Service::kProbePath;
       return false;
     }
 
@@ -73,7 +73,7 @@ class KernelDriverEBPF : public IKernelDriver {
     std::unordered_set<ppm_sc_code> ppm_sc = GetSyscallList(config);
 
     try {
-      inspector.open_bpf(SysdigService::kProbePath,
+      inspector.open_bpf(system_inspector::Service::kProbePath,
                          config.GetSinspBufferSize(),
                          ppm_sc);
     } catch (const sinsp_exception& ex) {

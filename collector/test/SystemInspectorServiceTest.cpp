@@ -1,10 +1,9 @@
-#include "SysdigService.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "system-inspector/Service.h"
 
-namespace collector {
+namespace collector::system_inspector {
 
-TEST(SysdigServiceTest, FilterEvent) {
+TEST(SystemInspectorServiceTest, FilterEvent) {
   std::unique_ptr<sinsp> inspector(new sinsp());
 
   sinsp_threadinfo regular_process(inspector.get());
@@ -35,8 +34,8 @@ TEST(SysdigServiceTest, FilterEvent) {
   };
 
   for (const auto& t : tests) {
-    ASSERT_EQ(SysdigService::FilterEvent(t.tinfo), t.expected);
+    ASSERT_EQ(system_inspector::Service::FilterEvent(t.tinfo), t.expected);
   }
 }
 
-}  // namespace collector
+}  // namespace collector::system_inspector

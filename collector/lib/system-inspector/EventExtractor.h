@@ -1,5 +1,5 @@
-#ifndef _SYSDIG_EVENT_EXTRACTOR_H_
-#define _SYSDIG_EVENT_EXTRACTOR_H_
+#ifndef _SYSTEM_INSPECTOR_EVENT_EXTRACTOR_H_
+#define _SYSTEM_INSPECTOR_EVENT_EXTRACTOR_H_
 
 #include <string>
 #include <vector>
@@ -9,17 +9,17 @@
 
 #include "Logging.h"
 
-namespace collector {
+namespace collector::system_inspector {
 
-// This class allows extracting a predefined set of Sysdig event fields in an efficient manner.
-class SysdigEventExtractor {
+// This class allows extracting a predefined set of system_inspector event fields in an efficient manner.
+class EventExtractor {
  public:
   void Init(sinsp* inspector);
   void ClearWrappers();
 
  private:
   struct FilterCheckWrapper {
-    FilterCheckWrapper(SysdigEventExtractor* extractor, const char* event_name) : event_name(event_name) {
+    FilterCheckWrapper(EventExtractor* extractor, const char* event_name) : event_name(event_name) {
       extractor->wrappers_.push_back(this);
     }
 
@@ -81,9 +81,9 @@ class SysdigEventExtractor {
   // Fields can be made available for querying by using a number of macros:
   // - TINFO_FIELD_RAW(id, fieldname, type): exposes the m_<fieldname> field of threadinfo via get_<id>()
   // - TINFO_FIELD(name): exposes the m_<name> field of threadinfo via get_<name>()
-  // - FIELD_CSTR(id, fieldname): exposes the sysdig field <fieldname> via get_<id>(), returning a null-terminated
+  // - FIELD_CSTR(id, fieldname): exposes the system inspector field <fieldname> via get_<id>(), returning a null-terminated
   //   const char*.
-  // - FIELD_RAW(id, fieldname, type): exposes the sysdig field <fieldname> via get_<id>(), returning a const <type>*.
+  // - FIELD_RAW(id, fieldname, type): exposes the system inspector field <fieldname> via get_<id>(), returning a const <type>*.
   // - EVT_ARG(argname): shorthand for FIELD_CSTR(evt_arg_<argname>, "evt.arg.<argname>")
   // - EVT_ARG_RAW(argname, type): shorthand for FIELD_RAW(evt_arg_<argname>, "evt.rawarg.<argname>", <type>)
   //
@@ -116,6 +116,6 @@ class SysdigEventExtractor {
 #undef DECLARE_FILTER_CHECK
 };
 
-}  // namespace collector
+}  // namespace collector::system_inspector
 
-#endif  // _SYSDIG_EVENT_EXTRACTOR_H_
+#endif  // _SYSTEM_INSPECTOR_EVENT_EXTRACTOR_H_

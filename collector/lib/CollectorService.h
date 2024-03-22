@@ -1,17 +1,12 @@
 #ifndef _COLLECTOR_SERVICE_H_
 #define _COLLECTOR_SERVICE_H_
 
-#include <vector>
-
 #include "CollectorConfig.h"
-#include "CollectorStats.h"
 #include "Control.h"
 #include "DriverCandidates.h"
-#include "SysdigService.h"
+#include "system-inspector/Service.h"
 
 namespace collector {
-
-class SysdigService;
 
 class CollectorService {
  public:
@@ -29,7 +24,7 @@ class CollectorService {
   std::atomic<ControlValue>* control_;
   const std::atomic<int>& signum_;
 
-  SysdigService sysdig_;
+  system_inspector::Service system_inspector_;
 };
 
 bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServer, const CollectorConfig& config);

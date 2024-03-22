@@ -5,15 +5,15 @@
 #include <string_view>
 
 #include "HostInfo.h"
-#include "SysdigService.h"
 #include "Utility.h"
+#include "system-inspector/Service.h"
 
 namespace collector {
 
 namespace {
 
 std::string driverFullName(const std::string& shortName) {
-  return std::string{SysdigService::kProbeName} + "-" + shortName + ".o";
+  return std::string{system_inspector::Service::kProbeName} + "-" + shortName + ".o";
 }
 
 // Retrieves the ubuntu backport version from the host kernel's release

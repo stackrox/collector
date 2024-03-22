@@ -14,8 +14,12 @@ class sinsp_threadinfo;
 namespace collector {
 class IProcess;
 class Process;
-class SysdigService;
+class Service;
 }  // namespace collector
+
+namespace collector::system_inspector {
+class Service;
+}
 
 namespace collector {
 /* A Process object store used to deduplicate process information.
@@ -23,8 +27,8 @@ namespace collector {
    When a process cannot be found in the store, it is fetched as a side-effect. */
 class ProcessStore {
  public:
-  /* falco_instance is the source of process information */
-  ProcessStore(SysdigService* falco_instance);
+  /* system-inspector is the source of process information */
+  ProcessStore(system_inspector::Service* instance);
 
   /* Get a Process by PID.
      Returns a reference to the cached Process entry, which may have just been created
@@ -34,7 +38,7 @@ class ProcessStore {
   typedef std::shared_ptr<std::unordered_map<uint64_t, std::weak_ptr<Process>>> MapRef;
 
  private:
-  SysdigService* falco_instance_;
+  system_inspector::Service* instance_;
   MapRef cache_;
 };
 
@@ -65,8 +69,8 @@ class Process : public IProcess {
   std::string args() const override;
 
   /* - when 'cache' is provided, this process will remove itself from it upon deletion.
-   * - 'falco_instance' is used to request the process information from the system. */
-  Process(uint64_t pid, ProcessStore::MapRef cache = 0, SysdigService* falco_instance = 0);
+   * - 'instance' is used to request the process information from the system. */
+  Process(uint64_t pid, ProcessStore::MapRef cache = 0, system_inspector::Service* instance = 0);
   ~Process();
 
  private:
@@ -80,12 +84,12 @@ class Process : public IProcess {
   mutable std::mutex process_info_mutex_;
   mutable std::condition_variable process_info_condition_;
 
-  // Underlying thread info provided asynchronously by Falco via falco_callback_
-  mutable std::shared_ptr<sinsp_threadinfo> falco_threadinfo_;
+  // Underlying thread info provided asynchronously by system-inspector via system_inspector_callback_
+  mutable std::shared_ptr<sinsp_threadinfo> system_inspector_threadinfo_;
   // use a shared pointer here to handle deletion while the callback is pending
-  std::shared_ptr<std::function<void(std::shared_ptr<sinsp_threadinfo>)>> falco_callback_;
+  std::shared_ptr<std::function<void(std::shared_ptr<sinsp_threadinfo>)>> system_inspector_callback_;
 
-  // entry-point when Falco resolved the requested process info
+  // entry-point when system inspector resolved the requested process info
   void ProcessInfoResolved(std::shared_ptr<sinsp_threadinfo> process_info);
 
   // block until process information is available, or timeout

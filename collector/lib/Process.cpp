@@ -3,13 +3,13 @@
 #include <chrono>
 
 #include "CollectorStats.h"
-#include "SysdigService.h"
+#include "system-inspector/Service.h"
 
 namespace collector {
 
 const std::string Process::NOT_AVAILABLE("N/A");
 
-ProcessStore::ProcessStore(SysdigService* falco_instance) : falco_instance_(falco_instance) {
+ProcessStore::ProcessStore(system_inspector::Service* instance) : instance_(instance) {
   cache_ = std::make_shared<std::unordered_map<uint64_t, std::weak_ptr<Process>>>();
 }
 
@@ -20,7 +20,7 @@ const std::shared_ptr<IProcess> ProcessStore::Fetch(uint64_t pid) {
     return cached_process_pair_iter->second.lock();
   }
 
-  std::shared_ptr<Process> cached_process = std::make_shared<Process>(pid, cache_, falco_instance_);
+  std::shared_ptr<Process> cached_process = std::make_shared<Process>(pid, cache_, instance_);
 
   cache_->emplace(pid, cached_process);
   return cached_process;
@@ -29,8 +29,8 @@ const std::shared_ptr<IProcess> ProcessStore::Fetch(uint64_t pid) {
 std::string Process::container_id() const {
   WaitForProcessInfo();
 
-  if (falco_threadinfo_) {
-    return falco_threadinfo_->m_container_id;
+  if (system_inspector_threadinfo_) {
+    return system_inspector_threadinfo_->m_container_id;
   }
 
   return NOT_AVAILABLE;
@@ -39,8 +39,8 @@ std::string Process::container_id() const {
 std::string Process::comm() const {
   WaitForProcessInfo();
 
-  if (falco_threadinfo_) {
-    return falco_threadinfo_->get_comm();
+  if (system_inspector_threadinfo_) {
+    return system_inspector_threadinfo_->get_comm();
   }
 
   return NOT_AVAILABLE;
@@ -49,8 +49,8 @@ std::string Process::comm() const {
 std::string Process::exe() const {
   WaitForProcessInfo();
 
-  if (falco_threadinfo_) {
-    return falco_threadinfo_->get_exe();
+  if (system_inspector_threadinfo_) {
+    return system_inspector_threadinfo_->get_exe();
   }
 
   return NOT_AVAILABLE;
@@ -59,8 +59,8 @@ std::string Process::exe() const {
 std::string Process::exe_path() const {
   WaitForProcessInfo();
 
-  if (falco_threadinfo_) {
-    return falco_threadinfo_->get_exepath();
+  if (system_inspector_threadinfo_) {
+    return system_inspector_threadinfo_->get_exepath();
   }
 
   return NOT_AVAILABLE;
@@ -69,18 +69,18 @@ std::string Process::exe_path() const {
 std::string Process::args() const {
   WaitForProcessInfo();
 
-  if (!falco_threadinfo_) {
+  if (!system_inspector_threadinfo_) {
     return NOT_AVAILABLE;
   }
 
-  if (falco_threadinfo_->m_args.empty()) {
+  if (system_inspector_threadinfo_->m_args.empty()) {
     return "";
   }
 
   std::ostringstream args;
-  for (auto it = falco_threadinfo_->m_args.begin(); it != falco_threadinfo_->m_args.end();) {
+  for (auto it = system_inspector_threadinfo_->m_args.begin(); it != system_inspector_threadinfo_->m_args.end();) {
     args << *it++;
-    if (it != falco_threadinfo_->m_args.end()) args << " ";
+    if (it != system_inspector_threadinfo_->m_args.end()) args << " ";
   }
   return args.str();
 }
@@ -88,16 +88,16 @@ std::string Process::args() const {
 Process::Process(
     uint64_t pid,
     ProcessStore::MapRef cache,
-    SysdigService* falco_instance)
+    system_inspector::Service* instance)
     : pid_(pid),
       cache_(cache),
       process_info_pending_resolution_(false),
-      falco_callback_(
+      system_inspector_callback_(
           new std::function<void(std::shared_ptr<sinsp_threadinfo>)>(
               std::bind(&Process::ProcessInfoResolved, this, std::placeholders::_1))) {
-  if (falco_instance) {
+  if (instance) {
     process_info_pending_resolution_ = true;
-    falco_instance->GetProcessInformation(pid, falco_callback_);
+    instance->GetProcessInformation(pid, system_inspector_callback_);
   }
 }
 
@@ -116,7 +116,7 @@ void Process::ProcessInfoResolved(std::shared_ptr<sinsp_threadinfo> process_info
     CLOG(WARNING) << "Process-info request failed. PID: " << pid();
   }
 
-  falco_threadinfo_ = process_info;
+  system_inspector_threadinfo_ = process_info;
   process_info_pending_resolution_ = false;
 
   process_info_condition_.notify_all();

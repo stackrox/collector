@@ -246,7 +246,7 @@ Units: microseconds
 | net_fetch_state                                  | Time spent to build a delta message content (connections + endpoints) to send to Sensor                                              |
 | net_create_message                               | Time spent to serialize the delta message and store the resulting state for next computation.                                        |
 | net_write_message                                | Time spent sending the raw message content.                                                                                          |
-| process_info_wait                                | Time spent blocked waiting for process info to be resolved by Falco.                                                                 |
+| process_info_wait                                | Time spent blocked waiting for process info to be resolved by system_inspector.                                                      |
 
 
 ### Network status notifier counters
@@ -278,10 +278,10 @@ Units: occurence
 \[1\] the process lineage information contains the ancestors list of a process. This attribute is formatted as a list of
 the process exec file paths.
 
-### Falco counters
+### system_inspector counters
 
 ```
-Component: SysdigStats
+Component: system_inspector::Stats
 Prometheus name: rox_collector_events
 Units: occurence
 ```
@@ -315,10 +315,10 @@ Note that the `[syscall]` suffix in a metric name means that it is instanciated 
 
 Note that if ProcfsScraper is unable to open /proc it is not able to open any of the subdirectories, but only procfs_could_not_open_proc_dir will be incremented in that case.
 
-### Falco timers per syscall
+### system_inspector timers per syscall
 
 ```
-Component: SysdigStats
+Component: system_inspector::Stats
 Prometheus name: rox_collector_events_typed
 Units: microseconds
 ```

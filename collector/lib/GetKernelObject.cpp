@@ -14,8 +14,8 @@ extern "C" {
 #include "FileDownloader.h"
 #include "FileSystem.h"
 #include "Logging.h"
-#include "SysdigService.h"
 #include "Utility.h"
+#include "system-inspector/Service.h"
 
 namespace collector {
 
@@ -177,7 +177,7 @@ bool GetKernelObject(const std::string& hostname, const Json::Value& tls_config,
 
   std::string expected_path = candidate.GetPath() + "/" + candidate.GetName();
   std::string expected_path_compressed = expected_path + ".gz";
-  std::string module_path = candidate.GetCollectionMethod() == CollectionMethod::EBPF ? SysdigService::kProbePath : SysdigService::kModulePath;
+  std::string module_path = candidate.GetCollectionMethod() == CollectionMethod::EBPF ? system_inspector::Service::kProbePath : system_inspector::Service::kModulePath;
   struct stat sb;
 
   // first check for an existing compressed kernel object in the

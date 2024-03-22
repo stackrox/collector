@@ -7,10 +7,10 @@
 #include "Containers.h"
 #include "EventNames.h"
 #include "Logging.h"
-#include "SysdigService.h"
 #include "Utility.h"
 #include "prometheus/gauge.h"
 #include "prometheus/summary.h"
+#include "system-inspector/Service.h"
 
 namespace collector {
 
@@ -58,10 +58,10 @@ class CollectorConnectionStatsPrometheus : public CollectorConnectionStats<T> {
   }
 };
 
-CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, SysdigService* sysdig)
+CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, system_inspector::Service* si)
     : registry_(std::move(registry)),
       config_(config),
-      sysdig_(sysdig),
+      system_inspector_(si),
       connections_total_reporter_(std::make_shared<CollectorConnectionStatsPrometheus<unsigned int>>(
           registry_,
           "rox_connections_total",
@@ -216,8 +216,8 @@ void CollectorStatsExporter::run() {
   }
 
   while (thread_.Pause(std::chrono::seconds(5))) {
-    SysdigStats stats;
-    if (!sysdig_->GetStats(&stats)) {
+    system_inspector::Stats stats;
+    if (!system_inspector_->GetStats(&stats)) {
       continue;
     }
 

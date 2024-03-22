@@ -18,6 +18,10 @@ working option, the `KERNEL_CANDIDATES` environment variable can be used to
 bypass this mechanism altogether.
 
 ## Falco libraries integration
+The aforementioned data gathering from the kernel is powered by the
+[Falco libraries](https://github.com/falcosecurity/libs/), an abstraction named
+`system_inspector` is put around them in order to have a better separation
+between the two, while also making it easier to integrate into our code base.
 
 ## Resource consumption breakdown
 
