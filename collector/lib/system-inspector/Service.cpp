@@ -80,7 +80,7 @@ bool Service::InitKernel(const CollectorConfig& config, const DriverCandidate& c
 
     inspector_->set_import_users(config.ImportUsers());
     inspector_->set_thread_timeout_s(30);
-    inspector_->set_thread_purge_interval_s(60);
+    inspector_->set_auto_threads_purging_interval_s(60);
     inspector_->m_thread_manager->set_max_thread_table_size(config.GetSinspThreadCacheSize());
 
     // Connection status tracking is used in NetworkSignalHandler,
@@ -119,7 +119,8 @@ bool Service::InitKernel(const CollectorConfig& config, const DriverCandidate& c
     inspector_->set_filter("container.id != 'host'");
 
     default_formatter_.reset(new sinsp_evt_formatter(inspector_.get(),
-                                                     DEFAULT_OUTPUT_STR));
+                                                     DEFAULT_OUTPUT_STR,
+                                                     SysdigEventExtractor::FilterList()));
   }
 
   std::unique_ptr<IKernelDriver> driver;
