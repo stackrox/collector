@@ -1,9 +1,6 @@
-
 #include "EventExtractor.h"
 
-#include "Logging.h"
-
-namespace collector {
+namespace collector::system_inspector {
 
 void EventExtractor::Init(sinsp* inspector) {
   for (auto* wrapper : wrappers_) {
@@ -22,4 +19,4 @@ void EventExtractor::ClearWrappers() {
   wrappers_.clear();
 }
 
-}  // namespace collector
+}  // namespace collector::system_inspector

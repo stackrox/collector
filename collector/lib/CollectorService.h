@@ -1,17 +1,12 @@
 #ifndef _COLLECTOR_SERVICE_H_
 #define _COLLECTOR_SERVICE_H_
 
-#include <vector>
-
 #include "CollectorConfig.h"
-#include "CollectorStats.h"
 #include "Control.h"
 #include "DriverCandidates.h"
 #include "system-inspector/Service.h"
 
 namespace collector {
-
-class Service;
 
 class CollectorService {
  public:

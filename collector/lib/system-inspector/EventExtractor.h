@@ -9,7 +9,7 @@
 
 #include "Logging.h"
 
-namespace collector {
+namespace collector::system_inspector {
 
 // This class allows extracting a predefined set of system_inspector event fields in an efficient manner.
 class EventExtractor {
@@ -116,6 +116,6 @@ class EventExtractor {
 #undef DECLARE_FILTER_CHECK
 };
 
-}  // namespace collector
+}  // namespace collector::system_inspector
 
 #endif  // _SYSTEM_INSPECTOR_EVENT_EXTRACTOR_H_

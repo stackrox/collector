@@ -40,7 +40,7 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
   void CountLineage(const std::vector<LineageInfo>& lineage);
 
   const EventNames& event_names_;
-  EventExtractor event_extractor_;
+  system_inspector::EventExtractor event_extractor_;
 };
 
 }  // namespace collector

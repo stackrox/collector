@@ -22,7 +22,7 @@ class SelfCheckHandler : public SignalHandler {
 
  protected:
   sinsp* inspector_;
-  EventExtractor event_extractor_;
+  system_inspector::EventExtractor event_extractor_;
 
   std::chrono::time_point<std::chrono::steady_clock> start_;
   std::chrono::seconds timeout_;

@@ -27,7 +27,7 @@ class NetworkSignalHandler final : public SignalHandler {
  private:
   std::optional<Connection> GetConnection(sinsp_evt* evt);
 
-  EventExtractor event_extractor_;
+  system_inspector::EventExtractor event_extractor_;
   std::shared_ptr<ConnectionTracker> conn_tracker_;
   system_inspector::Stats* stats_;
 
