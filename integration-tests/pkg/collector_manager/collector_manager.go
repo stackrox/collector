@@ -1,4 +1,4 @@
-package common
+package collector_manager
 
 import (
 	"encoding/json"
@@ -11,7 +11,9 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/pkg/common"
+	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/executor"
 )
 
 type CollectorStartupOptions struct {
@@ -22,7 +24,7 @@ type CollectorStartupOptions struct {
 }
 
 type CollectorManager struct {
-	executor      Executor
+	executor      executor.Executor
 	mounts        map[string]string
 	env           map[string]string
 	config        map[string]any
@@ -33,7 +35,7 @@ type CollectorManager struct {
 	ContainerID     string
 }
 
-func NewCollectorManager(e Executor, name string) *CollectorManager {
+func NewCollectorManager(e executor.Executor, name string) *CollectorManager {
 	collectorOptions := config.CollectorInfo()
 
 	collectionMethod := config.CollectionMethod()
@@ -135,21 +137,26 @@ func (c *CollectorManager) IsRunning() (bool, error) {
 
 // These two methods might be useful in the future. I used them for debugging
 func (c *CollectorManager) getContainers() (string, error) {
-	cmd := []string{RuntimeCommand, "container", "ps"}
+	cmd := []string{executor.RuntimeCommand, "container", "ps"}
 	containers, err := c.executor.Exec(cmd...)
 
 	return containers, err
 }
 
 func (c *CollectorManager) getAllContainers() (string, error) {
-	cmd := []string{RuntimeCommand, "container", "ps", "-a"}
+	cmd := []string{executor.RuntimeCommand, "container", "ps", "-a"}
 	containers, err := c.executor.Exec(cmd...)
 
 	return containers, err
 }
 
 func (c *CollectorManager) launchCollector() error {
-	cmd := []string{RuntimeCommand, "run",
+	coreDumpErr := c.SetCoreDumpPath(c.coreDumpPath)
+	if coreDumpErr != nil {
+		return coreDumpErr
+	}
+
+	cmd := []string{executor.RuntimeCommand, "run",
 		"--name", "collector",
 		"--privileged",
 		"--network=host"}
@@ -187,14 +194,14 @@ func (c *CollectorManager) launchCollector() error {
 	c.CollectorOutput = output
 
 	outLines := strings.Split(output, "\n")
-	c.ContainerID = ContainerShortID(string(outLines[len(outLines)-1]))
+	c.ContainerID = common.ContainerShortID(string(outLines[len(outLines)-1]))
 	return err
 }
 
 func (c *CollectorManager) captureLogs(containerName string) (string, error) {
-	logs, err := c.executor.Exec(RuntimeCommand, "logs", containerName)
+	logs, err := c.executor.Exec(executor.RuntimeCommand, "logs", containerName)
 	if err != nil {
-		fmt.Printf(RuntimeCommand+" logs error (%v) for container %s\n", err, containerName)
+		fmt.Printf(executor.RuntimeCommand+" logs error (%v) for container %s\n", err, containerName)
 		return "", err
 	}
 	logDirectory := filepath.Join(".", "container-logs", config.VMInfo().Config, config.CollectionMethod())

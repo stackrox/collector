@@ -7,6 +7,7 @@ ARG TEST_ROOT
 RUN mkdir -p "$TEST_ROOT"
 
 COPY suites "$TEST_ROOT/suites/"
+COPY pkg "$TEST_ROOT/pkg/"
 COPY integration_test.go "$TEST_ROOT"
 COPY benchmark_test.go "$TEST_ROOT"
 COPY go.* "$TEST_ROOT"

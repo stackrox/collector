@@ -1,4 +1,4 @@
-package common
+package executor
 
 import (
 	"fmt"
@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-
-	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/pkg/common"
+	"github.com/stackrox/collector/integration-tests/pkg/config"
 )
 
 var (
@@ -19,26 +19,6 @@ var (
 	RuntimeSocket  = config.RuntimeInfo().Socket
 	RuntimeAsRoot  = config.RuntimeInfo().RunAsRoot
 )
-
-type Executor interface {
-	CopyFromHost(src string, dst string) (string, error)
-	PullImage(image string) error
-	IsContainerRunning(image string) (bool, error)
-	ContainerExists(container string) (bool, error)
-	ExitCode(container string) (int, error)
-	Exec(args ...string) (string, error)
-	ExecWithErrorCheck(errCheckFn func(string, error) error, args ...string) (string, error)
-	ExecWithStdin(pipedContent string, args ...string) (string, error)
-	ExecWithoutRetry(args ...string) (string, error)
-	KillContainer(name string) (string, error)
-	RemoveContainer(name string) (string, error)
-	StopContainer(name string) (string, error)
-}
-
-type CommandBuilder interface {
-	ExecCommand(args ...string) *exec.Cmd
-	RemoteCopyCommand(remoteSrc string, localDst string) *exec.Cmd
-}
 
 type executor struct {
 	builder CommandBuilder
@@ -60,7 +40,7 @@ type gcloudCommandBuilder struct {
 type localCommandBuilder struct {
 }
 
-func NewSSHCommandBuilder() CommandBuilder {
+func newSSHCommandBuilder() CommandBuilder {
 	host_info := config.HostInfo()
 	return &sshCommandBuilder{
 		user:    host_info.User,
@@ -69,7 +49,7 @@ func NewSSHCommandBuilder() CommandBuilder {
 	}
 }
 
-func NewGcloudCommandBuilder() CommandBuilder {
+func newGcloudCommandBuilder() CommandBuilder {
 	host_info := config.HostInfo()
 	gcb := &gcloudCommandBuilder{
 		user:     host_info.User,
@@ -83,19 +63,19 @@ func NewGcloudCommandBuilder() CommandBuilder {
 	return gcb
 }
 
-func NewLocalCommandBuilder() CommandBuilder {
+func newLocalCommandBuilder() CommandBuilder {
 	return &localCommandBuilder{}
 }
 
-func NewExecutor() Executor {
+func newExecutor() Executor {
 	e := executor{}
 	switch config.HostInfo().Kind {
 	case "ssh":
-		e.builder = NewSSHCommandBuilder()
+		e.builder = newSSHCommandBuilder()
 	case "gcloud":
-		e.builder = NewGcloudCommandBuilder()
+		e.builder = newGcloudCommandBuilder()
 	case "local":
-		e.builder = NewLocalCommandBuilder()
+		e.builder = newLocalCommandBuilder()
 	}
 	return &e
 }
@@ -278,7 +258,7 @@ func (e *gcloudCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 	}
 
 	cmdArgs = append(cmdArgs, userInstance, "--", "-T")
-	cmdArgs = append(cmdArgs, QuoteArgs(args)...)
+	cmdArgs = append(cmdArgs, common.QuoteArgs(args)...)
 	return exec.Command("gcloud", cmdArgs...)
 }
 
@@ -301,7 +281,7 @@ func (e *sshCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
 		"-o", "StrictHostKeyChecking=no", "-i", e.keyPath,
 		e.user + "@" + e.address}
 
-	cmdArgs = append(cmdArgs, QuoteArgs(args)...)
+	cmdArgs = append(cmdArgs, common.QuoteArgs(args)...)
 	return exec.Command("ssh", cmdArgs...)
 }
 
