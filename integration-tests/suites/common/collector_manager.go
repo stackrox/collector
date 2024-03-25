@@ -12,6 +12,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/suites/log"
 )
 
 type CollectorStartupOptions struct {
@@ -112,7 +113,7 @@ func (c *CollectorManager) TearDown() error {
 
 	isRunning, err := c.IsRunning()
 	if err != nil {
-		fmt.Println("Error: Checking if container running")
+		log.Error("Checking if container running")
 		return err
 	}
 
@@ -121,7 +122,7 @@ func (c *CollectorManager) TearDown() error {
 		// Check if collector container segfaulted or exited with error
 		exitCode, err := c.executor.ExitCode("collector")
 		if err != nil {
-			fmt.Println("Error: Container not running")
+			log.Error("Container not running")
 			return err
 		}
 		if exitCode != 0 {
@@ -206,7 +207,7 @@ func (c *CollectorManager) launchCollector() error {
 func (c *CollectorManager) captureLogs(containerName string) (string, error) {
 	logs, err := c.executor.Exec(RuntimeCommand, "logs", containerName)
 	if err != nil {
-		fmt.Printf(RuntimeCommand+" logs error (%v) for container %s\n", err, containerName)
+		log.Error(RuntimeCommand+" logs error (%v) for container %s\n", err, containerName)
 		return "", err
 	}
 	logDirectory := filepath.Join(".", "container-logs", config.VMInfo().Config, config.CollectionMethod())
@@ -250,12 +251,12 @@ func (c *CollectorManager) SetCoreDumpPath(coreDumpFile string) error {
 		var err error
 		_, err = c.executor.Exec(cmdBackupCorePattern...)
 		if err != nil {
-			fmt.Printf("Error: Unable to backup core_pattern file. %v\n", err)
+			log.Error("Unable to backup core_pattern file. %v\n", err)
 			return err
 		}
 		_, err = c.executor.Exec(cmdSetCoreDumpPath...)
 		if err != nil {
-			fmt.Printf("Error: Unable to set core dump file path in core_pattern. %v\n", err)
+			log.Error("Unable to set core dump file path in core_pattern. %v\n", err)
 			return err
 		}
 	}
@@ -270,7 +271,7 @@ func (c *CollectorManager) RestoreCoreDumpPath() error {
 	cmdRestoreCorePattern := []string{"cat", corePatternBackupFile, "|", "sudo", "tee", corePatternFile}
 	_, err := c.executor.Exec(cmdRestoreCorePattern...)
 	if err != nil {
-		fmt.Printf("Error: Unable to restore core dump path. %v\n", err)
+		log.Error("Unable to restore core dump path. %v\n", err)
 		return err
 	}
 	return nil
