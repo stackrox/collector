@@ -50,7 +50,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithoutParentTest) {
   tinfo->m_tid = 0;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 2;
-  tinfo->m_user.uid = 7;
+  tinfo->m_user.set_uid(7);
   tinfo->m_exepath = "qwerty";
 
   inspector->add_thread(std::move(tinfo));
@@ -84,14 +84,14 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentTest) {
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.uid = 42;
+  tinfo->m_user.set_uid(42);
   tinfo->m_exepath = "asdf";
   auto tinfo2 = inspector->build_threadinfo();
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.uid = 7;
+  tinfo2->m_user.set_uid(7);
   tinfo2->m_exepath = "qwerty";
   inspector->add_thread(std::move(tinfo));
   inspector->add_thread(std::move(tinfo2));
@@ -167,14 +167,14 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithSameNameTest) {
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.uid = 43;
+  tinfo->m_user.set_uid(43);
   tinfo->m_exepath = "asdf";
   auto tinfo2 = inspector->build_threadinfo();
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.uid = 42;
+  tinfo2->m_user.set_uid(42);
   tinfo2->m_exepath = "asdf";
   inspector->add_thread(std::move(tinfo));
   inspector->add_thread(std::move(tinfo2));
@@ -211,7 +211,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.uid = 42;
+  tinfo->m_user.set_uid(42);
   tinfo->m_exepath = "asdf";
 
   auto tinfo2 = inspector->build_threadinfo();
@@ -219,7 +219,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.uid = 7;
+  tinfo2->m_user.set_uid(7);
   tinfo2->m_exepath = "qwerty";
 
   auto tinfo3 = inspector->build_threadinfo();
@@ -227,7 +227,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 9;
-  tinfo3->m_user.uid = 8;
+  tinfo3->m_user.set_uid(8);
   tinfo3->m_exepath = "uiop";
 
   inspector->add_thread(std::move(tinfo));
@@ -269,7 +269,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.uid = 42;
+  tinfo->m_user.set_uid(42);
   tinfo->m_exepath = "asdf";
 
   auto tinfo2 = inspector->build_threadinfo();
@@ -277,7 +277,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.uid = 7;
+  tinfo2->m_user.set_uid(7);
   tinfo2->m_exepath = "asdf";
 
   auto tinfo3 = inspector->build_threadinfo();
@@ -285,7 +285,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 9;
-  tinfo3->m_user.uid = 8;
+  tinfo3->m_user.set_uid(8);
   tinfo3->m_exepath = "asdf";
 
   inspector->add_thread(std::move(tinfo));
@@ -324,7 +324,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.uid = 42;
+  tinfo->m_user.set_uid(42);
   tinfo->m_exepath = "asdf";
 
   auto tinfo2 = inspector->build_threadinfo();
@@ -332,7 +332,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.uid = 7;
+  tinfo2->m_user.set_uid(7);
   tinfo2->m_exepath = "asdf";
 
   auto tinfo3 = inspector->build_threadinfo();
@@ -340,7 +340,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 9;
-  tinfo3->m_user.uid = 8;
+  tinfo3->m_user.set_uid(8);
   tinfo3->m_exepath = "asdf";
 
   auto tinfo4 = inspector->build_threadinfo();
@@ -348,7 +348,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
   tinfo4->m_tid = 5;
   tinfo4->m_ptid = 4;
   tinfo4->m_vpid = 10;
-  tinfo4->m_user.uid = 9;
+  tinfo4->m_user.set_uid(9);
   tinfo4->m_exepath = "qwerty";
 
   inspector->add_thread(std::move(tinfo));
@@ -388,7 +388,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.uid = 42;
+  tinfo->m_user.set_uid(42);
   tinfo->m_exepath = "qwerty";
 
   auto tinfo2 = inspector->build_threadinfo();
@@ -396,7 +396,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.uid = 7;
+  tinfo2->m_user.set_uid(7);
   tinfo2->m_exepath = "asdf";
 
   auto tinfo3 = inspector->build_threadinfo();
@@ -404,7 +404,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 9;
-  tinfo3->m_user.uid = 8;
+  tinfo3->m_user.set_uid(8);
   tinfo3->m_exepath = "asdf";
 
   auto tinfo4 = inspector->build_threadinfo();
@@ -412,7 +412,7 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   tinfo4->m_tid = 5;
   tinfo4->m_ptid = 4;
   tinfo4->m_vpid = 10;
-  tinfo4->m_user.uid = 9;
+  tinfo4->m_user.set_uid(9);
   tinfo4->m_exepath = "asdf";
 
   inspector->add_thread(std::move(tinfo));
@@ -455,7 +455,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.uid = 42;
+  tinfo->m_user.set_uid(42);
   tinfo->m_exepath = "qwerty";
 
   auto tinfo2 = inspector->build_threadinfo();
@@ -463,7 +463,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.uid = 7;
+  tinfo2->m_user.set_uid(7);
   tinfo2->m_exepath = "asdf";
 
   auto tinfo3 = inspector->build_threadinfo();
@@ -471,7 +471,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 9;
-  tinfo3->m_user.uid = 8;
+  tinfo3->m_user.set_uid(8);
   tinfo3->m_exepath = "uiop";
 
   auto tinfo4 = inspector->build_threadinfo();
@@ -479,7 +479,7 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   tinfo4->m_tid = 5;
   tinfo4->m_ptid = 555;
   tinfo4->m_vpid = 10;
-  tinfo4->m_user.uid = 9;
+  tinfo4->m_user.set_uid(9);
   tinfo4->m_exepath = "jkl;";
 
   inspector->add_thread(std::move(tinfo));
@@ -522,7 +522,7 @@ TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
   tinfo->m_tid = 1;
   tinfo->m_ptid = 555;
   tinfo->m_vpid = 10;
-  tinfo->m_user.uid = 9;
+  tinfo->m_user.set_uid(9);
   tinfo->m_exepath = "jkl;";
 
   inspector->add_thread(std::move(tinfo));
@@ -535,7 +535,7 @@ TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
   tinfo2->m_tid = 2;
   tinfo2->m_ptid = 555;
   tinfo2->m_vpid = 10;
-  tinfo2->m_user.uid = 9;
+  tinfo2->m_user.set_uid(9);
   tinfo2->m_exepath = "jkl;";
 
   inspector->add_thread(std::move(tinfo2));
@@ -569,7 +569,7 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 0;
-  tinfo->m_user.uid = 42;
+  tinfo->m_user.set_uid(42);
   tinfo->m_container_id = "";
   tinfo->m_exepath = "qwerty";
 
@@ -578,7 +578,7 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 0;
-  tinfo2->m_user.uid = 7;
+  tinfo2->m_user.set_uid(7);
   tinfo2->m_container_id = "id";
   tinfo2->m_exepath = "asdf";
 
@@ -587,7 +587,7 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 0;
-  tinfo3->m_user.uid = 8;
+  tinfo3->m_user.set_uid(8);
   tinfo3->m_container_id = "id";
   tinfo3->m_exepath = "uiop";
 

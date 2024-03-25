@@ -78,7 +78,7 @@ bool Service::InitKernel(const CollectorConfig& config, const DriverCandidate& c
     inspector_->disable_log_timestamps();
     inspector_->set_log_callback(logging::InspectorLogCallback);
 
-    inspector_->set_import_users(config.ImportUsers());
+    inspector_->set_import_users(config.ImportUsers(), false);
     inspector_->set_thread_timeout_s(30);
     inspector_->set_auto_threads_purging_interval_s(60);
     inspector_->m_thread_manager->set_max_thread_table_size(config.GetSinspThreadCacheSize());
