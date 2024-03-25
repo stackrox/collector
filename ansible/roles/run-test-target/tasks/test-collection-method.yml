@@ -39,6 +39,12 @@
     state: directory
     mode: '0777'
 
+- name: Set core dump path
+  become: yes
+  shell: |
+    echo '/tmp/core_dumps/core_%t' | sudo tee /proc/sys/kernel/core_pattern
+    mkdir /tmp/core_dumps || true
+
 - name: Copy podman auth
   become: "{{ runtime_as_root }}"
   shell:
@@ -126,6 +132,22 @@
         content: "{{ test_result.stdout }}"
         dest: "{{ logs_root }}/integration-test.log"
       delegate_to: localhost
+
+    - name: Get core dump file paths
+      become: yes
+      find:
+        paths: "/tmp/core_dumps/"
+      register: core_files
+
+    - name: Fetch each core dump file
+      become: yes
+      fetch:
+        src: "{{ core_file }}"
+        dest: "{{ logs_root }}/"
+        flat: true
+      loop: "{{ core_files.files | map(attribute='path') | list }}"
+      loop_control:
+        loop_var: core_file
 
     - name: Report
       community.general.make:

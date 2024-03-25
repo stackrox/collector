@@ -27,7 +27,6 @@ type CollectorManager struct {
 	env           map[string]string
 	config        map[string]any
 	bootstrapOnly bool
-	coreDumpPath  string
 	testName      string
 
 	CollectorOutput string
@@ -49,7 +48,7 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 		"GRPC_SERVER":             "localhost:9999",
 		"COLLECTION_METHOD":       collectionMethod,
 		"COLLECTOR_PRE_ARGUMENTS": collectorOptions.PreArguments,
-		"ENABLE_CORE_DUMP":        "false",
+		"ENABLE_CORE_DUMP":        "true",
 	}
 
 	if !collectorOptions.Offline {
@@ -74,7 +73,6 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 		mounts:        mounts,
 		config:        collectorConfig,
 		testName:      name,
-		coreDumpPath:  "/tmp/core.out",
 	}
 }
 
@@ -105,11 +103,6 @@ func (c *CollectorManager) Launch() error {
 }
 
 func (c *CollectorManager) TearDown() error {
-	coreDumpErr := c.GetCoreDump(c.coreDumpPath)
-	if coreDumpErr != nil {
-		return coreDumpErr
-	}
-
 	isRunning, err := c.IsRunning()
 	if err != nil {
 		fmt.Println("Error: Checking if container running")
@@ -156,11 +149,6 @@ func (c *CollectorManager) getAllContainers() (string, error) {
 }
 
 func (c *CollectorManager) launchCollector() error {
-	coreDumpErr := c.SetCoreDumpPath(c.coreDumpPath)
-	if coreDumpErr != nil {
-		return coreDumpErr
-	}
-
 	cmd := []string{RuntimeCommand, "run",
 		"--name", "collector",
 		"--privileged",
@@ -237,56 +225,4 @@ func (c *CollectorManager) killContainer(name string) error {
 func (c *CollectorManager) stopContainer(name string) error {
 	_, err := c.executor.StopContainer(name)
 	return err
-}
-
-// Sets the path to where core dumps are saved to. This is specified in the core_pattern file
-// The core_pattern file is backed up, because we don't want to permanently change it
-func (c *CollectorManager) SetCoreDumpPath(coreDumpFile string) error {
-	if !config.HostInfo().IsLocal() {
-		corePatternFile := "/proc/sys/kernel/core_pattern"
-		corePatternBackupFile := "/tmp/core_pattern_backup"
-		cmdBackupCorePattern := []string{"sudo", "cp", corePatternFile, corePatternBackupFile}
-		cmdSetCoreDumpPath := []string{"echo", "'" + coreDumpFile + "'", "|", "sudo", "tee", corePatternFile}
-		var err error
-		_, err = c.executor.Exec(cmdBackupCorePattern...)
-		if err != nil {
-			fmt.Printf("Error: Unable to backup core_pattern file. %v\n", err)
-			return err
-		}
-		_, err = c.executor.Exec(cmdSetCoreDumpPath...)
-		if err != nil {
-			fmt.Printf("Error: Unable to set core dump file path in core_pattern. %v\n", err)
-			return err
-		}
-	}
-	return nil
-}
-
-// Restores the backed up core_pattern file, which sets the location where core dumps are written to.
-func (c *CollectorManager) RestoreCoreDumpPath() error {
-	corePatternFile := "/proc/sys/kernel/core_pattern"
-	corePatternBackupFile := "/tmp/core_pattern_backup"
-	// cat is used to restore the backup instead of mv, becuase mv is not allowed.
-	cmdRestoreCorePattern := []string{"cat", corePatternBackupFile, "|", "sudo", "tee", corePatternFile}
-	_, err := c.executor.Exec(cmdRestoreCorePattern...)
-	if err != nil {
-		fmt.Printf("Error: Unable to restore core dump path. %v\n", err)
-		return err
-	}
-	return nil
-}
-
-// If the integration test is run on a remote host the core dump needs to be copied from the remote host
-// to the local maching
-func (c *CollectorManager) GetCoreDump(coreDumpFile string) error {
-	if c.env["ENABLE_CORE_DUMP"] == "true" && !config.HostInfo().IsLocal() {
-		cmd := []string{"sudo", "chmod", "755", coreDumpFile}
-		c.executor.Exec(cmd...)
-		c.executor.CopyFromHost(coreDumpFile, coreDumpFile)
-		err := c.RestoreCoreDumpPath()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
