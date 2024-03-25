@@ -75,7 +75,7 @@ extern "C" void AbortHandler(int signum) {
   }
 
   if (n_frames == max_frames)
-    write(STDERR_FILENO, "[truncated]\n", 14);
+    write(STDERR_FILENO, "[truncated]\n", 13);
 
   // Write a message to stderr using only reentrant functions.
   num_bytes = snprintf(message_buffer, message_buffer_size,
