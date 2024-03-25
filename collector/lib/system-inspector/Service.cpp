@@ -120,7 +120,7 @@ bool Service::InitKernel(const CollectorConfig& config, const DriverCandidate& c
 
     default_formatter_.reset(new sinsp_evt_formatter(inspector_.get(),
                                                      DEFAULT_OUTPUT_STR,
-                                                     SysdigEventExtractor::FilterList()));
+                                                     EventExtractor::FilterList()));
   }
 
   std::unique_ptr<IKernelDriver> driver;
