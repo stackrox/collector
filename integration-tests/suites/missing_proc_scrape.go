@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/stackrox/collector/integration-tests/suites/common"
+	"github.com/stackrox/collector/integration-tests/pkg/collector_manager"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -63,7 +63,7 @@ func (s *MissingProcScrapeTestSuite) SetupSuite() {
 		s.createFakeProcDir()
 	}
 
-	collectorOptions := common.CollectorStartupOptions{
+	collectorOptions := collector_manager.CollectorStartupOptions{
 		Mounts: map[string]string{
 			"/host/proc:ro": fakeProcDir,
 		},
