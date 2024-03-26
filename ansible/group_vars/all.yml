@@ -29,8 +29,6 @@ excluded_pairs:
   # eBPF on Garden Linux is not supported.
   - [ "{{ lookup('file', 'group_vars/gardenlinux-image.txt') }}", 'ebpf' ]
 
-  - [ 'p', 'ebpf' ]
-
 virtual_machines:
   rhel:
     project: rhel-cloud
