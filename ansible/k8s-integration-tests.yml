@@ -1,0 +1,150 @@
+---
+- name: Run k8s based integration tests on KinD
+  hosts: all
+
+  tasks:
+    - name: Check KinD is installed
+      ansible.builtin.command: which kind
+      register: is_kind_available
+      ignore_errors: true
+      changed_when: false
+
+    - name: Fail when kind is unavailable
+      ansible.builtin.fail:
+        msg: kind not found. https://kind.sigs.k8s.io/docs/user/quick-start/#installation
+      when: is_kind_available.rc != 0
+
+    - name: Create a test cluster
+      ansible.builtin.command:
+        cmd: kind --name collector-tests create cluster
+      changed_when: false
+
+    - name: Check collector image exists locally
+      community.docker.docker_image_info:
+        name: "{{ collector_image }}"
+      register: collector_image_info
+
+    - name: Load collector image into kind cluster
+      ansible.builtin.command:
+        cmd: kind --name collector-tests load docker-image {{ collector_image }}
+      when: collector_image_info.images | length == 1
+      changed_when: false
+
+    - name: Check tester image exists locally
+      community.docker.docker_image_info:
+        name: "{{ image }}"
+      register: tester_image_info
+
+    - name: Load tester image into kind cluster
+      ansible.builtin.command:
+        cmd: kind --name collector-tests load docker-image {{ image }}
+      when: tester_image_info.images | length == 1
+      changed_when: false
+
+    - name: Create a namespace for collector tests
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: collector-tests
+
+    - name: Create custom RBAC permissions for tester
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            name: tester-permissions
+          rules:
+            - apiGroups: [""]
+              resources:
+                - '*'
+              verbs:
+                - '*'
+
+    - name: Modify permissions to default service account for tester
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          kind: ClusterRoleBinding
+          metadata:
+            name: tester-permissions-binding
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: tester-permissions
+          subjects:
+            - kind: ServiceAccount
+              name: default
+              namespace: collector-tests
+
+    - name: Create a service for the tester pod
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: tester-svc
+            namespace: collector-tests
+          spec:
+            selector:
+              app: tester
+            ports:
+              - protocol: TCP
+                port: 9999
+                targetPort: 9999
+
+    - name: Run k8s tests
+      register: job_status
+      kubernetes.core.k8s:
+        state: present
+        wait: true
+        definition:
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: tester
+            namespace: collector-tests
+            labels:
+              app: tester
+          spec:
+            restartPolicy: Never
+            containers:
+              - name: tester
+                image: "{{ image }}"
+                env:
+                  - name: REMOTE_HOST_TYPE
+                    value: k8s
+                  - name: COLLECTOR_QA_TAG
+                    value: "{{ lookup('env', 'COLLECTOR_QA_TAG', default=lookup('file', collector_root + '/integration-tests/container/QA_TAG')) }}"
+                  - name: COLLECTOR_IMAGE
+                    value: "{{ collector_image }}"
+                args: ["-test.run", "^TestK8s.*"]
+                ports:
+                  - containerPort: 9999
+
+    - name: Wait until tests are done
+      kubernetes.core.k8s_info:
+        kind: Pod
+        name: tester
+        namespace: collector-tests
+      register: tests_status
+      until: tests_status.resources[0].status.phase != "Running"
+      retries: 100
+      delay: 6
+      ignore_errors: true
+
+    - name: Teardown test cluster
+      ansible.builtin.command:
+        cmd: kind --name collector-tests delete cluster
+      when: true
+      changed_when: false
+
+    - name: Tests failed
+      ansible.builtin.fail:
+        msg: "Tests have failed!!"
+      when: tests_status.resources[0].status.phase == "Failed"

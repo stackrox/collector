@@ -1,6 +1,7 @@
 package mock_sensor
 
 import (
+	"fmt"
 	"testing"
 
 	"time"
@@ -135,7 +136,9 @@ loop:
 			timeoutFn()
 			return make([]types.ProcessInfo, 0)
 		case proc := <-s.LiveProcesses():
+			fmt.Printf("Got event %+v\n", proc)
 			if proc.GetContainerId() != containerID {
+				fmt.Printf("Not expected container, got=%q want=%q\n", proc.GetContainerId(), containerID)
 				continue loop
 			}
 

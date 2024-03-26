@@ -46,7 +46,7 @@ $(foreach element,$(ALL_TESTS),$(eval $(call make-test-target,$(element))))
 .PHONY: build
 build:
 	mkdir -p bin
-	go test -tags bench -c -o bin/collector-tests
+	go test -tags bench,k8s -c -o bin/collector-tests
 
 .PHONY: build-image
 build-image:

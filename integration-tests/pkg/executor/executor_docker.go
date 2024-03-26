@@ -20,7 +20,7 @@ var (
 	RuntimeAsRoot  = config.RuntimeInfo().RunAsRoot
 )
 
-type executor struct {
+type dockerExecutor struct {
 	builder CommandBuilder
 }
 
@@ -67,8 +67,8 @@ func newLocalCommandBuilder() CommandBuilder {
 	return &localCommandBuilder{}
 }
 
-func newExecutor() Executor {
-	e := executor{}
+func newDockerExecutor() (*dockerExecutor, error) {
+	e := dockerExecutor{}
 	switch config.HostInfo().Kind {
 	case "ssh":
 		e.builder = newSSHCommandBuilder()
@@ -77,11 +77,11 @@ func newExecutor() Executor {
 	case "local":
 		e.builder = newLocalCommandBuilder()
 	}
-	return &e
+	return &e, nil
 }
 
 // Exec executes the provided command with retries on non-zero error from the command.
-func (e *executor) Exec(args ...string) (string, error) {
+func (e *dockerExecutor) Exec(args ...string) (string, error) {
 	if args[0] == RuntimeCommand && RuntimeAsRoot {
 		args = append([]string{"sudo"}, args...)
 	}
@@ -92,7 +92,7 @@ func (e *executor) Exec(args ...string) (string, error) {
 
 // ExecWithErrorCheck executes the provided command, retrying if an error occurs
 // and the command's output does not contain any of the accepted output contents.
-func (e *executor) ExecWithErrorCheck(errCheckFn func(string, error) error, args ...string) (string, error) {
+func (e *dockerExecutor) ExecWithErrorCheck(errCheckFn func(string, error) error, args ...string) (string, error) {
 	if args[0] == RuntimeCommand && RuntimeAsRoot {
 		args = append([]string{"sudo"}, args...)
 	}
@@ -102,14 +102,14 @@ func (e *executor) ExecWithErrorCheck(errCheckFn func(string, error) error, args
 }
 
 // ExecWithoutRetry executes provided command once, without retries.
-func (e *executor) ExecWithoutRetry(args ...string) (string, error) {
+func (e *dockerExecutor) ExecWithoutRetry(args ...string) (string, error) {
 	if args[0] == RuntimeCommand && RuntimeAsRoot {
 		args = append([]string{"sudo"}, args...)
 	}
 	return e.RunCommand(e.builder.ExecCommand(args...))
 }
 
-func (e *executor) RunCommand(cmd *exec.Cmd) (string, error) {
+func (e *dockerExecutor) RunCommand(cmd *exec.Cmd) (string, error) {
 	if cmd == nil {
 		return "", nil
 	}
@@ -128,7 +128,7 @@ func (e *executor) RunCommand(cmd *exec.Cmd) (string, error) {
 	return trimmed, err
 }
 
-func (e *executor) ExecWithStdin(pipedContent string, args ...string) (res string, err error) {
+func (e *dockerExecutor) ExecWithStdin(pipedContent string, args ...string) (res string, err error) {
 
 	if args[0] == RuntimeCommand && RuntimeAsRoot {
 		args = append([]string{"sudo"}, args...)
@@ -149,7 +149,7 @@ func (e *executor) ExecWithStdin(pipedContent string, args ...string) (res strin
 	return e.RunCommand(cmd)
 }
 
-func (e *executor) CopyFromHost(src string, dst string) (res string, err error) {
+func (e *dockerExecutor) CopyFromHost(src string, dst string) (res string, err error) {
 	maxAttempts := 3
 	attempt := 0
 	for attempt < maxAttempts {
@@ -166,7 +166,7 @@ func (e *executor) CopyFromHost(src string, dst string) (res string, err error) 
 	return res, err
 }
 
-func (e *executor) PullImage(image string) error {
+func (e *dockerExecutor) PullImage(image string) error {
 	_, err := e.Exec(RuntimeCommand, "image", "inspect", image)
 	if err == nil {
 		return nil
@@ -175,7 +175,7 @@ func (e *executor) PullImage(image string) error {
 	return err
 }
 
-func (e *executor) IsContainerRunning(containerID string) (bool, error) {
+func (e *dockerExecutor) IsContainerRunning(containerID string) (bool, error) {
 	result, err := e.ExecWithoutRetry(RuntimeCommand, "inspect", containerID, "--format='{{.State.Running}}'")
 	if err != nil {
 		return false, err
@@ -183,7 +183,26 @@ func (e *executor) IsContainerRunning(containerID string) (bool, error) {
 	return strconv.ParseBool(strings.Trim(result, "\"'"))
 }
 
-func (e *executor) ContainerExists(container string) (bool, error) {
+func (e *dockerExecutor) ContainerID(containerName interface{}) string {
+	name, ok := containerName.(string)
+	if !ok {
+		return ""
+	}
+
+	result, err := e.ExecWithoutRetry(RuntimeCommand, "ps", "-aqf", "name=^"+name+"$")
+	if err != nil {
+		return ""
+	}
+
+	return strings.Trim(result, "\"")
+}
+
+func (e *dockerExecutor) ContainerExists(containerName interface{}) (bool, error) {
+	container, ok := containerName.(string)
+	if !ok {
+		return false, fmt.Errorf("wrong container name type. expected=string, got=%T", containerName)
+	}
+
 	_, err := e.ExecWithoutRetry(RuntimeCommand, "inspect", container)
 	if err != nil {
 		return false, err
@@ -191,7 +210,7 @@ func (e *executor) ContainerExists(container string) (bool, error) {
 	return true, nil
 }
 
-func (e *executor) ExitCode(containerID string) (int, error) {
+func (e *dockerExecutor) ExitCode(containerID string) (int, error) {
 	result, err := e.Exec(RuntimeCommand, "inspect", containerID, "--format='{{.State.ExitCode}}'")
 	if err != nil {
 		return -1, err
@@ -221,17 +240,22 @@ func containerErrorCheckFunction(name string, cmd string) func(string, error) er
 }
 
 // KillContainer runs the kill operation on the provided container name
-func (e *executor) KillContainer(name string) (string, error) {
+func (e *dockerExecutor) KillContainer(name string) (string, error) {
 	return e.ExecWithErrorCheck(containerErrorCheckFunction(name, "kill"), RuntimeCommand, "kill", name)
 }
 
 // RemoveContainer runs the remove operation on the provided container name
-func (e *executor) RemoveContainer(name string) (string, error) {
-	return e.ExecWithErrorCheck(containerErrorCheckFunction(name, "remove"), RuntimeCommand, "rm", name)
+func (e *dockerExecutor) RemoveContainer(name interface{}) (string, error) {
+	n, ok := name.(string)
+	if !ok {
+		return "", fmt.Errorf("Wrong name type. expected=string, got=%T", name)
+	}
+
+	return e.ExecWithErrorCheck(containerErrorCheckFunction(n, "remove"), RuntimeCommand, "rm", n)
 }
 
 // StopContainer runs the stop operation on the provided container name
-func (e *executor) StopContainer(name string) (string, error) {
+func (e *dockerExecutor) StopContainer(name string) (string, error) {
 	return e.ExecWithErrorCheck(containerErrorCheckFunction(name, "stop"), RuntimeCommand, "stop", name)
 }
 
