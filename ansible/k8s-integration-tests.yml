@@ -59,7 +59,8 @@
           metadata:
             name: tester-permissions
           rules:
-            - apiGroups: [""]
+            - apiGroups:
+                - '*'
               resources:
                 - '*'
               verbs:
@@ -98,8 +99,17 @@
                 port: 9999
                 targetPort: 9999
 
+    - name: Wait for default service account to be available
+      kubernetes.core.k8s_info:
+        kind: ServiceAccount
+        name: default
+        namespace: collector-tests
+      register: account_status
+      until: account_status.resources | length == 1
+      retries: 10
+      delay: 5
+
     - name: Run k8s tests
-      register: job_status
       kubernetes.core.k8s:
         state: present
         wait: true
