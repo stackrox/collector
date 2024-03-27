@@ -450,3 +450,38 @@ $ curl collector:8080/profile/heap
 
 The resulting profile could be processed with `pprof` to get a human-readable
 output with debugging symbols.
+
+## Introspection API endpoint
+
+Collector provides a simple HTTP endpoint to investigate connections and
+endpoints. This can be enabled by setting the environment variable
+`DEBUG_ENABLE_INTROSPECTION: "true"`, and is disabled by default.
+
+The introspection API endpoints are as follows:
+- `/state/network/endpoint` will return an array of the endpoints known
+  to collector at that point.
+- `/state/network/connection` is similar to the previous, but for connections.
+
+Afterglow is not applied to the data returned by this API.
+
+The API endpoint is exposed on port `8080`.
+
+It is possible to filter the items returned per container_id by providing
+a query parameter: `container=<container_id>`
+
+Example of connection query, limited to container with identifier `c6f030bc4b42`:
+
+```
+$ curl "http://<collector>:8080/state/network/connection?container=c6f030bc4b42"
+{
+  "c6f030bc4b42" : 
+  [
+    {
+      "active" : true,
+      "l4proto" : "TCP",
+      "port" : 443,
+      "to" : "10.96.0.1"
+    }
+  ]
+}
+```
