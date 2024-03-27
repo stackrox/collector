@@ -55,6 +55,7 @@ $(obj)/probe.o: $(src)/collector_probe.c $(FALCO_DIR)/*.h
 		$(KBUILD_EXTRA_CPPFLAGS) \
 		$(DEBUG) \
 		-I $(FALCO_DIR) \
+		-I $(FALCO_DIR)/../ \
 		-D__KERNEL__ \
 		-DKBUILD_MODNAME=\"collector\" \
 		-D__BPF_TRACING__ \
