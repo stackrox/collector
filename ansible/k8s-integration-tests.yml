@@ -15,8 +15,18 @@
       when: is_kind_available.rc != 0
 
     - name: Create a test cluster
-      ansible.builtin.command:
-        cmd: kind --name collector-tests create cluster
+      ansible.builtin.shell:
+        cmd: |
+          cat << EOF | kind --name collector-tests --config=- create cluster
+          kind: Cluster
+          apiVersion: kind.x-k8s.io/v1alpha4
+          nodes:
+          - role: control-plane
+            extraMounts:
+            - hostPath: {{ collector_root }}
+              containerPath: /tmp/collector
+          EOF
+
       changed_when: false
 
     - name: Check collector image exists locally
@@ -136,6 +146,15 @@
                 args: ["-test.run", "^TestK8s.*"]
                 ports:
                   - containerPort: 9999
+                volumeMounts:
+                  - mountPath: /tests/container-logs
+                    name: logs
+                securityContext:
+                  privileged: true
+            volumes:
+              - name: logs
+                hostPath:
+                  path: /tmp/collector/integration-tests/container-logs
 
     - name: Wait until tests are done
       kubernetes.core.k8s_info:
@@ -147,6 +166,17 @@
       retries: 100
       delay: 6
       ignore_errors: true
+
+    - name: Get tester logs
+      kubernetes.core.k8s_log:
+        kind: Pod
+        name: tester
+        namespace: collector-tests
+      register: log
+
+    - name: Output tester logs
+      ansible.builtin.debug:
+        msg: "{{ log.log_lines }}"
 
     - name: Teardown test cluster
       ansible.builtin.command:

@@ -100,8 +100,7 @@ func (c *DockerCollectorManager) Launch() error {
 func (c *DockerCollectorManager) TearDown() error {
 	isRunning, err := c.IsRunning()
 	if err != nil {
-		fmt.Println("Error: Checking if container running")
-		return err
+		return fmt.Errorf("Unable to check if container is running: %s", err)
 	}
 
 	if !isRunning {
@@ -109,8 +108,7 @@ func (c *DockerCollectorManager) TearDown() error {
 		// Check if collector container segfaulted or exited with error
 		exitCode, err := c.executor.ExitCode("collector")
 		if err != nil {
-			fmt.Println("Error: Container not running")
-			return err
+			return fmt.Errorf("Failed to get container exit code: %s", err)
 		}
 		if exitCode != 0 {
 			return fmt.Errorf("Collector container has non-zero exit code (%d)", exitCode)

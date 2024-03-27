@@ -12,7 +12,7 @@ type Executor interface {
 	IsContainerRunning(container string) (bool, error)
 	ContainerExists(container interface{}) (bool, error)
 	ContainerID(container interface{}) string
-	ExitCode(container string) (int, error)
+	ExitCode(container interface{}) (int, error)
 	Exec(args ...string) (string, error)
 	ExecWithErrorCheck(errCheckFn func(string, error) error, args ...string) (string, error)
 	ExecWithStdin(pipedContent string, args ...string) (string, error)
