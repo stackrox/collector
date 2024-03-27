@@ -1,4 +1,4 @@
-package common
+package collector_manager
 
 import (
 	"encoding/json"
@@ -11,18 +11,13 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/pkg/common"
+	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/executor"
 )
 
-type CollectorStartupOptions struct {
-	Mounts        map[string]string
-	Env           map[string]string
-	Config        map[string]any
-	BootstrapOnly bool
-}
-
-type CollectorManager struct {
-	executor      Executor
+type DockerCollectorManager struct {
+	executor      executor.Executor
 	mounts        map[string]string
 	env           map[string]string
 	config        map[string]any
@@ -30,10 +25,10 @@ type CollectorManager struct {
 	testName      string
 
 	CollectorOutput string
-	ContainerID     string
+	containerID     string
 }
 
-func NewCollectorManager(e Executor, name string) *CollectorManager {
+func newDockerManager(e executor.Executor, name string) *DockerCollectorManager {
 	collectorOptions := config.CollectorInfo()
 
 	collectionMethod := config.CollectionMethod()
@@ -66,7 +61,7 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 		"/module": "",
 	}
 
-	return &CollectorManager{
+	return &DockerCollectorManager{
 		executor:      e,
 		bootstrapOnly: false,
 		env:           env,
@@ -76,7 +71,7 @@ func NewCollectorManager(e Executor, name string) *CollectorManager {
 	}
 }
 
-func (c *CollectorManager) Setup(options *CollectorStartupOptions) error {
+func (c *DockerCollectorManager) Setup(options *CollectorStartupOptions) error {
 	if options == nil {
 		// default to empty, if no options are provided (i.e. use the
 		// default values)
@@ -98,15 +93,14 @@ func (c *CollectorManager) Setup(options *CollectorStartupOptions) error {
 	return c.executor.PullImage(config.Images().CollectorImage())
 }
 
-func (c *CollectorManager) Launch() error {
+func (c *DockerCollectorManager) Launch() error {
 	return c.launchCollector()
 }
 
-func (c *CollectorManager) TearDown() error {
+func (c *DockerCollectorManager) TearDown() error {
 	isRunning, err := c.IsRunning()
 	if err != nil {
-		fmt.Println("Error: Checking if container running")
-		return err
+		return fmt.Errorf("Unable to check if container is running: %s", err)
 	}
 
 	if !isRunning {
@@ -114,8 +108,7 @@ func (c *CollectorManager) TearDown() error {
 		// Check if collector container segfaulted or exited with error
 		exitCode, err := c.executor.ExitCode("collector")
 		if err != nil {
-			fmt.Println("Error: Container not running")
-			return err
+			return fmt.Errorf("Failed to get container exit code: %s", err)
 		}
 		if exitCode != 0 {
 			return fmt.Errorf("Collector container has non-zero exit code (%d)", exitCode)
@@ -129,27 +122,27 @@ func (c *CollectorManager) TearDown() error {
 	return nil
 }
 
-func (c *CollectorManager) IsRunning() (bool, error) {
+func (c *DockerCollectorManager) IsRunning() (bool, error) {
 	return c.executor.IsContainerRunning("collector")
 }
 
 // These two methods might be useful in the future. I used them for debugging
-func (c *CollectorManager) getContainers() (string, error) {
-	cmd := []string{RuntimeCommand, "container", "ps"}
+func (c *DockerCollectorManager) getContainers() (string, error) {
+	cmd := []string{executor.RuntimeCommand, "container", "ps"}
 	containers, err := c.executor.Exec(cmd...)
 
 	return containers, err
 }
 
-func (c *CollectorManager) getAllContainers() (string, error) {
-	cmd := []string{RuntimeCommand, "container", "ps", "-a"}
+func (c *DockerCollectorManager) getAllContainers() (string, error) {
+	cmd := []string{executor.RuntimeCommand, "container", "ps", "-a"}
 	containers, err := c.executor.Exec(cmd...)
 
 	return containers, err
 }
 
-func (c *CollectorManager) launchCollector() error {
-	cmd := []string{RuntimeCommand, "run",
+func (c *DockerCollectorManager) launchCollector() error {
+	cmd := []string{executor.RuntimeCommand, "run",
 		"--name", "collector",
 		"--privileged",
 		"--network=host"}
@@ -187,14 +180,14 @@ func (c *CollectorManager) launchCollector() error {
 	c.CollectorOutput = output
 
 	outLines := strings.Split(output, "\n")
-	c.ContainerID = ContainerShortID(string(outLines[len(outLines)-1]))
+	c.containerID = common.ContainerShortID(string(outLines[len(outLines)-1]))
 	return err
 }
 
-func (c *CollectorManager) captureLogs(containerName string) (string, error) {
-	logs, err := c.executor.Exec(RuntimeCommand, "logs", containerName)
+func (c *DockerCollectorManager) captureLogs(containerName string) (string, error) {
+	logs, err := c.executor.Exec(executor.RuntimeCommand, "logs", containerName)
 	if err != nil {
-		fmt.Printf(RuntimeCommand+" logs error (%v) for container %s\n", err, containerName)
+		fmt.Printf(executor.RuntimeCommand+" logs error (%v) for container %s\n", err, containerName)
 		return "", err
 	}
 	logDirectory := filepath.Join(".", "container-logs", config.VMInfo().Config, config.CollectionMethod())
@@ -207,7 +200,7 @@ func (c *CollectorManager) captureLogs(containerName string) (string, error) {
 	return logs, nil
 }
 
-func (c *CollectorManager) killContainer(name string) error {
+func (c *DockerCollectorManager) killContainer(name string) error {
 	_, err1 := c.executor.KillContainer(name)
 	_, err2 := c.executor.RemoveContainer(name)
 
@@ -222,7 +215,11 @@ func (c *CollectorManager) killContainer(name string) error {
 	return result
 }
 
-func (c *CollectorManager) stopContainer(name string) error {
+func (c *DockerCollectorManager) stopContainer(name string) error {
 	_, err := c.executor.StopContainer(name)
 	return err
+}
+
+func (c *DockerCollectorManager) ContainerID() string {
+	return c.containerID
 }

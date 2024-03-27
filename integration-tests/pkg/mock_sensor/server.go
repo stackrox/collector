@@ -17,8 +17,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
-	"github.com/stackrox/collector/integration-tests/suites/config"
-	"github.com/stackrox/collector/integration-tests/suites/types"
+	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/types"
 )
 
 const (

@@ -5,8 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stackrox/collector/integration-tests/suites/common"
-	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/pkg/collector_manager"
+	"github.com/stackrox/collector/integration-tests/pkg/common"
+	"github.com/stackrox/collector/integration-tests/pkg/config"
 )
 
 const (
@@ -33,7 +34,7 @@ func (s *DuplicateEndpointsTestSuite) SetupSuite() {
 	s.RegisterCleanup("socat")
 	s.StartContainerStats()
 
-	collectorOptions := common.CollectorStartupOptions{
+	collectorOptions := collector_manager.CollectorStartupOptions{
 		Config: map[string]any{
 			"turnOffScrape":  false,
 			"scrapeInterval": gScrapeInterval,

@@ -7,8 +7,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/stackrox/collector/integration-tests/suites/common"
-	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/pkg/collector_manager"
+	"github.com/stackrox/collector/integration-tests/pkg/common"
+	"github.com/stackrox/collector/integration-tests/pkg/config"
 )
 
 type AsyncConnectionTestSuite struct {
@@ -34,7 +35,7 @@ func (s *AsyncConnectionTestSuite) SetupSuite() {
 	s.RegisterCleanup("server", "client")
 	s.StartContainerStats()
 
-	collectorOptions := common.CollectorStartupOptions{
+	collectorOptions := collector_manager.CollectorStartupOptions{
 		Env: map[string]string{
 			"ROX_COLLECT_CONNECTION_STATUS": strconv.FormatBool(!s.DisableConnectionStatusTracking),
 		},

@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/stackrox/collector/integration-tests/suites/common"
-	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/pkg/common"
+	"github.com/stackrox/collector/integration-tests/pkg/config"
 )
 
 type BenchmarkBaselineTestSuite struct {
