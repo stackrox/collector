@@ -78,7 +78,6 @@ func (e *K8sExecutor) ContainerID(podFilter interface{}) string {
 	}
 
 	if len(pod.Status.ContainerStatuses) != 1 {
-		fmt.Printf("Error: Expected 1 container, got=%d\n", len(pod.Status.ContainerStatuses))
 		return ""
 	}
 
@@ -111,8 +110,13 @@ func (e *K8sExecutor) ContainerExists(podFilter interface{}) (bool, error) {
 	return pod != nil, nil
 }
 
-func (e *K8sExecutor) ExitCode(podName string) (int, error) {
-	pod, err := e.clientset.CoreV1().Pods(TESTS_NAMESPACE).Get(context.Background(), podName, metaV1.GetOptions{})
+func (e *K8sExecutor) ExitCode(podFilter interface{}) (int, error) {
+	pf, ok := podFilter.(PodFilter)
+	if !ok {
+		return -1, fmt.Errorf("Wrong filter type. Expected=PodFilter, got=%T", podFilter)
+	}
+
+	pod, err := e.clientset.CoreV1().Pods(pf.Namespace).Get(context.Background(), pf.Name, metaV1.GetOptions{})
 	if err != nil {
 		return -1, err
 	}

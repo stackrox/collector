@@ -31,7 +31,8 @@ type NamespaceTest struct {
 
 type K8sNamespaceTestSuite struct {
 	IntegrationTestSuiteBase
-	tests []NamespaceTest
+	tests       []NamespaceTest
+	collectorIP string
 }
 
 func (k *K8sNamespaceTestSuite) SetupSuite() {
@@ -103,6 +104,7 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 		})
 	k.Require().True(selfCheckOk)
 
+	k.collectorIP = k.getCollectorIP()
 	k.tests = append(k.tests, NamespaceTest{
 		containerID:       containerID,
 		expectecNamespace: collector_manager.TEST_NAMESPACE,
@@ -120,8 +122,10 @@ func (k *K8sNamespaceTestSuite) TearDownSuite() {
 }
 
 func (k *K8sNamespaceTestSuite) TestK8sNamespace() {
+	baseUri := "http://" + k.collectorIP + ":8080/state/containers/"
+
 	for _, tt := range k.tests {
-		uri := "http://" + k.getCollectorIP() + ":8080/state/containers/" + tt.containerID
+		uri := baseUri + tt.containerID
 		fmt.Printf("Querying: %s\n", uri)
 		resp, err := http.Get(uri)
 		k.Require().NoError(err)
@@ -130,8 +134,8 @@ func (k *K8sNamespaceTestSuite) TestK8sNamespace() {
 		defer resp.Body.Close()
 		raw, err := io.ReadAll(resp.Body)
 		fmt.Printf("Response: %s\n", raw)
-		var body map[string]interface{}
 
+		var body map[string]interface{}
 		err = json.Unmarshal(raw, &body)
 		k.Require().NoError(err)
 
@@ -147,7 +151,6 @@ func (k *K8sNamespaceTestSuite) TestK8sNamespace() {
 		k.Require().True(ok)
 		k.Require().Equal(namespace, tt.expectecNamespace)
 	}
-
 }
 
 func (k *K8sNamespaceTestSuite) execPod(podName string, namespace string, command []string) (string, error) {

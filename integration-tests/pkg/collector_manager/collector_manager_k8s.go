@@ -3,6 +3,11 @@ package collector_manager
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
@@ -22,6 +27,8 @@ type K8sCollectorManager struct {
 	volumes      []coreV1.Volume
 	env          []coreV1.EnvVar
 	config       map[string]any
+
+	testName string
 }
 
 func newK8sManager(e executor.Executor, name string) *K8sCollectorManager {
@@ -74,6 +81,7 @@ func newK8sManager(e executor.Executor, name string) *K8sCollectorManager {
 		volumes:      volumes,
 		env:          env,
 		config:       collectorConfig,
+		testName:     name,
 	}
 }
 
@@ -120,23 +128,48 @@ func (k *K8sCollectorManager) Launch() error {
 	pod := &coreV1.Pod{
 		ObjectMeta: objectMeta,
 		Spec: coreV1.PodSpec{
-			Containers: []coreV1.Container{container},
-			Volumes:    k.volumes,
+			Containers:    []coreV1.Container{container},
+			Volumes:       k.volumes,
+			RestartPolicy: coreV1.RestartPolicyNever, // if the pod fails, it fails
 		},
 	}
 
-	executor, _ := k.executor.(*executor.K8sExecutor)
+	executor := k.executor.(*executor.K8sExecutor)
 	_, err := executor.CreatePod(TEST_NAMESPACE, pod)
 	return err
 }
 
 func (k *K8sCollectorManager) TearDown() error {
-	executor, _ := k.executor.(*executor.K8sExecutor)
+	isRunning, err := k.IsRunning()
+	if err != nil {
+		return err
+	}
+
+	err = k.captureLogs()
+	if err != nil {
+		return fmt.Errorf("Failed to get collector logs: %s", err)
+	}
+
+	if !isRunning {
+		exitCode, err := k.executor.ExitCode(executor.PodFilter{
+			Name:      "collector",
+			Namespace: TEST_NAMESPACE,
+		})
+		if err != nil {
+			return fmt.Errorf("Failed to get container exit code: %s", err)
+		}
+
+		if exitCode != 0 {
+			return fmt.Errorf("Collector container has non-zero exit code (%d)", exitCode)
+		}
+	}
+
+	executor := k.executor.(*executor.K8sExecutor)
 	return executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).Delete(context.Background(), "collector", metaV1.DeleteOptions{})
 }
 
 func (k *K8sCollectorManager) IsRunning() (bool, error) {
-	executor, _ := k.executor.(*executor.K8sExecutor)
+	executor := k.executor.(*executor.K8sExecutor)
 	pod, err := executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).Get(context.Background(), "collector", metaV1.GetOptions{})
 	if err != nil {
 		return false, err
@@ -163,4 +196,27 @@ func replaceOrAppendEnvVar(list []coreV1.EnvVar, newVar coreV1.EnvVar) []coreV1.
 	}
 
 	return append(list, newVar)
+}
+
+func (k *K8sCollectorManager) captureLogs() error {
+	executor := k.executor.(*executor.K8sExecutor)
+	req := executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).GetLogs("collector", &coreV1.PodLogOptions{})
+	podLogs, err := req.Stream(context.Background())
+	if err != nil {
+		return err
+	}
+	defer podLogs.Close()
+
+	logDirectory := filepath.Join(".", "container-logs", config.VMInfo().Config, config.CollectionMethod())
+	os.MkdirAll(logDirectory, os.ModePerm)
+	logFilePath := filepath.Join(logDirectory, strings.ReplaceAll(k.testName, "/", "_")+"-collector.log")
+	fmt.Printf("Dumping collector logs to %q\n", logFilePath)
+	logFile, err := os.Create(logFilePath)
+	if err != nil {
+		return err
+	}
+	defer logFile.Close()
+
+	_, err = io.Copy(logFile, podLogs)
+	return err
 }

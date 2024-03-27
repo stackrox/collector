@@ -210,8 +210,13 @@ func (e *dockerExecutor) ContainerExists(containerName interface{}) (bool, error
 	return true, nil
 }
 
-func (e *dockerExecutor) ExitCode(containerID string) (int, error) {
-	result, err := e.Exec(RuntimeCommand, "inspect", containerID, "--format='{{.State.ExitCode}}'")
+func (e *dockerExecutor) ExitCode(containerID interface{}) (int, error) {
+	cID, ok := containerID.(string)
+	if !ok {
+		return -1, fmt.Errorf("Unexpected containerID type. Expected=string, got=%T", containerID)
+	}
+
+	result, err := e.Exec(RuntimeCommand, "inspect", cID, "--format='{{.State.ExitCode}}'")
 	if err != nil {
 		return -1, err
 	}
