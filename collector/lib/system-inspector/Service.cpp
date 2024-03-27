@@ -89,6 +89,8 @@ bool Service::InitKernel(const CollectorConfig& config, const DriverCandidate& c
       inspector_->get_parser()->set_track_connection_status(true);
     }
 
+    k8s_inspector_.reset(new K8s(inspector_.get()));
+
     if (config.EnableRuntimeFilters()) {
       uint64_t mask = 1 << CT_CRI |
                       1 << CT_CRIO |

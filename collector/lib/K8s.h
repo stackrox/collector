@@ -14,32 +14,22 @@ class K8s {
     event_extractor_.Init(inspector);
   }
 
-  inline std::string_view GetNamespace(sinsp_evt* event) {
+  inline std::string GetNamespace(sinsp_evt* event) {
     const char* ns = event_extractor_.get_k8s_namespace(event);
     return ns != nullptr ? ns : "";
   }
 
-  inline std::string_view GetNamespace(const std::string& container_id) {
+  inline std::string GetNamespace(const std::string& container_id) {
     return GetContainerLabel(container_id, "io.kubernetes.pod.namespace");
   }
 
-  std::string GetContainerLabels(const std::string& container_id) {
-    const auto container = inspector_->m_container_manager.get_container(container_id);
-    if (container == nullptr) {
+  inline std::string GetContainerLabel(const std::string& container_id, const std::string& label) {
+    const auto& containers = *inspector_->m_container_manager.get_containers();
+    if (containers.count(container_id) == 0) {
       return "";
     }
 
-    std::stringstream ss;
-
-    for (const auto& [key, value] : container->m_labels) {
-      ss << key << ":" << value << ",";
-    }
-
-    return ss.str();
-  }
-
-  inline std::string_view GetContainerLabel(const std::string& container_id, const std::string& label) {
-    const auto container = inspector_->m_container_manager.get_container(container_id);
+    const auto& container = containers.at(container_id);
     if (container == nullptr || container->m_labels.count(label) == 0) {
       return "";
     }
