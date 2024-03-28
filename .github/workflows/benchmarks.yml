@@ -22,6 +22,7 @@ jobs:
       run-benchmarks: true
       collector-tag: ${{ inputs.collector-tag }}
       collector-qa-tag: ${{ inputs.collector-qa-tag }}
+      collector-test-tag: ${{ inputs.collector-tag }}
     secrets: inherit
 
   calculate-baseline:
