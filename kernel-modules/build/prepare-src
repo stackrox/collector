@@ -22,7 +22,7 @@ BUILD_SCRATCH="${SCRATCH_DIR}/cmake-build"
 modfiles0() (
     local dir="${1:-${DRIVER_SCRATCH}/driver}"
     cd "$dir"
-    find . -type f \( -name 'Makefile' -o -name '*.c' -o -name '*.h' \) -print0 \
+    find . -type f \( -name 'Makefile*' -o -name '*.sh' -o -name '*.c' -o -name '*.h' \) -print0 \
         | LC_ALL=C sort -z
 )
 
