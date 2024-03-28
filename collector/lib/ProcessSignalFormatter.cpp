@@ -143,7 +143,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   }
 
   CLOG(DEBUG) << "Process (" << signal->container_id() << ": " << signal->pid() << "): "
-              << signal->name()
+              << signal->name() << "[" << k8s_.GetNamespace(event) << "] "
               << " (" << signal->exec_file_path() << ")"
               << " " << signal->args();
 

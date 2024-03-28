@@ -75,6 +75,9 @@ class CollectorConfig {
   bool EnableExternalIPs() const { return enable_external_ips_; }
   bool EnableConnectionStats() const { return enable_connection_stats_; }
   bool EnableDetailedMetrics() const { return enable_detailed_metrics_; }
+  bool EnableRuntimeFilters() const { return enable_runtime_filters_; }
+  bool UseDockerCe() const { return use_docker_ce_; }
+  bool UsePodmanCe() const { return use_podman_ce_; }
   const std::vector<double>& GetConnectionStatsQuantiles() const { return connection_stats_quantiles_; }
   double GetConnectionStatsError() const { return connection_stats_error_; }
   unsigned int GetConnectionStatsWindow() const { return connection_stats_window_; }
@@ -107,6 +110,9 @@ class CollectorConfig {
   bool enable_external_ips_;
   bool enable_connection_stats_;
   bool enable_detailed_metrics_;
+  bool enable_runtime_filters_;
+  bool use_docker_ce_;
+  bool use_podman_ce_;
   std::vector<double> connection_stats_quantiles_;
   double connection_stats_error_;
   unsigned int connection_stats_window_;

@@ -50,7 +50,7 @@ include_directories(/usr/local/include/civetweb)
 include_directories(/usr/local/include/prometheus)
 set(DRIVER_HEADERS ${FALCO_DIR}/driver/ppm_events_public.h ${FALCO_DIR}/driver/ppm_fillers.h)
 
-add_definitions(-DUSE_PROTO_ARENAS -DMINIMAL_BUILD)
+add_definitions(-DUSE_PROTO_ARENAS)
 
 add_definitions(-DASSERT_TO_LOG)
 
@@ -83,7 +83,7 @@ set(USE_BUNDLED_DEPS OFF CACHE BOOL "Enable bundled dependencies instead of usin
 set(USE_BUNDLED_CARES OFF CACHE BOOL "Enable bundled dependencies instead of using the system ones" FORCE)
 set(WITH_CHISEL OFF CACHE BOOL "Include chisel implementation" FORCE)
 set(BUILD_LIBSCAP_GVISOR OFF CACHE BOOL "Do not build gVisor support" FORCE)
-set(MINIMAL_BUILD ON CACHE BOOL "Minimal" FORCE)
+set(MINIMAL_BUILD OFF CACHE BOOL "Minimal" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build position independent libraries and executables" FORCE)
 set(LIBELF_LIB_SUFFIX ".so" CACHE STRING "Use libelf.so" FORCE)
 
