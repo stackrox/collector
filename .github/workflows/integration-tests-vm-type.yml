@@ -40,7 +40,9 @@ jobs:
     name: Testing ${{ inputs.vm_type }}
     runs-on: ubuntu-latest
     env:
-      COLLECTOR_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+      # Force slim image, to download drivers from GCP rather than rely on the
+      # existence of full images
+      COLLECTOR_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}-slim
       COLLECTOR_QA_TAG: ${{ inputs.collector-qa-tag }}
       TEST_IMAGE: quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}
     steps:
@@ -107,11 +109,7 @@ jobs:
 
       - name: Teardown VMs
         if: always()
-        run: |
-          if [[ "${RUNNER_DEBUG}" == "1" ]]; then
-            make -C "${{ github.workspace }}/ansible" list-inventory
-          fi
-          make -C "${{ github.workspace }}/ansible" destroy-vms
+        run: make -C "${{ github.workspace }}/ansible" destroy-vms
 
       - name: Store artifacts
         if: always()
