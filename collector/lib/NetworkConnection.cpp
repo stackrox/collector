@@ -45,17 +45,19 @@ std::ostream& operator<<(std::ostream& os, const ContainerEndpoint& container_en
 }
 
 std::ostream& operator<<(std::ostream& os, const Connection& conn) {
-  os << conn.container() << ": " << conn.local();
+  os << "Connection(container: " << conn.container() << ", "
+     << "local: " << conn.local();
   if (conn.is_server()) {
     os << " <- ";
   } else {
     os << " -> ";
   }
-  os << conn.remote() << " [" << conn.l4proto();
+  os << "remote: " << conn.remote() << ", "
+     << "proto: " << conn.l4proto();
   if (conn.local().address().family() == Address::Family::IPV6) {
     os << "6";
   }
-  return os << "]";
+  return os << ")";
 }
 
 static bool parse_address(const char* address, struct sockaddr_storage& sockaddr) {

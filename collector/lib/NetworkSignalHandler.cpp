@@ -108,7 +108,10 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   const Endpoint* remote = is_server ? &client : &server;
 
   const std::string* container_id = event_extractor_.get_container_id(evt);
-  if (!container_id) return std::nullopt;
+  if (!container_id) {
+    return std::nullopt;
+  }
+
   return {Connection(*container_id, *local, *remote, l4proto, is_server)};
 }
 
@@ -120,6 +123,8 @@ SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
   if (!result.has_value() || !IsRelevantConnection(*result)) {
     return SignalHandler::IGNORED;
   }
+
+  CLOG(DEBUG) << *result;
 
   conn_tracker_->UpdateConnection(*result, evt->get_ts() / 1000UL, modifier == Modifier::ADD);
   return SignalHandler::PROCESSED;

@@ -65,8 +65,6 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 		s.Require().NoError(err)
 	}
 
-	time.Sleep(10 * time.Second)
-
 	// invokes default nginx
 	containerID, err := s.launchContainer("nginx", image_store.ImageByKey("nginx"))
 	s.Require().NoError(err)
@@ -82,21 +80,29 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 
 	s.ServerPort, err = s.getPort("nginx")
 	s.Require().NoError(err)
-	time.Sleep(30 * time.Second)
 
 	serverAddress := fmt.Sprintf("%s:%s", s.ServerIP, s.ServerPort)
 
-	numMetaIter := strconv.Itoa(s.NumMetaIter)
-	numIter := strconv.Itoa(s.NumIter)
-	sleepBetweenCurlTime := strconv.Itoa(s.SleepBetweenCurlTime)
-	sleepBetweenIterations := strconv.Itoa(s.SleepBetweenIterations)
-	_, err = s.execContainer("nginx-curl", []string{"/usr/bin/schedule-curls.sh", numMetaIter, numIter, sleepBetweenCurlTime, sleepBetweenIterations, serverAddress})
+	// This is to synchronize with collector's scrape interval. We wait until we
+	// see the curl network event, which will only be reported on a scrape
+	_, err = s.execContainer("nginx-curl", []string{"curl", serverAddress})
+	s.Sensor().ExpectConnectionsN(s.T(), s.ClientContainer, time.Duration(s.ScrapeInterval)*time.Second*2, 1)
+
+	// Clear the state so we don't need to account for the additional connection in the test
+	s.Sensor().Clear(s.ClientContainer)
+	s.Sensor().Clear(s.ServerContainer)
+
+	_, err = s.execContainer("nginx-curl", []string{
+		"/usr/bin/schedule-curls.sh",
+		strconv.Itoa(s.NumMetaIter),
+		strconv.Itoa(s.NumIter),
+		strconv.Itoa(s.SleepBetweenCurlTime),
+		strconv.Itoa(s.SleepBetweenIterations),
+		serverAddress,
+	})
 
 	s.ClientIP, err = s.getIPAddress("nginx-curl")
 	s.Require().NoError(err)
-
-	totalTime := (s.SleepBetweenCurlTime*s.NumIter+s.SleepBetweenIterations)*s.NumMetaIter + s.AfterglowPeriod + 10
-	time.Sleep(time.Duration(totalTime) * time.Second)
 }
 
 func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
@@ -106,7 +112,11 @@ func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
 }
 
 func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
-	networkInfos := s.Sensor().ExpectConnectionsN(s.T(), s.ServerContainer, 10*time.Second, s.ExpectedActive+s.ExpectedInactive)
+	networkInfos := s.Sensor().ExpectConnectionsN(
+		s.T(),
+		s.ServerContainer,
+		time.Duration(s.ScrapeInterval+s.AfterglowPeriod)*time.Second*2,
+		s.ExpectedActive+s.ExpectedInactive)
 
 	observedActive := 0
 	observedInactive := 0
