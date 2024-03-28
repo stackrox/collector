@@ -37,6 +37,24 @@ setup_driver_config() {
 
     # Create the driver_config.h file
     envsubst < "${falco_dir}/driver/driver_config.h.in" > "${falco_dir}/driver/driver_config.h"
+
+    if [[ -d "${falco_dir}/driver/bpf/configure" ]]; then
+        for dir in "${falco_dir}"/driver/bpf/configure/*; do
+            if [[ ! -d "${dir}" ]]; then
+                continue
+            fi
+
+            CONFIGURE_MODULE=$(basename "$dir")
+            CONFIGURE_ROOT="${falco_dir}/driver/bpf/${CONFIGURE_MODULE}"
+
+            mkdir -p "${CONFIGURE_ROOT}"
+            cp "${dir}/test.c" "${CONFIGURE_ROOT}"
+            cp "${dir}/../Makefile" "${CONFIGURE_ROOT}"
+            cp "${dir}/../build.sh" "${CONFIGURE_ROOT}"
+
+            sed "s/@CONFIGURE_MODULE@/$CONFIGURE_MODULE/g" < "${dir}/../Makefile.inc.in" > "${CONFIGURE_ROOT}/Makefile.inc"
+        done
+    fi
 }
 
 compare_version() {

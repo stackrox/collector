@@ -210,7 +210,7 @@ PROBE_SIGNATURE("sched/", sched_process_exit, sched_process_exit_args) {
     return 0;
   }
 
-  call_filler(ctx, ctx, evt_type, UF_NEVER_DROP);
+  call_filler(ctx, ctx, evt_type, UF_NEVER_DROP, -1);
   return 0;
 }
 
@@ -231,6 +231,7 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
   int drop_flags = UF_ALWAYS_DROP;
   struct sys_enter_args stack_ctx = {.id = id};
   long mapped_id = id;
+  long socketcall_syscall_id = -1;
 
   if (bpf_in_ia32_syscall()) {
     return 0;
@@ -261,6 +262,7 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
 
 #ifdef __s390x__
   syscall_to_enter_args(id, ctx, &stack_ctx);
+  socketcall_syscall_id = __NR_socketcall;
 #else
   evt_type = sc_evt->enter_event_type;
   drop_flags = sc_evt->flags;
@@ -285,7 +287,7 @@ static __always_inline int enter_probe(long id, struct sys_enter_args* ctx) {
   //
   // It also handles the stack context problem, so we can pass both
   // pointers through without issue.
-  call_filler(ctx, &stack_ctx, evt_type, drop_flags);
+  call_filler(ctx, &stack_ctx, evt_type, drop_flags, socketcall_syscall_id);
   return 0;
 }
 
@@ -305,6 +307,7 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
   ppm_event_code evt_type = PPME_GENERIC_X;
   int drop_flags = UF_ALWAYS_DROP;
   long mapped_id = id;
+  long socketcall_syscall_id = -1;
 
   struct sys_exit_args stack_ctx = {.id = id, .ret = _READ(ctx->ret)};
 
@@ -324,6 +327,10 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
   }
 #endif
 
+#ifdef __s390x__
+  socketcall_syscall_id = __NR_socketcall;
+#endif
+
   sc_evt = get_syscall_info(mapped_id);
   if (sc_evt == NULL || (sc_evt->flags & UF_USED) == 0) {
     return 0;
@@ -334,7 +341,7 @@ static __always_inline int exit_probe(long id, struct sys_exit_args* ctx) {
 
   // the fillers contain syscall specific processing logic, so we simply
   // call into those and let the rest of falco deal with the event.
-  call_filler(ctx, &stack_ctx, evt_type, drop_flags);
+  call_filler(ctx, &stack_ctx, evt_type, drop_flags, socketcall_syscall_id);
   return 0;
 }
 
