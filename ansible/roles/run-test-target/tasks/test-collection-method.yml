@@ -25,13 +25,46 @@
     collector_image: "{{ lookup('env', 'COLLECTOR_IMAGE', default='quay.io/rhacs-eng/collector:' +  collector_tag_result.stdout) }}"
     integration_tests_image: "{{ lookup('env', 'TEST_IMAGE', default='quay.io/rhacs-eng/qa-multi-arch:collector-tests-' + collector_tag_result.stdout) }}"
 
+- name: Get list of tests
+  become: "{{ runtime_as_root }}"
+  shell: |
+    cd {{ collector_root }}/integration-tests
+    grep "func Test" integration_test.go | awk '{print $2}' | sed 's|(.*||'
+    #grep func\ Test integration_test.go | awk '{print $2}' | sed 's|(.*||'
+    #go test -list Test -test.run=^$
+  register: test_list
+
+- name: Get contents of integration_test.go
+  become: "{{ runtime_as_root }}"
+  shell: |
+    cd {{ collector_root }}/integration-tests
+    cat integration_test.go
+  register: test_contents
+
+- name: Output test contents
+  debug:
+    msg: "{{ test_contents.stdout_lines }}"
+
+- name: Output test contents 2
+  debug:
+    msg: "{{ test_contents.stdout }}"
+
+- name: Output list of tests
+  debug:
+    msg: "{{ test_list.stdout_lines }}"
+
+- name: Output list of tests 2
+  debug:
+    msg: "{{ test_list.stdout }}"
+
 - set_fact:
-    run_args: -test.run {{ collector_test }} -test.timeout 60m -test.count=1
+    tests_to_run:
+      - "{{ collector_test }}"
   when: collector_test != "ci-integration-tests"
 
 - set_fact:
-    run_args: -test.timeout 120m -test.short
-  when: collector_test == "ci-integration-tests"
+    tests_to_run: "{{ test_list.stdout_lines | select('regex', '^(Test\\w+)$') | map('regex_replace', '^(Test\\w+)$', '\\1') | list }}"
+    when: collector_test == "ci-integration-tests"
 
 - name: Make logs directory
   file:
@@ -56,6 +89,11 @@
     creates: ~/.docker/config.json
   when: runtime_command == "podman"
 
+- name: Make core dumps directory
+  become: yes
+  shell: |
+    mkdir /tmp/core_dumps || true
+
 - block:
 
     # Some considerations for running the test container:
@@ -71,6 +109,7 @@
   - name: Run integration tests
     become: "{{ runtime_as_root }}"
     shell: |
+      echo '/tmp/core_dumps/core-{{ test_to_run }}.out' | sudo tee /proc/sys/kernel/core_pattern
       {{ runtime_command }} run -it --rm \
         -v {{ remote_log_mount }}:{{ container_logs_root }} \
         -v ~/.docker:/root/.docker \
@@ -84,7 +123,7 @@
         -e COLLECTOR_QA_TAG \
         -e COLLECTOR_LOG_LEVEL \
         {{ integration_tests_image }} \
-        {{ run_args }} -test.v 2>&1
+        -test.run {{ test_to_run }} -test.timeout 60m -test.count=1 -test.v 2>&1
     environment:
       COLLECTION_METHOD: "{{ collection_method }}"
       VM_CONFIG: "{{ vm_config }}"
@@ -95,6 +134,9 @@
     register: test_result
     # ensure that this is printed
     tags: [print_action]
+    loop: "{{ tests_to_run }}"
+    loop_control:
+      loop_var: test_to_run
 
   rescue:
     - name: Set tests as failed
@@ -103,7 +145,7 @@
 
     - name: Output test log
       debug:
-        msg: "{{ test_result.stdout }}"
+        msg: "{{ test_result.results | map(attribute='stdout') | join('\n') }}"
       tags: [print_action]
 
   always:
@@ -129,7 +171,7 @@
 
     - name: Write integration test log
       copy:
-        content: "{{ test_result.stdout }}"
+        content: "{{ test_result.results | map(attribute='stdout') | join('\n') }}"
         dest: "{{ logs_root }}/integration-test.log"
       delegate_to: localhost
 
