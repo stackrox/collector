@@ -46,7 +46,9 @@ jobs:
           path: ${{ github.workspace }}
 
       - name: Install python deps
-        run: python3 -m pip install -r ./integration-tests/scripts/baseline/requirements.txt
+        run: |
+          python3 -m pip install -r ./integration-tests/scripts/baseline/requirements.txt
+          python3 -m pip install -r ./utilities/perf-plotter/requirements.txt
 
       - name: Calculate Baseline
         run: |
@@ -55,15 +57,28 @@ jobs:
           ./integration-tests/scripts/baseline/main.py --test integration-tests/perf-all.json \
             | sort \
             | awk -f ./integration-tests/scripts/baseline/format.awk > benchmark.md
-
-          delimiter=$(openssl rand -hex 8)
-          {
-            echo "PERF_TABLE<<${delimiter}"
-            cat benchmark.md
-            echo "${delimiter}"
-          } >> "$GITHUB_ENV"
         env:
           GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT: "${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}"
+
+      - name: Plot benchmark graphs
+        run: |
+          ./utilities/perf-plotter/plot-perf.py integration-tests/perf-all.json -o /tmp/perf.png
+
+      - name: Upload perf plot to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: perf-plot
+          path: /tmp/perf.png
+
+      - name: Upload plot for PRs
+        if: github.event_name == 'pull_request'
+        run: |
+          OBJECT_IN_BUCKET="mauro-perf-plot/${GITHUB_HEAD_REF}/${{ github.run_id }}-${{ github.run_attempt}}.png"
+
+          # upload perf graph to public GCP bucket
+          gsutil cp /tmp/perf.png "gs://${OBJECT_IN_BUCKET}"
+
+          echo "![Performance graph](https://storage.googleapis.com/${OBJECT_IN_BUCKET})" > /tmp/perf-plot.md
 
       - name: Update Baseline
         if: github.ref == 'master'
@@ -76,7 +91,8 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: mshick/add-pr-comment@v2
         with:
-          message: |
-            ${{ env.PERF_TABLE }}
+          message-path: |
+            benchmark.md
+            /tmp/perf-plot.md
           message-id: performance-comment
 
