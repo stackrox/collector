@@ -8,25 +8,25 @@
 
 namespace collector {
 
-bool ResourceSelector::IsRuleValueFollowed(const storage::RuleValue& value, const std::string& ns) {
+bool ResourceSelector::IsRuleValueFollowed(const storage::RuleValue& value, const std::string& resource_name) {
   if (value.match_type() == storage::REGEX) {
     std::regex pattern(value.value());
-    return std::regex_match(ns, pattern);
+    return std::regex_match(resource_name, pattern);
   } else {
-    return (ns == value.value());
+    return (resource_name == value.value());
   }
 }
 
-bool ResourceSelector::IsRuleFollowed(const storage::SelectorRule& rule, const std::string& ns) {
+bool ResourceSelector::IsRuleFollowed(const storage::SelectorRule& rule, const std::string& resource_name) {
   if (rule.operator_() == storage::BooleanOperator::OR) {
     for (const auto& value : rule.values()) {
-      if (IsRuleValueFollowed(value, ns)) {
+      if (IsRuleValueFollowed(value, resource_name)) {
         return true;
       }
     }
   } else if (rule.operator_() == storage::BooleanOperator::AND) {
     for (const auto& value : rule.values()) {
-      if (!IsRuleValueFollowed(value, ns)) {
+      if (!IsRuleValueFollowed(value, resource_name)) {
         return false;
       }
     }
