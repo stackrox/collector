@@ -8,6 +8,8 @@
 
 #include "storage/resource_collection.pb.h"
 
+#include "Hash.h"
+
 namespace collector {
 
 class ResourceSelector {
@@ -19,6 +21,7 @@ class ResourceSelector {
   static bool IsClusterInResourceSelector(const storage::ResourceSelector& rs, const std::string& cluster);
   static bool IsNamespaceSelected(const storage::ResourceCollection& rc, const std::string& ns);
   static bool AreClusterAndNamespaceSelected(const storage::ResourceCollection& rc, const std::string& cluster, const std::string& ns);
+  static bool AreClusterAndNamespaceSelected(const storage::ResourceCollection& rc, const UnorderedMap<std::string, storage::ResourceCollection> rcMap, const std::string& cluster, const std::string& ns);
 };
 
 }  // namespace collector

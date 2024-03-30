@@ -6,6 +6,8 @@
 
 #include <regex>
 
+#include "Hash.h"
+
 namespace collector {
 
 bool ResourceSelector::IsRuleValueFollowed(const storage::RuleValue& value, const std::string& resource_name) {
@@ -71,6 +73,23 @@ bool ResourceSelector::AreClusterAndNamespaceSelected(const storage::ResourceCol
     }
   }
 
+  return false;
+}
+
+bool ResourceSelector::AreClusterAndNamespaceSelected(const storage::ResourceCollection& rc, const UnorderedMap<std::string, storage::ResourceCollection> rcMap, const std::string& cluster, const std::string& ns) {
+  if (AreClusterAndNamespaceSelected(rc, cluster, ns)) {
+    return true;
+  }
+
+  for (const auto& embeddedCollection : rc.embedded_collections()) {
+    auto embeddedRc = rcMap.find(embeddedCollection.id());
+    if (embeddedRc != rcMap.end()) {
+      bool inEmbeddedRc = AreClusterAndNamespaceSelected(embeddedRc->second, rcMap, cluster, ns);
+      if (inEmbeddedRc) {
+        return true;
+      }
+    }
+  }
   return false;
 }
 
