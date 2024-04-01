@@ -398,6 +398,13 @@ TEST_F(ResourceSelectorTest, IncludingEmbeddedCollections) {
 
   UnorderedMap<std::string, storage::ResourceCollection> rcMap;
 
+  EXPECT_FALSE(collector::ResourceSelector::AreClusterAndNamespaceSelected(resourceCollection, rcMap, "remote", "default"));
+  EXPECT_FALSE(collector::ResourceSelector::AreClusterAndNamespaceSelected(resourceCollection, rcMap, "remote", "unknown"));
+  EXPECT_TRUE(collector::ResourceSelector::AreClusterAndNamespaceSelected(resourceCollection, rcMap, "remote", "prod-1"));
+  EXPECT_TRUE(collector::ResourceSelector::AreClusterAndNamespaceSelected(resourceCollection, rcMap, "remote", "prod-2"));
+  EXPECT_TRUE(collector::ResourceSelector::AreClusterAndNamespaceSelected(resourceCollection, rcMap, "remote", "development"));
+  EXPECT_TRUE(collector::ResourceSelector::AreClusterAndNamespaceSelected(resourceCollection, rcMap, "remote", "development"));
+
   std::string embeddedCollectionId1 = "b703d50e-b003-4a6a-bf1b-7ab36c9af184";
   std::string embeddedCollectionId2 = "afd76230-4539-498d-abf6-6208ec5c48bb";
 

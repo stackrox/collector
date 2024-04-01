@@ -10,9 +10,22 @@
 
 namespace collector {
 
+UnorderedMap<std::string, std::regex> ResourceSelector::regexMap_;
+
+std::regex ResourceSelector::GetOrCompileRegex(const std::string& str) {
+  auto pair = regexMap_.find(str);
+  if (pair != regexMap_.end()) {
+    return pair->second;
+  } else {
+    std::regex pattern(str);
+    regexMap_.insert(std::make_pair(str, pattern));
+    return pattern;
+  }
+}
+
 bool ResourceSelector::IsRuleValueFollowed(const storage::RuleValue& value, const std::string& resource_name) {
   if (value.match_type() == storage::REGEX) {
-    std::regex pattern(value.value());
+    std::regex pattern = GetOrCompileRegex(value.value());
     return std::regex_match(resource_name, pattern);
   } else {
     return (resource_name == value.value());
