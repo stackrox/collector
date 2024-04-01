@@ -86,6 +86,135 @@ TEST_F(ResourceSelectorTest, NamespaceIncludedWithWildcard) {
   EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "development"));
 }
 
+TEST_F(ResourceSelectorTest, NamespaceNoRuleValues) {
+  std::string jsonStr = R"({
+        "id": "b703d50e-b003-4a6a-bf1b-7ab36c9af184",
+        "name": "External IP reporting for Ingress",
+        "description": "Enable external ips on ingress",
+        "createdAt": "2024-03-21T16:47:08.550364622Z",
+        "lastUpdated": "2024-03-21T16:57:15.308488438Z",
+        "resourceSelectors": [
+            {
+                "rules": [
+                    {
+                        "fieldName": "Cluster",
+                        "operator": "OR",
+                        "values": [
+                            {
+                                "value": ".*",
+                                "matchType": "REGEX"
+                            }
+                        ]
+                    },
+                    {
+                        "fieldName": "Namespace",
+                        "operator": "OR",
+                        "values": []
+                    },
+                    {
+                        "fieldName": "Deployment",
+                        "operator": "OR",
+                        "values": [
+                            {
+                                "value": ".*",
+                                "matchType": "REGEX"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "embeddedCollections": [
+            {
+                "id": "afd76230-4539-498d-abf6-6208ec5c48bb"
+            },
+            {
+                "id": "49f7deb3-3ea2-4aa3-9f40-645e9b26e2e1"
+            }
+        ]
+    })";
+
+  auto resourceCollection = CreateResourceCollectionFromJson(jsonStr);
+  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "default"));
+  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "prod-1"));
+  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "prod-2"));
+  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "development"));
+}
+
+TEST_F(ResourceSelectorTest, NoNamespace) {
+  std::string jsonStr = R"({
+        "id": "b703d50e-b003-4a6a-bf1b-7ab36c9af184",
+        "name": "External IP reporting for Ingress",
+        "description": "Enable external ips on ingress",
+        "createdAt": "2024-03-21T16:47:08.550364622Z",
+        "lastUpdated": "2024-03-21T16:57:15.308488438Z",
+        "resourceSelectors": [
+            {
+                "rules": [
+                    {
+                        "fieldName": "Cluster",
+                        "operator": "OR",
+                        "values": [
+                            {
+                                "value": ".*",
+                                "matchType": "REGEX"
+                            }
+                        ]
+                    },
+                    {
+                        "fieldName": "Deployment",
+                        "operator": "OR",
+                        "values": [
+                            {
+                                "value": ".*",
+                                "matchType": "REGEX"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "embeddedCollections": [
+            {
+                "id": "afd76230-4539-498d-abf6-6208ec5c48bb"
+            },
+            {
+                "id": "49f7deb3-3ea2-4aa3-9f40-645e9b26e2e1"
+            }
+        ]
+    })";
+
+  auto resourceCollection = CreateResourceCollectionFromJson(jsonStr);
+  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "default"));
+  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "prod-1"));
+  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "prod-2"));
+  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "development"));
+}
+
+TEST_F(ResourceSelectorTest, NoResourceSelectors) {
+  std::string jsonStr = R"({
+        "id": "b703d50e-b003-4a6a-bf1b-7ab36c9af184",
+        "name": "External IP reporting for Ingress",
+        "description": "Enable external ips on ingress",
+        "createdAt": "2024-03-21T16:47:08.550364622Z",
+        "lastUpdated": "2024-03-21T16:57:15.308488438Z",
+        "embeddedCollections": [
+            {
+                "id": "afd76230-4539-498d-abf6-6208ec5c48bb"
+            },
+            {
+                "id": "49f7deb3-3ea2-4aa3-9f40-645e9b26e2e1"
+            }
+        ]
+    })";
+
+  auto resourceCollection = CreateResourceCollectionFromJson(jsonStr);
+  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "default"));
+  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "prod-1"));
+  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "prod-2"));
+  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "development"));
+}
+
 TEST_F(ResourceSelectorTest, NamespaceIncludedWithWildcardAnd) {
   std::string jsonStr = R"({
         "id": "b703d50e-b003-4a6a-bf1b-7ab36c9af184",
@@ -167,10 +296,6 @@ TEST_F(ResourceSelectorTest, NamespaceIncludedMultipleSelectorRules) {
                             {
                                 "value": ".*2",
                                 "matchType": "REGEX"
-                            },
-                            {
-                                "value": "test-.*",
-                                "matchType": "REGEX"
                             }
                         ]
                     },
@@ -179,12 +304,8 @@ TEST_F(ResourceSelectorTest, NamespaceIncludedMultipleSelectorRules) {
                         "operator": "OR",
                         "values": [
                             {
-                                "value": "prod-.*",
+                                "value": "test-.*",
                                 "matchType": "REGEX"
-                            },
-                            {
-                                "value": "development",
-                                "matchType": "EXACT"
                             }
                         ]
                     },
@@ -203,12 +324,52 @@ TEST_F(ResourceSelectorTest, NamespaceIncludedMultipleSelectorRules) {
 
   auto resourceCollection = CreateResourceCollectionFromJson(jsonStr);
   EXPECT_FALSE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "default"));
-  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "prod-1"));
-  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "prod-2"));
+  EXPECT_FALSE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "prod-1"));
+  EXPECT_FALSE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "prod-2"));
   EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "test-2"));
   EXPECT_FALSE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "test-3"));
   EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "test-32"));
-  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "development"));
+  EXPECT_FALSE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "development"));
+}
+
+TEST_F(ResourceSelectorTest, NamespaceIncludedNoSelectorRules) {
+  std::string jsonStr = R"({
+        "id": "b703d50e-b003-4a6a-bf1b-7ab36c9af184",
+        "name": "External IP reporting for Ingress",
+        "description": "Enable external ips on ingress",
+        "createdAt": "2024-03-21T16:47:08.550364622Z",
+        "lastUpdated": "2024-03-21T16:57:15.308488438Z",
+        "resourceSelectors": [
+            {
+                "rules": [
+                    {
+                        "fieldName": "Cluster",
+                        "operator": "OR",
+                        "values": [
+                            {
+                                "value": ".*",
+                                "matchType": "REGEX"
+                            }
+                        ]
+                    },
+                ]
+            }
+        ],
+        "embeddedCollections": [
+            {
+                "id": "afd76230-4539-498d-abf6-6208ec5c48bb"
+            },
+            {
+                "id": "49f7deb3-3ea2-4aa3-9f40-645e9b26e2e1"
+            }
+        ]
+    })";
+
+  auto resourceCollection = CreateResourceCollectionFromJson(jsonStr);
+  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "default"));
+  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "prod-1"));
+  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "prod-2"));
+  EXPECT_TRUE(collector::ResourceSelector::IsNamespaceSelected(resourceCollection, "test-2"));
 }
 
 TEST_F(ResourceSelectorTest, MultipleResourceSelectors) {
@@ -411,6 +572,7 @@ TEST_F(ResourceSelectorTest, IncludingEmbeddedCollections) {
   rcMap.insert(std::make_pair(embeddedCollectionId1, resourceCollection));
   rcMap.insert(std::make_pair(embeddedCollectionId2, resourceCollection2));
 
+  // Once the collection with the default namespace has been added to the ResourceCollection map it is found
   EXPECT_TRUE(collector::ResourceSelector::AreClusterAndNamespaceSelected(resourceCollection, rcMap, "remote", "default"));
   EXPECT_FALSE(collector::ResourceSelector::AreClusterAndNamespaceSelected(resourceCollection, rcMap, "remote", "unknown"));
   EXPECT_TRUE(collector::ResourceSelector::AreClusterAndNamespaceSelected(resourceCollection, rcMap, "remote", "prod-1"));

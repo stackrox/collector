@@ -33,32 +33,49 @@ bool ResourceSelector::IsRuleValueFollowed(const storage::RuleValue& value, cons
 }
 
 bool ResourceSelector::IsRuleFollowed(const storage::SelectorRule& rule, const std::string& resource_name) {
-  if (rule.operator_() == storage::BooleanOperator::OR) {
-    for (const auto& value : rule.values()) {
-      if (IsRuleValueFollowed(value, resource_name)) {
-        return true;
-      }
-    }
-  } else if (rule.operator_() == storage::BooleanOperator::AND) {
-    for (const auto& value : rule.values()) {
-      if (!IsRuleValueFollowed(value, resource_name)) {
-        return false;
-      }
-    }
+  const auto& values = rule.values();
+
+  if (values.size() == 0) {
     return true;
+  }
+
+  auto op = [resource_name](const auto& value) -> bool {
+    return IsRuleValueFollowed(value, resource_name);
+  };
+
+  if (rule.operator_() == storage::BooleanOperator::OR) {
+    return std::any_of(values.begin(), values.end(), op);
+  } else if (rule.operator_() == storage::BooleanOperator::AND) {
+    return std::all_of(values.begin(), values.end(), op);
   }
 
   return false;
 }
 
 bool ResourceSelector::IsResourceInResourceSelector(const storage::ResourceSelector& rs, const std::string& resource_type, const std::string& resource_name) {
+  // const auto& rules = rs.rules();
+
+  // auto op = [resource_type, resource_name](const auto& rule) -> bool {
+  //   if (rule.field_name() == resource_type) {
+  //     if (!IsRuleFollowed(rule, resource_name)) {
+  //       return false;
+  //     }
+  //     return true;
+  //   }
+  //   return true;
+  // };
+
+  // return std::all_of(rules.begin(), rules.end(), op);
+
   for (const auto& rule : rs.rules()) {
-    if (rule.field_name() == resource_type && IsRuleFollowed(rule, resource_name)) {
-      return true;
+    if (rule.field_name() == resource_type) {
+      if (!IsRuleFollowed(rule, resource_name)) {
+        return false;
+      }
     }
   }
 
-  return false;
+  return true;
 }
 
 bool ResourceSelector::IsNamespaceInResourceSelector(const storage::ResourceSelector& rs, const std::string& ns) {
@@ -70,23 +87,35 @@ bool ResourceSelector::IsClusterInResourceSelector(const storage::ResourceSelect
 }
 
 bool ResourceSelector::IsNamespaceSelected(const storage::ResourceCollection& rc, const std::string& ns) {
-  for (const auto& rs : rc.resource_selectors()) {
-    if (IsNamespaceInResourceSelector(rs, ns)) {
-      return true;
-    }
+  const auto& resource_selectors = rc.resource_selectors();
+
+  if (resource_selectors.size() == 0) {
+    return true;
   }
 
-  return false;
+  auto op = [ns](const auto& rs) -> bool {
+    return IsNamespaceInResourceSelector(rs, ns);
+  };
+
+  return std::any_of(resource_selectors.begin(), resource_selectors.end(), op);
+
+  // for (const auto& rs : rc.resource_selectors()) {
+  //   if (IsNamespaceInResourceSelector(rs, ns)) {
+  //     return true;
+  //   }
+  // }
+  //
+  // return false;
 }
 
 bool ResourceSelector::AreClusterAndNamespaceSelected(const storage::ResourceCollection& rc, const std::string& cluster, const std::string& ns) {
-  for (const auto& rs : rc.resource_selectors()) {
-    if (IsClusterInResourceSelector(rs, cluster) && IsNamespaceInResourceSelector(rs, ns)) {
-      return true;
-    }
-  }
+  const auto& resource_selectors = rc.resource_selectors();
 
-  return false;
+  auto op = [cluster, ns](const auto& rs) -> bool {
+    return IsClusterInResourceSelector(rs, cluster) && IsNamespaceInResourceSelector(rs, ns);
+  };
+
+  return std::any_of(resource_selectors.begin(), resource_selectors.end(), op);
 }
 
 bool ResourceSelector::AreClusterAndNamespaceSelected(const storage::ResourceCollection& rc, const UnorderedMap<std::string, storage::ResourceCollection> rcMap, const std::string& cluster, const std::string& ns) {
