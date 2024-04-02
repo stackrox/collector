@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
@@ -206,11 +204,7 @@ func (k *K8sCollectorManager) captureLogs() error {
 	}
 	defer podLogs.Close()
 
-	logDirectory := getLogDirectory()
-	os.MkdirAll(logDirectory, os.ModePerm)
-	logFilePath := filepath.Join(logDirectory, getLogFilename(k))
-	fmt.Printf("Dumping collector logs to %q\n", logFilePath)
-	logFile, err := os.Create(logFilePath)
+	logFile, err := prepareLog(k)
 	if err != nil {
 		return err
 	}

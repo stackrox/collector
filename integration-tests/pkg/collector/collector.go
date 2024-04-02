@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -32,10 +33,13 @@ func New(e executor.Executor, name string) Manager {
 	return newDockerManager(e, name)
 }
 
-func getLogDirectory() string {
-	return filepath.Join(".", "container-logs", config.VMInfo().Config, config.CollectionMethod())
-}
+func prepareLog(m Manager) (*os.File, error) {
+	logDirectory := filepath.Join(".", "container-logs", config.VMInfo().Config, config.CollectionMethod())
+	err := os.MkdirAll(logDirectory, os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
 
-func getLogFilename(m Manager) string {
-	return strings.ReplaceAll(m.TestName(), "/", "_") + "-collector.log"
+	logPath := filepath.Join(logDirectory, strings.ReplaceAll(m.TestName(), "/", "_")+"-collector.log")
+	return os.Create(logPath)
 }

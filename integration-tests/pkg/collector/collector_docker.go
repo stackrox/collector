@@ -3,9 +3,6 @@ package collector
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"golang.org/x/exp/maps"
@@ -193,13 +190,13 @@ func (c *DockerCollectorManager) captureLogs(containerName string) (string, erro
 		return "", err
 	}
 
-	logDirectory := getLogDirectory()
-	os.MkdirAll(logDirectory, os.ModePerm)
-	logFile := filepath.Join(logDirectory, getLogFilename(c))
-	err = ioutil.WriteFile(logFile, []byte(logs), 0644)
+	logFile, err := prepareLog(c)
 	if err != nil {
 		return "", err
 	}
+	defer logFile.Close()
+
+	_, err = logFile.WriteString(logs)
 	return logs, nil
 }
 
