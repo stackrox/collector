@@ -21,12 +21,12 @@ class ContainerMetadata {
   }
 
   inline std::string GetContainerLabel(const std::string& container_id, const std::string& label) {
-    const auto& containers = *inspector_->m_container_manager.get_containers();
-    if (containers.count(container_id) == 0) {
+    const auto& containers = inspector_->m_container_manager.get_containers();
+    if (containers->count(container_id) == 0) {
       return "";
     }
 
-    const auto& container = containers.at(container_id);
+    const auto& container = containers->at(container_id);
     if (container->m_labels.count(label) == 0) {
       return "";
     }
