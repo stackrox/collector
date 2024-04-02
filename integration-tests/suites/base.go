@@ -69,17 +69,15 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *col
 		s.Sensor().Start()
 	}
 
-	collector := s.Collector()
-
-	s.Require().NoError(collector.Setup(options))
-	s.Require().NoError(collector.Launch())
+	s.Require().NoError(s.Collector().Setup(options))
+	s.Require().NoError(s.Collector().Launch())
 
 	// Verify if the image we test has a health check. There are some CI
 	// configurations, where it's not the case. If something went wrong and we
 	// get an error, treat it as no health check was found for the sake of
 	// robustness.
 	hasHealthCheck, err := s.findContainerHealthCheck("collector",
-		collector.ContainerID())
+		s.Collector().ContainerID())
 
 	if hasHealthCheck && err == nil {
 		// Wait for collector to report healthy, includes initial setup and
@@ -87,7 +85,7 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *col
 		// it to 1 min.
 		_, err := s.waitForContainerToBecomeHealthy(
 			"collector",
-			collector.ContainerID(),
+			s.Collector().ContainerID(),
 			defaultWaitTickSeconds, 5*time.Minute)
 		s.Require().NoError(err)
 	} else {
@@ -99,7 +97,7 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *col
 
 	// wait for the canary process to guarantee collector is started
 	selfCheckOk := s.Sensor().WaitProcessesN(
-		collector.ContainerID(), 30*time.Second, 1, func() {
+		s.Collector().ContainerID(), 30*time.Second, 1, func() {
 			// Self-check process is not going to be sent via GRPC, instead
 			// create at least one canary process to make sure everything is
 			// fine.

@@ -38,9 +38,7 @@ type K8sNamespaceTestSuite struct {
 func (k *K8sNamespaceTestSuite) SetupSuite() {
 	// Ensure the collector pod gets deleted
 	k.T().Cleanup(func() {
-		exec := k.Executor()
-
-		exists, err := exec.ContainerExists(executor.ContainerFilter{
+		exists, err := k.Executor().ContainerExists(executor.ContainerFilter{
 			Name:      "collector",
 			Namespace: collector.TEST_NAMESPACE,
 		})
@@ -57,11 +55,11 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 			Name:      "nginx",
 			Namespace: NAMESPACE,
 		}
-		exists, err = exec.ContainerExists(nginxPodFilter)
+		exists, err = k.Executor().ContainerExists(nginxPodFilter)
 		k.Require().NoError(err)
 
 		if exists {
-			exec.RemoveContainer(nginxPodFilter)
+			k.Executor().RemoveContainer(nginxPodFilter)
 		}
 	})
 
@@ -150,12 +148,12 @@ func (k *K8sNamespaceTestSuite) TestK8sNamespace() {
 }
 
 func (k *K8sNamespaceTestSuite) execPod(podName string, namespace string, command []string) (string, error) {
-	executor, ok := k.executor.(*executor.K8sExecutor)
+	k8sExec, ok := k.executor.(*executor.K8sExecutor)
 	if !ok {
 		return "", fmt.Errorf("Expected k8s executor, got=%T", k.executor)
 	}
 
-	req := executor.ClientSet().CoreV1().RESTClient().Post().Resource("Pods").Name(podName).Namespace(namespace).SubResource("exec")
+	req := k8sExec.ClientSet().CoreV1().RESTClient().Post().Resource("Pods").Name(podName).Namespace(namespace).SubResource("exec")
 	option := &coreV1.PodExecOptions{
 		Command: command,
 		Stdin:   false,
@@ -189,8 +187,7 @@ func (k *K8sNamespaceTestSuite) execPod(podName string, namespace string, comman
 }
 
 func (k *K8sNamespaceTestSuite) watchPod(selector string, namespace string, callback func() bool) {
-	exec := k.Executor()
-	k8sExec := exec.(*executor.K8sExecutor)
+	k8sExec := k.Executor().(*executor.K8sExecutor)
 
 	timeout := int64(60)
 	listOptions := metaV1.ListOptions{
@@ -214,8 +211,7 @@ func (k *K8sNamespaceTestSuite) watchPod(selector string, namespace string, call
 }
 
 func (k *K8sNamespaceTestSuite) getCollectorIP() string {
-	exec := k.Executor()
-	k8sExec := exec.(*executor.K8sExecutor)
+	k8sExec := k.Executor().(*executor.K8sExecutor)
 	pod, err := k8sExec.ClientSet().CoreV1().Pods(collector.TEST_NAMESPACE).Get(context.Background(), "collector", metaV1.GetOptions{})
 	k.Require().NoError(err)
 
@@ -224,8 +220,7 @@ func (k *K8sNamespaceTestSuite) getCollectorIP() string {
 
 func (k *K8sNamespaceTestSuite) launchNginxPod() string {
 	// Create a namespace for the pod
-	exec := k.Executor()
-	k8sExec := exec.(*executor.K8sExecutor)
+	k8sExec := k.Executor().(*executor.K8sExecutor)
 
 	_, err := k8sExec.CreateNamespace(NAMESPACE)
 
