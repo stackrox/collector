@@ -24,12 +24,15 @@ endif
 FIRST_MAKEFILE := $(firstword $(MAKEFILE_LIST))
 FIRST_MAKEFILE_FILENAME := $(notdir $(FIRST_MAKEFILE))
 FIRST_MAKEFILE_DIRNAME := $(shell basename $(dir $(FIRST_MAKEFILE)))
+
 ifeq ($(FIRST_MAKEFILE_DIRNAME)/$(FIRST_MAKEFILE_FILENAME), scripts/Makefile.build)
+
 # Build phase
 MODULE_MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 MAKEFILE_INC_FILES := $(shell find $(FALCO_DIR) -type f -name Makefile.inc)
 $(info [configure-bpf] Including $(MAKEFILE_INC_FILES))
 include $(MAKEFILE_INC_FILES)
+
 endif
 
 #
