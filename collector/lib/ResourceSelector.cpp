@@ -93,11 +93,9 @@ bool ResourceSelector::IsNamespaceSelected(const storage::ResourceCollection& rc
     return true;
   }
 
-  auto op = [ns](const auto& rs) -> bool {
+  return std::any_of(resource_selectors.begin(), resource_selectors.end(), [ns](const auto& rs) -> bool {
     return IsNamespaceInResourceSelector(rs, ns);
-  };
-
-  return std::any_of(resource_selectors.begin(), resource_selectors.end(), op);
+  });
 
   // for (const auto& rs : rc.resource_selectors()) {
   //   if (IsNamespaceInResourceSelector(rs, ns)) {
