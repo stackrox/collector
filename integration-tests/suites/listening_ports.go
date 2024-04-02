@@ -4,7 +4,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/stackrox/collector/integration-tests/pkg/collector_manager"
+	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
@@ -20,7 +20,7 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	s.RegisterCleanup("process-ports")
 	s.StartContainerStats()
 
-	collectorOptions := collector_manager.CollectorStartupOptions{
+	collectorOptions := collector.StartupOptions{
 		Config: map[string]any{
 			"turnOffScrape":  false,
 			"scrapeInterval": 1,

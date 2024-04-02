@@ -17,9 +17,8 @@ func (s *ImageLabelJSONTestSuite) TestRunImageWithJSONLabel() {
 	name := "jsonlabel"
 	image := config.Images().QaImageByKey("performance-json-label")
 
-	ex, err := s.Executor()
-	s.Require().NoError(err)
-	err = ex.PullImage(image)
+	ex := s.Executor()
+	err := ex.PullImage(image)
 	s.Require().NoError(err)
 
 	containerID, err := s.launchContainer(name, image)

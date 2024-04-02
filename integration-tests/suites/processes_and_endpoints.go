@@ -3,7 +3,7 @@ package suites
 import (
 	"time"
 
-	"github.com/stackrox/collector/integration-tests/pkg/collector_manager"
+	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
@@ -24,7 +24,7 @@ func (s *ProcessesAndEndpointsTestSuite) SetupSuite() {
 	s.RegisterCleanup(s.ContainerName)
 	s.StartContainerStats()
 
-	collectorOptions := collector_manager.CollectorStartupOptions{
+	collectorOptions := collector.StartupOptions{
 		Env: map[string]string{
 			"ROX_PROCESSES_LISTENING_ON_PORT": "true",
 		},

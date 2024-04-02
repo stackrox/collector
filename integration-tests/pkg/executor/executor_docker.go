@@ -183,13 +183,8 @@ func (e *dockerExecutor) IsContainerRunning(containerID string) (bool, error) {
 	return strconv.ParseBool(strings.Trim(result, "\"'"))
 }
 
-func (e *dockerExecutor) ContainerID(containerName interface{}) string {
-	name, ok := containerName.(string)
-	if !ok {
-		return ""
-	}
-
-	result, err := e.ExecWithoutRetry(RuntimeCommand, "ps", "-aqf", "name=^"+name+"$")
+func (e *dockerExecutor) ContainerID(cf ContainerFilter) string {
+	result, err := e.ExecWithoutRetry(RuntimeCommand, "ps", "-aqf", "name=^"+cf.Name+"$")
 	if err != nil {
 		return ""
 	}
@@ -197,26 +192,16 @@ func (e *dockerExecutor) ContainerID(containerName interface{}) string {
 	return strings.Trim(result, "\"")
 }
 
-func (e *dockerExecutor) ContainerExists(containerName interface{}) (bool, error) {
-	container, ok := containerName.(string)
-	if !ok {
-		return false, fmt.Errorf("wrong container name type. expected=string, got=%T", containerName)
-	}
-
-	_, err := e.ExecWithoutRetry(RuntimeCommand, "inspect", container)
+func (e *dockerExecutor) ContainerExists(cf ContainerFilter) (bool, error) {
+	_, err := e.ExecWithoutRetry(RuntimeCommand, "inspect", cf.Name)
 	if err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
-func (e *dockerExecutor) ExitCode(containerID interface{}) (int, error) {
-	cID, ok := containerID.(string)
-	if !ok {
-		return -1, fmt.Errorf("Unexpected containerID type. Expected=string, got=%T", containerID)
-	}
-
-	result, err := e.Exec(RuntimeCommand, "inspect", cID, "--format='{{.State.ExitCode}}'")
+func (e *dockerExecutor) ExitCode(cf ContainerFilter) (int, error) {
+	result, err := e.Exec(RuntimeCommand, "inspect", cf.Name, "--format='{{.State.ExitCode}}'")
 	if err != nil {
 		return -1, err
 	}
@@ -250,13 +235,8 @@ func (e *dockerExecutor) KillContainer(name string) (string, error) {
 }
 
 // RemoveContainer runs the remove operation on the provided container name
-func (e *dockerExecutor) RemoveContainer(name interface{}) (string, error) {
-	n, ok := name.(string)
-	if !ok {
-		return "", fmt.Errorf("Wrong name type. expected=string, got=%T", name)
-	}
-
-	return e.ExecWithErrorCheck(containerErrorCheckFunction(n, "remove"), RuntimeCommand, "rm", n)
+func (e *dockerExecutor) RemoveContainer(cf ContainerFilter) (string, error) {
+	return e.ExecWithErrorCheck(containerErrorCheckFunction(cf.Name, "remove"), RuntimeCommand, "rm", cf.Name)
 }
 
 // StopContainer runs the stop operation on the provided container name

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/stackrox/collector/integration-tests/pkg/collector_manager"
+	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 )
@@ -19,7 +19,7 @@ func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
 	s.RegisterCleanup("process-ports")
 	s.StartContainerStats()
 
-	collectorOptions := collector_manager.CollectorStartupOptions{
+	collectorOptions := collector.StartupOptions{
 		Config: map[string]any{
 			"turnOffScrape": false,
 		},

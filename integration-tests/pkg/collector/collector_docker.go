@@ -1,4 +1,4 @@
-package collector_manager
+package collector
 
 import (
 	"encoding/json"
@@ -71,11 +71,11 @@ func newDockerManager(e executor.Executor, name string) *DockerCollectorManager 
 	}
 }
 
-func (c *DockerCollectorManager) Setup(options *CollectorStartupOptions) error {
+func (c *DockerCollectorManager) Setup(options *StartupOptions) error {
 	if options == nil {
 		// default to empty, if no options are provided (i.e. use the
 		// default values)
-		options = &CollectorStartupOptions{}
+		options = &StartupOptions{}
 	}
 
 	if options.Env != nil {
@@ -106,7 +106,9 @@ func (c *DockerCollectorManager) TearDown() error {
 	if !isRunning {
 		c.captureLogs("collector")
 		// Check if collector container segfaulted or exited with error
-		exitCode, err := c.executor.ExitCode("collector")
+		exitCode, err := c.executor.ExitCode(executor.ContainerFilter{
+			Name: "collector",
+		})
 		if err != nil {
 			return fmt.Errorf("Failed to get container exit code: %s", err)
 		}
@@ -190,9 +192,10 @@ func (c *DockerCollectorManager) captureLogs(containerName string) (string, erro
 		fmt.Printf(executor.RuntimeCommand+" logs error (%v) for container %s\n", err, containerName)
 		return "", err
 	}
-	logDirectory := filepath.Join(".", "container-logs", config.VMInfo().Config, config.CollectionMethod())
+
+	logDirectory := getLogDirectory()
 	os.MkdirAll(logDirectory, os.ModePerm)
-	logFile := filepath.Join(logDirectory, strings.ReplaceAll(c.testName, "/", "_")+"-"+containerName+".log")
+	logFile := filepath.Join(logDirectory, getLogFilename(c))
 	err = ioutil.WriteFile(logFile, []byte(logs), 0644)
 	if err != nil {
 		return "", err
@@ -202,7 +205,9 @@ func (c *DockerCollectorManager) captureLogs(containerName string) (string, erro
 
 func (c *DockerCollectorManager) killContainer(name string) error {
 	_, err1 := c.executor.KillContainer(name)
-	_, err2 := c.executor.RemoveContainer(name)
+	_, err2 := c.executor.RemoveContainer(executor.ContainerFilter{
+		Name: name,
+	})
 
 	var result error
 	if err1 != nil {
@@ -222,4 +227,8 @@ func (c *DockerCollectorManager) stopContainer(name string) error {
 
 func (c *DockerCollectorManager) ContainerID() string {
 	return c.containerID
+}
+
+func (c *DockerCollectorManager) TestName() string {
+	return c.testName
 }

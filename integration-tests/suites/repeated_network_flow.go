@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/stackrox/collector/integration-tests/pkg/collector_manager"
+	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
@@ -38,7 +38,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.RegisterCleanup("nginx", "nginx-curl")
 	s.StartContainerStats()
 
-	collectorOptions := collector_manager.CollectorStartupOptions{
+	collectorOptions := collector.StartupOptions{
 		Config: map[string]any{
 			// turnOffScrape will be true, but the scrapeInterval
 			// also controls the reporting interval for network events

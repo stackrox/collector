@@ -6,19 +6,24 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 )
 
+type ContainerFilter struct {
+	Name      string
+	Namespace string
+}
+
 type Executor interface {
 	CopyFromHost(src string, dst string) (string, error)
 	PullImage(image string) error
 	IsContainerRunning(container string) (bool, error)
-	ContainerExists(container interface{}) (bool, error)
-	ContainerID(container interface{}) string
-	ExitCode(container interface{}) (int, error)
+	ContainerExists(filter ContainerFilter) (bool, error)
+	ContainerID(filter ContainerFilter) string
+	ExitCode(filter ContainerFilter) (int, error)
 	Exec(args ...string) (string, error)
 	ExecWithErrorCheck(errCheckFn func(string, error) error, args ...string) (string, error)
 	ExecWithStdin(pipedContent string, args ...string) (string, error)
 	ExecWithoutRetry(args ...string) (string, error)
 	KillContainer(name string) (string, error)
-	RemoveContainer(name interface{}) (string, error)
+	RemoveContainer(filter ContainerFilter) (string, error)
 	StopContainer(name string) (string, error)
 }
 

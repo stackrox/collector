@@ -1,4 +1,4 @@
-package collector_manager
+package collector
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
@@ -22,7 +21,7 @@ const (
 )
 
 type K8sCollectorManager struct {
-	executor     executor.Executor
+	executor     executor.K8sExecutor
 	volumeMounts []coreV1.VolumeMount
 	volumes      []coreV1.Volume
 	env          []coreV1.EnvVar
@@ -31,7 +30,7 @@ type K8sCollectorManager struct {
 	testName string
 }
 
-func newK8sManager(e executor.Executor, name string) *K8sCollectorManager {
+func newK8sManager(e executor.K8sExecutor, name string) *K8sCollectorManager {
 	collectorOptions := config.CollectorInfo()
 	collectionMethod := config.CollectionMethod()
 
@@ -85,10 +84,10 @@ func newK8sManager(e executor.Executor, name string) *K8sCollectorManager {
 	}
 }
 
-func (k *K8sCollectorManager) Setup(options *CollectorStartupOptions) error {
+func (k *K8sCollectorManager) Setup(options *StartupOptions) error {
 	if options == nil {
 		// default values
-		options = &CollectorStartupOptions{}
+		options = &StartupOptions{}
 	}
 
 	for name, value := range options.Env {
@@ -134,8 +133,7 @@ func (k *K8sCollectorManager) Launch() error {
 		},
 	}
 
-	executor := k.executor.(*executor.K8sExecutor)
-	_, err := executor.CreatePod(TEST_NAMESPACE, pod)
+	_, err := k.executor.CreatePod(TEST_NAMESPACE, pod)
 	return err
 }
 
@@ -151,7 +149,7 @@ func (k *K8sCollectorManager) TearDown() error {
 	}
 
 	if !isRunning {
-		exitCode, err := k.executor.ExitCode(executor.PodFilter{
+		exitCode, err := k.executor.ExitCode(executor.ContainerFilter{
 			Name:      "collector",
 			Namespace: TEST_NAMESPACE,
 		})
@@ -164,13 +162,11 @@ func (k *K8sCollectorManager) TearDown() error {
 		}
 	}
 
-	executor := k.executor.(*executor.K8sExecutor)
-	return executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).Delete(context.Background(), "collector", metaV1.DeleteOptions{})
+	return k.executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).Delete(context.Background(), "collector", metaV1.DeleteOptions{})
 }
 
 func (k *K8sCollectorManager) IsRunning() (bool, error) {
-	executor := k.executor.(*executor.K8sExecutor)
-	pod, err := executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).Get(context.Background(), "collector", metaV1.GetOptions{})
+	pod, err := k.executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).Get(context.Background(), "collector", metaV1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
@@ -179,12 +175,16 @@ func (k *K8sCollectorManager) IsRunning() (bool, error) {
 }
 
 func (k *K8sCollectorManager) ContainerID() string {
-	pf := executor.PodFilter{
+	cf := executor.ContainerFilter{
 		Name:      "collector",
 		Namespace: TEST_NAMESPACE,
 	}
 
-	return k.executor.ContainerID(pf)
+	return k.executor.ContainerID(cf)
+}
+
+func (k *K8sCollectorManager) TestName() string {
+	return k.testName
 }
 
 func replaceOrAppendEnvVar(list []coreV1.EnvVar, newVar coreV1.EnvVar) []coreV1.EnvVar {
@@ -199,17 +199,16 @@ func replaceOrAppendEnvVar(list []coreV1.EnvVar, newVar coreV1.EnvVar) []coreV1.
 }
 
 func (k *K8sCollectorManager) captureLogs() error {
-	executor := k.executor.(*executor.K8sExecutor)
-	req := executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).GetLogs("collector", &coreV1.PodLogOptions{})
+	req := k.executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).GetLogs("collector", &coreV1.PodLogOptions{})
 	podLogs, err := req.Stream(context.Background())
 	if err != nil {
 		return err
 	}
 	defer podLogs.Close()
 
-	logDirectory := filepath.Join(".", "container-logs", config.VMInfo().Config, config.CollectionMethod())
+	logDirectory := getLogDirectory()
 	os.MkdirAll(logDirectory, os.ModePerm)
-	logFilePath := filepath.Join(logDirectory, strings.ReplaceAll(k.testName, "/", "_")+"-collector.log")
+	logFilePath := filepath.Join(logDirectory, getLogFilename(k))
 	fmt.Printf("Dumping collector logs to %q\n", logFilePath)
 	logFile, err := os.Create(logFilePath)
 	if err != nil {

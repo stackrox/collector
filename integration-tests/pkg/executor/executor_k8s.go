@@ -60,18 +60,8 @@ func (e *K8sExecutor) IsContainerRunning(podName string) (bool, error) {
 	return pod.Status.ContainerStatuses[0].Ready, nil
 }
 
-type PodFilter struct {
-	Name      string
-	Namespace string
-}
-
-func (e *K8sExecutor) ContainerID(podFilter interface{}) string {
-	pf, ok := podFilter.(PodFilter)
-	if !ok {
-		return ""
-	}
-
-	pod, err := e.ClientSet().CoreV1().Pods(pf.Namespace).Get(context.Background(), pf.Name, metaV1.GetOptions{})
+func (e *K8sExecutor) ContainerID(podFilter ContainerFilter) string {
+	pod, err := e.ClientSet().CoreV1().Pods(podFilter.Namespace).Get(context.Background(), podFilter.Name, metaV1.GetOptions{})
 	if err != nil {
 		fmt.Printf("%s\n", err)
 		return ""
@@ -96,13 +86,8 @@ func (e *K8sExecutor) ContainerID(podFilter interface{}) string {
 	return containerID[i+1 : i+13]
 }
 
-func (e *K8sExecutor) ContainerExists(podFilter interface{}) (bool, error) {
-	pf, ok := podFilter.(PodFilter)
-	if !ok {
-		return false, fmt.Errorf("Wrong filter type. Expected=PodFilter, got=%T", podFilter)
-	}
-
-	pod, err := e.clientset.CoreV1().Pods(pf.Namespace).Get(context.Background(), pf.Name, metaV1.GetOptions{})
+func (e *K8sExecutor) ContainerExists(podFilter ContainerFilter) (bool, error) {
+	pod, err := e.clientset.CoreV1().Pods(podFilter.Namespace).Get(context.Background(), podFilter.Name, metaV1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
@@ -110,13 +95,8 @@ func (e *K8sExecutor) ContainerExists(podFilter interface{}) (bool, error) {
 	return pod != nil, nil
 }
 
-func (e *K8sExecutor) ExitCode(podFilter interface{}) (int, error) {
-	pf, ok := podFilter.(PodFilter)
-	if !ok {
-		return -1, fmt.Errorf("Wrong filter type. Expected=PodFilter, got=%T", podFilter)
-	}
-
-	pod, err := e.clientset.CoreV1().Pods(pf.Namespace).Get(context.Background(), pf.Name, metaV1.GetOptions{})
+func (e *K8sExecutor) ExitCode(podFilter ContainerFilter) (int, error) {
+	pod, err := e.clientset.CoreV1().Pods(podFilter.Namespace).Get(context.Background(), podFilter.Name, metaV1.GetOptions{})
 	if err != nil {
 		return -1, err
 	}
@@ -153,13 +133,8 @@ func (e *K8sExecutor) KillContainer(name string) (string, error) {
 	return "", fmt.Errorf("Unimplemented")
 }
 
-func (e *K8sExecutor) RemoveContainer(podFilter interface{}) (string, error) {
-	pf, ok := podFilter.(PodFilter)
-	if !ok {
-		return "", fmt.Errorf("Wrong pod filter type. Expected=PodFilter, got=%T", podFilter)
-	}
-
-	err := e.clientset.CoreV1().Pods(pf.Namespace).Delete(context.Background(), pf.Name, metaV1.DeleteOptions{})
+func (e *K8sExecutor) RemoveContainer(podFilter ContainerFilter) (string, error) {
+	err := e.clientset.CoreV1().Pods(podFilter.Namespace).Delete(context.Background(), podFilter.Name, metaV1.DeleteOptions{})
 	return "", err
 }
 

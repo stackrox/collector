@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/stackrox/collector/integration-tests/pkg/collector_manager"
+	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
 
 	coreV1 "k8s.io/api/core/v1"
@@ -38,25 +38,22 @@ type K8sNamespaceTestSuite struct {
 func (k *K8sNamespaceTestSuite) SetupSuite() {
 	// Ensure the collector pod gets deleted
 	k.T().Cleanup(func() {
-		exec, err := k.Executor()
-		k.Require().NoError(err)
+		exec := k.Executor()
 
-		exists, err := exec.ContainerExists(executor.PodFilter{
+		exists, err := exec.ContainerExists(executor.ContainerFilter{
 			Name:      "collector",
-			Namespace: collector_manager.TEST_NAMESPACE,
+			Namespace: collector.TEST_NAMESPACE,
 		})
 		k.Require().NoError(err)
 		if exists {
-			collector, err := k.Collector()
-			k.Require().NoError(err)
-			collector.TearDown()
+			k.Collector().TearDown()
 		}
 
 		if k.sensor != nil {
 			k.sensor.Stop()
 		}
 
-		nginxPodFilter := executor.PodFilter{
+		nginxPodFilter := executor.ContainerFilter{
 			Name:      "nginx",
 			Namespace: NAMESPACE,
 		}
@@ -71,23 +68,22 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 	// Start Sensor
 	k.Sensor().Start()
 
-	collector, err := k.Collector()
-	err = collector.Setup(&collector_manager.CollectorStartupOptions{
+	err := k.Collector().Setup(&collector.StartupOptions{
 		Env: map[string]string{
 			"ROX_COLLECTOR_RUNTIME_FILTERS_ENABLED": "true",
 			"ROX_COLLECTOR_INTROSPECTION_ENABLE":    "true",
 		},
 	})
 	k.Require().NoError(err)
-	err = collector.Launch()
+	err = k.Collector().Launch()
 	k.Require().NoError(err)
 
 	// wait for collector to be running
-	k.watchPod("app=collector", collector_manager.TEST_NAMESPACE, func() bool {
-		return len(collector.ContainerID()) != 0
+	k.watchPod("app=collector", collector.TEST_NAMESPACE, func() bool {
+		return len(k.Collector().ContainerID()) != 0
 	})
 
-	containerID := collector.ContainerID()
+	containerID := k.Collector().ContainerID()
 	if len(containerID) == 0 {
 		k.FailNow("Failed to get collector container ID")
 	}
@@ -98,8 +94,8 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 			// Self-check process is not going to be sent via GRPC, instead
 			// create at least one canary process to make sure everything is
 			// fine.
-			fmt.Printf("Spawn a canary process, container ID: %s\n", collector.ContainerID())
-			_, err = k.execPod("collector", collector_manager.TEST_NAMESPACE, []string{"echo"})
+			fmt.Printf("Spawn a canary process, container ID: %s\n", k.Collector().ContainerID())
+			_, err = k.execPod("collector", collector.TEST_NAMESPACE, []string{"echo"})
 			k.Require().NoError(err)
 		})
 	k.Require().True(selfCheckOk)
@@ -107,7 +103,7 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 	k.collectorIP = k.getCollectorIP()
 	k.tests = append(k.tests, NamespaceTest{
 		containerID:       containerID,
-		expectecNamespace: collector_manager.TEST_NAMESPACE,
+		expectecNamespace: collector.TEST_NAMESPACE,
 	})
 
 	nginxID := k.launchNginxPod()
@@ -193,8 +189,7 @@ func (k *K8sNamespaceTestSuite) execPod(podName string, namespace string, comman
 }
 
 func (k *K8sNamespaceTestSuite) watchPod(selector string, namespace string, callback func() bool) {
-	exec, err := k.Executor()
-	k.Require().NoError(err)
+	exec := k.Executor()
 	k8sExec := exec.(*executor.K8sExecutor)
 
 	timeout := int64(60)
@@ -219,11 +214,9 @@ func (k *K8sNamespaceTestSuite) watchPod(selector string, namespace string, call
 }
 
 func (k *K8sNamespaceTestSuite) getCollectorIP() string {
-	exec, err := k.Executor()
-	k.Require().NoError(err)
-
+	exec := k.Executor()
 	k8sExec := exec.(*executor.K8sExecutor)
-	pod, err := k8sExec.ClientSet().CoreV1().Pods(collector_manager.TEST_NAMESPACE).Get(context.Background(), "collector", metaV1.GetOptions{})
+	pod, err := k8sExec.ClientSet().CoreV1().Pods(collector.TEST_NAMESPACE).Get(context.Background(), "collector", metaV1.GetOptions{})
 	k.Require().NoError(err)
 
 	return pod.Status.PodIP
@@ -231,11 +224,10 @@ func (k *K8sNamespaceTestSuite) getCollectorIP() string {
 
 func (k *K8sNamespaceTestSuite) launchNginxPod() string {
 	// Create a namespace for the pod
-	exec, err := k.Executor()
-	k.Require().NoError(err)
+	exec := k.Executor()
 	k8sExec := exec.(*executor.K8sExecutor)
 
-	_, err = k8sExec.CreateNamespace(NAMESPACE)
+	_, err := k8sExec.CreateNamespace(NAMESPACE)
 
 	pod := &coreV1.Pod{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -256,7 +248,7 @@ func (k *K8sNamespaceTestSuite) launchNginxPod() string {
 	k.Require().NoError(err)
 
 	// Wait for nginx pod to start up
-	pf := executor.PodFilter{
+	pf := executor.ContainerFilter{
 		Name:      "nginx",
 		Namespace: NAMESPACE,
 	}

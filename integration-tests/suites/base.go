@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/stackrox/collector/integration-tests/pkg/collector_manager"
+	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
@@ -38,7 +38,7 @@ const (
 type IntegrationTestSuiteBase struct {
 	suite.Suite
 	executor  executor.Executor
-	collector collector_manager.CollectorManager
+	collector collector.Manager
 	sensor    *mock_sensor.MockSensor
 	metrics   map[string]float64
 	stats     []ContainerStat
@@ -64,13 +64,12 @@ type PerformanceResult struct {
 
 // StartCollector will start the collector container and optionally
 // start the MockSensor, if disableGRPC is false.
-func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *collector_manager.CollectorStartupOptions) {
+func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *collector.StartupOptions) {
 	if !disableGRPC {
 		s.Sensor().Start()
 	}
 
-	collector, err := s.Collector()
-	s.Require().NoError(err)
+	collector := s.Collector()
 
 	s.Require().NoError(collector.Setup(options))
 	s.Require().NoError(collector.Launch())
@@ -124,30 +123,22 @@ func (s *IntegrationTestSuiteBase) StopCollector() {
 // one if it is nil. This function can be used to get the object before
 // the container is launched, so that Collector settings can be adjusted
 // by individual test suites
-func (s *IntegrationTestSuiteBase) Collector() (collector_manager.CollectorManager, error) {
+func (s *IntegrationTestSuiteBase) Collector() collector.Manager {
 	if s.collector == nil {
-		executor, err := s.Executor()
-		if err != nil {
-			return nil, err
-		}
-
-		s.collector = collector_manager.New(executor, s.T().Name())
+		s.collector = collector.New(s.Executor(), s.T().Name())
 	}
-	return s.collector, nil
+	return s.collector
 }
 
 // Executor returns the current executor object, or initializes a new one
 // if it is nil.
-func (s *IntegrationTestSuiteBase) Executor() (executor.Executor, error) {
+func (s *IntegrationTestSuiteBase) Executor() executor.Executor {
 	if s.executor == nil {
 		exec, err := executor.New()
-		if err != nil {
-			return nil, err
-		}
-
+		s.Require().NoError(err)
 		s.executor = exec
 	}
-	return s.executor, nil
+	return s.executor
 }
 
 // Sensor returns the current mock sensor object, or initializes a new one
@@ -180,14 +171,10 @@ func (s *IntegrationTestSuiteBase) RegisterCleanup(containers ...string) {
 		containers = append(containers, containerStatsName)
 		s.cleanupContainers(containers...)
 
-		executor, err := s.Executor()
-		if err != nil {
-			return
-		}
-
 		// StopCollector is safe when collector isn't running, but the container must exist.
 		// This will ensure that logs are still written even when test setup fails
-		if exists, _ := executor.ContainerExists("collector"); exists {
+		exists, _ := s.Executor().ContainerExists(executor.ContainerFilter{Name: "collector"})
+		if exists {
 			s.StopCollector()
 		}
 	})
@@ -282,12 +269,7 @@ func (s *IntegrationTestSuiteBase) launchContainer(name string, args ...string) 
 	cmd := []string{executor.RuntimeCommand, "run", "-d", "--name", name}
 	cmd = append(cmd, args...)
 
-	executor, err := s.Executor()
-	if err != nil {
-		return "", err
-	}
-
-	output, err := executor.Exec(cmd...)
+	output, err := s.Executor().Exec(cmd...)
 
 	outLines := strings.Split(output, "\n")
 	return outLines[len(outLines)-1], err
@@ -323,14 +305,7 @@ func (s *IntegrationTestSuiteBase) waitForContainerStatus(
 	for {
 		select {
 		case <-tick:
-			executor, err := s.Executor()
-			if err != nil {
-				fmt.Printf("Retrying waitForContainerStatus(%s, %s): Error: %v\n",
-					containerName, containerID, err)
-				continue
-			}
-
-			output, err := executor.Exec(cmd...)
+			output, err := s.Executor().Exec(cmd...)
 			outLines := strings.Split(output, "\n")
 			lastLine := outLines[len(outLines)-1]
 			if lastLine == common.ContainerShortID(containerID) {
@@ -365,12 +340,7 @@ func (s *IntegrationTestSuiteBase) findContainerHealthCheck(
 		"'{{ .Config.Healthcheck }}'", containerID,
 	}
 
-	executor, err := s.Executor()
-	if err != nil {
-		return false, err
-	}
-
-	output, err := executor.Exec(cmd...)
+	output, err := s.Executor().Exec(cmd...)
 	if err != nil {
 		return false, err
 	}
@@ -416,85 +386,60 @@ func (s *IntegrationTestSuiteBase) execContainer(containerName string, command [
 	cmd := []string{executor.RuntimeCommand, "exec", containerName}
 	cmd = append(cmd, command...)
 
-	executor, err := s.Executor()
-	if err != nil {
-		return "", err
-	}
-
-	return executor.Exec(cmd...)
+	return s.Executor().Exec(cmd...)
 }
 
 func (s *IntegrationTestSuiteBase) execContainerShellScript(containerName string, shell string, script string, args ...string) (string, error) {
 	cmd := []string{executor.RuntimeCommand, "exec", "-i", containerName, shell, "-s"}
 	cmd = append(cmd, args...)
-	executor, err := s.Executor()
-	if err != nil {
-		return "", err
-	}
 
-	return executor.ExecWithStdin(script, cmd...)
+	return s.Executor().ExecWithStdin(script, cmd...)
 }
 
 func (s *IntegrationTestSuiteBase) cleanupContainers(containers ...string) {
-	executor, err := s.Executor()
-	if err != nil {
-		return
-	}
-
 	for _, container := range containers {
-		executor.KillContainer(container)
-		executor.RemoveContainer(container)
+		s.Executor().KillContainer(container)
+		s.Executor().RemoveContainer(executor.ContainerFilter{Name: container})
 	}
 }
 
 func (s *IntegrationTestSuiteBase) stopContainers(containers ...string) {
-	executor, err := s.Executor()
-	if err != nil {
-		return
-	}
-
 	for _, container := range containers {
-		executor.StopContainer(container)
+		s.Executor().StopContainer(container)
 	}
 }
 
 func (s *IntegrationTestSuiteBase) removeContainers(containers ...string) {
-	executor, err := s.Executor()
-	if err != nil {
-		return
-	}
-
 	for _, container := range containers {
-		executor.RemoveContainer(container)
+		s.Executor().RemoveContainer(executor.ContainerFilter{Name: container})
 	}
 }
 
 func (s *IntegrationTestSuiteBase) containerLogs(containerName string) (string, error) {
-	e, err := s.Executor()
-	if err != nil {
-		return "", err
-	}
-
-	return e.Exec(executor.RuntimeCommand, "logs", containerName)
+	return s.Executor().Exec(executor.RuntimeCommand, "logs", containerName)
 }
 
 func (s *IntegrationTestSuiteBase) getIPAddress(containerName string) (string, error) {
-	e, err := s.Executor()
-	if err != nil {
-		return "", err
+	args := []string{
+		executor.RuntimeCommand,
+		"inspect",
+		"--format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'",
+		containerName,
 	}
 
-	stdoutStderr, err := e.Exec(executor.RuntimeCommand, "inspect", "--format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'", containerName)
+	stdoutStderr, err := s.Executor().Exec(args...)
 	return strings.Replace(string(stdoutStderr), "'", "", -1), err
 }
 
 func (s *IntegrationTestSuiteBase) getPort(containerName string) (string, error) {
-	e, err := s.Executor()
-	if err != nil {
-		return "", err
+	args := []string{
+		executor.RuntimeCommand,
+		"inspect",
+		"--format='{{json .NetworkSettings.Ports}}'",
+		containerName,
 	}
 
-	stdoutStderr, err := e.Exec(executor.RuntimeCommand, "inspect", "--format='{{json .NetworkSettings.Ports}}'", containerName)
+	stdoutStderr, err := s.Executor().Exec(args...)
 	if err != nil {
 		return "", err
 	}
@@ -516,10 +461,7 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 	benchmarkName := "benchmark"
 	benchmarkImage := config.Images().QaImageByKey("performance-phoronix")
 
-	executor, err := s.Executor()
-	s.Require().NoError(err)
-
-	err = executor.PullImage(benchmarkImage)
+	err := s.Executor().PullImage(benchmarkImage)
 	s.Require().NoError(err)
 
 	benchmarkArgs := []string{
@@ -552,9 +494,7 @@ func (s *IntegrationTestSuiteBase) StartContainerStats() {
 	image := config.Images().QaImageByKey("performance-stats")
 	args := []string{"-v", executor.RuntimeSocket + ":/var/run/docker.sock", image}
 
-	executor, err := s.Executor()
-	s.Require().NoError(err)
-	err = executor.PullImage(image)
+	err := s.Executor().PullImage(image)
 	s.Require().NoError(err)
 
 	_, err = s.launchContainer(containerStatsName, args...)
@@ -576,12 +516,7 @@ func (s *IntegrationTestSuiteBase) waitForFileToBeDeleted(file string) error {
 					return nil
 				}
 			} else {
-				ex, err := s.Executor()
-				if err != nil {
-					return nil
-				}
-
-				output, _ := ex.Exec("stat", file)
+				output, _ := s.Executor().Exec("stat", file)
 				if strings.Contains(output, "No such file or directory") {
 					return nil
 				}
