@@ -18,7 +18,7 @@ std::regex ResourceSelector::GetOrCompileRegex(const std::string& str) {
     return pair->second;
   } else {
     std::regex pattern(str);
-    regexMap_.insert(std::make_pair(str, pattern));
+    regexMap_[str] = pattern;
     return pattern;
   }
 }
@@ -53,29 +53,15 @@ bool ResourceSelector::IsRuleFollowed(const storage::SelectorRule& rule, const s
 }
 
 bool ResourceSelector::IsResourceInResourceSelector(const storage::ResourceSelector& rs, const std::string& resource_type, const std::string& resource_name) {
-  // const auto& rules = rs.rules();
+  const auto& rules = rs.rules();
 
-  // auto op = [resource_type, resource_name](const auto& rule) -> bool {
-  //   if (rule.field_name() == resource_type) {
-  //     if (!IsRuleFollowed(rule, resource_name)) {
-  //       return false;
-  //     }
-  //     return true;
-  //   }
-  //   return true;
-  // };
-
-  // return std::all_of(rules.begin(), rules.end(), op);
-
-  for (const auto& rule : rs.rules()) {
-    if (rule.field_name() == resource_type) {
-      if (!IsRuleFollowed(rule, resource_name)) {
-        return false;
-      }
-    }
+  if (rules.size() == 0) {
+    return true;
   }
 
-  return true;
+  return std::all_of(rules.begin(), rules.end(), [resource_type, resource_name](const auto& rule) -> bool {
+    return rule.field_name() != resource_type || IsRuleFollowed(rule, resource_name);
+  });
 }
 
 bool ResourceSelector::IsNamespaceInResourceSelector(const storage::ResourceSelector& rs, const std::string& ns) {
@@ -96,24 +82,18 @@ bool ResourceSelector::IsNamespaceSelected(const storage::ResourceCollection& rc
   return std::any_of(resource_selectors.begin(), resource_selectors.end(), [ns](const auto& rs) -> bool {
     return IsNamespaceInResourceSelector(rs, ns);
   });
-
-  // for (const auto& rs : rc.resource_selectors()) {
-  //   if (IsNamespaceInResourceSelector(rs, ns)) {
-  //     return true;
-  //   }
-  // }
-  //
-  // return false;
 }
 
 bool ResourceSelector::AreClusterAndNamespaceSelected(const storage::ResourceCollection& rc, const std::string& cluster, const std::string& ns) {
   const auto& resource_selectors = rc.resource_selectors();
 
-  auto op = [cluster, ns](const auto& rs) -> bool {
-    return IsClusterInResourceSelector(rs, cluster) && IsNamespaceInResourceSelector(rs, ns);
-  };
+  if (resource_selectors.size() == 0) {
+    return true;
+  }
 
-  return std::any_of(resource_selectors.begin(), resource_selectors.end(), op);
+  return std::any_of(resource_selectors.begin(), resource_selectors.end(), [cluster, ns](const auto& rs) -> bool {
+    return IsClusterInResourceSelector(rs, cluster) && IsNamespaceInResourceSelector(rs, ns);
+  });
 }
 
 bool ResourceSelector::AreClusterAndNamespaceSelected(const storage::ResourceCollection& rc, const UnorderedMap<std::string, storage::ResourceCollection> rcMap, const std::string& cluster, const std::string& ns) {
