@@ -21,17 +21,19 @@ class ContainerMetadata {
   }
 
   inline std::string GetContainerLabel(const std::string& container_id, const std::string& label) {
-    const auto& containers = inspector_->m_container_manager.get_containers();
-    if (containers->count(container_id) == 0) {
+    const auto containers = inspector_->m_container_manager.get_containers();
+    const auto& container = containers->find(container_id);
+    if (container == containers->end()) {
       return "";
     }
 
-    const auto& container = containers->at(container_id);
-    if (container->m_labels.count(label) == 0) {
+    const auto& labels = container->second->m_labels;
+    const auto& label_it = labels.find(label);
+    if (label_it == labels.end()) {
       return "";
     }
 
-    return container->m_labels.at(label);
+    return label_it->second;
   }
 
  private:
