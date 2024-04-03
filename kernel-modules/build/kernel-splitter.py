@@ -126,8 +126,8 @@ def main(task_file):
         oracle,
         fc39,
         fc36,
-        rhel7_ebpf,
         rhel8,
+        rhel7_ebpf,
         rhel7
     ]
 
