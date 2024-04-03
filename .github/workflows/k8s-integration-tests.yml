@@ -49,7 +49,7 @@ jobs:
         run: |
           cat << EOF > /tmp/vars.yml
           ---
-          image: ${{ env.COLLECTOR_TESTS_IMAGE }}
+          tester_image: ${{ env.COLLECTOR_TESTS_IMAGE }}
           collector_image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
           collector_root: ${{ github.workspace }}
           EOF

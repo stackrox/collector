@@ -61,6 +61,17 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 		if exists {
 			k.Executor().RemoveContainer(nginxPodFilter)
 		}
+
+		k8sExecutor, ok := k.Executor().(*executor.K8sExecutor)
+		if !ok {
+			k.Require().FailNow("Incorrect executor type. got=%T, want=K8sExecutor", k.Executor())
+		}
+
+		exists, err = k8sExecutor.NamespaceExists(NAMESPACE)
+		k.Require().NoError(err)
+		if exists {
+			k8sExecutor.RemoveNamespace(NAMESPACE)
+		}
 	})
 
 	// Start Sensor

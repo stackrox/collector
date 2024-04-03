@@ -147,6 +147,19 @@ func (e *K8sExecutor) CreateNamespace(ns string) (*coreV1.Namespace, error) {
 	return e.clientset.CoreV1().Namespaces().Create(context.Background(), &coreV1.Namespace{ObjectMeta: meta}, metaV1.CreateOptions{})
 }
 
+func (e *K8sExecutor) NamespaceExists(ns string) (bool, error) {
+	res, err := e.clientset.CoreV1().Namespaces().Get(context.Background(), ns, metaV1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+
+	return res != nil, nil
+}
+
+func (e *K8sExecutor) RemoveNamespace(ns string) error {
+	return e.clientset.CoreV1().Namespaces().Delete(context.Background(), ns, metaV1.DeleteOptions{})
+}
+
 func (e *K8sExecutor) CreatePod(ns string, pod *coreV1.Pod) (*coreV1.Pod, error) {
 	return e.clientset.CoreV1().Pods(ns).Create(context.Background(), pod, metaV1.CreateOptions{})
 }
