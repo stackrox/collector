@@ -102,6 +102,7 @@ build_ko() (
         fi
 
         echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
+        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${KERNEL_SRC_DIR}" FALCO_DIR="$(pwd)/bpf" make -C "${probe_dir}" clean
         KERNELDIR="$kernel_build_dir" BUILD_ROOT="${KERNEL_SRC_DIR}" FALCO_DIR="$(pwd)/bpf" make -j 6 -C "${probe_dir}"
 
         if [[ ! -f "$collector_probe" || ! -s "$collector_probe" ]]; then

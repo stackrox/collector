@@ -63,6 +63,7 @@ all:
 
 clean:
 	$(MAKE) -C $(KERNELDIR) M=$$PWD clean
+	$(MAKE) -C $(FALCO_DIR) clean
 	@rm -f *~
 
 $(obj)/probe.o: $(src)/collector_probe.c $(FALCO_DIR)/*.h
