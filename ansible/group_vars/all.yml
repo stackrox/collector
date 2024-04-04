@@ -29,7 +29,8 @@ excluded_pairs:
   # eBPF on Garden Linux is not supported.
   - [ "{{ lookup('file', 'group_vars/gardenlinux-image.txt') }}", 'ebpf' ]
 
-  - [ 'p', 'ebpf' ]
+  # Power eBPF
+  - [ 'rhel-8.8-05102023', 'ebpf' ]
 
 virtual_machines:
   rhel:
@@ -58,8 +59,9 @@ virtual_machines:
     project: rhel-ppc64le-cloud
     arch: ppc64le
     ssh_key_file: "~/.ssh/acs-ppc64le-rsa.prv"
-    families:
-      - p
+    images:
+      - rhel-86-05162022
+      - rhel-8.8-05102023
 
   rhel-sap:
     project: rhel-sap-cloud
