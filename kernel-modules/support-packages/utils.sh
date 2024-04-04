@@ -8,13 +8,13 @@ _check_min_version() {
         exit 1
     fi
 
-    if [[ ! "$1" =~ $version_re ]]; then
+    if [[ ! "$2" =~ $version_re ]]; then
         echo >&2 "Error: Invalid version number format '$2'"
         exit 1
     fi
 
     IFS='.' read -ra version <<< "${1%-*}"
-    IFS='.' read -ra min_version <<< "${1%-*}"
+    IFS='.' read -ra min_version <<< "${2%-*}"
 
     for ((i = 0; i < ${#min_version[@]}; i++)); do
         if ((version[i] < min_version[i])); then
