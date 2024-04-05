@@ -109,8 +109,8 @@ class PowerHeuristic : public Heuristic {
       return;
     }
 
-    if (host.IsOCP4_12() || host.IsRHEL86()) {
-      CLOG(INFO) << "CORE_BPF is not available on OCP 4.12, switching to EBPF collection method.";
+    if (host.IsRHEL86()) {
+      CLOG(INFO) << "CORE_BPF is not available, switching to EBPF collection method.";
       hconfig->SetCollectionMethod(CollectionMethod::EBPF);
     }
   }
