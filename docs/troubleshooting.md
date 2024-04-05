@@ -462,6 +462,17 @@ In order to enable these introspection endpoints, the
 `ROX_COLLECTOR_INTROSPECTION_ENABLE` environment variable needs to be set to
 `true`.
 
+The endpoints should be reachable from within the k8s cluster the collector
+daemonset is deployed, but you can also access it from your local host by
+using port-forward:
+
+```sh
+$ kubectl -n stackrox port-forward ds/collector 8080:8080 &
+[1] 64384
+Forwarding from 127.0.0.1:8080 -> 8080
+Forwarding from [::1]:8080 -> 8080
+```
+
 ### Container metadata endpoint
 
 This endpoint provides a way for users to query metadata of a given container
@@ -470,13 +481,13 @@ containerID argument needs to be provided in its short form (first 12
 characters).
 
 ```sh
-$ curl collector:8080/state/containers/
+$ curl collector:8080/state/containers/01e8c0454972
 ```
 
 In order for the metadata to be collected, the collector daemonset needs to be
 edited for it to have access to the corresponding CRI socket on the system.
 Since metadata collection is locked behind a feature flag, the
-`ROX_COLLECTOR_RUNTIME_FILTERS_ENABLED` needs to be set to `true`.
+`ROX_COLLECTOR_RUNTIME_FILTERS_ENABLED` needs to be set to `true` as well.
 
 ```yaml
 spec:
@@ -525,10 +536,6 @@ into a pod with access to an HTTP tool in order to query the endpoint from
 within the cluster itself.
 
 ```sh
-$ krox port-forward ds/collector 8080:8080 &
-[1] 64384
-Forwarding from 127.0.0.1:8080 -> 8080
-Forwarding from [::1]:8080 -> 8080
 $ curl "localhost:8080/state/containers/01e8c0454972"
 Handling connection for 8080
 {"container_id":"01e8c0454972","namespace":"stackrox"}
