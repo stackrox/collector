@@ -159,6 +159,13 @@ std::string& HostInfo::GetOSID() {
   return os_id_;
 }
 
+std::string& HostInfo::GetVersionID() {
+  if (version_id_.empty()) {
+    version_id_ = GetOSReleaseValue("VERSION_ID");
+  }
+  return version_id_;
+}
+
 std::string HostInfo::GetOSReleaseValue(const char* name) {
   std::ifstream release_file(GetHostPath("/etc/os-release"));
   if (!release_file.is_open()) {
@@ -175,6 +182,15 @@ std::string HostInfo::GetOSReleaseValue(const char* name) {
 bool HostInfo::IsRHEL76() {
   auto kernel = GetKernelVersion();
   return collector::isRHEL76(kernel, GetOSID());
+}
+
+bool HostInfo::IsRHEL86() {
+  return GetOSID() == "rhel" && GetVersionID() == "8.6";
+}
+
+bool HostInfo::IsOCP4_12() {
+  auto kernel = GetKernelVersion();
+  return GetOSID() == "rhcos" && GetVersionID() == "4.12";
 }
 
 bool HostInfo::HasEBPFSupport() {

@@ -100,11 +100,28 @@ class ARM64Heuristic : public Heuristic {
   }
 };
 
+class PowerHeuristic : public Heuristic {
+ public:
+  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
+    auto k = host.GetKernelVersion();
+
+    if (k.machine != "ppc64le") {
+      return;
+    }
+
+    if (host.IsOCP4_12() || host.IsRHEL86()) {
+      CLOG(INFO) << "CORE_BPF is not available on OCP 4.12, switching to EBPF collection method.";
+      hconfig->SetCollectionMethod(CollectionMethod::EBPF);
+    }
+  }
+};
+
 const std::unique_ptr<Heuristic> g_host_heuristics[] = {
     std::unique_ptr<Heuristic>(new CollectionHeuristic),
     std::unique_ptr<Heuristic>(new DockerDesktopHeuristic),
     std::unique_ptr<Heuristic>(new S390XHeuristic),
     std::unique_ptr<Heuristic>(new ARM64Heuristic),
+    std::unique_ptr<Heuristic>(new PowerHeuristic),
 };
 
 }  // namespace

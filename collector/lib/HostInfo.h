@@ -185,6 +185,9 @@ class HostInfo {
   // Get the OS ID of the host
   virtual std::string& GetOSID();
 
+  // Get the VERSION_ID of the host
+  virtual std::string& GetVersionID();
+
   // Whether we're running on a COS host
   virtual bool IsCOS() {
     return GetOSID() == "cos" && !GetBuildID().empty();
@@ -226,6 +229,12 @@ class HostInfo {
   // this check to build IDs between MIN_RHEL_BUILD_ID and MAX_RHEL_BUILD_ID
   bool IsRHEL76();
 
+  // Whether we are running on RHEL 8.6
+  bool IsRHEL86();
+
+  // Whether we are running on OCP 4.12
+  bool IsOCP4_12();
+
   // Whether this host has eBPF support, based on the kernel version.
   // Only exception is RHEL 7.6, which does support eBPF but runs kernel 3.10 (which ordinarily does
   // not support eBPF)
@@ -265,6 +274,8 @@ class HostInfo {
   std::string build_id_;
   // the OS ID (from os-release file)
   std::string os_id_;
+  // the VERSION_ID of the host (from os-release file)
+  std::string version_id_;
   // the system SecureBoot status
   SecureBootStatus secure_boot_status_;
 };
