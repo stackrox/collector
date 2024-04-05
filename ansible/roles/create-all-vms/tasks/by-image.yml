@@ -1,5 +1,8 @@
 ---
 
+- include_vars: ppc64le.yml
+- include_vars: s390x.yml
+
 - set_fact:
     vm_hashable_name: "{{ item.1 }}"
 
@@ -8,6 +11,9 @@
 
 - set_fact:
     vm_hashed_name_short: "{{ vm_hashed_name | truncate(8, True, '') }}"
+
+- set_fact:
+    arch: "{{ item.0.value.arch | default('amd64') }}"
 
 - set_fact:
     ibm_env: "{{ s390x.env }}"
