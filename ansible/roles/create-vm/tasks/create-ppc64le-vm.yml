@@ -4,6 +4,9 @@
   collections:
    - ibm.cloudcollection
 
+- debug:
+    var: vars
+
 - name: Check for existing SSH Key
   ibm.cloudcollection.ibm_pi_key_info:
     pi_key_name: "{{ pi_name }}-ssh-key"
