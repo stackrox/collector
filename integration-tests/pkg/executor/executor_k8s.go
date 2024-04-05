@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/stackrox/collector/integration-tests/pkg/common"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -71,6 +72,10 @@ func (e *K8sExecutor) ContainerID(podFilter ContainerFilter) string {
 		return ""
 	}
 
+	/*
+	 * The format extracted from the following line looks something like this:
+	 *    containerd://01e8c0454972a6b22b2e8ff7bf5a7d011e7dc7c0cde95c468a823b7085669a36
+	 */
 	containerID := pod.Status.ContainerStatuses[0].ContainerID
 	if len(containerID) < 12 {
 		fmt.Printf("Invalid container ID: %q\n", containerID)
@@ -83,7 +88,7 @@ func (e *K8sExecutor) ContainerID(podFilter ContainerFilter) string {
 		return ""
 	}
 
-	return containerID[i+1 : i+13]
+	return common.ContainerShortID(containerID[i+1:])
 }
 
 func (e *K8sExecutor) ContainerExists(podFilter ContainerFilter) (bool, error) {
