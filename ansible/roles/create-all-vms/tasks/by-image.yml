@@ -9,9 +9,19 @@
 - set_fact:
     vm_hashed_name_short: "{{ vm_hashed_name | truncate(8, True, '') }}"
 
+- set_fact:
+    ibm_env: "{{ s390x.env }}"
+  when: arch == 's390x'
+
+- set_fact:
+    ibm_env: "{{ ppc64le.env }}"
+  when: arch == 'ppc64le'
+
 - name: Create VMs From Image
   include_role:
     name: create-vm
+    apply:
+      environment: "{{ ibm_env | default({}) }}"
   vars:
     vm_name: "{{ gcp_instance_prefix }}-{{ item.0.key }}-{{ normalized_collection_method }}-{{ vm_hashed_name_short }}-{{ job_id }}"
     vm_project: "{{ item.0.value.project }}"
