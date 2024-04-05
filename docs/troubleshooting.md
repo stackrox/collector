@@ -450,3 +450,86 @@ $ curl collector:8080/profile/heap
 
 The resulting profile could be processed with `pprof` to get a human-readable
 output with debugging symbols.
+
+## Introspection endpoints
+
+Another method for troubleshooting collector during development cycles is to
+use its introspection endpoints. These are REST like endpoints exposed on port
+`8080` and provide some more insights into data being held by collector in
+JSON format.
+
+In order to enable these introspection endpoints, the
+`ROX_COLLECTOR_INTROSPECTION_ENABLE` environment variable needs to be set to
+`true`.
+
+### Container metadata endpoint
+
+This endpoint provides a way for users to query metadata of a given container
+by its ID, querying the `/state/containers/{containerID}` endpoint. The
+containerID argument needs to be provided in its short form (first 12
+characters).
+
+```sh
+$ curl collector:8080/state/containers/
+```
+
+In order for the metadata to be collected, the collector daemonset needs to be
+edited for it to have access to the corresponding CRI socket on the system.
+Since metadata collection is locked behind a feature flag, the
+`ROX_COLLECTOR_RUNTIME_FILTERS_ENABLED` needs to be set to `true`.
+
+```yaml
+spec:
+  template:
+    spec:
+      containers:
+        ...
+        env:
+        - name: ROX_COLLECTOR_RUNTIME_FILTERS_ENABLED
+          value: "true"
+        ...
+        volumeMounts:
+        ...
+        - mountPath: /host/run/containerd/containerd.sock
+          mountPropagation: HostToContainer
+          name: containerd-sock
+        - mountPath: /host/run/crio/crio.sock
+          mountPropagation: HostToContainer
+          name: crio-sock
+    ...
+      volumes:
+      ...
+      - hostPath:
+          path: /run/containerd/containerd.sock
+        name: containerd-sock
+      - hostPath:
+          path: /run/crio/crio.sock
+        name: crio-sock
+```
+
+Once edited, you can use the following command to extract the container IDs
+from a given kubernetes object.
+
+```sh
+$ kubectl -n stackrox get pods -l "app=collector" -o json \
+    | jq -r '.items[].status.containerStatuses[].containerID' \
+    | sed -e 's#containerd://##' \
+    | cut -c -12
+01e8c0454972
+80bfaff4d03b
+```
+
+You can then port-forward the collector daemonset to be able to query the
+container metadata endpoint from your localhost. Alternatively, you can exec
+into a pod with access to an HTTP tool in order to query the endpoint from
+within the cluster itself.
+
+```sh
+$ krox port-forward ds/collector 8080:8080 &
+[1] 64384
+Forwarding from 127.0.0.1:8080 -> 8080
+Forwarding from [::1]:8080 -> 8080
+$ curl "localhost:8080/state/containers/01e8c0454972"
+Handling connection for 8080
+{"container_id":"01e8c0454972","namespace":"stackrox"}
+```
