@@ -13,11 +13,32 @@
 
 namespace collector {
 
+class FilteringRule {
+ public:
+  FilteringRule(std::string collectionId, bool status) {
+    collectionId_ = collectionId;
+    status_ = status;
+  }
+
+  std::string collectionId() {
+    return collectionId_;
+  }
+
+  bool status() {
+    return status_;
+  }
+
+ private:
+  std::string collectionId_;
+  bool status_;
+};
+
 class ResourceSelector {
  public:
   static bool IsNamespaceSelected(const storage::ResourceCollection& rc, const std::string& ns);
   static bool AreClusterAndNamespaceSelected(const storage::ResourceCollection& rc, const std::string& cluster, const std::string& ns);
   static bool AreClusterAndNamespaceSelected(const storage::ResourceCollection& rc, const UnorderedMap<std::string, storage::ResourceCollection> rcMap, const std::string& cluster, const std::string& ns);
+  static bool IsFeatureEnabledForClusterAndNamespace(const std::vector<FilteringRule>& filteringRules, const UnorderedMap<std::string, storage::ResourceCollection> rcMap, bool defaultStatus, const std::string& cluster, const std::string& ns);
 
  private:
   static bool IsRuleFollowed(const storage::SelectorRule& rule, const std::string& ns);

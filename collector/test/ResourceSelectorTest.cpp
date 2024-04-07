@@ -581,4 +581,130 @@ TEST_F(ResourceSelectorTest, IncludingEmbeddedCollections) {
   EXPECT_TRUE(collector::ResourceSelector::AreClusterAndNamespaceSelected(resourceCollection, rcMap, "remote", "development"));
 }
 
+TEST_F(ResourceSelectorTest, MultipleResourceCollectionRules) {
+  std::string jsonStr1 = R"({
+        "id": "b703d50e-b003-4a6a-bf1b-7ab36c9af184",
+        "name": "cluster-1",
+        "description": "Enable external ips on ingress",
+        "createdAt": "2024-03-21T16:47:08.550364622Z",
+        "lastUpdated": "2024-03-21T16:57:15.308488438Z",
+        "resourceSelectors": [
+            {
+                "rules": [
+                    {
+                        "fieldName": "Cluster",
+                        "operator": "OR",
+                        "values": [
+                            {
+                                "value": "cluster-1",
+                                "matchType": "EXACT"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    })";
+
+  std::string jsonStr2 = R"({
+        "id": "afd76230-4539-498d-abf6-6208ec5c48bb",
+        "name": "webapp and marketing",
+        "description": "Enable external ips on ingress",
+        "createdAt": "2024-03-21T16:47:08.550364622Z",
+        "lastUpdated": "2024-03-21T16:57:15.308488438Z",
+        "resourceSelectors": [
+            {
+                "rules": [
+                    {
+                        "fieldName": "Cluster",
+                        "operator": "OR",
+                        "values": [
+                            {
+                                "value": "cluster-1",
+                                "matchType": "EXACT"
+                            }
+                        ]
+                    },
+                    {
+                        "fieldName": "Namespace",
+                        "operator": "OR",
+                        "values": [
+                            {
+                                "value": "webapp",
+                                "matchType": "EXACT"
+                            },
+                            {
+                                "value": "marketing.*",
+                                "matchType": "REGEX"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    })";
+
+  std::string jsonStr3 = R"({
+        "id": "49f7deb3-3ea2-4aa3-9f40-645e9b26e2e1",
+        "name": "marketing-department",
+        "description": "Enable external ips on ingress",
+        "createdAt": "2024-03-21T16:47:08.550364622Z",
+        "lastUpdated": "2024-03-21T16:57:15.308488438Z",
+        "resourceSelectors": [
+            {
+                "rules": [
+                    {
+                        "fieldName": "Cluster",
+                        "operator": "OR",
+                        "values": [
+                            {
+                                "value": "cluster-1",
+                                "matchType": "EXACT"
+                            }
+                        ]
+                    },
+                    {
+                        "fieldName": "Namespace",
+                        "operator": "OR",
+                        "values": [
+                            {
+                                "value": "marketing-department",
+                                "matchType": "EXACT"
+                            },
+                        ]
+                    }
+                ]
+            }
+        ]
+    })";
+
+  auto resourceCollection1 = CreateResourceCollectionFromJson(jsonStr1);
+  auto resourceCollection2 = CreateResourceCollectionFromJson(jsonStr2);
+  auto resourceCollection3 = CreateResourceCollectionFromJson(jsonStr3);
+
+  std::string collectionId1 = "b703d50e-b003-4a6a-bf1b-7ab36c9af184";
+  std::string collectionId2 = "afd76230-4539-498d-abf6-6208ec5c48bb";
+  std::string collectionId3 = "49f7deb3-3ea2-4aa3-9f40-645e9b26e2e1";
+
+  UnorderedMap<std::string, storage::ResourceCollection> rcMap;
+
+  rcMap[collectionId1] = resourceCollection1;
+  rcMap[collectionId2] = resourceCollection2;
+  rcMap[collectionId3] = resourceCollection3;
+
+  FilteringRule filteringRule1(collectionId1, true);
+  FilteringRule filteringRule2(collectionId2, false);
+  FilteringRule filteringRule3(collectionId3, true);
+
+  std::vector<FilteringRule> filteringRules = {filteringRule1, filteringRule2, filteringRule3};
+
+  bool defaultStatus = false;
+
+  EXPECT_FALSE(collector::ResourceSelector::IsFeatureEnabledForClusterAndNamespace(filteringRules, rcMap, defaultStatus, "cluster-1", "webapp"));
+  EXPECT_TRUE(collector::ResourceSelector::IsFeatureEnabledForClusterAndNamespace(filteringRules, rcMap, defaultStatus, "cluster-1", "analytics"));
+  EXPECT_FALSE(collector::ResourceSelector::IsFeatureEnabledForClusterAndNamespace(filteringRules, rcMap, defaultStatus, "cluster-1", "marketing-stats"));
+  EXPECT_TRUE(collector::ResourceSelector::IsFeatureEnabledForClusterAndNamespace(filteringRules, rcMap, defaultStatus, "cluster-1", "marketing-department"));
+  EXPECT_FALSE(collector::ResourceSelector::IsFeatureEnabledForClusterAndNamespace(filteringRules, rcMap, defaultStatus, "cluster-2", "prod"));
+}
+
 }  // namespace collector

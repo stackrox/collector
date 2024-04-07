@@ -113,4 +113,21 @@ bool ResourceSelector::AreClusterAndNamespaceSelected(const storage::ResourceCol
   return false;
 }
 
+// Applies multiple rules for ResourceCollections. Starts with a default status and applies the rules one by one.
+// If a cluster/namespace is in a collection the status becomes the status for that collection.
+bool ResourceSelector::IsFeatureEnabledForClusterAndNamespace(const std::vector<FilteringRule>& filteringRules, const UnorderedMap<std::string, storage::ResourceCollection> rcMap, bool defaultStatus, const std::string& cluster, const std::string& ns) {
+  bool status = defaultStatus;
+
+  for (auto filteringRule : filteringRules) {
+    auto rc = rcMap.find(filteringRule.collectionId());
+    if (rc != rcMap.end()) {
+      if (AreClusterAndNamespaceSelected(rc->second, rcMap, cluster, ns)) {
+        status = filteringRule.status();
+      }
+    }
+  }
+
+  return status;
+}
+
 }  // namespace collector
