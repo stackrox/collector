@@ -226,6 +226,9 @@ class HostInfo {
   // this check to build IDs between MIN_RHEL_BUILD_ID and MAX_RHEL_BUILD_ID
   bool IsRHEL76();
 
+  // Whether we are running on RHEL 8.6
+  bool IsRHEL86();
+
   // Whether this host has eBPF support, based on the kernel version.
   // Only exception is RHEL 7.6, which does support eBPF but runs kernel 3.10 (which ordinarily does
   // not support eBPF)
