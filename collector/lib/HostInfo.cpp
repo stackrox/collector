@@ -177,6 +177,14 @@ bool HostInfo::IsRHEL76() {
   return collector::isRHEL76(kernel, GetOSID());
 }
 
+bool HostInfo::IsRHEL86() {
+  auto kernel = GetKernelVersion();
+  if (GetOSID() == "rhel" || GetOSID() == "rhcos") {
+    return kernel.release.find(".el8_6.") != std::string::npos;
+  }
+  return false;
+}
+
 bool HostInfo::HasEBPFSupport() {
   auto kernel = GetKernelVersion();
   return collector::hasEBPFSupport(kernel, GetOSID());
