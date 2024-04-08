@@ -65,6 +65,10 @@ spec:
     secret:
       secretName: subscription-manager-activation-key
 
+  # The pipeline regularly takes >1h to finish.
+  timeouts:
+    pipeline: 1h30m0s
+
   pipelineSpec:
 
     finally:
