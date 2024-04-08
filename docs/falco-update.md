@@ -35,7 +35,7 @@ With a latest version in hand, you can proceed with the update:
 ```sh
 $ git remote add falco git@github.com:falcosecurity/libs
 $ git fetch falco
-$ git checkout upstream-main
+$ git switch upstream-main
 
 # Make sure to use --ff-only (fast forward) rather than introducing
 # a merge commit
@@ -44,10 +44,10 @@ $ git push origin upstream-main
 $ git push --tags origin upstream-main
 
 # Now update the most recent branch
-$ git checkout module-version-2.9
+$ git switch module-version-2.9
 
 # Perform the update, fixing any conflicts
-$ git checkout -b module-version-2.10
+$ git switch -c module-version-2.10
 $ git rebase <tag> # NOT upstream-main, we should only update to stable tags
 $ git push -u origin module-version-2.10
 ```
