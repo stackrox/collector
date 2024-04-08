@@ -7,7 +7,7 @@
     vm_hashable_name: "{{ item.1 }}-{{ job_id }}"
 
 - set_fact:
-    vm_hashed_name: "{{ vm_hashable_name | hash('md5') }}"
+    vm_hashed_name: "{{ vm_hashable_name | hash('md5') | truncate(8, True, '') }}"
 
 - set_fact:
     arch: "{{ item.0.value.arch | default('amd64') }}"
