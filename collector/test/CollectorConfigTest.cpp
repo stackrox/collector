@@ -63,7 +63,7 @@ TEST(CollectorConfigTest, TestSinspCpuPerBufferAdjusted) {
   // High number of CPUs, adjusted value
   hconfig.SetNumPossibleCPUs(150);
   config.MockSetHostConfig(&hconfig);
-  EXPECT_EQ(2, config.GetSinspCpuPerBuffer());
+  EXPECT_EQ(3, config.GetSinspCpuPerBuffer());
 }
 
 }  // namespace collector

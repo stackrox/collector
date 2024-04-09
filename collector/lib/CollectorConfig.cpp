@@ -386,27 +386,30 @@ unsigned int CollectorConfig::GetSinspCpuPerBuffer() const {
 
   if (sinsp_buffer_size_ == 0) {
     CLOG(WARNING) << "Trying to calculate cpu-per-buffer without"
-                     "initialized buffer size. Return raw value.";
+                     "initialized buffer size. Return unmodified "
+                  << sinsp_cpu_per_buffer_ << " CPUs per buffer.";
     return sinsp_cpu_per_buffer_;
   }
 
   if (host_config_.GetNumPossibleCPUs() == 0) {
     CLOG(WARNING) << "Trying to calculate cpu-per-buffer without"
-                     "number of possible CPUs. Return raw value.";
+                     "number of possible CPUs. Return unmodified "
+                  << sinsp_cpu_per_buffer_ << " CPUs per buffer.";
     return sinsp_cpu_per_buffer_;
   }
 
   // Round to the larger value, since one buffer will be allocated even if the
   // last group of CPUs is less than sinsp_cpu_per_buffer_
-  n_buffers = std::ceil((host_config_.GetNumPossibleCPUs() / sinsp_cpu_per_buffer_));
-  max_n_buffers = std::ceil(sinsp_total_buffer_size_ / sinsp_buffer_size_);
+  n_buffers = std::ceil(((float)host_config_.GetNumPossibleCPUs() / (float)sinsp_cpu_per_buffer_));
+  max_n_buffers = std::ceil((float)sinsp_total_buffer_size_ / (float)sinsp_buffer_size_);
 
   // Baseline case, nothing to adjust
-  if (n_buffers <= max_n_buffers)
+  if (n_buffers <= max_n_buffers) {
     return sinsp_cpu_per_buffer_;
+  }
 
   // Otherwise reduce sinsp_cpu_per_buffer_ to fit into the total limit
-  return host_config_.GetNumPossibleCPUs() / max_n_buffers;
+  return std::ceil((float)host_config_.GetNumPossibleCPUs() / (float)max_n_buffers);
 }
 
 void CollectorConfig::SetSinspBufferSize(unsigned int buffer_size) {
