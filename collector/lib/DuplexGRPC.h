@@ -6,6 +6,7 @@
 
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/async_stream.h>
+#include <google/protobuf/util/json_util.h>
 
 #include "Logging.h"
 
