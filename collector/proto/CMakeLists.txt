@@ -17,9 +17,23 @@ set(ROX_PROTO_FILES
     internalapi/sensor/network_connection_iservice.proto
     internalapi/sensor/network_enums.proto
     internalapi/sensor/signal_iservice.proto
+    storage/container_runtime.proto
+    storage/cve.proto
+    storage/deployment.proto
+    storage/image.proto
+    storage/labels.proto
     storage/network_flow.proto
+    storage/policy.proto
     storage/process_indicator.proto
     storage/runtime_filters.proto
+    storage/rbac.proto
+    storage/resource_collection.proto
+    storage/role.proto
+    storage/scope.proto
+    storage/taints.proto
+    storage/traits.proto
+    storage/user.proto
+    storage/vulnerability.proto
 )
 
 add_library(rox-proto ${ROX_PROTO_FILES})
