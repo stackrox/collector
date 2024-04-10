@@ -275,3 +275,120 @@ To find VM definitions see [group_vars/all.yml](./group_vars/all.yml)
 
 [^1]: there should be no CI related functionality within this directory
       outside the `ci/` inventory.
+
+### K8S based integration tests
+There are a set of tests that can be run on k8s clusters. In order to make
+these as easy as possible to execute, there is an ansible playbook at
+`$REPO_ROOT/ansible/k8s-integration-tests.yml`. This playbook runs solely on
+ansible variables and attempts to be as flexible and as easy to use as
+possible, so they also allow the tests to run on a throw away KinD cluster that
+is created and deleted by the playbook, or on an existing cluster of your own.
+
+The following section will describe how to configure and run these
+tests.
+
+#### Inventory file
+As with every ansible playbook, an inventory file is required. The k8s tests
+are prepared to use the local kubeconfig, so if you want to run the tests on an
+existing cluster or by using a throw away one with KinD, the following
+inventory should be enough:
+
+```yaml
+all:
+  hosts:
+    local:
+      ansible_connection: local
+      ansible_python_interpreter: "{{ansible_playbook_python}}"
+```
+
+For other configurations that require access to remote systems, refer to
+[ansible's guide on managing inventories](https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html).
+
+#### Variables
+The following is a list of variables used by the playbook.
+
+| Variable Name | Description |
+| --- | --- |
+| tester_image | The image to run the tests, created from the `build-image` integration-tests make target. |
+| collector_image | The collector image to be tested. |
+| collector_root | The path to the root of the collector repo, used for dumping logs. |
+| cluster_name | When using a KinD cluster, the name to be used for the cluster where the tests will run. Default: collector-tests |
+
+Easiest way to manage these variables is to create a yaml file that can later
+be supplied to the `ansible-playbook` command, the following should work as a
+template for such a file
+
+```yaml
+---
+tester_image: <tester image>
+collector_image: <collector image>
+collector_root: <path to the collector repo>
+cluster_name: collector-tests
+```
+
+#### Tags
+The playbook also has a some tags that allow for more flexibility in execution,
+keep in mind that if the `--tags` argument is not supplied to
+`ansible-playbook` it will run all steps in the playbook.
+
+| Tag name | Description |
+| --- | --- |
+| test-only | Run the tests and clean up the environment, skip all steps handling disposable KinD clusters. |
+| cleanup | Run the cleanup steps only, removing k8s objects such as namespaces, cluster roles, etc... |
+
+#### Examples
+##### Run all tests on a throw-away KinD cluster
+
+Assuming your inventory is in `inventory.yml` and variables are set in a
+`k8s-tests.yml` file, the following command will create a KinD cluster, run
+all integration tests and teardown the cluster.
+
+```sh
+ansible-playbook \
+    -i inventory.yml \
+    -e '@k8s-tests.yml' \
+    k8s-integration-tests.yml
+```
+
+##### Run the tests on an existing cluster
+
+The following command will only run the integration tests, once the playbook
+is done executing the cluster will be left in the same state it was before
+running it.
+
+```sh
+ansible-playbook \
+    -i inventory.yml \
+    -e '@k8s-tests.yml' \
+    --tags test-only \
+    k8s-integration-tests.yml
+```
+
+##### Run the cleanup steps on a cluster
+
+In case something goes wrong and you want to remove all objects created by the
+playbook from your cluster, the `cleanup` tag can be used.
+
+```sh
+ansible-playbook \
+    -i inventory.yml \
+    -e '@k8s-tests.yml' \
+    --tags cleanup \
+    k8s-integration-tests.yml
+```
+
+##### Running the playbook step-by-step
+
+This is more of a general ansible-playbook tip, but still useful for debugging.
+Using the `--step` argument will cause the ansible-playbook command to stop at
+every step and wait for user confirmation.
+
+```sh
+ansible-playbook \
+    -i inventory.yml \
+    -e '@k8s-tests.yml' \
+    --step \
+    k8s-integration-tests.yml
+```
+For more tips on troubleshooting ansible playbooks see
+[Executing playbooks for troubleshooting](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_startnstep.html).

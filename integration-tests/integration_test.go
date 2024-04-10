@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/types"
 	"github.com/stackrox/collector/integration-tests/suites"
-	"github.com/stackrox/collector/integration-tests/suites/config"
-	"github.com/stackrox/collector/integration-tests/suites/types"
 )
 
 func TestProcessNetwork(t *testing.T) {

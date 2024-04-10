@@ -1,7 +1,7 @@
 package suites
 
 import (
-	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/pkg/config"
 )
 
 type ImageLabelJSONTestSuite struct {

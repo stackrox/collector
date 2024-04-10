@@ -5,6 +5,7 @@
 
 #include <linux/ioctl.h>
 
+#include "libsinsp/container_engine/sinsp_container_type.h"
 #include "libsinsp/parsers.h"
 
 #include <google/protobuf/util/time_util.h>
@@ -13,6 +14,7 @@
 #include "CollectorException.h"
 #include "CollectorStats.h"
 #include "ContainerEngine.h"
+#include "ContainerMetadata.h"
 #include "EventNames.h"
 #include "HostInfo.h"
 #include "KernelDriver.h"
@@ -88,9 +90,31 @@ bool Service::InitKernel(const CollectorConfig& config, const DriverCandidate& c
       inspector_->get_parser()->set_track_connection_status(true);
     }
 
-    auto engine = std::make_shared<ContainerEngine>(inspector_->m_container_manager);
-    auto* container_engines = inspector_->m_container_manager.get_container_engines();
-    container_engines->push_back(engine);
+    container_metadata_inspector_.reset(new ContainerMetadata(inspector_.get()));
+
+    if (config.EnableRuntimeFilters()) {
+      uint64_t mask = 1 << CT_CRI |
+                      1 << CT_CRIO |
+                      1 << CT_CONTAINERD;
+
+      if (config.UseDockerCe()) {
+        mask |= 1 << CT_DOCKER;
+      }
+
+      if (config.UsePodmanCe()) {
+        mask |= 1 << CT_PODMAN;
+      }
+
+      inspector_->set_container_engine_mask(mask);
+
+      // k8s naming conventions specify that max length be 253 characters
+      // (the extra 2 are just for a nice 0xFF).
+      inspector_->set_container_labels_max_len(255);
+    } else {
+      auto engine = std::make_shared<ContainerEngine>(inspector_->m_container_manager);
+      auto* container_engines = inspector_->m_container_manager.get_container_engines();
+      container_engines->push_back(engine);
+    }
 
     inspector_->set_filter("container.id != 'host'");
 
