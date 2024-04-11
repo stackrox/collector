@@ -392,7 +392,7 @@ unsigned int CollectorConfig::GetSinspCpuPerBuffer() const {
   }
 
   if (sinsp_cpu_per_buffer_ == 0) {
-    CLOG(WARNING) << "Trying to calculate cpu-per-buffer without"
+    CLOG(WARNING) << "Trying to calculate cpu-per-buffer without "
                      "requested cpu-per-buffer. Return unmodified "
                   << sinsp_cpu_per_buffer_ << " CPUs per buffer.";
     return sinsp_cpu_per_buffer_;
