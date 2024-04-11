@@ -391,6 +391,13 @@ unsigned int CollectorConfig::GetSinspCpuPerBuffer() const {
     return sinsp_cpu_per_buffer_;
   }
 
+  if (sinsp_cpu_per_buffer_ == 0) {
+    CLOG(WARNING) << "Trying to calculate cpu-per-buffer without "
+                     "requested cpu-per-buffer. Return unmodified "
+                  << sinsp_cpu_per_buffer_ << " CPUs per buffer.";
+    return sinsp_cpu_per_buffer_;
+  }
+
   if (host_config_.GetNumPossibleCPUs() == 0) {
     CLOG(WARNING) << "Trying to calculate cpu-per-buffer without"
                      "number of possible CPUs. Return unmodified "
