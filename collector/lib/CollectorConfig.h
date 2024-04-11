@@ -114,11 +114,12 @@ class CollectorConfig {
 
   // One ring buffer will be initialized for this many CPUs
   unsigned int sinsp_cpu_per_buffer_ = 0;
-  // Size of one ring buffer, in bytes. The default value 512Mi is based on the
-  // default memory limit set of the Collector DaemonSet, which is 1Gi.
-  unsigned int sinsp_buffer_size_ = 512 * 1024 * 1024;
-  // Allowed size of all ring buffers, in bytes
-  unsigned int sinsp_total_buffer_size_ = 0;
+  // Size of one ring buffer, in bytes.
+  unsigned int sinsp_buffer_size_ = 0;
+  // Allowed size of all ring buffers, in bytes. The default value 512Mi is
+  // based on the default memory limit set of the Collector DaemonSet, which is
+  // 1Gi.
+  unsigned int sinsp_total_buffer_size_ = 512 * 1024 * 1024;
 
   // Max size of the thread cache. This parameter essentially translated into
   // the upper boundary for memory consumption. Note that Falco puts it's own
