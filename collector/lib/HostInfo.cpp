@@ -415,4 +415,15 @@ std::string HostInfo::GetMinikubeVersion() {
   return match.str();
 }
 
+int HostInfo::NumPossibleCPU() {
+  int n_possible_cpus = libbpf_num_possible_cpus();
+  if (n_possible_cpus < 0) {
+    CLOG(WARNING) << "Cannot get number of possible CPUs: "
+                  << StrError(n_possible_cpus);
+    return 0;
+  }
+
+  return n_possible_cpus;
+}
+
 }  // namespace collector

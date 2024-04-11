@@ -63,6 +63,12 @@ are there. This parameter affects CO-RE BPF only.
 * `ROX_COLLECTOR_SINSP_BUFFER_SIZE`: Specifies the size of a sinsp buffer in
 bytes. The default value is 16 MB.
 
+* `ROX_COLLECTOR_SINSP_TOTAL_BUFFER_SIZE`: Specifies the allowed total size of
+all sinsp buffer in bytes. If the actual value will be larger than that due to
+number of available CPUs, `ROX_COLLECTOR_SINSP_CPU_PER_BUFFER` will be adjusted
+to match the limit. The default value is 512 MB and based on the default memory
+limit specified for Collector DaemonSet in ACS.
+
 * `ROX_COLLECTOR_SINSP_THREAD_CACHE_SIZE`: Puts upper limit on how many
 thread info objects are going to be kept in memory. Since for process-based
 workloads it's the main part of memory consumption, this value effectively

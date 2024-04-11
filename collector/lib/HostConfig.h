@@ -22,8 +22,12 @@ class HostConfig {
     collection_method_ = method;
   }
 
+  unsigned int GetNumPossibleCPUs() const { return num_possible_cpus_; }
+  void SetNumPossibleCPUs(unsigned int value) { num_possible_cpus_ = value; }
+
  private:
   std::optional<collector::CollectionMethod> collection_method_;
+  unsigned int num_possible_cpus_;
 };
 
 #endif  // COLLECTOR_HOSTCONFIG_H

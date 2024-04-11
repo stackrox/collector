@@ -243,6 +243,16 @@ class HostInfo {
   // Check for BPF tracepoint program type support
   bool HasBPFTracingSupport();
 
+  // Return number of possible CPU cores. It relies on
+  // libbpf_num_possible_cpus, and "possible" means the same as in
+  // "/sys/devices/system/cpu/possible":
+  //
+  // 	possible: cpus that have been allocated resources and can be brought
+  // 	online if they are present.
+  //
+  // In case of failure, logs the error and returns 0.
+  int NumPossibleCPU();
+
   // The system was booted in UEFI mode.
   virtual bool IsUEFI();
 
