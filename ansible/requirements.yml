@@ -3,3 +3,4 @@ collections:
 - community.general
 - community.docker
 - ibm.cloudcollection
+- kubernetes.core

@@ -6,9 +6,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/stackrox/collector/integration-tests/suites/common"
-	"github.com/stackrox/collector/integration-tests/suites/config"
-	"github.com/stackrox/collector/integration-tests/suites/types"
+	"github.com/stackrox/collector/integration-tests/pkg/collector"
+	"github.com/stackrox/collector/integration-tests/pkg/common"
+	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,7 +33,7 @@ func (s *SocatTestSuite) SetupSuite() {
 	s.RegisterCleanup("socat")
 	s.StartContainerStats()
 
-	collectorOptions := common.CollectorStartupOptions{
+	collectorOptions := collector.StartupOptions{
 		Config: map[string]any{
 			"turnOffScrape": false,
 		},

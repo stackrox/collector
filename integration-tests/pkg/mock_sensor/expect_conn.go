@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/thoas/go-funk"
 
-	"github.com/stackrox/collector/integration-tests/suites/types"
+	"github.com/stackrox/collector/integration-tests/pkg/types"
 )
 
 // ExpectConnections waits up to the timeout for the gRPC server to receive
