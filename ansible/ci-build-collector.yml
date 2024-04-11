@@ -11,6 +11,7 @@
 
   vars:
     collector_root: "{{ ansible_env.HOME }}/collector"
+    local_branch: local
 
   tasks:
     - debug: var=collector_root
@@ -18,8 +19,11 @@
       ansible.builtin.git:
         repo: https://github.com/stackrox/collector
         dest: "{{ collector_root }}"
-        version: "{{ collector_git_sha }}"
-        refspec: "+{{ collector_git_ref | replace('refs/', '') }}"
+        # We fetch the ref (either master, or pull/<ID>/merge) and then
+        # create a local branch based on that. Doing it this way, rather
+        # than with commit hashes, prevents "reference is not a tree" errors
+        version: "{{ local_branch }}"
+        refspec: "+{{ collector_git_ref | replace('refs/', '') }}:{{ local_branch }}"
         recursive: true
       when: arch == "s390x"
 
