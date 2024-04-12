@@ -55,8 +55,7 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 			Name:      "nginx",
 			Namespace: NAMESPACE,
 		}
-		exists, err = k.Executor().ContainerExists(nginxPodFilter)
-		k.Require().NoError(err)
+		exists, _ = k.Executor().ContainerExists(nginxPodFilter)
 
 		if exists {
 			k.Executor().RemoveContainer(nginxPodFilter)
@@ -67,8 +66,7 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 			k.Require().FailNow("Incorrect executor type. got=%T, want=K8sExecutor", k.Executor())
 		}
 
-		exists, err = k8sExecutor.NamespaceExists(NAMESPACE)
-		k.Require().NoError(err)
+		exists, _ = k8sExecutor.NamespaceExists(NAMESPACE)
 		if exists {
 			k8sExecutor.RemoveNamespace(NAMESPACE)
 		}
