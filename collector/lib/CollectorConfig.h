@@ -78,6 +78,7 @@ class CollectorConfig {
   bool EnableRuntimeFilters() const { return enable_runtime_filters_; }
   bool UseDockerCe() const { return use_docker_ce_; }
   bool UsePodmanCe() const { return use_podman_ce_; }
+  bool IsIntrospectionEnabled() const { return enable_introspection_; }
   const std::vector<double>& GetConnectionStatsQuantiles() const { return connection_stats_quantiles_; }
   double GetConnectionStatsError() const { return connection_stats_error_; }
   unsigned int GetConnectionStatsWindow() const { return connection_stats_window_; }
@@ -113,6 +114,7 @@ class CollectorConfig {
   bool enable_runtime_filters_;
   bool use_docker_ce_;
   bool use_podman_ce_;
+  bool enable_introspection_;
   std::vector<double> connection_stats_quantiles_;
   double connection_stats_error_;
   unsigned int connection_stats_window_;
