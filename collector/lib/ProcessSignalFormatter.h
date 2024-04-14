@@ -6,6 +6,7 @@
 #include "storage/process_indicator.pb.h"
 
 #include "CollectorStats.h"
+#include "ContainerMetadata.h"
 #include "EventNames.h"
 #include "ProtoSignalFormatter.h"
 #include "system-inspector/EventExtractor.h"
@@ -14,7 +15,7 @@ namespace collector {
 
 class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
  public:
-  ProcessSignalFormatter(sinsp* inspector) : event_names_(EventNames::GetInstance()) {
+  ProcessSignalFormatter(sinsp* inspector) : event_names_(EventNames::GetInstance()), container_metadata_(inspector) {
     event_extractor_.Init(inspector);
   }
 
@@ -41,6 +42,7 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
 
   const EventNames& event_names_;
   system_inspector::EventExtractor event_extractor_;
+  ContainerMetadata container_metadata_;
 };
 
 }  // namespace collector

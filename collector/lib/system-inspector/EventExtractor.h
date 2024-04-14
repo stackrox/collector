@@ -108,6 +108,9 @@ class EventExtractor {
   FIELD_RAW(client_port, "fd.cport", uint16_t);
   FIELD_RAW(server_port, "fd.sport", uint16_t);
 
+  // k8s metadata
+  FIELD_CSTR(k8s_namespace, "k8s.ns.name");
+
 #undef TINFO_FIELD
 #undef FIELD_RAW
 #undef FIELD_CSTR

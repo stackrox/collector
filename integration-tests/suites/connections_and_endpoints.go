@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stackrox/collector/integration-tests/suites/common"
-	"github.com/stackrox/collector/integration-tests/suites/config"
-	"github.com/stackrox/collector/integration-tests/suites/types"
+	"github.com/stackrox/collector/integration-tests/pkg/collector"
+	"github.com/stackrox/collector/integration-tests/pkg/common"
+	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,7 +32,7 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	s.RegisterCleanup(s.Server.Name, s.Client.Name)
 	s.StartContainerStats()
 
-	collectorOptions := common.CollectorStartupOptions{
+	collectorOptions := collector.StartupOptions{
 		Env: map[string]string{
 			"ROX_PROCESSES_LISTENING_ON_PORT": "true",
 			"ROX_ENABLE_AFTERGLOW":            "false",

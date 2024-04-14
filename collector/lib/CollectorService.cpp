@@ -1,5 +1,7 @@
 #include "CollectorService.h"
 
+#include "ContainerInfoInspector.h"
+
 extern "C" {
 #include <signal.h>
 }
@@ -58,6 +60,8 @@ void CollectorService::RunForever() {
 
   std::unique_ptr<NetworkStatusNotifier> net_status_notifier;
 
+  std::unique_ptr<ContainerInfoInspector> container_info_inspector;
+
   CLOG(INFO) << "Network scrape interval set to " << config_.ScrapeInterval() << " seconds";
 
   if (config_.grpc_channel) {
@@ -97,6 +101,11 @@ void CollectorService::RunForever() {
 
   if (!exporter.start()) {
     CLOG(FATAL) << "Unable to start collector stats exporter";
+  }
+
+  if (config_.IsIntrospectionEnabled()) {
+    container_info_inspector = std::make_unique<ContainerInfoInspector>(system_inspector_.GetContainerMetadataInspector());
+    server.addHandler(container_info_inspector->kBaseRoute, container_info_inspector.get());
   }
 
   system_inspector_.Init(config_, conn_tracker);

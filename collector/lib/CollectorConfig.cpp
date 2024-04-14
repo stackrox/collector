@@ -46,6 +46,13 @@ BoolEnvVar enable_connection_stats("ROX_COLLECTOR_ENABLE_CONNECTION_STATS", true
 
 BoolEnvVar enable_detailed_metrics("ROX_COLLECTOR_ENABLE_DETAILED_METRICS", true);
 
+BoolEnvVar enable_runtime_filters("ROX_COLLECTOR_RUNTIME_FILTERS_ENABLED", false);
+
+BoolEnvVar use_docker_ce("ROX_COLLECTOR_CE_USE_DOCKER", false);
+BoolEnvVar use_podman_ce("ROX_COLLECTOR_CE_USE_PODMAN", false);
+
+BoolEnvVar enable_introspection("ROX_COLLECTOR_INTROSPECTION_ENABLE", false);
+
 }  // namespace
 
 constexpr bool CollectorConfig::kTurnOffScrape;
@@ -71,6 +78,10 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   enable_external_ips_ = enable_external_ips.value();
   enable_connection_stats_ = enable_connection_stats.value();
   enable_detailed_metrics_ = enable_detailed_metrics.value();
+  enable_runtime_filters_ = enable_runtime_filters.value();
+  use_docker_ce_ = use_docker_ce.value();
+  use_podman_ce_ = use_podman_ce.value();
+  enable_introspection_ = enable_introspection.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.push_back(syscall);
