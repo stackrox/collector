@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/stackrox/collector/integration-tests/suites/config"
+	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 

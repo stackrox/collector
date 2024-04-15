@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stackrox/collector/integration-tests/suites/common"
+	"github.com/stackrox/collector/integration-tests/pkg/common"
 )
 
 type GperftoolsTestSuite struct {
