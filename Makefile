@@ -34,8 +34,6 @@ ifneq ($(BUILD_BUILDER_IMAGE), false)
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
 		"$(CURDIR)/builder"
-else
-	docker pull --platform ${PLATFORM} quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
 endif
 
 collector: check-builder
@@ -111,6 +109,8 @@ endif
 start-builder: builder teardown-builder
 	docker run -d \
 		--name $(COLLECTOR_BUILDER_NAME) \
+		--pull missing \
+		--platform ${PLATFORM} \
 		-v $(CURDIR):$(CURDIR) \
 		$(if $(LOCAL_SSH_PORT),-p $(LOCAL_SSH_PORT):22 )\
 		-w $(CURDIR) \

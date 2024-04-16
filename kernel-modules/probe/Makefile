@@ -19,6 +19,22 @@ endif
 # DEBUG = -DBPF_DEBUG
 # BPF_DEBUG_SYMBOLS = -g
 
+# Get the path of the module sources
+#
+FIRST_MAKEFILE := $(firstword $(MAKEFILE_LIST))
+FIRST_MAKEFILE_FILENAME := $(notdir $(FIRST_MAKEFILE))
+FIRST_MAKEFILE_DIRNAME := $(shell basename $(dir $(FIRST_MAKEFILE)))
+
+ifeq ($(FIRST_MAKEFILE_DIRNAME)/$(FIRST_MAKEFILE_FILENAME), scripts/Makefile.build)
+
+# Build phase
+MODULE_MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+MAKEFILE_INC_FILES := $(shell find $(FALCO_DIR) -type f -name Makefile.inc)
+$(info [configure-bpf] Including $(MAKEFILE_INC_FILES))
+include $(MAKEFILE_INC_FILES)
+
+endif
+
 #
 # https://chromium.googlesource.com/chromiumos/third_party/kernel/+/096925a44076ba5c52faa84d255a847130ff341e%5E%21/#F2
 # This commit diverged the ChromiumOS kernel from stock in the area of audit information, which this probe accesses.
@@ -47,6 +63,7 @@ all:
 
 clean:
 	$(MAKE) -C $(KERNELDIR) M=$$PWD clean
+	$(MAKE) -C $(FALCO_DIR) clean
 	@rm -f *~
 
 $(obj)/probe.o: $(src)/collector_probe.c $(FALCO_DIR)/*.h
@@ -55,6 +72,7 @@ $(obj)/probe.o: $(src)/collector_probe.c $(FALCO_DIR)/*.h
 		$(KBUILD_EXTRA_CPPFLAGS) \
 		$(DEBUG) \
 		-I $(FALCO_DIR) \
+		-I $(FALCO_DIR)/../ \
 		-D__KERNEL__ \
 		-DKBUILD_MODNAME=\"collector\" \
 		-D__BPF_TRACING__ \

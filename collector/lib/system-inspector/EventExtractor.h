@@ -17,6 +17,11 @@ class EventExtractor {
   void Init(sinsp* inspector);
   void ClearWrappers();
 
+  static sinsp_filter_check_list& FilterList() {
+    static sinsp_filter_check_list filterlist;
+    return filterlist;
+  }
+
  private:
   struct FilterCheckWrapper {
     FilterCheckWrapper(EventExtractor* extractor, const char* event_name) : event_name(event_name) {
