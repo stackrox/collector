@@ -21,7 +21,7 @@ class ContainerMetadata {
   }
 
   inline std::string GetContainerLabel(const std::string& container_id, const std::string& label) {
-    const auto containers = inspector_->m_container_manager.get_containers();
+    auto containers = inspector_->m_container_manager.get_containers();
     const auto& container = containers->find(container_id);
     if (container == containers->end()) {
       return "";
