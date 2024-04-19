@@ -106,9 +106,9 @@ set(BUILD_LIBSCAP_MODERN_BPF ON CACHE BOOL "Enable modern bpf engine" FORCE)
 # Exclude unneeded progs, generated in a straightforward way as follow:
 # $ bpftool prog | grep tracing | awk '{print $4}' > all_progs.list
 # $ grep -v -f progs_in_use.list all_progs.list > collector/excluded_progs.list
-file(READ "excluded_progs.list" EXCLUDED_PROGS)
-STRING(REGEX REPLACE "\n" "" EXCLUDED_PROGS "${EXCLUDED_PROGS}")
-set(MODERN_BPF_EXCLUDE_PROGS "${EXCLUDED_PROGS}" CACHE STRING "Set of syscalls to exclude from modern bpf engine " FORCE)
-message(INFO "Excluding ${MODERN_BPF_EXCLUDE_PROGS}")
+file(STRINGS "excluded_progs.list" EXCLUDED_PROGS_LIST)
+list(JOIN EXCLUDED_PROGS_LIST "|" EXCLUDED_PROGS)
+set(MODERN_BPF_EXCLUDE_PROGS "^(${EXCLUDED_PROGS})$" CACHE STRING "Set of syscalls to exclude from modern bpf engine " FORCE)
+message(INFO " Excluding ${MODERN_BPF_EXCLUDE_PROGS}")
 
 add_subdirectory(${FALCO_DIR} falco)
