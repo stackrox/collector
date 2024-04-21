@@ -10,16 +10,29 @@ set(ROX_PROTO_FILES
     api/v1/empty.proto
     api/v1/signal.proto
     gogoproto/gogo.proto
-    internalapi/central/runtime_filters.proto
     internalapi/sensor/collector.proto
     internalapi/sensor/collector_iservice.proto
     internalapi/sensor/network_connection_info.proto
     internalapi/sensor/network_connection_iservice.proto
     internalapi/sensor/network_enums.proto
     internalapi/sensor/signal_iservice.proto
+    storage/container_runtime.proto
+    storage/cve.proto
+    storage/deployment.proto
+    storage/image.proto
+    storage/labels.proto
     storage/network_flow.proto
+    storage/policy.proto
     storage/process_indicator.proto
+    storage/rbac.proto
     storage/runtime_filters.proto
+    storage/resource_collection.proto
+    storage/role.proto
+    storage/scope.proto
+    storage/taints.proto
+    storage/traits.proto
+    storage/user.proto
+    storage/vulnerability.proto
 )
 
 add_library(rox-proto ${ROX_PROTO_FILES})
