@@ -196,7 +196,7 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
                   std::optional<IPNet> net = IPNet::parse(str);
 
                   if (net) {
-                    CLOG(INFO) << "Private network : " << *net;
+                    CLOG(INFO) << "Detail network : " << *net;
                     detailed_networks.emplace_back(std::move(*net));
                   } else {
                     CLOG(ERROR) << "Invalid network in ROX_DETAIL_NETWORKS : " << str;
