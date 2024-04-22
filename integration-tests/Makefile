@@ -75,6 +75,15 @@ benchmark: TestBenchmarkCollector
 .PHONY: baseline
 baseline: TestBenchmarkBaseline
 
+.PHONY: syscall-latency
+syscall-latency: syscall-latency-baseline syscall-latency-benchmark
+
+.PHONY: syscall-latency-benchmark
+syscall-latency-benchmark: TestSyscallLatencyBenchmark
+
+.PHONY: syscall-latency-baseline
+syscall-latency-baseline: TestSyscallLatencyBaseline
+
 LOG_FILE ?= integration-test.log
 .PHONY: report
 report:

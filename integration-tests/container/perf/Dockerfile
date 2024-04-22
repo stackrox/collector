@@ -10,10 +10,15 @@ RUN dnf install -y \
     flex \
     kernel-devel \
     make \
+    gcc-g++ \
     openssl-devel
 
 COPY tools /tools
 COPY scripts /scripts
+
+RUN make -C /tools
+
+ENV PATH="${PATH}:/tools/bin"
 
 WORKDIR /root
 
