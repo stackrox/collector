@@ -130,6 +130,7 @@ class ConnectionTracker {
   void EnableExternalIPs(bool enable) { enable_external_ips_ = enable; }
   void UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair>&& ignored_l4proto_port_pairs);
   void UpdateIgnoredNetworks(const std::vector<IPNet>& network_list);
+  void UpdateDetailedNetworks(const std::vector<IPNet>& network_list);
 
   // Emplace a connection into the state ConnMap, or update its timestamp if the supplied timestamp is more recent
   // than the stored one.
@@ -200,6 +201,7 @@ class ConnectionTracker {
   UnorderedMap<Address::Family, bool> known_private_networks_exists_;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
   NRadixTree ignored_networks_;
+  NRadixTree detailed_networks_;
 
   Stats inserted_connections_counters_ = {};
 };

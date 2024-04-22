@@ -76,14 +76,15 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
     return {};
   }
 
-  bool private_addr = !address.IsPublic();
+  // We want to keep private addresses and explicitely requested ones.
+  bool keep_addr = !address.IsPublic() || !detailed_networks_.Find(address).IsNull();
   const bool* known_private_networks_exists = Lookup(known_private_networks_exists_, address.family());
-  if (private_addr && (known_private_networks_exists && !*known_private_networks_exists)) {
+  if (keep_addr && (known_private_networks_exists && !*known_private_networks_exists)) {
     return IPNet(address, 0, true);
   }
 
   const auto& network = known_ip_networks_.Find(address);
-  if (private_addr || Contains(known_public_ips_, address)) {
+  if (keep_addr || Contains(known_public_ips_, address)) {
     return IPNet(address, network.bits(), true);
   }
 
@@ -327,6 +328,12 @@ void ConnectionTracker::UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPa
 void ConnectionTracker::UpdateIgnoredNetworks(const std::vector<IPNet>& network_list) {
   WITH_LOCK(mutex_) {
     ignored_networks_ = NRadixTree(network_list);
+  }
+}
+
+void ConnectionTracker::UpdateDetailedNetworks(const std::vector<IPNet>& network_list) {
+  WITH_LOCK(mutex_) {
+    detailed_networks_ = NRadixTree(network_list);
   }
 }
 
