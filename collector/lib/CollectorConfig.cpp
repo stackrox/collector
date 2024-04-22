@@ -26,6 +26,9 @@ BoolEnvVar network_drop_ignored("ROX_NETWORK_DROP_IGNORED", true);
 // The default value contains link-local addresses for IPv4 (RFC3927) and IPv6 (RFC2462)
 StringListEnvVar ignored_networks("ROX_IGNORE_NETWORKS", std::vector<std::string>({"169.254.0.0/16", "fe80::/10"}));
 
+// Connection endpoints matching a network prefix listed here will never be aggregated.
+StringListEnvVar detailed_networks("ROX_DETAIL_NETWORKS", std::vector<std::string>());
+
 // If true, set curl to be verbose, adding further logging that might be useful for debugging.
 BoolEnvVar set_curl_verbose("ROX_COLLECTOR_SET_CURL_VERBOSE", false);
 
@@ -182,6 +185,21 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
                     ignored_networks.emplace_back(std::move(*net));
                   } else {
                     CLOG(ERROR) << "Invalid network in ROX_IGNORE_NETWORKS : " << str;
+                  }
+                });
+
+  std::for_each(detailed_networks.value().begin(), detailed_networks.value().end(),
+                [&detailed_networks = this->detailed_networks_](const std::string& str) {
+                  if (str.empty())
+                    return;
+
+                  std::optional<IPNet> net = IPNet::parse(str);
+
+                  if (net) {
+                    CLOG(INFO) << "Private network : " << *net;
+                    detailed_networks.emplace_back(std::move(*net));
+                  } else {
+                    CLOG(ERROR) << "Invalid network in ROX_DETAIL_NETWORKS : " << str;
                   }
                 });
 
