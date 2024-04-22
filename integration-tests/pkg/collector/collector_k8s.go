@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
 	"golang.org/x/exp/maps"
@@ -197,6 +198,21 @@ func replaceOrAppendEnvVar(list []coreV1.EnvVar, newVar coreV1.EnvVar) []coreV1.
 }
 
 func (k *K8sCollectorManager) captureLogs() error {
+	err := k.capturePodLogs()
+	if err != nil {
+		return err
+	}
+
+	err = k.capturePodConfiguration()
+	if err != nil {
+		return err
+	}
+
+	err = k.captureNamespaceEvents()
+	return err
+}
+
+func (k *K8sCollectorManager) capturePodLogs() error {
 	req := k.executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).GetLogs("collector", &coreV1.PodLogOptions{})
 	podLogs, err := req.Stream(context.Background())
 	if err != nil {
@@ -204,7 +220,7 @@ func (k *K8sCollectorManager) captureLogs() error {
 	}
 	defer podLogs.Close()
 
-	logFile, err := prepareLog(k)
+	logFile, err := common.PrepareLog(k.testName, "collector.log")
 	if err != nil {
 		return err
 	}
@@ -212,4 +228,12 @@ func (k *K8sCollectorManager) captureLogs() error {
 
 	_, err = io.Copy(logFile, podLogs)
 	return err
+}
+
+func (k *K8sCollectorManager) capturePodConfiguration() error {
+	return k.executor.CapturePodConfiguration(k.testName, TEST_NAMESPACE, "collector")
+}
+
+func (k *K8sCollectorManager) captureNamespaceEvents() error {
+	return k.executor.CaptureNamespaceEvents(k.testName, TEST_NAMESPACE)
 }

@@ -51,6 +51,12 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 			k.sensor.Stop()
 		}
 
+		// Dump logs for the target namespace
+		e, ok := k.Executor().(*executor.K8sExecutor)
+		k.Require().True(ok)
+		err = e.CaptureNamespaceEvents(k.collector.TestName(), NAMESPACE)
+		k.Require().NoError(err)
+
 		nginxPodFilter := executor.ContainerFilter{
 			Name:      "nginx",
 			Namespace: NAMESPACE,
@@ -58,6 +64,8 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 		exists, _ = k.Executor().ContainerExists(nginxPodFilter)
 
 		if exists {
+			err = e.CapturePodConfiguration(k.collector.TestName(), NAMESPACE, "nginx")
+			k.Require().NoError(err)
 			k.Executor().RemoveContainer(nginxPodFilter)
 		}
 

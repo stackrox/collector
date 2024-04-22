@@ -190,7 +190,7 @@ func (c *DockerCollectorManager) captureLogs(containerName string) (string, erro
 		return "", err
 	}
 
-	logFile, err := prepareLog(c)
+	logFile, err := common.PrepareLog(c.testName, "collector.log")
 	if err != nil {
 		return "", err
 	}
