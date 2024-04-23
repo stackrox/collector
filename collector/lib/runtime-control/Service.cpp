@@ -12,6 +12,7 @@ Service::~Service() {
 }
 
 void Service::Init(std::shared_ptr<grpc::Channel> control_channel) {
+  CLOG(INFO) << "In Init";
   this->control_channel_ = control_channel;
 }
 
@@ -39,6 +40,7 @@ void Service::Stop(bool wait) {
 }
 
 void Service::Run() {
+  CLOG(INFO) << "In Run";
   writer_ = DuplexClient::CreateWithReadCallback(
       &sensor::CollectorService::Stub::AsyncCommunicate,
       control_channel_,
@@ -48,6 +50,7 @@ void Service::Run() {
       }));
 
   while (writer_->Sleep(1s)) {
+    CLOG(INFO) << "In while (writer_->Sleep(1s)) {";
     std::unique_lock<std::mutex> lock(global_mutex_);
 
     // TODO
@@ -60,6 +63,7 @@ void Service::Run() {
 }
 
 void Service::Receive(const sensor::MsgToCollector* message) {
+  CLOG(INFO) << "In Receive";
   if (!message) {
     return;
   }
