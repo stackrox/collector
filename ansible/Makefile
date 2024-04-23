@@ -52,7 +52,7 @@ benchmarks: secrets.yml
 	ansible-playbook -i $(CONTEXT) \
 		-e job_id="$(JOB_ID)" \
 		-e @secrets.yml \
-		--tags run-benchmarks \
+		--tags run-benchmarks,run-syscall-latency \
 		benchmarks.yml
 
 .PHONY: create-benchmark-vms
