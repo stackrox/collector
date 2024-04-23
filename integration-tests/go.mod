@@ -86,6 +86,6 @@ replace (
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20230714151239-78b1f5f70b8a
 	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.10-0.20220919093109-89f9785764c6
-	github.com/stackrox/rox => github.com/stackrox/stackrox v0.0.0-20230918143419-23e948778ebe
+	github.com/stackrox/rox => github.com/stackrox/stackrox v0.0.0-20240410165428-30bea07b0269
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
 )
