@@ -1,5 +1,6 @@
 qa:
   performance-phoronix: quay.io/rhacs-eng/collector-performance:phoronix
+  performance-berserker: quay.io/rhacs-eng/collector-performance:berserker
   performance-json-label: quay.io/rhacs-eng/collector-performance:json-label
   performance-stats: quay.io/rhacs-eng/collector-performance:stats
   performance-perf: quay.io/rhacs-eng/collector-performance:perf

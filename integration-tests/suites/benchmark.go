@@ -19,6 +19,7 @@ type BenchmarkBaselineTestSuite struct {
 
 type BenchmarkCollectorTestSuite struct {
 	BenchmarkTestSuiteBase
+	workloads []string
 }
 
 type BenchmarkTestSuiteBase struct {
@@ -126,12 +127,66 @@ func (b *BenchmarkTestSuiteBase) StopPerfTools() {
 }
 
 func (s *BenchmarkCollectorTestSuite) SetupSuite() {
-	s.RegisterCleanup("perf", "bcc", "bpftrace", "init")
+	s.RegisterCleanup("perf", "bcc", "bpftrace", "init",
+		"benchmark-processes", "benchmark-endpoints")
 	s.StartContainerStats()
 
 	s.StartPerfTools()
 
 	s.StartCollector(false, nil)
+}
+
+func (s *IntegrationTestSuiteBase) SpinBerserker(workload string) (string, error) {
+	benchmarkName := fmt.Sprintf("benchmark-%s", workload)
+	benchmarkImage := config.Images().QaImageByKey("performance-berserker")
+
+	err := s.Executor().PullImage(benchmarkImage)
+	if err != nil {
+		return "", err
+	}
+
+	workdir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	volumes := fmt.Sprintf(
+		"%s/container/berserker/workloads/%s/:/etc/berserker/",
+		workdir, workload)
+
+	benchmarkArgs := []string{"-v", volumes, benchmarkImage}
+
+	containerID, err := s.launchContainer(benchmarkName, benchmarkArgs...)
+	if err != nil {
+		return "", err
+	}
+
+	return containerID, nil
+}
+
+func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
+	procContainerID, err := s.SpinBerserker("processes")
+	s.Require().NoError(err)
+
+	endpointsContainerID, err := s.SpinBerserker("endpoints")
+	s.Require().NoError(err)
+
+	s.start = time.Now().UTC()
+
+	// The assumption is that the benchmark is short, and to get better
+	// resolution into when relevant metrics start and stop, tick more
+	// frequently
+	waitTick := 1 * time.Second
+
+	// Container name here is used only for reporting
+	_, err = s.waitForContainerToExit("berserker", procContainerID, waitTick, 0)
+	s.Require().NoError(err)
+
+	_, err = s.waitForContainerToExit("berserker", endpointsContainerID, waitTick, 0)
+
+	s.Require().NoError(err)
+
+	s.stop = time.Now()
 }
 
 func (s *BenchmarkCollectorTestSuite) TestBenchmarkCollector() {
@@ -148,6 +203,7 @@ func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
 }
 
 func (s *BenchmarkBaselineTestSuite) SetupSuite() {
+	s.RegisterCleanup("benchmark-processes", "benchmark-endpoints")
 	s.StartContainerStats()
 	s.StartPerfTools()
 }
