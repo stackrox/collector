@@ -52,6 +52,10 @@ type MockSensor struct {
 	endpoints    map[string]EndpointMap
 	networkMutex sync.Mutex
 
+	OnCollectorRuntimeControlServiceConnect func()
+	collectorRuntimeControlService          sensorAPI.CollectorService_CommunicateServer
+	receivedRuntimeMessages                 chan *sensorAPI.MsgFromCollector
+
 	// every event will be forwarded to these channels, to allow
 	// tests to look directly at the incoming data without
 	// losing anything underneath
@@ -249,11 +253,14 @@ func (m *MockSensor) Start() {
 
 	sensorAPI.RegisterSignalServiceServer(m.grpcServer, m)
 	sensorAPI.RegisterNetworkConnectionInfoServiceServer(m.grpcServer, m)
+	sensorAPI.RegisterCollectorServiceServer(m.grpcServer, m)
 
 	m.processChannel = NewRingChan[*storage.ProcessSignal](gDefaultRingSize)
 	m.lineageChannel = NewRingChan[*storage.ProcessSignal_LineageInfo](gDefaultRingSize)
 	m.connectionChannel = NewRingChan[*sensorAPI.NetworkConnection](gDefaultRingSize)
 	m.endpointChannel = NewRingChan[*sensorAPI.NetworkEndpoint](gDefaultRingSize)
+
+	m.receivedRuntimeMessages = make(chan *sensorAPI.MsgFromCollector)
 
 	go func() {
 		if err := m.grpcServer.Serve(m.listener); err != nil {
@@ -274,6 +281,16 @@ func (m *MockSensor) Stop() {
 	m.processLineages = make(map[string]LineageMap)
 	m.connections = make(map[string]ConnMap)
 	m.endpoints = make(map[string]EndpointMap)
+
+	m.OnCollectorRuntimeControlServiceConnect = nil
+	m.collectorRuntimeControlService = nil
+
+	// unblock the communication thread
+	select {
+	case <-m.receivedRuntimeMessages:
+	default:
+	}
+	m.receivedRuntimeMessages = nil
 
 	m.processChannel.Stop()
 	m.lineageChannel.Stop()
@@ -495,4 +512,48 @@ func (m *MockSensor) translateAddress(addr *sensorAPI.NetworkAddress) string {
 		Port:    uint16(addr.GetPort()),
 	}
 	return ipPortPair.String()
+}
+
+func (m *MockSensor) Communicate(stream sensorAPI.CollectorService_CommunicateServer) error {
+	m.collectorRuntimeControlService = stream
+
+	if m.OnCollectorRuntimeControlServiceConnect != nil {
+		m.OnCollectorRuntimeControlServiceConnect()
+	}
+
+	for {
+		message, err := stream.Recv()
+		if err != nil {
+			break
+		}
+
+		m.receivedRuntimeMessages <- message
+	}
+	m.collectorRuntimeControlService = nil
+
+	return nil
+}
+
+func (m *MockSensor) WaitForRuntimeFiltersAck(timeout int) bool {
+	t := time.After(time.Duration(timeout) * time.Second)
+
+	for {
+		select {
+		case message := <-m.receivedRuntimeMessages:
+			if message.GetCollectorRuntimeConfigAck() != nil {
+				return true
+			}
+		case <-t:
+			return false
+		}
+	}
+}
+
+func (m *MockSensor) SendRuntimeFilters(config *sensorAPI.CollectorRuntimeConfigWithCluster) {
+	m.collectorRuntimeControlService.Send(&sensorAPI.MsgToCollector{
+		Msg: &sensorAPI.MsgToCollector_ConfigWithCluster{
+			ConfigWithCluster: config,
+		},
+	},
+	)
 }
