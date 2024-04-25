@@ -54,7 +54,7 @@ type MockSensor struct {
 
 	OnCollectorRuntimeControlServiceConnect func()
 	collectorRuntimeControlService          sensorAPI.CollectorService_CommunicateServer
-	runtimeFiltersAckReceived               bool
+	receivedRuntimeMessages                 chan *sensorAPI.MsgFromCollector
 
 	// every event will be forwarded to these channels, to allow
 	// tests to look directly at the incoming data without
@@ -260,6 +260,8 @@ func (m *MockSensor) Start() {
 	m.connectionChannel = NewRingChan[*sensorAPI.NetworkConnection](gDefaultRingSize)
 	m.endpointChannel = NewRingChan[*sensorAPI.NetworkEndpoint](gDefaultRingSize)
 
+	m.receivedRuntimeMessages = make(chan *sensorAPI.MsgFromCollector)
+
 	go func() {
 		if err := m.grpcServer.Serve(m.listener); err != nil {
 			log.Fatalf("failed to serve: %v", err)
@@ -282,7 +284,13 @@ func (m *MockSensor) Stop() {
 
 	m.OnCollectorRuntimeControlServiceConnect = nil
 	m.collectorRuntimeControlService = nil
-	m.runtimeFiltersAckReceived = false
+
+	// unblock the communication thread
+	select {
+	case <-m.receivedRuntimeMessages:
+	default:
+	}
+	m.receivedRuntimeMessages = nil
 
 	m.processChannel.Stop()
 	m.lineageChannel.Stop()
@@ -519,13 +527,7 @@ func (m *MockSensor) Communicate(stream sensorAPI.CollectorService_CommunicateSe
 			break
 		}
 
-		switch v := message.GetMsg().(type) {
-		case *sensorAPI.MsgFromCollector_RuntimeFiltersAck:
-			m.logger.Printf("RuntimeFiltersAck")
-			m.runtimeFiltersAckReceived = true
-		default:
-			m.logger.Printf("Unknown object received through CollectorService with type %q", v)
-		}
+		m.receivedRuntimeMessages <- message
 	}
 	m.collectorRuntimeControlService = nil
 
@@ -533,14 +535,18 @@ func (m *MockSensor) Communicate(stream sensorAPI.CollectorService_CommunicateSe
 }
 
 func (m *MockSensor) WaitForRuntimeFiltersAck(timeout int) bool {
-	for timeout > 0 {
-		timeout--
-		if m.runtimeFiltersAckReceived {
-			break
+	t := time.After(time.Duration(timeout) * time.Second)
+
+	for {
+		select {
+		case message := <-m.receivedRuntimeMessages:
+			if message.GetRuntimeFiltersAck() != nil {
+				return true
+			}
+		case <-t:
+			return false
 		}
-		time.Sleep(time.Second)
 	}
-	return m.runtimeFiltersAckReceived
 }
 
 func (m *MockSensor) SendRuntimeFilters(filters *storage.RuntimeFilteringConfiguration) {
