@@ -1,3 +1,4 @@
+#include <GRPCUtil.h>
 #include <Logging.h>
 
 #include <runtime-control/Config.h>
@@ -39,24 +40,37 @@ void Service::Stop(bool wait) {
 }
 
 void Service::Run() {
-  writer_ = DuplexClient::CreateWithReadCallback(
-      &sensor::CollectorService::Stub::AsyncCommunicate,
-      control_channel_,
-      &client_context_,
-      std::function([this](const sensor::MsgToCollector* message) {
-        Receive(message);
-      }));
+  CLOG(DEBUG) << "[runtime-control::Service] Start";
 
-  while (writer_->Sleep(1s)) {
-    std::unique_lock<std::mutex> lock(global_mutex_);
+  while (should_run_) {
+    if (WaitForChannelReady(control_channel_, [this]() -> bool { return !should_run_; })) {
+      CLOG(DEBUG) << "[runtime-control::Service] Channel is ready";
+      writer_ = DuplexClient::CreateWithReadCallback(
+          &sensor::CollectorService::Stub::AsyncCommunicate,
+          control_channel_,
+          &client_context_,
+          std::function([this](const sensor::MsgToCollector* message) {
+            Receive(message);
+          }));
 
-    // TODO
+      SessionLoop();
 
-    if (!should_run_)
-      break;
+      writer_->Finish();
+    }
   }
 
-  writer_->Shutdown();
+  CLOG(DEBUG) << "[runtime-control::Service] Shutdown";
+}
+
+void Service::SessionLoop() {
+  while (should_run_) {
+    if (!writer_->Sleep(1s)) {
+      CLOG(WARNING) << "[runtime-control::Service] Connection interrupted";
+      break;
+    }
+
+    // TODO
+  }
 }
 
 void Service::Receive(const sensor::MsgToCollector* message) {
@@ -68,14 +82,16 @@ void Service::Receive(const sensor::MsgToCollector* message) {
     case sensor::MsgToCollector::kRuntimeFilteringConfiguration: {
       sensor::MsgFromCollector msg;
 
-      CLOG(INFO) << "Receive: RuntimeFilteringConfiguration";
+      CLOG(INFO) << "[runtime-control::Service] Receive: RuntimeFilteringConfiguration";
       Config::GetOrCreate().Update(message->runtime_filtering_configuration());
 
       msg.mutable_runtime_filters_ack();
       writer_->WriteAsync(msg);
+
+      break;
     }
     default:
-      CLOG(WARNING) << "runtime-control::Service::Receive() unhandled object with id=" << message->msg_case();
+      CLOG(WARNING) << "[runtime-control::Service] Unhandled object with id=" << message->msg_case();
   }
 }
 

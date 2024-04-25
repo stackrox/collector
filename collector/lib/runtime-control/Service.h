@@ -2,6 +2,7 @@
 #define _RUNTIME_CONTROL_SERVICE_H_
 
 #include <DuplexGRPC.h>
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -27,13 +28,14 @@ class Service {
 
   std::thread thread_;
   std::mutex global_mutex_;
-  bool should_run_ = true;
+  std::atomic_bool should_run_ = true;
   grpc::ClientContext client_context_;
   std::unique_ptr<IDuplexClientWriter<sensor::MsgFromCollector>> writer_;
 
   void Receive(const sensor::MsgToCollector* message);
 
   void Run();
+  void SessionLoop();
 };
 
 }  // namespace collector::runtime_control
