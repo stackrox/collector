@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
@@ -12,7 +13,9 @@ import (
 	"golang.org/x/exp/maps"
 
 	coreV1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
 const (
@@ -161,7 +164,35 @@ func (k *K8sCollectorManager) TearDown() error {
 		}
 	}
 
-	return k.executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).Delete(context.Background(), "collector", metaV1.DeleteOptions{})
+	watcher, err := k.executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).Watch(context.Background(),
+		metaV1.ListOptions{
+			FieldSelector: "metadata.name==collector",
+		})
+	if err != nil {
+		return err
+	}
+	defer watcher.Stop()
+
+	err = k.executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).Delete(context.Background(), "collector", metaV1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+
+	timeout := time.After(60 * time.Second)
+
+	for {
+		select {
+		case event := <-watcher.ResultChan():
+			switch event.Type {
+			case watch.Deleted:
+				return nil
+			default:
+				// nothing to do here
+			}
+		case <-timeout:
+			return errors.NewTimeoutError("Waiting for collector POD to be deleted", 0)
+		}
+	}
 }
 
 func (k *K8sCollectorManager) IsRunning() (bool, error) {
