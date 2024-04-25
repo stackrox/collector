@@ -32,7 +32,9 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
         elfutils-libelf-devel \
         tbb-devel \
         jq-devel \
-        c-ares-devel && \
+        c-ares-devel \
+        # for USDT support
+        systemtap-sdt-devel && \
     /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
     dnf -y --installroot=/mnt clean all
 
