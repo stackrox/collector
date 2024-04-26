@@ -79,7 +79,7 @@ own upper limit on top of that, which is 2^17.
 information could be useful for troubleshooting, but under normal functioning
 is quite verbose. The default is true.
 
-* `DEBUG_ENABLE_INTROSPECTION`: Enable the introspection API and publish the
+* `ROX_COLLECTOR_INTROSPECTION_ENABLE`: Enable the introspection API and publish the
 corresponding endpoints. With this API, it is possible to dump some of the
 internal state of Collector. Refer to the 
 [troubleshooting](troubleshooting.md#introspection-endpoints) section for more details.

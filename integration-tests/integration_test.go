@@ -422,7 +422,7 @@ func TestIntrospectionAPI(t *testing.T) {
 		Port: 8080,
 		CollectorOptions: collector.StartupOptions{
 			Env: map[string]string{
-				"DEBUG_ENABLE_INTROSPECTION": "true",
+				"ROX_COLLECTOR_INTROSPECTION_ENABLE": "true",
 			},
 		},
 		Endpoints: []string{
