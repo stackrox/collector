@@ -10,6 +10,7 @@
 #include "EventMap.h"
 #include "Logging.h"
 #include "Utility.h"
+#include "system-inspector/EventExtractor.h"
 
 namespace collector {
 
@@ -46,6 +47,12 @@ std::string extract_proc_args(sinsp_threadinfo* tinfo) {
 }
 
 }  // namespace
+
+ProcessSignalFormatter::ProcessSignalFormatter(sinsp* inspector) : event_names_(EventNames::GetInstance()), event_extractor_(std::make_unique<system_inspector::EventExtractor>()), container_metadata_(inspector) {
+  event_extractor_->Init(inspector);
+}
+
+ProcessSignalFormatter::~ProcessSignalFormatter() {}
 
 const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* event) {
   if (process_signals[event->get_type()] == ProcessSignalType::UNKNOWN_PROCESS_TYPE) {
@@ -96,8 +103,8 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   // set id
   signal->set_id(UUIDStr());
 
-  const std::string* name = event_extractor_.get_comm(event);
-  const std::string* exepath = event_extractor_.get_exepath(event);
+  const std::string* name = event_extractor_->get_comm(event);
+  const std::string* exepath = event_extractor_->get_exepath(event);
 
   // set name (if name is missing or empty, try to use exec_file_path)
   if (name && !name->empty() && *name != "<NA>") {
@@ -114,14 +121,14 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   }
 
   // set process arguments
-  if (const char* args = event_extractor_.get_proc_args(event)) signal->set_args(args);
+  if (const char* args = event_extractor_->get_proc_args(event)) signal->set_args(args);
 
   // set pid
-  if (const int64_t* pid = event_extractor_.get_pid(event)) signal->set_pid(*pid);
+  if (const int64_t* pid = event_extractor_->get_pid(event)) signal->set_pid(*pid);
 
   // set user and group id credentials
-  if (const uint32_t* uid = event_extractor_.get_uid(event)) signal->set_uid(*uid);
-  if (const uint32_t* gid = event_extractor_.get_gid(event)) signal->set_gid(*gid);
+  if (const uint32_t* uid = event_extractor_->get_uid(event)) signal->set_uid(*uid);
+  if (const uint32_t* gid = event_extractor_->get_gid(event)) signal->set_gid(*gid);
 
   // set time
   auto timestamp = Allocate<Timestamp>();
@@ -129,7 +136,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   signal->set_allocated_time(timestamp);
 
   // set container_id
-  if (const std::string* container_id = event_extractor_.get_container_id(event)) {
+  if (const std::string* container_id = event_extractor_->get_container_id(event)) {
     signal->set_container_id(*container_id);
   }
 
@@ -214,11 +221,11 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
 
 std::string ProcessSignalFormatter::ProcessDetails(sinsp_evt* event) {
   std::stringstream ss;
-  const std::string* path = event_extractor_.get_exepath(event);
-  const std::string* name = event_extractor_.get_comm(event);
-  const std::string* container_id = event_extractor_.get_container_id(event);
-  const char* args = event_extractor_.get_proc_args(event);
-  const int64_t* pid = event_extractor_.get_pid(event);
+  const std::string* path = event_extractor_->get_exepath(event);
+  const std::string* name = event_extractor_->get_comm(event);
+  const std::string* container_id = event_extractor_->get_container_id(event);
+  const char* args = event_extractor_->get_proc_args(event);
+  const int64_t* pid = event_extractor_->get_pid(event);
 
   ss << "Container: " << (container_id ? *container_id : "null")
      << ", Name: " << (name ? *name : "null")

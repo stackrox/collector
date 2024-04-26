@@ -7,6 +7,7 @@
 
 #include "libsinsp/container_engine/sinsp_container_type.h"
 #include "libsinsp/parsers.h"
+#include "libsinsp/sinsp.h"
 
 #include <google/protobuf/util/time_util.h>
 
@@ -15,6 +16,7 @@
 #include "CollectorStats.h"
 #include "ContainerEngine.h"
 #include "ContainerMetadata.h"
+#include "EventExtractor.h"
 #include "EventNames.h"
 #include "HostInfo.h"
 #include "KernelDriver.h"
@@ -33,6 +35,9 @@ constexpr char Service::kModulePath[];
 constexpr char Service::kModuleName[];
 constexpr char Service::kProbePath[];
 constexpr char Service::kProbeName[];
+
+Service::Service() {}
+Service::~Service() {}
 
 void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) {
   // The self-check handlers should only operate during start up,
@@ -398,6 +403,10 @@ void Service::ServePendingProcessRequests() {
 
     pending_process_requests_.pop_front();
   }
+}
+
+bool Service::SignalHandlerEntry::ShouldHandle(sinsp_evt* evt) const {
+  return event_filter[evt->get_type()];
 }
 
 }  // namespace collector::system_inspector

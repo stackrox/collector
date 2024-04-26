@@ -18,6 +18,8 @@ extern "C" {
 #include <fstream>
 #include <regex>
 
+#include <libsinsp/sinsp.h>
+
 #include "HostInfo.h"
 #include "Logging.h"
 #include "Utility.h"

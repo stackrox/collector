@@ -1,43 +1,32 @@
 #ifndef _CONTAINER_METADATA_H_
 #define _CONTAINER_METADATA_H_
 
-#include "system-inspector/EventExtractor.h"
+#include <memory>
+#include <string>
+
+// forward declarations
+class sinsp;
+class sinsp_evt;
+namespace collector {
+namespace system_inspector {
+class EventExtractor;
+}
+}  // namespace collector
 
 namespace collector {
 
 class ContainerMetadata {
  public:
-  ContainerMetadata(sinsp* inspector) : inspector_(inspector) {
-    event_extractor_.Init(inspector);
-  }
+  ContainerMetadata(sinsp* inspector);
 
-  inline std::string GetNamespace(sinsp_evt* event) {
-    const char* ns = event_extractor_.get_k8s_namespace(event);
-    return ns != nullptr ? ns : "";
-  }
+  std::string GetNamespace(sinsp_evt* event);
 
-  inline std::string GetNamespace(const std::string& container_id) {
-    return GetContainerLabel(container_id, "io.kubernetes.pod.namespace");
-  }
+  std::string GetNamespace(const std::string& container_id);
 
-  inline std::string GetContainerLabel(const std::string& container_id, const std::string& label) {
-    auto containers = inspector_->m_container_manager.get_containers();
-    const auto& container = containers->find(container_id);
-    if (container == containers->end()) {
-      return "";
-    }
-
-    const auto& labels = container->second->m_labels;
-    const auto& label_it = labels.find(label);
-    if (label_it == labels.end()) {
-      return "";
-    }
-
-    return label_it->second;
-  }
+  std::string GetContainerLabel(const std::string& container_id, const std::string& label);
 
  private:
-  system_inspector::EventExtractor event_extractor_;
+  std::unique_ptr<system_inspector::EventExtractor> event_extractor_;
   sinsp* inspector_;
 };
 

@@ -3,14 +3,17 @@
 
 #include <memory>
 
-#include "libsinsp/sinsp.h"
-
 #include <grpcpp/channel.h>
 
 #include "ProcessSignalFormatter.h"
 #include "RateLimit.h"
 #include "SignalHandler.h"
 #include "system-inspector/Service.h"
+
+// forward declarations
+class sinsp;
+class sinsp_evt;
+class sinsp_threadinfo;
 
 namespace collector {
 
