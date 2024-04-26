@@ -33,6 +33,8 @@ type K8sNamespaceTestSuite struct {
 	IntegrationTestSuiteBase
 	tests       []NamespaceTest
 	collectorIP string
+
+	targetNamespaceWatcher watch.Interface
 }
 
 func (k *K8sNamespaceTestSuite) SetupSuite() {
@@ -54,8 +56,6 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 		// Dump logs for the target namespace
 		e, ok := k.Executor().(*executor.K8sExecutor)
 		k.Require().True(ok)
-		err = e.CaptureNamespaceEvents(k.collector.TestName(), NAMESPACE)
-		k.Require().NoError(err)
 
 		nginxPodFilter := executor.ContainerFilter{
 			Name:      "nginx",
@@ -69,14 +69,13 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 			k.Executor().RemoveContainer(nginxPodFilter)
 		}
 
-		k8sExecutor, ok := k.Executor().(*executor.K8sExecutor)
-		if !ok {
-			k.Require().FailNow("Incorrect executor type. got=%T, want=K8sExecutor", k.Executor())
+		if k.targetNamespaceWatcher != nil {
+			k.targetNamespaceWatcher.Stop()
 		}
 
-		exists, _ = k8sExecutor.NamespaceExists(NAMESPACE)
+		exists, _ = e.NamespaceExists(NAMESPACE)
 		if exists {
-			k8sExecutor.RemoveNamespace(NAMESPACE)
+			e.RemoveNamespace(NAMESPACE)
 		}
 	})
 
@@ -240,6 +239,9 @@ func (k *K8sNamespaceTestSuite) launchNginxPod() string {
 	k8sExec := k.Executor().(*executor.K8sExecutor)
 
 	_, err := k8sExec.CreateNamespace(NAMESPACE)
+	eventWatcher, err := k8sExec.CreateNamespaceEventWatcher(k.collector.TestName(), NAMESPACE)
+	k.Require().NoError(err)
+	k.targetNamespaceWatcher = eventWatcher
 
 	pod := &coreV1.Pod{
 		ObjectMeta: metaV1.ObjectMeta{

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -29,12 +30,14 @@ func newK8sExecutor() (*K8sExecutor, error) {
 		return nil, err
 	}
 
+	fmt.Println("Creating clientset")
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		fmt.Printf("Error: Failed to create client: %s", err)
 		return nil, err
 	}
 
+	fmt.Println("Done with executor construction")
 	k8s := &K8sExecutor{
 		clientset: clientset,
 	}
@@ -199,29 +202,36 @@ func (e *K8sExecutor) CapturePodConfiguration(testName, ns, podName string) erro
 	return nil
 }
 
-func (e *K8sExecutor) CaptureNamespaceEvents(testName, ns string) error {
-	events, err := e.clientset.CoreV1().Events(ns).List(context.Background(), metaV1.ListOptions{})
+func (e *K8sExecutor) CreateNamespaceEventWatcher(testName, ns string) (watch.Interface, error) {
+	watcher, err := e.clientset.CoreV1().Events(ns).Watch(context.Background(), metaV1.ListOptions{})
 	if err != nil {
-		return err
+		fmt.Printf("Failed to start event watcher: %s\n", err)
+		return nil, err
 	}
 
-	logFile, err := common.PrepareLog(testName, ns+"-events.jsonl")
-	if err != nil {
-		return err
-	}
-	defer logFile.Close()
-
-	for _, event := range events.Items {
-		eventJson, err := json.Marshal(event)
+	go func(watcher watch.Interface) {
+		logFile, err := common.PrepareLog(testName, ns+"-events.jsonl")
 		if err != nil {
-			return err
+			fmt.Printf("Failed to open event file: %s\n", err)
+			return
 		}
+		defer logFile.Close()
 
-		_, err = logFile.WriteString(string(eventJson) + "\n")
-		if err != nil {
-			return err
+		for event := range watcher.ResultChan() {
+			eventJson, err := json.Marshal(event)
+			if err != nil {
+				fmt.Printf("Failed to marshal event: %+v\n", event)
+				fmt.Printf("%s\n", err)
+				return
+			}
+
+			_, err = logFile.WriteString(string(eventJson) + "\n")
+			if err != nil {
+				fmt.Printf("Failed to write to event file: %s\n", err)
+				return
+			}
 		}
-	}
+	}(watcher)
 
-	return nil
+	return watcher, nil
 }

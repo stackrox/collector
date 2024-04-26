@@ -13,6 +13,7 @@ import (
 
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
 const (
@@ -27,6 +28,8 @@ type K8sCollectorManager struct {
 	config       map[string]any
 
 	testName string
+
+	eventWatcher watch.Interface
 }
 
 func newK8sManager(e executor.K8sExecutor, name string) *K8sCollectorManager {
@@ -107,6 +110,12 @@ func (k *K8sCollectorManager) Setup(options *StartupOptions) error {
 }
 
 func (k *K8sCollectorManager) Launch() error {
+	// Start an events watcher before spawning collector
+	err := k.startNamespaceEventWatcher()
+	if err != nil {
+		return err
+	}
+
 	objectMeta := metaV1.ObjectMeta{
 		Name:      "collector",
 		Namespace: TEST_NAMESPACE,
@@ -132,7 +141,7 @@ func (k *K8sCollectorManager) Launch() error {
 		},
 	}
 
-	_, err := k.executor.CreatePod(TEST_NAMESPACE, pod)
+	_, err = k.executor.CreatePod(TEST_NAMESPACE, pod)
 	return err
 }
 
@@ -160,6 +169,8 @@ func (k *K8sCollectorManager) TearDown() error {
 			return fmt.Errorf("Collector container has non-zero exit code (%d)", exitCode)
 		}
 	}
+
+	k.stopNamespaceEventWatcher()
 
 	return k.executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).Delete(context.Background(), "collector", metaV1.DeleteOptions{})
 }
@@ -203,13 +214,7 @@ func (k *K8sCollectorManager) captureLogs() error {
 		return err
 	}
 
-	err = k.capturePodConfiguration()
-	if err != nil {
-		return err
-	}
-
-	err = k.captureNamespaceEvents()
-	return err
+	return k.capturePodConfiguration()
 }
 
 func (k *K8sCollectorManager) capturePodLogs() error {
@@ -234,6 +239,18 @@ func (k *K8sCollectorManager) capturePodConfiguration() error {
 	return k.executor.CapturePodConfiguration(k.testName, TEST_NAMESPACE, "collector")
 }
 
-func (k *K8sCollectorManager) captureNamespaceEvents() error {
-	return k.executor.CaptureNamespaceEvents(k.testName, TEST_NAMESPACE)
+func (k *K8sCollectorManager) startNamespaceEventWatcher() error {
+	eventWatcher, err := k.executor.CreateNamespaceEventWatcher(k.testName, TEST_NAMESPACE)
+	if err != nil {
+		return err
+	}
+
+	k.eventWatcher = eventWatcher
+	return err
+}
+
+func (k *K8sCollectorManager) stopNamespaceEventWatcher() {
+	if k.eventWatcher != nil {
+		k.eventWatcher.Stop()
+	}
 }
