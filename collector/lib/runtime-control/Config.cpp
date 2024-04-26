@@ -39,8 +39,8 @@ void Config::SetProcessBitMask(bool enabled, std::string container, std::string 
 
   bitMask = 0;
   bitMask = enabled ? (bitMask | kProcessFlag) : (bitMask & ~kProcessFlag);
-  this->containerFeatureBitMask_[container] = &bitMask;
-  this->namespaceFeatureBitMask_[container] = &bitMask;
+  containerFeatureBitMask_[container] = &bitMask;
+  namespaceFeatureBitMask_[container] = &bitMask;
 }
 
 bool Config::IsProcessEnabled(std::string cluster, std::string ns, std::string container_id) {
