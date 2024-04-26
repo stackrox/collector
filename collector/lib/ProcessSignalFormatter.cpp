@@ -10,6 +10,7 @@
 #include "EventMap.h"
 #include "Logging.h"
 #include "Utility.h"
+#include "runtime-control/Config.h"
 
 namespace collector {
 
@@ -243,6 +244,14 @@ bool ProcessSignalFormatter::ValidateProcessDetails(const sinsp_threadinfo* tinf
 
 bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
   const sinsp_threadinfo* tinfo = event->get_thread_info();
+
+  std::string ns = container_metadata_.GetNamespace(event);
+  std::string cluster = "cluster-1";  // Hard coding this for now
+  // config = Config::GetOrCreate();
+  const std::string* container_id = event_extractor_.get_container_id(event);
+  if (!runtime_control::Config::GetOrCreate().IsProcessEnabled(cluster, ns, *container_id)) {
+    return false;
+  }
 
   return ValidateProcessDetails(tinfo);
 }

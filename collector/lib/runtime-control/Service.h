@@ -1,12 +1,13 @@
 #ifndef _RUNTIME_CONTROL_SERVICE_H_
 #define _RUNTIME_CONTROL_SERVICE_H_
 
+#include <DuplexGRPC.h>
 #include <memory>
+#include <mutex>
 #include <thread>
 
 #include <grpcpp/grpcpp.h>
 
-#include <DuplexGRPC.h>
 #include <internalapi/sensor/collector_iservice.grpc.pb.h>
 
 namespace collector::runtime_control {
@@ -26,15 +27,15 @@ class Service {
 
   std::thread thread_;
   std::mutex global_mutex_;
+  bool should_run_ = true;
   grpc::ClientContext client_context_;
   std::unique_ptr<IDuplexClientWriter<sensor::MsgFromCollector>> writer_;
 
   void Receive(const sensor::MsgToCollector* message);
 
   void Run();
-  bool IsRunning();
 };
 
-}
+}  // namespace collector::runtime_control
 
 #endif
