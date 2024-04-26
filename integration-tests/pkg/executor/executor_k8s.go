@@ -30,14 +30,12 @@ func newK8sExecutor() (*K8sExecutor, error) {
 		return nil, err
 	}
 
-	fmt.Println("Creating clientset")
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		fmt.Printf("Error: Failed to create client: %s", err)
 		return nil, err
 	}
 
-	fmt.Println("Done with executor construction")
 	k8s := &K8sExecutor{
 		clientset: clientset,
 	}
@@ -205,7 +203,6 @@ func (e *K8sExecutor) CapturePodConfiguration(testName, ns, podName string) erro
 func (e *K8sExecutor) CreateNamespaceEventWatcher(testName, ns string) (watch.Interface, error) {
 	watcher, err := e.clientset.CoreV1().Events(ns).Watch(context.Background(), metaV1.ListOptions{})
 	if err != nil {
-		fmt.Printf("Failed to start event watcher: %s\n", err)
 		return nil, err
 	}
 
