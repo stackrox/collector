@@ -28,6 +28,8 @@ bool Config::IsProcessEnabled(uint64_t bitMask) {
 }
 
 bool Config::IsProcessEnabled(std::string cluster, std::string ns) {
+  // Make use of ResourceSelector::IsFeatureEnabledForClusterAndNamespace here.
+  // Need to first change the config into something more usable.
   return true;
 }
 
