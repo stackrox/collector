@@ -33,14 +33,14 @@ bool Config::IsProcessEnabled(std::string cluster, std::string ns) {
   return true;
 }
 
-void Config::SetProcessBitMask(bool enabled, std::string container, std::string ns) {
+void Config::SetProcessBitMask(bool enabled, std::string container_id, std::string ns) {
   uint64_t bitMask;
   uint64_t kProcessFlag = 1;
 
   bitMask = 0;
   bitMask = enabled ? (bitMask | kProcessFlag) : (bitMask & ~kProcessFlag);
-  containerFeatureBitMask_[container] = &bitMask;
-  namespaceFeatureBitMask_[container] = &bitMask;
+  containerFeatureBitMask_[container_id] = &bitMask;
+  namespaceFeatureBitMask_[ns] = &bitMask;
 }
 
 bool Config::IsProcessEnabled(std::string cluster, std::string ns, std::string container_id) {
@@ -56,7 +56,7 @@ bool Config::IsProcessEnabled(std::string cluster, std::string ns, std::string c
       return IsProcessEnabled(*bitMask);
     } else {
       bool enabled = IsProcessEnabled(cluster, ns);
-      SetProcessBitMask(enabled, cluster, ns);
+      SetProcessBitMask(enabled, container_id, ns);
       return enabled;
     }
   }
