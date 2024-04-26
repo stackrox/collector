@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/stackrox/collector/integration-tests/pkg/common"
@@ -206,12 +207,12 @@ func (e *K8sExecutor) CreateNamespaceEventWatcher(testName, ns string) (watch.In
 		return nil, err
 	}
 
-	go func(watcher watch.Interface) {
-		logFile, err := common.PrepareLog(testName, ns+"-events.jsonl")
-		if err != nil {
-			fmt.Printf("Failed to open event file: %s\n", err)
-			return
-		}
+	logFile, err := common.PrepareLog(testName, ns+"-events.jsonl")
+	if err != nil {
+		return nil, err
+	}
+
+	go func(watcher watch.Interface, logFile *os.File) {
 		defer logFile.Close()
 
 		for event := range watcher.ResultChan() {
@@ -228,7 +229,7 @@ func (e *K8sExecutor) CreateNamespaceEventWatcher(testName, ns string) (watch.In
 				return
 			}
 		}
-	}(watcher)
+	}(watcher, logFile)
 
 	return watcher, nil
 }
