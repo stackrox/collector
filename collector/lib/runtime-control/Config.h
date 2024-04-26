@@ -8,6 +8,10 @@
 
 #include <storage/runtime_filters.pb.h>
 
+#include "Hash.h"
+
+#include "../ResourceSelector.h"
+
 namespace collector::runtime_control {
 
 class Config {
@@ -18,11 +22,21 @@ class Config {
   bool WaitUntilInitialized(unsigned int timeout_ms);
 
   void Update(const storage::RuntimeFilteringConfiguration& msg);
+  static bool IsProcessEnabled(uint64_t bitMask);
+  bool IsProcessEnabled(std::string cluster, std::string ns, std::string container_id);
+  bool IsProcessEnabled(std::string cluster, std::string ns);
+  void ConfigMessageToConfig(const storage::RuntimeFilteringConfiguration& msg);
 
  private:
   std::mutex mutex_;
   std::condition_variable condition_;
   std::optional<storage::RuntimeFilteringConfiguration> config_message_;
+  UnorderedMap<std::string, uint64_t> namespaceFeatureBitMask_;
+  UnorderedMap<std::string, uint64_t*> containerFeatureBitMask_;
+  void SetProcessBitMask(bool enabled, std::string container, std::string ns);
+  UnorderedMap<storage::RuntimeFilter_RuntimeFilterFeatures, bool> default_status_map_;
+  UnorderedMap<storage::RuntimeFilter_RuntimeFilterFeatures, std::vector<storage::RuntimeFilter_RuntimeFilterRule> > config_by_feature_;
+  UnorderedMap<std::string, storage::ResourceCollection> rcMap_;
 };
 
 }  // namespace collector::runtime_control
