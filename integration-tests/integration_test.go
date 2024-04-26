@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 	"github.com/stackrox/collector/integration-tests/suites"
@@ -414,6 +415,21 @@ func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
 		},
 	}
 	suite.Run(t, mixedHighLowPorts)
+}
+
+func TestIntrospectionAPI(t *testing.T) {
+	endpointTestSuite := &suites.HttpEndpointAvailabilityTestSuite{
+		Port: 8080,
+		CollectorOptions: collector.StartupOptions{
+			Env: map[string]string{
+				"DEBUG_ENABLE_INTROSPECTION": "true",
+			},
+		},
+		Endpoints: []string{
+			"/state/network/connection",
+			"/state/network/endpoint",
+		}}
+	suite.Run(t, endpointTestSuite)
 }
 
 // By default, a failed connection is not reported.
