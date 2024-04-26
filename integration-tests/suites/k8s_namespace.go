@@ -33,51 +33,21 @@ type K8sNamespaceTestSuite struct {
 	IntegrationTestSuiteBase
 	tests       []NamespaceTest
 	collectorIP string
+
+	targetNamespaceWatcher watch.Interface
 }
 
 func (k *K8sNamespaceTestSuite) SetupSuite() {
 	// Ensure the collector pod gets deleted
 	k.T().Cleanup(func() {
-		exists, err := k.Executor().ContainerExists(executor.ContainerFilter{
-			Name:      "collector",
-			Namespace: collector.TEST_NAMESPACE,
-		})
-		k.Require().NoError(err)
-		if exists {
-			k.Collector().TearDown()
-		}
+		k.Collector().TearDown()
 
 		if k.sensor != nil {
 			k.sensor.Stop()
 		}
 
-		// Dump logs for the target namespace
-		e, ok := k.Executor().(*executor.K8sExecutor)
-		k.Require().True(ok)
-		err = e.CaptureNamespaceEvents(k.collector.TestName(), NAMESPACE)
-		k.Require().NoError(err)
-
-		nginxPodFilter := executor.ContainerFilter{
-			Name:      "nginx",
-			Namespace: NAMESPACE,
-		}
-		exists, _ = k.Executor().ContainerExists(nginxPodFilter)
-
-		if exists {
-			err = e.CapturePodConfiguration(k.collector.TestName(), NAMESPACE, "nginx")
-			k.Require().NoError(err)
-			k.Executor().RemoveContainer(nginxPodFilter)
-		}
-
-		k8sExecutor, ok := k.Executor().(*executor.K8sExecutor)
-		if !ok {
-			k.Require().FailNow("Incorrect executor type. got=%T, want=K8sExecutor", k.Executor())
-		}
-
-		exists, _ = k8sExecutor.NamespaceExists(NAMESPACE)
-		if exists {
-			k8sExecutor.RemoveNamespace(NAMESPACE)
-		}
+		k.teardownNginxPod()
+		k.teardownTargetNamespace()
 	})
 
 	// Start Sensor
@@ -121,6 +91,7 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 		expectecNamespace: collector.TEST_NAMESPACE,
 	})
 
+	k.createTargetNamespace()
 	nginxID := k.launchNginxPod()
 	k.Require().Len(nginxID, 12)
 	k.tests = append(k.tests, NamespaceTest{
@@ -235,12 +206,32 @@ func (k *K8sNamespaceTestSuite) getCollectorIP() string {
 	return pod.Status.PodIP
 }
 
-func (k *K8sNamespaceTestSuite) launchNginxPod() string {
-	// Create a namespace for the pod
-	k8sExec := k.Executor().(*executor.K8sExecutor)
+func (k *K8sNamespaceTestSuite) createTargetNamespace() {
+	k8sExec, ok := k.Executor().(*executor.K8sExecutor)
+	k.Require().True(ok)
 
 	_, err := k8sExec.CreateNamespace(NAMESPACE)
+	k.Require().NoError(err)
+	eventWatcher, err := k8sExec.CreateNamespaceEventWatcher(k.collector.TestName(), NAMESPACE)
+	k.Require().NoError(err)
+	k.targetNamespaceWatcher = eventWatcher
+}
 
+func (k *K8sNamespaceTestSuite) teardownTargetNamespace() {
+	if k.targetNamespaceWatcher != nil {
+		k.targetNamespaceWatcher.Stop()
+	}
+
+	e, ok := k.Executor().(*executor.K8sExecutor)
+	k.Require().True(ok)
+
+	exists, _ := e.NamespaceExists(NAMESPACE)
+	if exists {
+		e.RemoveNamespace(NAMESPACE)
+	}
+}
+
+func (k *K8sNamespaceTestSuite) launchNginxPod() string {
 	pod := &coreV1.Pod{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "nginx",
@@ -256,7 +247,9 @@ func (k *K8sNamespaceTestSuite) launchNginxPod() string {
 		},
 	}
 
-	_, err = k8sExec.CreatePod(NAMESPACE, pod)
+	k8sExec, ok := k.Executor().(*executor.K8sExecutor)
+	k.Require().True(ok)
+	_, err := k8sExec.CreatePod(NAMESPACE, pod)
 	k.Require().NoError(err)
 
 	// Wait for nginx pod to start up
@@ -271,4 +264,21 @@ func (k *K8sNamespaceTestSuite) launchNginxPod() string {
 	})
 
 	return k8sExec.ContainerID(pf)
+}
+
+func (k *K8sNamespaceTestSuite) teardownNginxPod() {
+	e, ok := k.Executor().(*executor.K8sExecutor)
+	k.Require().True(ok)
+
+	nginxPodFilter := executor.ContainerFilter{
+		Name:      "nginx",
+		Namespace: NAMESPACE,
+	}
+	exists, _ := k.Executor().ContainerExists(nginxPodFilter)
+
+	if exists {
+		err := e.CapturePodConfiguration(k.collector.TestName(), NAMESPACE, "nginx")
+		k.Require().NoError(err)
+		k.Executor().RemoveContainer(nginxPodFilter)
+	}
 }
