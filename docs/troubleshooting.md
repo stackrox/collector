@@ -540,3 +540,35 @@ $ curl "localhost:8080/state/containers/01e8c0454972"
 Handling connection for 8080
 {"container_id":"01e8c0454972","namespace":"stackrox"}
 ```
+
+### Network endpoint
+
+This endpoint provides visibility into connections and endpoints known to
+collector.
+
+The introspection API endpoints are as follows:
+- `/state/network/endpoint` will return an array of the endpoints known
+  to collector at that point.
+- `/state/network/connection` is similar to the previous, but for connections.
+
+Afterglow is not applied to the data returned by this API.
+
+It is possible to filter the items returned per container_id by providing
+a query parameter: `container=<container_id>`
+
+Example of connection query, limited to container with identifier `c6f030bc4b42`:
+
+```
+$ curl "http://<collector>:8080/state/network/connection?container=c6f030bc4b42"
+{
+  "c6f030bc4b42" : 
+  [
+    {
+      "active" : true,
+      "l4proto" : "TCP",
+      "port" : 443,
+      "to" : "10.96.0.1"
+    }
+  ]
+}
+```
