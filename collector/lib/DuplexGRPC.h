@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstdint>
 
+#include <google/protobuf/util/json_util.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/async_stream.h>
 
