@@ -1,15 +1,11 @@
-//
-// Created by Robby Cochran on 3/28/24.
-//
 #include <gtest/gtest.h>
+#include <runtime-control/Config.h>
 
 #include <google/protobuf/util/json_util.h>
 
 #include "storage/resource_collection.pb.h"
 
 #include "Hash.h"
-// #include "ResourceSelector.h"
-#include <runtime-control/Config.h>
 
 namespace collector {
 
