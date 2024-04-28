@@ -24,10 +24,9 @@ void Config::Update(const storage::RuntimeFilteringConfiguration& msg) {
   condition_.notify_all();
 }
 
-bool Config::IsProcessEnabled(uint64_t bitMask) {
+bool Config::IsFeatureEnabled(uint64_t bitMask, storage::RuntimeFilter_RuntimeFilterFeatures feature) {
   CLOG(INFO) << "bitMask= " << bitMask;
-  int kProcessFlag = 1;
-  return (bitMask & kProcessFlag) != 0;
+  return (bitMask & kFeatureFlags_[feature]) != 0;
 }
 
 void Config::ConfigMessageToConfig(const storage::RuntimeFilteringConfiguration& msg) {
@@ -48,10 +47,10 @@ void Config::ConfigMessageToConfig(const storage::RuntimeFilteringConfiguration&
   }
 }
 
-bool Config::IsProcessEnabled(std::string cluster, std::string ns) {
-  auto filteringRulesPair = config_by_feature_.find(storage::RuntimeFilter_RuntimeFilterFeatures_PROCESSES);
+bool Config::IsFeatureEnabled(std::string cluster, std::string ns, storage::RuntimeFilter_RuntimeFilterFeatures feature) {
+  auto filteringRulesPair = config_by_feature_.find(feature);
   if (filteringRulesPair != config_by_feature_.end()) {
-    bool defaultStatus = default_status_map_[storage::RuntimeFilter_RuntimeFilterFeatures_PROCESSES];
+    bool defaultStatus = default_status_map_[feature];
     auto filteringRules = filteringRulesPair->second;
     return ResourceSelector::IsFeatureEnabledForClusterAndNamespace(filteringRules, rcMap_, defaultStatus, cluster, ns);
   } else {
@@ -59,38 +58,48 @@ bool Config::IsProcessEnabled(std::string cluster, std::string ns) {
   }
 }
 
-void Config::SetProcessBitMask(bool enabled, std::string container_id, std::string ns) {
-  uint64_t bitMask;
-  uint64_t kProcessFlag = 1;
-
-  bitMask = 0;
-  bitMask = enabled ? (bitMask | kProcessFlag) : (bitMask & ~kProcessFlag);
+uint64_t Config::SetFeatureBitMask(uint64_t bitMask, bool enabled, storage::RuntimeFilter_RuntimeFilterFeatures feature) {
+  bitMask = enabled ? (bitMask | kFeatureFlags_[feature]) : (bitMask & ~kFeatureFlags_[feature]);
   CLOG(INFO) << "bitMask= " << bitMask;
+  return bitMask;
+}
+
+void Config::SetBitMask(std::string cluster, std::string ns) {
+  uint64_t bitMask = 0;
+  for (int i = 0; i < storage::RuntimeFilter_RuntimeFilterFeatures_RuntimeFilterFeatures_ARRAYSIZE; i++) {
+    storage::RuntimeFilter_RuntimeFilterFeatures feature = static_cast<storage::RuntimeFilter_RuntimeFilterFeatures>(i);
+    bool enabled = IsFeatureEnabled(cluster, ns, feature);
+    bitMask = SetFeatureBitMask(bitMask, enabled, feature);
+  }
   namespaceFeatureBitMask_[ns] = bitMask;
+}
+
+void Config::SetBitMask(std::string cluster, std::string container_id, std::string ns) {
+  SetBitMask(cluster, ns);
   containerFeatureBitMask_[container_id] = &namespaceFeatureBitMask_[ns];
   CLOG(INFO) << "namespaceFeatureBitMask_[ns]= " << namespaceFeatureBitMask_[ns];
   CLOG(INFO) << "*containerFeatureBitMask_[container_id]= " << *containerFeatureBitMask_[container_id];
 }
 
-bool Config::IsProcessEnabled(std::string cluster, std::string ns, std::string container_id) {
-  CLOG(INFO) << "In IsProcessEnabled";
+// Should probably just take in the container_id, check the containerFeatureBitMask_ map, and only figure out the namespace if the container is not in the map.
+// For now this is easier for testing purposes.
+bool Config::IsFeatureEnabled(std::string cluster, std::string ns, std::string container_id, storage::RuntimeFilter_RuntimeFilterFeatures feature) {
   auto bitMaskPair = containerFeatureBitMask_.find(container_id);
   if (bitMaskPair != containerFeatureBitMask_.end()) {
     CLOG(INFO) << "Found in container map";
     uint64_t* bitMask = bitMaskPair->second;
-    return IsProcessEnabled(*bitMask);
+    return IsFeatureEnabled(*bitMask, feature);
   } else {
     auto bitMaskPairNs = namespaceFeatureBitMask_.find(ns);
     if (bitMaskPairNs != namespaceFeatureBitMask_.end()) {
       CLOG(INFO) << "Found in namespace map";
       uint64_t bitMask = bitMaskPairNs->second;
       containerFeatureBitMask_[container_id] = &namespaceFeatureBitMask_[ns];
-      return IsProcessEnabled(bitMask);
+      return IsFeatureEnabled(bitMask, feature);
     } else {
-      bool enabled = IsProcessEnabled(cluster, ns);
-      CLOG(INFO) << "enabled= " << enabled;
-      SetProcessBitMask(enabled, container_id, ns);
-      return enabled;
+      SetBitMask(cluster, container_id, ns);
+      uint64_t bitMask = *containerFeatureBitMask_[container_id];
+      return IsFeatureEnabled(bitMask, feature);
     }
   }
 }
