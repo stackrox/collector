@@ -43,6 +43,7 @@ class Config {
   uint64_t SetFeatureBitMask(uint64_t bitMask, bool enabled, storage::RuntimeFilter_RuntimeFilterFeatures feature);
   void SetBitMask(std::string cluster, std::string ns);
   void SetBitMask(std::string cluster, std::string container_id, std::string ns);
+  void SetBitMasksForNamespaces(std::string cluster);
   UnorderedMap<storage::RuntimeFilter_RuntimeFilterFeatures, bool> default_status_map_;
   UnorderedMap<storage::RuntimeFilter_RuntimeFilterFeatures, std::vector<storage::RuntimeFilter_RuntimeFilterRule> > config_by_feature_;
   UnorderedMap<std::string, storage::ResourceCollection> rcMap_;

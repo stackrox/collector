@@ -20,6 +20,9 @@ void Config::Update(const storage::RuntimeFilteringConfiguration& msg) {
   std::unique_lock<std::mutex> lock(mutex_);
 
   config_message_.emplace(msg);
+  ConfigMessageToConfig(msg);
+  std::string cluster = "cluster-1";  // Cluster is always the same, so should probably not use it anywhere. Using it but hardcoding it for now.
+  SetBitMasksForNamespaces(cluster);
 
   condition_.notify_all();
 }
@@ -72,6 +75,14 @@ void Config::SetBitMask(std::string cluster, std::string ns) {
     bitMask = SetFeatureBitMask(bitMask, enabled, feature);
   }
   namespaceFeatureBitMask_[ns] = bitMask;
+}
+
+void Config::SetBitMasksForNamespaces(std::string cluster) {
+  for (auto it = namespaceFeatureBitMask_.begin(); it != namespaceFeatureBitMask_.end();) {
+    auto& pair = *it;
+    std::string ns = pair.first;
+    SetBitMask(cluster, ns);
+  }
 }
 
 void Config::SetBitMask(std::string cluster, std::string container_id, std::string ns) {
