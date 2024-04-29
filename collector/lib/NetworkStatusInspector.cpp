@@ -69,8 +69,9 @@ bool NetworkStatusInspector::handleGetEndpoints(struct mg_connection* conn, cons
   std::optional<std::string> containerFilter = GetParameter(queryParams, kQueryParam_container);
 
   for (auto& endpointState : endpointStates) {
-    if (!containerFilter || *containerFilter == endpointState.first.container())
+    if (!containerFilter || *containerFilter == endpointState.first.container()) {
       byContainer[endpointState.first.container()].push_front(&endpointState);
+    }
   }
 
   for (auto& container : byContainer) {
