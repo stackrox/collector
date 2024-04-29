@@ -29,16 +29,13 @@ func (s *HttpEndpointAvailabilityTestSuite) TestAvailability() {
 		resp, err := http.Get(url)
 		s.Require().NoError(err)
 		s.Require().NotNil(resp)
-		if resp != nil {
-			s.Require().Equal(resp.StatusCode, http.StatusOK, "HTTP status code")
+		s.Require().Equal(resp.StatusCode, http.StatusOK, "HTTP status code")
 
-			var buf bytes.Buffer
-			defer resp.Body.Close()
-			_, err = buf.ReadFrom(resp.Body)
-			s.Require().NoError(err)
-			s.Require().True(json.Valid(buf.Bytes()))
-		}
-
+		var buf bytes.Buffer
+		defer resp.Body.Close()
+		_, err = buf.ReadFrom(resp.Body)
+		s.Require().NoError(err)
+		s.Require().True(json.Valid(buf.Bytes()))
 	}
 }
 
