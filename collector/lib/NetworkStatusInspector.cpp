@@ -116,8 +116,9 @@ bool NetworkStatusInspector::handleGetConnections(struct mg_connection* conn, co
   std::optional<std::string> containerFilter = GetParameter(queryParams, kQueryParam_container);
 
   for (auto& connectionState : connectionStates) {
-    if (!containerFilter || *containerFilter == connectionState.first.container())
+    if (!containerFilter || *containerFilter == connectionState.first.container()) {
       byContainer[connectionState.first.container()].push_front(&connectionState);
+    }
   }
 
   for (auto& container : byContainer) {
