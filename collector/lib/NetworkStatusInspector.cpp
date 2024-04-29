@@ -60,45 +60,45 @@ static void SerializeEndpoint(const Endpoint& ep, Json::Value& node) {
   node["port"] = ep.port();
 }
 
-bool NetworkStatusInspector::handleGetEndpoints(struct mg_connection* conn, const QueryParams& queryParams) {
-  collector::AdvertisedEndpointMap endpointStates = conntracker_->FetchEndpointState(true, false);
-  Json::Value bodyRoot(Json::objectValue);
+bool NetworkStatusInspector::handleGetEndpoints(struct mg_connection* conn, const QueryParams& query_params) {
+  collector::AdvertisedEndpointMap endpoint_states = conntracker_->FetchEndpointState(true, false);
+  Json::Value body_root(Json::objectValue);
 
-  std::unordered_map<std::string, std::forward_list<collector::ContainerEndpointMap::value_type*>> byContainer;
+  std::unordered_map<std::string, std::forward_list<collector::ContainerEndpointMap::value_type*>> by_container;
 
-  std::optional<std::string> containerFilter = GetParameter(queryParams, kQueryParam_container);
+  std::optional<std::string> container_filter = GetParameter(query_params, kQueryParam_container);
 
-  for (auto& endpointState : endpointStates) {
-    if (!containerFilter || *containerFilter == endpointState.first.container()) {
-      byContainer[endpointState.first.container()].push_front(&endpointState);
+  for (auto& endpoint_state : endpoint_states) {
+    if (!container_filter || *container_filter == endpoint_state.first.container()) {
+      by_container[endpoint_state.first.container()].push_front(&endpoint_state);
     }
   }
 
-  for (auto& container : byContainer) {
-    const std::string& containerId = container.first;
+  for (auto& container : by_container) {
+    const std::string& container_id = container.first;
 
-    Json::Value containerArray(Json::arrayValue);
+    Json::Value container_array(Json::arrayValue);
 
-    for (auto endpointState : container.second) {
-      const collector::ContainerEndpoint& endpoint = endpointState->first;
-      const collector::ConnStatus& status = endpointState->second;
+    for (auto endpoint_state : container.second) {
+      const collector::ContainerEndpoint& endpoint = endpoint_state->first;
+      const collector::ConnStatus& status = endpoint_state->second;
 
-      Json::Value endpointNode(Json::objectValue);
+      Json::Value endpoint_node(Json::objectValue);
 
-      endpointNode["active"] = status.IsActive();
+      endpoint_node["active"] = status.IsActive();
 
-      endpointNode["l4proto"] = Proto2str(endpoint.l4proto());
+      endpoint_node["l4proto"] = Proto2str(endpoint.l4proto());
 
-      endpointNode["endpoint"] = Json::objectValue;
-      SerializeEndpoint(endpoint.endpoint(), endpointNode["endpoint"]);
+      endpoint_node["endpoint"] = Json::objectValue;
+      SerializeEndpoint(endpoint.endpoint(), endpoint_node["endpoint"]);
 
-      containerArray.append(endpointNode);
+      container_array.append(endpoint_node);
     }
 
-    bodyRoot[containerId] = containerArray;
+    body_root[container_id] = container_array;
   }
 
-  std::string buffer = Json::writeString(jsonStreamWriterBuilder_, bodyRoot);
+  std::string buffer = Json::writeString(json_stream_writer_builder_, body_root);
 
   mg_send_http_ok(conn, "application/json", buffer.size());
 
@@ -107,50 +107,50 @@ bool NetworkStatusInspector::handleGetEndpoints(struct mg_connection* conn, cons
   return true;
 }
 
-bool NetworkStatusInspector::handleGetConnections(struct mg_connection* conn, const QueryParams& queryParams) {
-  collector::ConnMap connectionStates = conntracker_->FetchConnState(true, false);
-  Json::Value bodyRoot(Json::objectValue);
+bool NetworkStatusInspector::handleGetConnections(struct mg_connection* conn, const QueryParams& query_params) {
+  collector::ConnMap connection_states = conntracker_->FetchConnState(true, false);
+  Json::Value body_root(Json::objectValue);
 
-  std::unordered_map<std::string, std::forward_list<collector::ConnMap::value_type*>> byContainer;
+  std::unordered_map<std::string, std::forward_list<collector::ConnMap::value_type*>> by_container;
 
-  std::optional<std::string> containerFilter = GetParameter(queryParams, kQueryParam_container);
+  std::optional<std::string> container_filter = GetParameter(query_params, kQueryParam_container);
 
-  for (auto& connectionState : connectionStates) {
-    if (!containerFilter || *containerFilter == connectionState.first.container()) {
-      byContainer[connectionState.first.container()].push_front(&connectionState);
+  for (auto& connection_state : connection_states) {
+    if (!container_filter || *container_filter == connection_state.first.container()) {
+      by_container[connection_state.first.container()].push_front(&connection_state);
     }
   }
 
-  for (auto& container : byContainer) {
-    const std::string& containerId = container.first;
+  for (auto& container : by_container) {
+    const std::string& container_id = container.first;
 
-    Json::Value containerArray(Json::arrayValue);
+    Json::Value container_array(Json::arrayValue);
 
-    for (auto connectionState : container.second) {
-      const collector::Connection& connection = connectionState->first;
-      const collector::ConnStatus& status = connectionState->second;
+    for (auto connection_state : container.second) {
+      const collector::Connection& connection = connection_state->first;
+      const collector::ConnStatus& status = connection_state->second;
 
-      Json::Value connectionNode(Json::objectValue);
+      Json::Value connection_node(Json::objectValue);
       std::string l4proto;
 
-      connectionNode["active"] = status.IsActive();
+      connection_node["active"] = status.IsActive();
 
-      connectionNode["l4proto"] = Proto2str(connection.l4proto());
+      connection_node["l4proto"] = Proto2str(connection.l4proto());
 
       if (connection.is_server()) {
-        connectionNode["from"] = IPNet2str(connection.remote().network());
-        connectionNode["port"] = connection.local().port();
+        connection_node["from"] = IPNet2str(connection.remote().network());
+        connection_node["port"] = connection.local().port();
       } else {
-        connectionNode["to"] = IPNet2str(connection.remote().network());
-        connectionNode["port"] = connection.remote().port();
+        connection_node["to"] = IPNet2str(connection.remote().network());
+        connection_node["port"] = connection.remote().port();
       }
 
-      containerArray.append(connectionNode);
+      container_array.append(connection_node);
     }
-    bodyRoot[containerId] = containerArray;
+    body_root[container_id] = container_array;
   }
 
-  std::string buffer = Json::writeString(jsonStreamWriterBuilder_, bodyRoot);
+  std::string buffer = Json::writeString(json_stream_writer_builder_, body_root);
 
   mg_send_http_ok(conn, "application/json", buffer.size());
 

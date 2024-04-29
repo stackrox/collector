@@ -26,7 +26,7 @@ class NetworkStatusInspector : public IntrospectionEndpoint {
 
  private:
   const std::shared_ptr<ConnectionTracker> conntracker_;
-  Json::StreamWriterBuilder jsonStreamWriterBuilder_;
+  Json::StreamWriterBuilder json_stream_writer_builder_;
 
   static const std::string kQueryParam_container;  // = "container"
 
