@@ -75,11 +75,16 @@ class CollectorConfig {
   bool EnableExternalIPs() const { return enable_external_ips_; }
   bool EnableConnectionStats() const { return enable_connection_stats_; }
   bool EnableDetailedMetrics() const { return enable_detailed_metrics_; }
+  bool EnableRuntimeFilters() const { return enable_runtime_filters_; }
+  bool UseDockerCe() const { return use_docker_ce_; }
+  bool UsePodmanCe() const { return use_podman_ce_; }
+  bool IsIntrospectionEnabled() const { return enable_introspection_; }
   const std::vector<double>& GetConnectionStatsQuantiles() const { return connection_stats_quantiles_; }
   double GetConnectionStatsError() const { return connection_stats_error_; }
   unsigned int GetConnectionStatsWindow() const { return connection_stats_window_; }
   unsigned int GetSinspBufferSize() const { return sinsp_buffer_size_; }
-  unsigned int GetSinspCpuPerBuffer() const { return sinsp_cpu_per_buffer_; }
+  unsigned int GetSinspCpuPerBuffer() const;
+  unsigned int GetSinspTotalBufferSize() const { return sinsp_total_buffer_size_; }
   unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
@@ -107,14 +112,22 @@ class CollectorConfig {
   bool enable_external_ips_;
   bool enable_connection_stats_;
   bool enable_detailed_metrics_;
+  bool enable_runtime_filters_;
+  bool use_docker_ce_;
+  bool use_podman_ce_;
+  bool enable_introspection_;
   std::vector<double> connection_stats_quantiles_;
   double connection_stats_error_;
   unsigned int connection_stats_window_;
 
   // One ring buffer will be initialized for this many CPUs
-  unsigned int sinsp_cpu_per_buffer_;
-  // Size of one ring buffer, in bytes
-  unsigned int sinsp_buffer_size_;
+  unsigned int sinsp_cpu_per_buffer_ = 0;
+  // Size of one ring buffer, in bytes.
+  unsigned int sinsp_buffer_size_ = 0;
+  // Allowed size of all ring buffers, in bytes. The default value 512Mi is
+  // based on the default memory limit set of the Collector DaemonSet, which is
+  // 1Gi.
+  unsigned int sinsp_total_buffer_size_ = 512 * 1024 * 1024;
 
   // Max size of the thread cache. This parameter essentially translated into
   // the upper boundary for memory consumption. Note that Falco puts it's own
@@ -127,6 +140,12 @@ class CollectorConfig {
   void HandleAfterglowEnvVars();
   void HandleConnectionStatsEnvVars();
   void HandleSinspEnvVars();
+
+  // Protected, used for testing purposes
+  void SetSinspBufferSize(unsigned int buffer_size);
+  void SetSinspTotalBufferSize(unsigned int total_buffer_size);
+  void SetSinspCpuPerBuffer(unsigned int buffer_size);
+  void SetHostConfig(HostConfig* config);
 };
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);

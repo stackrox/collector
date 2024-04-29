@@ -1,0 +1,106 @@
+name: K8S based integration tests
+
+on:
+  workflow_call:
+   inputs:
+      collector-tag:
+        description: |
+          Tag used for running the integration tests
+        type: string
+        required: true
+      collector-qa-tag:
+        description: |
+          Tag used for QA containers
+        type: string
+        required: true
+
+env:
+  ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
+  COLLECTOR_TESTS_IMAGE: quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}
+  COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+
+jobs:
+  k8s-integration-tests:
+    name: Run k8s integration tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r "${{ github.workspace }}/ansible/requirements.txt"
+          ansible-galaxy collection install -r "${{ github.workspace }}/ansible/requirements.yml"
+
+      - name: Create inventory.yml
+        run: |
+          cat << EOF > /tmp/inventory.yml
+          all:
+            hosts:
+              localhost:
+                ansible_connection: local
+                ansible_python_interpreter: "{{ansible_playbook_python}}"
+          EOF
+
+      - name: Create ansible variables file
+        run: |
+          cat << EOF > /tmp/vars.yml
+          ---
+          tester_image: ${{ env.COLLECTOR_TESTS_IMAGE }}
+          collector_image: ${{ env.COLLECTOR_IMAGE }}
+          collector_root: ${{ github.workspace }}
+          EOF
+
+      - name: Login to quay.io/rhacs-eng
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+
+      - name: Pull tests image
+        run: |
+          docker pull ${{ env.COLLECTOR_TESTS_IMAGE }}
+
+      - name: Pull collector image
+        run: |
+          # Collector image is pulled to prevent timeout errors due
+          # to inconsistent timing
+          docker pull ${{ env.COLLECTOR_IMAGE }}
+
+      - name: Run tests
+        run: |
+          ansible-playbook \
+            -i /tmp/inventory.yml \
+            -e @/tmp/vars.yml \
+            ansible/k8s-integration-tests.yml
+
+      - name: Store artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k8s-logs
+          path: |
+            ${{ github.workspace }}/integration-tests/container-logs/**/*
+
+  notify:
+    runs-on: ubuntu-latest
+    if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name == 'push'
+    needs:
+      - k8s-integration-tests
+    steps:
+      - name: Slack notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_ONCALL_WEBHOOK }}
+          SLACK_CHANNEL: team-acs-collector-oncall
+          SLACK_COLOR: failure
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: "K8S Integration tests failed."
+          MSG_MINIMAL: actions url,commit
+          SLACK_MESSAGE: |
+            @acs-collector-oncall

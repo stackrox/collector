@@ -43,6 +43,8 @@ RUN dnf -y update \
         wget \
         which \
         bpftool \
+        # for USDT support
+        systemtap-sdt-devel \
     && dnf clean all
 
 # Build dependencies from source

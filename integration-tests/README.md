@@ -82,3 +82,56 @@ COLLECTOR_BCC_COMMAND='syscount --latency' make benchmark
 # Record perf events, writing /tmp
 COLLECTOR_PERF_COMMAND='record -o /tmp/perf.data' make benchmark
 ```
+
+## Useful jq queries for K8S based log files
+The K8S based tests that run on KinD are able to dump events for namespaces
+and configuration used by pods involved in tests for later inspection. However,
+these dumps are done in JSON files and can be quite bulky, so using `jq` for
+narrowing down data and formatting is highly recommended.
+
+For reference and other use cases not covered here, please refer to the jq
+manual: https://jqlang.github.io/jq/manual/
+
+### Get the container configuration from a pod
+```sh
+$ jq '.spec.containers[]' TestK8sNamespace-collector-tests-collector-config.json
+{
+  "name": "collector",
+  "image": "quay.io/stackrox-io/collector:3.18.x-146-g3538c194be-dirty",
+  "ports": [
+    {
+      "containerPort": 8080,
+      "protocol": "TCP"
+    }
+  ],
+  "env": [
+    {
+      "name": "GRPC_SERVER",
+      "value": "tester-svc:9999"
+    },
+...
+```
+
+### Get all events from the collector pod
+```sh
+$ jq 'select(.involvedObject.name == "collector")' core-bpf/TestK8sNamespace-collector-tests-events.jsonl
+{
+  "metadata": {
+    "name": "collector.17c772d099db6bb6",
+    "namespace": "collector-tests",
+    "uid": "f467c96e-b8c1-4ef2-8505-773fe711af92",
+    "resourceVersion": "475",
+    "creationTimestamp": "2024-04-18T18:20:23Z",
+    "managedFields": [
+      {
+        "manager": "kube-scheduler",
+        "operation": "Update",
+        "apiVersion": "v1",
+        "time": "2024-04-18T18:20:23Z",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:count": {},
+          "f:firstTimestamp": {},
+          "f:involvedObject": {},
+...
+```

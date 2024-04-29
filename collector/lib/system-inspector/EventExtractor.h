@@ -17,6 +17,11 @@ class EventExtractor {
   void Init(sinsp* inspector);
   void ClearWrappers();
 
+  static sinsp_filter_check_list& FilterList() {
+    static sinsp_filter_check_list filterlist;
+    return filterlist;
+  }
+
  private:
   struct FilterCheckWrapper {
     FilterCheckWrapper(EventExtractor* extractor, const char* event_name) : event_name(event_name) {
@@ -107,6 +112,9 @@ class EventExtractor {
   // File/network related
   FIELD_RAW(client_port, "fd.cport", uint16_t);
   FIELD_RAW(server_port, "fd.sport", uint16_t);
+
+  // k8s metadata
+  FIELD_CSTR(k8s_namespace, "k8s.ns.name");
 
 #undef TINFO_FIELD
 #undef FIELD_RAW

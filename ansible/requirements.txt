@@ -2,3 +2,4 @@ ansible
 requests
 google-auth
 selinux
+kubernetes

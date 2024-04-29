@@ -108,8 +108,8 @@ class ModBuilder(Builder):
 
 def main(task_file):
     oracle_kernels = r"(?:.*el7uek.*)"
-    fc39_kernels = r"(?:(?:6\.[6-9]\..*)|(?:6\.[1-9][0-9]\..*)|(:?[7-9]\.\d+\..*))"
-    fc36_kernels = r"(?:(?:5\.[1-9]\d+\..*)|(?:6\.[0-5]\..*))"
+    fc39_kernels = r"(?:(?:6\.[1-9]\..*)|(?:6\.[1-9][0-9]\..*)|(:?[7-9]\.\d+\..*))"
+    fc36_kernels = r"(?:(?:5\.[1-9]\d*\..*)|(?:6\.[0-5]\..*))"
     rhel8_kernels = r"(?:(?:4|5)\.\d+\..*)"
     rhel7_kernels = r"(?:3\.\d+\..*)"
     rhel7_ebpf_kernels = r"(?:(?:3|4|5)\.\d+\..*)"
@@ -126,8 +126,8 @@ def main(task_file):
         oracle,
         fc39,
         fc36,
-        rhel7_ebpf,
         rhel8,
+        rhel7_ebpf,
         rhel7
     ]
 

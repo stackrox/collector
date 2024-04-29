@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/thoas/go-funk"
 
-	"github.com/stackrox/collector/integration-tests/suites/types"
+	"github.com/stackrox/collector/integration-tests/pkg/types"
 )
 
 func (s *MockSensor) ExpectProcessesN(t *testing.T, containerID string, timeout time.Duration, n int) []types.ProcessInfo {
@@ -125,13 +125,14 @@ func (s *MockSensor) waitProcessesN(
 	}
 
 	tick := time.Tick(tickSeconds)
+	timer := time.After(timeout)
 
 loop:
 	for {
 		select {
 		case <-tick:
 			tickFn()
-		case <-time.After(timeout):
+		case <-timer:
 			timeoutFn()
 			return make([]types.ProcessInfo, 0)
 		case proc := <-s.LiveProcesses():

@@ -32,7 +32,9 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
         elfutils-libelf-devel \
         tbb-devel \
         jq-devel \
-        c-ares-devel && \
+        c-ares-devel \
+        # for USDT support
+        systemtap-sdt-devel && \
     /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
     dnf -y --installroot=/mnt clean all
 
@@ -134,7 +136,7 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
     rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
 
-FROM scratch
+FROM scratch as collector-common
 
 COPY --from=rpm-implanter-app /mnt /
 
@@ -144,19 +146,16 @@ ARG COLLECTOR_VERSION=0.0.1-todo
 WORKDIR /
 
 LABEL \
-    com.redhat.component="rhacs-collector-container" \
     com.redhat.license_terms="https://www.redhat.com/agreements" \
-    description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
+    description="This image supports runtime data collection for Red Hat Advanced Cluster Security for Kubernetes" \
     distribution-scope="public" \
-    io.k8s.description="This image supports runtime data collection in the StackRox Kubernetes Security Platform" \
-    io.k8s.display-name="collector" \
+    io.k8s.description="This image supports runtime data collection for Red Hat Advanced Cluster Security for Kubernetes" \
     io.openshift.tags="rhacs,collector,stackrox" \
     maintainer="Red Hat, Inc." \
-    name="rhacs-collector-rhel8" \
     # TODO(ROX-20236): release label is required by EC, figure what to put in the release version on rebuilds.
     release="0" \
     source-location="https://github.com/stackrox/collector" \
-    summary="Runtime data collection for the StackRox Kubernetes Security Platform" \
+    summary="Runtime data collection for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     version=${COLLECTOR_VERSION} \
     vendor="Red Hat, Inc."
@@ -166,7 +165,6 @@ ARG CMAKE_BUILD_DIR
 
 ENV COLLECTOR_HOST_ROOT=/host
 
-COPY --from=unpacker /kernel-modules /kernel-modules
 COPY kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
@@ -185,3 +183,19 @@ CMD collector-wrapper.sh \
     --collector-config=$COLLECTOR_CONFIG \
     --collection-method=$COLLECTION_METHOD \
     --grpc-server=$GRPC_SERVER
+
+FROM collector-common AS collector-slim
+
+LABEL \
+    com.redhat.component="rhacs-collector-slim-container" \
+    io.k8s.display-name="collector-slim" \
+    name="rhacs-collector-slim-rhel8"
+
+FROM collector-common AS collector
+
+LABEL \
+    com.redhat.component="rhacs-collector-container" \
+    io.k8s.display-name="collector" \
+    name="rhacs-collector-rhel8"
+
+COPY --from=unpacker /kernel-modules /kernel-modules
