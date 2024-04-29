@@ -98,7 +98,7 @@ bool NetworkStatusInspector::handleGetEndpoints(struct mg_connection* conn, cons
     body_root[container_id] = container_array;
   }
 
-  std::string buffer = Json::writeString(json_stream_writer_builder_, body_root);
+  std::string buffer = writer_.write(body_root);
 
   mg_send_http_ok(conn, "application/json", buffer.size());
 
@@ -150,7 +150,7 @@ bool NetworkStatusInspector::handleGetConnections(struct mg_connection* conn, co
     body_root[container_id] = container_array;
   }
 
-  std::string buffer = Json::writeString(json_stream_writer_builder_, body_root);
+  std::string buffer = writer_.write(body_root);
 
   mg_send_http_ok(conn, "application/json", buffer.size());
 
