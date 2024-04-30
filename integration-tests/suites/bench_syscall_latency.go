@@ -3,6 +3,7 @@ package suites
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -26,6 +27,8 @@ type SyscallAnalysis struct {
 	Median float64 `json:"median"`
 	Mean   float64 `json:"mean"`
 	N      int     `json:"n"`
+	Max    uint64  `json:"max"`
+	Min    uint64  `json:"min"`
 }
 
 type Analysis struct {
@@ -192,5 +195,7 @@ func processRawSyscall(raw []uint64) (*SyscallAnalysis, error) {
 		Median: median,
 		Mean:   mean,
 		N:      len(raw),
+		Max:    slices.Max(raw),
+		Min:    slices.Min(raw),
 	}, nil
 }

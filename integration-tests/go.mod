@@ -1,6 +1,6 @@
 module github.com/stackrox/collector/integration-tests
 
-go 1.19
+go 1.21
 
 require (
 	github.com/gonum/stat v0.0.0-20181125101827-41a0da705a5b
