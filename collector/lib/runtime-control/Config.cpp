@@ -66,6 +66,7 @@ bool Config::IsFeatureEnabled(std::string cluster, std::string ns, storage::Runt
 }
 
 uint64_t Config::SetFeatureBitMask(uint64_t bitMask, bool enabled, storage::RuntimeFilterFeatures feature) {
+  CLOG(INFO) << "kFeatureFlags_[feature]= " << kFeatureFlags_[feature];
   bitMask = enabled ? (bitMask | kFeatureFlags_[feature]) : (bitMask & ~kFeatureFlags_[feature]);
   return bitMask;
 }
@@ -73,8 +74,10 @@ uint64_t Config::SetFeatureBitMask(uint64_t bitMask, bool enabled, storage::Runt
 void Config::SetBitMask(std::string cluster, std::string ns) {
   uint64_t bitMask = 0;
   for (int i = 0; i < storage::RuntimeFilterFeatures_ARRAYSIZE; i++) {
+    CLOG(INFO) << "i= " << i;
     storage::RuntimeFilterFeatures feature = static_cast<storage::RuntimeFilterFeatures>(i);
     bool enabled = IsFeatureEnabled(cluster, ns, feature);
+    CLOG(INFO) << "enabled= " << enabled;
     bitMask = SetFeatureBitMask(bitMask, enabled, feature);
   }
   CLOG(INFO) << "ns= " << ns << " bitMask= " << bitMask;
