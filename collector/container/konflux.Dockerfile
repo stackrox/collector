@@ -5,7 +5,7 @@ ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 # TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available.
 FROM registry.access.redhat.com/ubi8/ubi:latest AS ubi-normal
-FROM registry.access.redhat.com/ubi8/ubi:latest AS rpm-implanter-builder
+FROM ubi-normal AS rpm-implanter-builder
 
 COPY --from=ubi-normal / /mnt
 COPY ./.konflux /tmp/.konflux
@@ -94,7 +94,8 @@ RUN ./builder/install/install-dependencies.sh && \
 FROM brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0 AS drivers-build
 
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS unpacker
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS ubi-minimal
+FROM ubi-minimal AS unpacker
 
 RUN microdnf install -y findutils
 WORKDIR /staging
@@ -116,7 +117,6 @@ RUN if [[ "$(ls -A /kernel-modules)" == "" ]]; then \
     fi
 
 # Application
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS ubi-minimal
 FROM ubi-normal AS rpm-implanter-app
 
 COPY --from=ubi-minimal / /mnt
