@@ -74,8 +74,9 @@ void CollectorService::RunForever() {
       return;
     }
     CLOG(INFO) << "Sensor connectivity is successful";
-
+    CLOG(INFO) << "Before runtime_control_service.Init(config_.grpc_channel)";
     runtime_control_service.Init(config_.grpc_channel);
+    CLOG(INFO) << "Before runtime_control_service.Start()";
     runtime_control_service.Start();
   }
 

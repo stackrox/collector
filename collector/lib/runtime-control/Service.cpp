@@ -13,12 +13,14 @@ Service::~Service() {
 }
 
 void Service::Init(std::shared_ptr<grpc::Channel> control_channel) {
+  CLOG(INFO) << "[runtime-control::Service] In Service::Init";
   this->control_channel_ = control_channel;
 }
 
 void Service::Start() {
   std::unique_lock<std::mutex> lock(global_mutex_);
 
+  CLOG(INFO) << "[runtime-control::Service] In Service::Start()";
   if (!thread_.joinable()) {
     thread_ = std::thread(&Service::Run, this);
   }

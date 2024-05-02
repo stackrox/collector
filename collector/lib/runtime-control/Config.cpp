@@ -28,25 +28,29 @@ void Config::Update(const storage::RuntimeFilteringConfiguration& msg) {
 }
 
 bool Config::IsFeatureEnabled(uint64_t bitMask, storage::RuntimeFilterFeatures feature) {
-  CLOG(INFO) << "bitMask= " << bitMask;
   return (bitMask & kFeatureFlags_[feature]) != 0;
 }
 
 void Config::ConfigMessageToConfig(const storage::RuntimeFilteringConfiguration& msg) {
   for (storage::RuntimeFilter runtimeConfig : msg.runtime_filters()) {
+    CLOG(INFO) << "runtimeConfig.feature()= " << runtimeConfig.feature();
     if (runtimeConfig.default_status().compare("on") == 0) {
       default_status_map_[runtimeConfig.feature()] = true;
+      CLOG(INFO) << "Setting default to true";
     } else {
       default_status_map_[runtimeConfig.feature()] = false;
+      CLOG(INFO) << "Setting default to false";
     }
 
     for (auto runtimeConfigRule : runtimeConfig.rules()) {
       config_by_feature_[runtimeConfig.feature()].push_back(runtimeConfigRule);
+      CLOG(INFO) << "Adding rule to config";
     }
   }
 
   for (storage::ResourceCollection rc : msg.resource_collections()) {
     rcMap_[rc.id()] = rc;
+    CLOG(INFO) << "Adding rc.id()= " << rc.id();
   }
 }
 
@@ -63,7 +67,6 @@ bool Config::IsFeatureEnabled(std::string cluster, std::string ns, storage::Runt
 
 uint64_t Config::SetFeatureBitMask(uint64_t bitMask, bool enabled, storage::RuntimeFilterFeatures feature) {
   bitMask = enabled ? (bitMask | kFeatureFlags_[feature]) : (bitMask & ~kFeatureFlags_[feature]);
-  CLOG(INFO) << "bitMask= " << bitMask;
   return bitMask;
 }
 
@@ -74,6 +77,7 @@ void Config::SetBitMask(std::string cluster, std::string ns) {
     bool enabled = IsFeatureEnabled(cluster, ns, feature);
     bitMask = SetFeatureBitMask(bitMask, enabled, feature);
   }
+  CLOG(INFO) << "ns= " << ns << " bitMask= " << bitMask;
   namespaceFeatureBitMask_[ns] = bitMask;
 }
 
@@ -97,7 +101,8 @@ void Config::SetBitMask(std::string cluster, std::string container_id, std::stri
 bool Config::IsFeatureEnabled(std::string cluster, std::string ns, std::string container_id, storage::RuntimeFilterFeatures feature) {
   auto bitMaskPair = containerFeatureBitMask_.find(container_id);
   if (bitMaskPair != containerFeatureBitMask_.end()) {
-    CLOG(INFO) << "Found in container map";
+    CLOG(INFO) << "Found in container map"
+               << " container_id= " << container_id << " ns= " << ns;
     uint64_t* bitMask = bitMaskPair->second;
     return IsFeatureEnabled(*bitMask, feature);
   } else {
