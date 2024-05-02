@@ -86,6 +86,7 @@ void Config::SetBitMasksForNamespaces(std::string cluster) {
     auto& pair = *it;
     std::string ns = pair.first;
     SetBitMask(cluster, ns);
+    ++it;
   }
 }
 
