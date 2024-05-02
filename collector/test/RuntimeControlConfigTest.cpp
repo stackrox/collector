@@ -145,7 +145,7 @@ TEST_F(RuntimeControlConfigTest, Process) {
 
   runtime_control::Config::GetOrCreate().ConfigMessageToConfig(runtimeFilteringConfiguration);
 
-  storage::RuntimeFilter_RuntimeFilterFeatures feature = storage::RuntimeFilter_RuntimeFilterFeatures_PROCESSES;
+  storage::RuntimeFilterFeatures feature = storage::RuntimeFilterFeatures::PROCESSES;
 
   EXPECT_FALSE(runtime_control::Config::GetOrCreate().IsFeatureEnabled("cluster-1", "marketing", "qwerty", feature));
   EXPECT_TRUE(runtime_control::Config::GetOrCreate().IsFeatureEnabled("cluster-1", "default", "asdf", feature));

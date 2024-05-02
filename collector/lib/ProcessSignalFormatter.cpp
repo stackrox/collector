@@ -10,6 +10,7 @@
 #include "EventMap.h"
 #include "Logging.h"
 #include "Utility.h"
+#include "runtime-control/Config.h"
 #include "system-inspector/EventExtractor.h"
 
 namespace collector {
@@ -250,6 +251,15 @@ bool ProcessSignalFormatter::ValidateProcessDetails(const sinsp_threadinfo* tinf
 
 bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
   const sinsp_threadinfo* tinfo = event->get_thread_info();
+
+  const std::string* container_id = event_extractor_->get_container_id(event);
+  const std::string cluster = "cluster-1";
+  std::string ns = container_metadata_.GetNamespace(event);
+
+  storage::RuntimeFilterFeatures feature = storage::RuntimeFilterFeatures::PROCESSES;
+  if (!runtime_control::Config::GetOrCreate().IsFeatureEnabled(cluster, ns, *container_id, feature)) {
+    return false;
+  }
 
   return ValidateProcessDetails(tinfo);
 }
