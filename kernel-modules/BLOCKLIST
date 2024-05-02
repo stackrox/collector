@@ -91,3 +91,4 @@
 # https://github.com/falcosecurity/libs/issues/918
 # Since kmods are not supported anyway, block these combination
 ~.*\.el8_9\..* * mod
+~.*\.el9_4\..* ~2\.[3-9]\..* *
