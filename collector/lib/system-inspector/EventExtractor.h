@@ -78,10 +78,21 @@ class EventExtractor {
     if (!event) return nullptr;                             \
     sinsp_threadinfo* tinfo = event->get_thread_info(true); \
     if (!tinfo) return nullptr;                             \
-    return &tinfo->m_##fieldname;                           \
+    return &tinfo->fieldname;                               \
   }
 
-#define TINFO_FIELD(id) TINFO_FIELD_RAW(id, id, decltype(std::declval<sinsp_threadinfo>().m_##id))
+#define TINFO_FIELD_RAW_GETTER(id, getter, type)            \
+ public:                                                    \
+  type internal_##id;                                       \
+  const type* get_##id(sinsp_evt* event) {                  \
+    if (!event) return nullptr;                             \
+    sinsp_threadinfo* tinfo = event->get_thread_info(true); \
+    if (!tinfo) return nullptr;                             \
+    internal_##id = tinfo->getter();                        \
+    return &internal_##id;                                  \
+  }
+
+#define TINFO_FIELD(id) TINFO_FIELD_RAW(id, m_##id, decltype(std::declval<sinsp_threadinfo>().m_##id))
 
   // Fields can be made available for querying by using a number of macros:
   // - TINFO_FIELD_RAW(id, fieldname, type): exposes the m_<fieldname> field of threadinfo via get_<id>()
@@ -102,8 +113,8 @@ class EventExtractor {
   TINFO_FIELD(exe);
   TINFO_FIELD(exepath);
   TINFO_FIELD(pid);
-  TINFO_FIELD_RAW(uid, user.uid, uint32_t);
-  TINFO_FIELD_RAW(gid, group.gid, uint32_t);
+  TINFO_FIELD_RAW_GETTER(uid, m_user.uid, uint32_t);
+  TINFO_FIELD_RAW_GETTER(gid, m_group.gid, uint32_t);
   FIELD_CSTR(proc_args, "proc.args");
 
   // General event information
