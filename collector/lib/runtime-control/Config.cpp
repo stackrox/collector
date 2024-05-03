@@ -10,16 +10,10 @@ Config& Config::GetOrCreate() {
   return config;
 }
 
-bool Config::WaitUntilInitialized(unsigned int timeout_ms) {
-  std::unique_lock<std::mutex> lock(mutex_);
-
-  return config_message_ || (condition_.wait_for(lock, std::chrono::milliseconds(timeout_ms)) == std::cv_status::no_timeout);
-}
-
 void Config::Update(const storage::RuntimeFilteringConfiguration& msg) {
   std::unique_lock<std::mutex> lock(mutex_);
 
-  config_message_.emplace(msg);
+  config_message_ = msg;
   ConfigMessageToConfig(msg);
   std::string cluster = "cluster-1";  // Cluster is always the same, so should probably not use it anywhere. Using it but hardcoding it for now.
   SetBitMasksForNamespaces(cluster);

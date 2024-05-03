@@ -20,12 +20,18 @@ class Config {
     for (int i = 0; i < storage::RuntimeFilterFeatures_ARRAYSIZE; i++) {
       kFeatureFlags_[i] = 1UL << (i + 1);
     }
+
+    storage::RuntimeFilter processRuntime;
+    storage::RuntimeFilterFeatures processFeature = storage::RuntimeFilterFeatures::PROCESSES;
+    processRuntime.set_feature(processFeature);
+    processRuntime.set_default_status("on");
+
+    auto runtimeFilters = config_message_.mutable_runtime_filters();
+    runtimeFilters->Add()->CopyFrom(processRuntime);
+    ConfigMessageToConfig(config_message_);
   }
 
   static Config& GetOrCreate();
-
-  // returns true when initialized, false for a timeout.
-  bool WaitUntilInitialized(unsigned int timeout_ms);
 
   void Update(const storage::RuntimeFilteringConfiguration& msg);
   bool IsFeatureEnabled(uint64_t bitMask, storage::RuntimeFilterFeatures feature);
@@ -36,7 +42,7 @@ class Config {
  private:
   std::mutex mutex_;
   std::condition_variable condition_;
-  std::optional<storage::RuntimeFilteringConfiguration> config_message_;
+  storage::RuntimeFilteringConfiguration config_message_;
   uint64_t kFeatureFlags_[storage::RuntimeFilterFeatures_ARRAYSIZE];
   UnorderedMap<std::string, uint64_t> namespaceFeatureBitMask_;
   UnorderedMap<std::string, uint64_t*> containerFeatureBitMask_;
