@@ -55,14 +55,17 @@ void Config::ConfigMessageToConfig(const storage::RuntimeFilteringConfiguration&
 }
 
 bool Config::IsFeatureEnabled(std::string cluster, std::string ns, storage::RuntimeFilterFeatures feature) {
+  std::vector<storage::RuntimeFilter_RuntimeFilterRule> filteringRules;
+  bool defaultStatus = false;
   auto filteringRulesPair = config_by_feature_.find(feature);
   if (filteringRulesPair != config_by_feature_.end()) {
-    bool defaultStatus = default_status_map_[feature];
-    auto filteringRules = filteringRulesPair->second;
-    return ResourceSelector::IsFeatureEnabledForClusterAndNamespace(filteringRules, rcMap_, defaultStatus, cluster, ns);
-  } else {
-    return false;
+    filteringRules = filteringRulesPair->second;
   }
+  auto defaultStatusPair = default_status_map_.find(feature);
+  if (defaultStatusPair != default_status_map_.end()) {
+    defaultStatus = default_status_map_[feature];
+  }
+  return ResourceSelector::IsFeatureEnabledForClusterAndNamespace(filteringRules, rcMap_, defaultStatus, cluster, ns);
 }
 
 uint64_t Config::SetFeatureBitMask(uint64_t bitMask, bool enabled, storage::RuntimeFilterFeatures feature) {
