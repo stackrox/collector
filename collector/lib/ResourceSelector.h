@@ -1,7 +1,3 @@
-//
-// Created by Robby Cochran on 3/28/24.
-//
-
 #ifndef RESOURCESELECTOR_H
 #define RESOURCESELECTOR_H
 #include <regex>

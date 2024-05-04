@@ -1,7 +1,3 @@
-//
-// Created by Robby Cochran on 3/28/24.
-//
-
 #include "ResourceSelector.h"
 
 #include <regex>

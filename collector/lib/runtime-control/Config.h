@@ -16,6 +16,15 @@ namespace collector::runtime_control {
 
 class Config {
  public:
+  static Config& GetOrCreate();
+
+  void Update(const storage::RuntimeFilteringConfiguration& msg);
+  bool IsFeatureEnabled(uint64_t bitMask, storage::RuntimeFilterFeatures feature);
+  bool IsFeatureEnabled(const std::string& cluster, const std::string& ns, const std::string& container_id, storage::RuntimeFilterFeatures feature);
+  bool IsFeatureEnabled(const std::string& cluster, const std::string& ns, storage::RuntimeFilterFeatures feature);
+  void ConfigMessageToConfig(const storage::RuntimeFilteringConfiguration& msg);
+
+ private:
   Config() {
     for (int i = 0; i < storage::RuntimeFilterFeatures_ARRAYSIZE; i++) {
       kFeatureFlags_[i] = 1UL << (i + 1);
@@ -30,16 +39,6 @@ class Config {
     runtimeFilters->Add()->CopyFrom(processRuntime);
     ConfigMessageToConfig(config_message_);
   }
-
-  static Config& GetOrCreate();
-
-  void Update(const storage::RuntimeFilteringConfiguration& msg);
-  bool IsFeatureEnabled(uint64_t bitMask, storage::RuntimeFilterFeatures feature);
-  bool IsFeatureEnabled(std::string cluster, std::string ns, std::string container_id, storage::RuntimeFilterFeatures feature);
-  bool IsFeatureEnabled(std::string cluster, std::string ns, storage::RuntimeFilterFeatures feature);
-  void ConfigMessageToConfig(const storage::RuntimeFilteringConfiguration& msg);
-
- private:
   std::mutex mutex_;
   std::condition_variable condition_;
   storage::RuntimeFilteringConfiguration config_message_;
@@ -47,9 +46,9 @@ class Config {
   UnorderedMap<std::string, uint64_t> namespaceFeatureBitMask_;
   UnorderedMap<std::string, uint64_t*> containerFeatureBitMask_;
   uint64_t SetFeatureBitMask(uint64_t bitMask, bool enabled, storage::RuntimeFilterFeatures feature);
-  void SetBitMask(std::string cluster, std::string ns);
-  void SetBitMask(std::string cluster, std::string container_id, std::string ns);
-  void SetBitMasksForNamespaces(std::string cluster);
+  void SetBitMask(const std::string& cluster, const std::string& ns);
+  void SetBitMask(const std::string& cluster, const std::string& container_id, const std::string& ns);
+  void SetBitMasksForNamespaces(const std::string& cluster);
   UnorderedMap<storage::RuntimeFilterFeatures, bool> default_status_map_;
   UnorderedMap<storage::RuntimeFilterFeatures, std::vector<storage::RuntimeFilter_RuntimeFilterRule> > config_by_feature_;
   UnorderedMap<std::string, storage::ResourceCollection> rcMap_;
