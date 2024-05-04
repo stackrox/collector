@@ -8,7 +8,9 @@
 
 #include <storage/runtime_filters.pb.h>
 
+#include "ContainerMetadata.h"
 #include "Hash.h"
+#include "system-inspector/EventExtractor.h"
 
 #include "../ResourceSelector.h"
 
@@ -16,12 +18,13 @@ namespace collector::runtime_control {
 
 class Config {
  public:
-  static Config& GetOrCreate();
+  static Config& GetInstance();
 
   void Update(const storage::RuntimeFilteringConfiguration& msg);
   bool IsFeatureEnabled(uint64_t bitMask, storage::RuntimeFilterFeatures feature);
   bool IsFeatureEnabled(const std::string& cluster, const std::string& ns, const std::string& container_id, storage::RuntimeFilterFeatures feature);
   bool IsFeatureEnabled(const std::string& cluster, const std::string& ns, storage::RuntimeFilterFeatures feature);
+  bool IsFeatureEnabled(const std::string& cluster, sinsp_evt* event, ContainerMetadata& container_metadata, const std::string& container_id, storage::RuntimeFilterFeatures feature);
   void ConfigMessageToConfig(const storage::RuntimeFilteringConfiguration& msg);
 
  private:
@@ -39,6 +42,7 @@ class Config {
     runtimeFilters->Add()->CopyFrom(processRuntime);
     ConfigMessageToConfig(config_message_);
   }
+
   std::mutex mutex_;
   std::condition_variable condition_;
   storage::RuntimeFilteringConfiguration config_message_;

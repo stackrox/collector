@@ -1,10 +1,12 @@
 #include <runtime-control/Config.h>
 
+#include "ContainerMetadata.h"
 #include "Logging.h"
+#include "system-inspector/EventExtractor.h"
 
 namespace collector::runtime_control {
 
-Config& Config::GetOrCreate() {
+Config& Config::GetInstance() {
   static Config config;
 
   return config;
@@ -106,6 +108,31 @@ bool Config::IsFeatureEnabled(const std::string& cluster, const std::string& ns,
     uint64_t* bitMask = bitMaskPair->second;
     return IsFeatureEnabled(*bitMask, feature);
   } else {
+    auto bitMaskPairNs = namespaceFeatureBitMask_.find(ns);
+    if (bitMaskPairNs != namespaceFeatureBitMask_.end()) {
+      CLOG(INFO) << "Found in namespace map";
+      uint64_t bitMask = bitMaskPairNs->second;
+      containerFeatureBitMask_[container_id] = &namespaceFeatureBitMask_[ns];
+      return IsFeatureEnabled(bitMask, feature);
+    } else {
+      SetBitMask(cluster, container_id, ns);
+      uint64_t bitMask = *containerFeatureBitMask_[container_id];
+      return IsFeatureEnabled(bitMask, feature);
+    }
+  }
+}
+
+// Probably won't keep both versions. Probably won't pass in container_metadata, but add it to the class later on.
+bool Config::IsFeatureEnabled(const std::string& cluster, sinsp_evt* event, ContainerMetadata& container_metadata, const std::string& container_id, storage::RuntimeFilterFeatures feature) {
+  auto bitMaskPair = containerFeatureBitMask_.find(container_id);
+  if (bitMaskPair != containerFeatureBitMask_.end()) {
+    CLOG(INFO) << "Found in container map"
+               << " container_id= " << container_id;
+    uint64_t* bitMask = bitMaskPair->second;
+    return IsFeatureEnabled(*bitMask, feature);
+  } else {
+    std::string ns = container_metadata.GetNamespace(event);
+    CLOG(INFO) << "ns= " << ns;
     auto bitMaskPairNs = namespaceFeatureBitMask_.find(ns);
     if (bitMaskPairNs != namespaceFeatureBitMask_.end()) {
       CLOG(INFO) << "Found in namespace map";

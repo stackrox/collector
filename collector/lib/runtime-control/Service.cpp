@@ -85,7 +85,7 @@ void Service::Receive(const sensor::MsgToCollector* message) {
       sensor::MsgFromCollector msg;
 
       CLOG(INFO) << "[runtime-control::Service] Receive: RuntimeFilteringConfiguration";
-      Config::GetOrCreate().Update(message->runtime_filtering_configuration());
+      Config::GetInstance().Update(message->runtime_filtering_configuration());
 
       msg.mutable_runtime_filters_ack();
       writer_->WriteAsync(msg);

@@ -143,16 +143,16 @@ TEST_F(RuntimeControlConfigTest, Process) {
 
   auto runtimeFilteringConfiguration = CreateRuntimeFilteringConfigurationFromJson(jsonStr);
 
-  runtime_control::Config::GetOrCreate().ConfigMessageToConfig(runtimeFilteringConfiguration);
+  runtime_control::Config::GetInstance().ConfigMessageToConfig(runtimeFilteringConfiguration);
 
   storage::RuntimeFilterFeatures feature = storage::RuntimeFilterFeatures::PROCESSES;
 
-  EXPECT_FALSE(runtime_control::Config::GetOrCreate().IsFeatureEnabled("cluster-1", "marketing", "qwerty", feature));
-  EXPECT_TRUE(runtime_control::Config::GetOrCreate().IsFeatureEnabled("cluster-1", "default", "asdf", feature));
+  EXPECT_FALSE(runtime_control::Config::GetInstance().IsFeatureEnabled("cluster-1", "marketing", "qwerty", feature));
+  EXPECT_TRUE(runtime_control::Config::GetInstance().IsFeatureEnabled("cluster-1", "default", "asdf", feature));
   // Even though the process feature should be off for the marketing namespace it is on, because it is
   // looked up for the asdf container.
-  EXPECT_TRUE(runtime_control::Config::GetOrCreate().IsFeatureEnabled("cluster-1", "marketing", "asdf", feature));
-  EXPECT_TRUE(runtime_control::Config::GetOrCreate().IsFeatureEnabled("cluster-1", "marketing-department", "jklm", feature));
+  EXPECT_TRUE(runtime_control::Config::GetInstance().IsFeatureEnabled("cluster-1", "marketing", "asdf", feature));
+  EXPECT_TRUE(runtime_control::Config::GetInstance().IsFeatureEnabled("cluster-1", "marketing-department", "jklm", feature));
 }
 
 }  // namespace collector

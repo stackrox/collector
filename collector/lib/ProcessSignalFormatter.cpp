@@ -254,10 +254,9 @@ bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
 
   const std::string* container_id = event_extractor_->get_container_id(event);
   const std::string cluster = "cluster-1";
-  std::string ns = container_metadata_.GetNamespace(event);
 
   storage::RuntimeFilterFeatures feature = storage::RuntimeFilterFeatures::PROCESSES;
-  if (!runtime_control::Config::GetOrCreate().IsFeatureEnabled(cluster, ns, *container_id, feature)) {
+  if (!runtime_control::Config::GetInstance().IsFeatureEnabled(cluster, event, container_metadata_, *container_id, feature)) {
     return false;
   }
 
