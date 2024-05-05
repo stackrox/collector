@@ -53,8 +53,8 @@ class Config {
   void SetBitMask(const std::string& cluster, const std::string& ns);
   void SetBitMask(const std::string& cluster, const std::string& container_id, const std::string& ns);
   void SetBitMasksForNamespaces(const std::string& cluster);
-  UnorderedMap<storage::RuntimeFilterFeatures, bool> default_status_map_;
-  UnorderedMap<storage::RuntimeFilterFeatures, std::vector<storage::RuntimeFilter_RuntimeFilterRule> > config_by_feature_;
+  bool default_status_[storage::RuntimeFilterFeatures_ARRAYSIZE];
+  std::vector<storage::RuntimeFilter_RuntimeFilterRule> config_by_feature_[storage::RuntimeFilterFeatures_ARRAYSIZE];
   UnorderedMap<std::string, storage::ResourceCollection> rcMap_;
 };
 

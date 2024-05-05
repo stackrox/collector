@@ -30,17 +30,20 @@ bool Config::IsFeatureEnabled(uint64_t bitMask, storage::RuntimeFilterFeatures f
 void Config::ConfigMessageToConfig(const storage::RuntimeFilteringConfiguration& msg) {
   for (storage::RuntimeFilter runtimeConfig : msg.runtime_filters()) {
     CLOG(INFO) << "runtimeConfig.feature()= " << runtimeConfig.feature();
-    if (runtimeConfig.default_status().compare("on") == 0) {
-      default_status_map_[runtimeConfig.feature()] = true;
-      CLOG(INFO) << "Setting default to true";
-    } else {
-      default_status_map_[runtimeConfig.feature()] = false;
-      CLOG(INFO) << "Setting default to false";
-    }
+    storage::RuntimeFilterFeatures feature = runtimeConfig.feature();
+    if (feature < storage::RuntimeFilterFeatures_ARRAYSIZE) {
+      if (runtimeConfig.default_status().compare("on") == 0) {
+        default_status_[feature] = true;
+        CLOG(INFO) << "Setting default to true";
+      } else {
+        default_status_[feature] = false;
+        CLOG(INFO) << "Setting default to false";
+      }
 
-    for (auto runtimeConfigRule : runtimeConfig.rules()) {
-      config_by_feature_[runtimeConfig.feature()].push_back(runtimeConfigRule);
-      CLOG(INFO) << "Adding rule to config";
+      for (auto runtimeConfigRule : runtimeConfig.rules()) {
+        config_by_feature_[feature].push_back(runtimeConfigRule);
+        CLOG(INFO) << "Adding rule to config";
+      }
     }
   }
 
@@ -51,17 +54,11 @@ void Config::ConfigMessageToConfig(const storage::RuntimeFilteringConfiguration&
 }
 
 bool Config::IsFeatureEnabled(const std::string& cluster, const std::string& ns, storage::RuntimeFilterFeatures feature) {
-  std::vector<storage::RuntimeFilter_RuntimeFilterRule> filteringRules;
-  bool defaultStatus = false;
-  const auto& filteringRulesPair = config_by_feature_.find(feature);
-  if (filteringRulesPair != config_by_feature_.end()) {
-    filteringRules = filteringRulesPair->second;
+  if (feature < storage::RuntimeFilterFeatures_ARRAYSIZE) {
+    return ResourceSelector::IsFeatureEnabledForClusterAndNamespace(config_by_feature_[feature], rcMap_, default_status_[feature], cluster, ns);
+  } else {
+    return false;
   }
-  const auto& defaultStatusPair = default_status_map_.find(feature);
-  if (defaultStatusPair != default_status_map_.end()) {
-    defaultStatus = default_status_map_[feature];
-  }
-  return ResourceSelector::IsFeatureEnabledForClusterAndNamespace(filteringRules, rcMap_, defaultStatus, cluster, ns);
 }
 
 uint64_t Config::SetFeatureBitMask(uint64_t bitMask, bool enabled, storage::RuntimeFilterFeatures feature) {
