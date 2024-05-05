@@ -15,16 +15,12 @@ Config& Config::GetInstance() {
 void Config::Update(const storage::RuntimeFilteringConfiguration& msg) {
   std::unique_lock<std::mutex> lock(mutex_);
 
-  config_message_ = msg;
+  config_message_ = std::move(msg);
   ConfigMessageToConfig(msg);
   std::string cluster = "cluster-1";  // Cluster is always the same, so should probably not use it anywhere. Using it but hardcoding it for now.
   SetBitMasksForNamespaces(cluster);
 
   condition_.notify_all();
-}
-
-bool Config::IsFeatureEnabled(uint64_t bitMask, storage::RuntimeFilterFeatures feature) {
-  return (bitMask & kFeatureFlags_[feature]) != 0;
 }
 
 void Config::ConfigMessageToConfig(const storage::RuntimeFilteringConfiguration& msg) {
@@ -40,9 +36,9 @@ void Config::ConfigMessageToConfig(const storage::RuntimeFilteringConfiguration&
         CLOG(INFO) << "Setting default to false";
       }
 
+      config_by_feature_[feature].clear();
       for (auto runtimeConfigRule : runtimeConfig.rules()) {
         config_by_feature_[feature].push_back(runtimeConfigRule);
-        CLOG(INFO) << "Adding rule to config";
       }
     }
   }
@@ -53,7 +49,11 @@ void Config::ConfigMessageToConfig(const storage::RuntimeFilteringConfiguration&
   }
 }
 
-bool Config::IsFeatureEnabled(const std::string& cluster, const std::string& ns, storage::RuntimeFilterFeatures feature) {
+inline bool Config::IsFeatureEnabled(uint64_t bitMask, storage::RuntimeFilterFeatures feature) {
+  return (bitMask & kFeatureFlags_[feature]) != 0;
+}
+
+inline bool Config::IsFeatureEnabled(const std::string& cluster, const std::string& ns, storage::RuntimeFilterFeatures feature) {
   if (feature < storage::RuntimeFilterFeatures_ARRAYSIZE) {
     return ResourceSelector::IsFeatureEnabledForClusterAndNamespace(config_by_feature_[feature], rcMap_, default_status_[feature], cluster, ns);
   } else {
@@ -61,10 +61,8 @@ bool Config::IsFeatureEnabled(const std::string& cluster, const std::string& ns,
   }
 }
 
-uint64_t Config::SetFeatureBitMask(uint64_t bitMask, bool enabled, storage::RuntimeFilterFeatures feature) {
-  CLOG(INFO) << "kFeatureFlags_[feature]= " << kFeatureFlags_[feature];
+inline void Config::SetFeatureBitMask(uint64_t& bitMask, bool enabled, storage::RuntimeFilterFeatures feature) {
   bitMask = enabled ? (bitMask | kFeatureFlags_[feature]) : (bitMask & ~kFeatureFlags_[feature]);
-  return bitMask;
 }
 
 void Config::SetBitMask(const std::string& cluster, const std::string& ns) {
@@ -74,7 +72,7 @@ void Config::SetBitMask(const std::string& cluster, const std::string& ns) {
     storage::RuntimeFilterFeatures feature = static_cast<storage::RuntimeFilterFeatures>(i);
     bool enabled = IsFeatureEnabled(cluster, ns, feature);
     CLOG(INFO) << "enabled= " << enabled;
-    bitMask = SetFeatureBitMask(bitMask, enabled, feature);
+    SetFeatureBitMask(bitMask, enabled, feature);
   }
   CLOG(INFO) << "ns= " << ns << " bitMask= " << bitMask;
   namespaceFeatureBitMask_[ns] = bitMask;

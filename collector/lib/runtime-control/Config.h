@@ -21,16 +21,16 @@ class Config {
   static Config& GetInstance();
 
   void Update(const storage::RuntimeFilteringConfiguration& msg);
-  bool IsFeatureEnabled(uint64_t bitMask, storage::RuntimeFilterFeatures feature);
+  inline bool IsFeatureEnabled(uint64_t bitMask, storage::RuntimeFilterFeatures feature);
   bool IsFeatureEnabled(const std::string& cluster, const std::string& ns, const std::string& container_id, storage::RuntimeFilterFeatures feature);
-  bool IsFeatureEnabled(const std::string& cluster, const std::string& ns, storage::RuntimeFilterFeatures feature);
+  inline bool IsFeatureEnabled(const std::string& cluster, const std::string& ns, storage::RuntimeFilterFeatures feature);
   bool IsFeatureEnabled(const std::string& cluster, sinsp_evt* event, ContainerMetadata& container_metadata, const std::string& container_id, storage::RuntimeFilterFeatures feature);
   void ConfigMessageToConfig(const storage::RuntimeFilteringConfiguration& msg);
 
  private:
   Config() {
     for (int i = 0; i < storage::RuntimeFilterFeatures_ARRAYSIZE; i++) {
-      kFeatureFlags_[i] = 1UL << (i + 1);
+      kFeatureFlags_[i] = 1UL << i;
     }
 
     storage::RuntimeFilter processRuntime;
@@ -49,7 +49,7 @@ class Config {
   uint64_t kFeatureFlags_[storage::RuntimeFilterFeatures_ARRAYSIZE];
   UnorderedMap<std::string, uint64_t> namespaceFeatureBitMask_;
   UnorderedMap<std::string, uint64_t*> containerFeatureBitMask_;
-  uint64_t SetFeatureBitMask(uint64_t bitMask, bool enabled, storage::RuntimeFilterFeatures feature);
+  inline void SetFeatureBitMask(uint64_t& bitMask, bool enabled, storage::RuntimeFilterFeatures feature);
   void SetBitMask(const std::string& cluster, const std::string& ns);
   void SetBitMask(const std::string& cluster, const std::string& container_id, const std::string& ns);
   void SetBitMasksForNamespaces(const std::string& cluster);
