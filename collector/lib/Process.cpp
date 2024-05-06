@@ -2,6 +2,8 @@
 
 #include <chrono>
 
+#include <libsinsp/sinsp.h>
+
 #include "CollectorStats.h"
 #include "system-inspector/Service.h"
 

@@ -4,7 +4,9 @@
 #include <string>
 #include <vector>
 
-#include "libsinsp/sinsp.h"
+// forward declarations
+class sinsp_evt;
+class sinsp_threadinfo;
 
 namespace collector {
 

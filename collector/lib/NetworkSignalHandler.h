@@ -1,21 +1,27 @@
 #ifndef COLLECTOR_NETWORKSIGNALHANDLER_H
 #define COLLECTOR_NETWORKSIGNALHANDLER_H
 
+#include <memory>
 #include <optional>
 
 #include "ConnTracker.h"
 #include "SignalHandler.h"
-#include "system-inspector/EventExtractor.h"
 #include "system-inspector/SystemInspector.h"
+
+// forward declarations
+class sinsp;
+class sinsp_evt;
+namespace collector {
+namespace system_inspector {
+class EventExtractor;
+}
+}  // namespace collector
 
 namespace collector {
 
 class NetworkSignalHandler final : public SignalHandler {
  public:
-  explicit NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker, system_inspector::Stats* stats)
-      : conn_tracker_(std::move(conn_tracker)), stats_(stats), collect_connection_status_(true) {
-    event_extractor_.Init(inspector);
-  }
+  explicit NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker, system_inspector::Stats* stats);
 
   std::string GetName() override { return "NetworkSignalHandler"; }
   Result HandleSignal(sinsp_evt* evt) override;
@@ -27,7 +33,7 @@ class NetworkSignalHandler final : public SignalHandler {
  private:
   std::optional<Connection> GetConnection(sinsp_evt* evt);
 
-  system_inspector::EventExtractor event_extractor_;
+  std::unique_ptr<system_inspector::EventExtractor> event_extractor_;
   std::shared_ptr<ConnectionTracker> conn_tracker_;
   system_inspector::Stats* stats_;
 

@@ -3,10 +3,18 @@
 #define COLLECTOR_SELF_CHECK_HANDLE_H
 
 #include <chrono>
+#include <memory>
 
 #include "SelfChecks.h"
 #include "SignalHandler.h"
-#include "system-inspector/EventExtractor.h"
+
+// forward declaration
+class sinsp;
+namespace collector {
+namespace system_inspector {
+class EventExtractor;
+}
+}  // namespace collector
 
 namespace collector {
 
@@ -15,14 +23,11 @@ class SelfCheckHandler : public SignalHandler {
   SelfCheckHandler() {}
   SelfCheckHandler(
       sinsp* inspector,
-      std::chrono::seconds timeout = std::chrono::seconds(5)) : inspector_(inspector), timeout_(timeout) {
-    event_extractor_.Init(inspector);
-    start_ = std::chrono::steady_clock::now();
-  }
+      std::chrono::seconds timeout = std::chrono::seconds(5));
 
  protected:
   sinsp* inspector_;
-  system_inspector::EventExtractor event_extractor_;
+  std::unique_ptr<system_inspector::EventExtractor> event_extractor_;
 
   std::chrono::time_point<std::chrono::steady_clock> start_;
   std::chrono::seconds timeout_;
@@ -35,25 +40,13 @@ class SelfCheckHandler : public SignalHandler {
    *       the host pid, but when we fork the process we get the namespace
    *       pid.
    */
-  bool isSelfCheckEvent(sinsp_evt* evt) {
-    const std::string* name = event_extractor_.get_comm(evt);
-    const std::string* exe = event_extractor_.get_exe(evt);
-
-    if (name == nullptr || exe == nullptr) {
-      return false;
-    }
-
-    return name->compare(self_checks::kSelfChecksName) == 0 && exe->compare(self_checks::kSelfChecksExePath) == 0;
-  }
+  bool isSelfCheckEvent(sinsp_evt* evt);
 
   /**
    * @brief simple check that the handler has timed out waiting for
    *        self check events.
    */
-  bool hasTimedOut() {
-    auto now = std::chrono::steady_clock::now();
-    return now > (start_ + timeout_);
-  }
+  bool hasTimedOut();
 };
 
 class SelfCheckProcessHandler : public SelfCheckHandler {

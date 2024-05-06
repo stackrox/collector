@@ -4,9 +4,12 @@
 
 #include <sys/sdt.h>
 
+#include <libsinsp/sinsp.h>
+
 #include "storage/process_indicator.pb.h"
 
 #include "RateLimit.h"
+#include "system-inspector/EventExtractor.h"
 
 namespace collector {
 

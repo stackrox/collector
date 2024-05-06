@@ -1,6 +1,8 @@
 #ifndef _PROCESS_SIGNAL_FORMATTER_H_
 #define _PROCESS_SIGNAL_FORMATTER_H_
 
+#include <memory>
+
 #include "api/v1/signal.pb.h"
 #include "internalapi/sensor/signal_iservice.pb.h"
 #include "storage/process_indicator.pb.h"
@@ -9,15 +11,22 @@
 #include "ContainerMetadata.h"
 #include "EventNames.h"
 #include "ProtoSignalFormatter.h"
-#include "system-inspector/EventExtractor.h"
+
+// forward definitions
+class sinsp;
+class sinsp_threadinfo;
+namespace collector {
+namespace system_inspector {
+class EventExtractor;
+}
+}  // namespace collector
 
 namespace collector {
 
 class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
  public:
-  ProcessSignalFormatter(sinsp* inspector) : event_names_(EventNames::GetInstance()), container_metadata_(inspector) {
-    event_extractor_.Init(inspector);
-  }
+  ProcessSignalFormatter(sinsp* inspector);
+  ~ProcessSignalFormatter();
 
   using Signal = v1::Signal;
   using ProcessSignal = storage::ProcessSignal;
@@ -41,7 +50,7 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
   void CountLineage(const std::vector<LineageInfo>& lineage);
 
   const EventNames& event_names_;
-  system_inspector::EventExtractor event_extractor_;
+  std::unique_ptr<system_inspector::EventExtractor> event_extractor_;
   ContainerMetadata container_metadata_;
 };
 

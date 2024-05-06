@@ -14,7 +14,8 @@
 #include <string_view>
 #include <utility>
 
-#include "libsinsp/sinsp.h"
+// forward declarations
+class sinsp_threadinfo;
 
 namespace collector {
 

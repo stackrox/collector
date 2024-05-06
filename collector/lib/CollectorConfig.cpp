@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+#include <libsinsp/sinsp.h>
+
 #include "CollectorArgs.h"
 #include "EnvVar.h"
 #include "HostHeuristics.h"

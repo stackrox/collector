@@ -1,3 +1,5 @@
+#include <libsinsp/sinsp.h>
+
 #include "gtest/gtest.h"
 #include "system-inspector/Service.h"
 
