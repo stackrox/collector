@@ -9,15 +9,18 @@
 
 #include <gtest/gtest_prod.h>
 
-#include "libsinsp/sinsp.h"
-
 #include "ContainerMetadata.h"
 #include "Control.h"
 #include "DriverCandidates.h"
 #include "SignalHandler.h"
 #include "SignalServiceClient.h"
 #include "SystemInspector.h"
-#include "threadinfo.h"
+
+// forward declarations
+class sinsp;
+class sinsp_evt;
+class sinsp_evt_formatter;
+class sinsp_threadinfo;
 
 namespace collector::system_inspector {
 
@@ -30,7 +33,8 @@ class Service : public SystemInspector {
   static constexpr int kMessageBufferSize = 8192;
   static constexpr int kKeyBufferSize = 48;
 
-  Service() = default;
+  Service();
+  ~Service();
 
   void Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) override;
   void Start() override;
@@ -41,7 +45,7 @@ class Service : public SystemInspector {
 
   bool InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) override;
 
-  typedef std::weak_ptr<std::function<void(threadinfo_map_t::ptr_t)>> ProcessInfoCallbackRef;
+  typedef std::weak_ptr<std::function<void(std::shared_ptr<sinsp_threadinfo>)>> ProcessInfoCallbackRef;
 
   void GetProcessInformation(uint64_t pid, ProcessInfoCallbackRef callback);
 
@@ -57,9 +61,7 @@ class Service : public SystemInspector {
     SignalHandlerEntry(std::unique_ptr<SignalHandler> handler, std::bitset<PPM_EVENT_MAX> event_filter)
         : handler(std::move(handler)), event_filter(event_filter) {}
 
-    bool ShouldHandle(sinsp_evt* evt) const {
-      return event_filter[evt->get_type()];
-    }
+    bool ShouldHandle(sinsp_evt* evt) const;
   };
 
   sinsp_evt* GetNext();

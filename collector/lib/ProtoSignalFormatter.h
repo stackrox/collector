@@ -3,11 +3,12 @@
 
 #include <utility>
 
-#include "libsinsp/sinsp.h"
-
 #include <google/protobuf/message.h>
 
 #include "ProtoAllocator.h"
+
+// forward declarations
+class sinsp_evt;
 
 namespace collector {
 

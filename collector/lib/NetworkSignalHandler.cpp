@@ -2,7 +2,10 @@
 
 #include <optional>
 
+#include <libsinsp/sinsp.h>
+
 #include "EventMap.h"
+#include "system-inspector/EventExtractor.h"
 
 namespace collector {
 
@@ -26,6 +29,12 @@ EventMap<Modifier> modifiers = {
 };
 
 }  // namespace
+
+NetworkSignalHandler::NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker, system_inspector::Stats* stats)
+    : event_extractor_(std::make_unique<system_inspector::EventExtractor>()), conn_tracker_(std::move(conn_tracker)), stats_(stats), collect_connection_status_(true) {
+  event_extractor_->Init(inspector);
+}
+
 /*
  * Socket connection life-cycle scenarii:
  * - synchronous:
@@ -63,7 +72,7 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
     }
   }
 
-  const int64_t* res = event_extractor_.get_event_rawres(evt);
+  const int64_t* res = event_extractor_->get_event_rawres(evt);
   if (!res || *res < 0) {
     // ignore unsuccessful events for now.
     return std::nullopt;
@@ -107,7 +116,7 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   const Endpoint* local = is_server ? &server : &client;
   const Endpoint* remote = is_server ? &client : &server;
 
-  const std::string* container_id = event_extractor_.get_container_id(evt);
+  const std::string* container_id = event_extractor_->get_container_id(evt);
   if (!container_id) return std::nullopt;
   return {Connection(*container_id, *local, *remote, l4proto, is_server)};
 }
@@ -130,7 +139,7 @@ std::vector<std::string> NetworkSignalHandler::GetRelevantEvents() {
 }
 
 bool NetworkSignalHandler::Stop() {
-  event_extractor_.ClearWrappers();
+  event_extractor_->ClearWrappers();
   return true;
 }
 
