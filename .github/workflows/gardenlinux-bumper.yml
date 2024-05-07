@@ -42,6 +42,7 @@ jobs:
           labels: |
             all-integration-tests
           draft: false
+          base: gavin/ROX-21044/switch-bot
 
   notify:
     runs-on: ubuntu-latest
