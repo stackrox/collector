@@ -24,34 +24,6 @@ jobs:
       collector-qa-tag: ${{ inputs.collector-qa-tag }}
     secrets: inherit
 
-  generate-latency-graphs:
-    runs-on: ubuntu-latest
-    needs:
-      - benchmarks
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-
-      - name: Install python deps
-        run: python3 -m pip install -r ./integration-tests/tools/requirements.txt
-
-      - name: Download benchmark logs
-        uses: actions/download-artifact@v4
-        with:
-          name: benchmark-logs
-          path: benchmark-logs
-
-      - name: Generate graphs
-        run: |
-          ./integration-tests/tools/ci-syscall-latency-graphs.sh benchmark-logs
-
-      - name: Reupload logs
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmark-logs
-          path: benchmark-logs/**/*
-          overwrite: true
-
   calculate-baseline:
     runs-on: ubuntu-latest
     needs:
