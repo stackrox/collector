@@ -1,8 +1,7 @@
 name: Garden Linux VM bumper
 
 on:
-    pull_request:
-    schedule:
+  schedule:
     - cron: '0 6 * * *'
 
 jobs:
