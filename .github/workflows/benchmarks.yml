@@ -48,7 +48,7 @@ jobs:
       - name: Install python deps
         run: python3 -m pip install -r ./integration-tests/scripts/baseline/requirements.txt
 
-      - name: Calculate Baseline
+      - name: Compare with the Baseline
         run: |
           jq -s 'flatten' perf.json > integration-tests/perf-all.json
 

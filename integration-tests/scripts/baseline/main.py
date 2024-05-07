@@ -68,7 +68,7 @@ def memory_parser(data):
     }
 
     for k, v in data.items():
-        if k in ('Mem'):
+        if k in ('Mem') and isinstance(v, str) and len(v) > 3:
             suffix = v[-3:]
             multiplier = multipliers.get(suffix, 0)
 
@@ -272,7 +272,7 @@ def process(content):
 
 def group_data(content, *columns):
     def record_id(record):
-        return " ".join([record.get(c) for c in columns])
+        return ",".join([record.get(c) for c in columns])
 
     ordered = sorted(content, key=record_id)
     return [
@@ -316,6 +316,26 @@ def collector_overhead(measurements):
 
 
 def compare(input_file_name, baseline_data):
+    """
+    Compare the test with the baseline data. The output goes to stdout is in
+    the following comma-separated format:
+        vm:                     What type of VM the test was performed on.
+        collection method:      Which collection method was used.
+        baseline_cpu_median:    For this VM type, the median for CPU
+                                utilization data from the baseline.
+        test_cpu_median:        For this VM type, the median for CPU
+                                utilization from the test.
+        cpu_pvalue:             P-value of a t-test for baseline/test CPU data,
+                                high values indicates that the difference is
+                                due to the noise.
+        baseline_mem_median:    For this VM type, the median for memory
+                                utilization data from the baseline.
+        test_mem_median:        For this VM type, the median for memory
+                                utilization from the test.
+        mem_pvalue:             P-value of a t-test for baseline/test memory data,
+                                high values indicates that the difference is
+                                due to the noise.
+    """
     if not baseline_data:
         print("Baseline file is empty, nothing to compare.", file=sys.stderr)
         return
@@ -357,8 +377,8 @@ def compare(input_file_name, baseline_data):
             test_cpu_median = round(stats.tmean(test_cpu), 2)
             test_mem_median = round(stats.tmean(test_mem), 2)
 
-            print(f"{bgroup} {baseline_cpu_median} {test_cpu_median} {cpu_pvalue} "
-                  f"{baseline_mem_median} {test_mem_median} {mem_pvalue}")
+            print(f"{bgroup},{baseline_cpu_median},{test_cpu_median},{cpu_pvalue},"
+                  f"{baseline_mem_median},{test_mem_median},{mem_pvalue}")
 
 
 if __name__ == "__main__":
@@ -387,6 +407,9 @@ if __name__ == "__main__":
                         help=('If specified, overrides --gcs-bucket and instructs'
                               ' to manage baselines by specified file path'))
 
+    parser.add_argument('--reset-baseline', default=False, action='store_true',
+                        help=('Instructs to cleanup the baseline file'))
+
     args = parser.parse_args()
 
     if args.baseline_path:
@@ -406,4 +429,8 @@ if __name__ == "__main__":
         result = add_to_baseline_file(args.update, baseline_data,
                                       args.baseline_threshold)
         save_baseline_file(result)
+        sys.exit(0)
+
+    if args.reset_baseline:
+        save_baseline_file(EMPTY_BASELINE_STRUCTURE)
         sys.exit(0)
