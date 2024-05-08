@@ -1,4 +1,4 @@
-FROM quay.io/rhacs-eng/berserker:latest
+FROM  quay.io/rhacs-eng/qa:berserker-1.0-59-g87ad0d870e
 
 ENV PATH="${PATH}:/usr/local/bin"
 
