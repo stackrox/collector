@@ -52,7 +52,11 @@
   roles:
     - run-test-target
   vars:
-    collector_test: TestBenchmark
+    # This is going to be the prefix for tests to be run. Originally it was
+    # just TestBenchmark, to include both TestBenchmarkBaseline and
+    # TestBenchmarkCollector, but since now we do benchmarking directly there
+    # is no need in baseline results.
+    collector_test: TestBenchmarkCollector
   tags:
     - run-benchmarks
 
