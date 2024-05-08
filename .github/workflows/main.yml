@@ -161,7 +161,7 @@ jobs:
     if: |
       always() &&
       ((github.event_name == 'push' && github.ref_name == 'master') ||
-      contains(github.event.pull_request.body, '#run-benchmark'))
+      contains(github.event.pull_request.labels.*.name, 'run-benchmark'))
     needs:
     - init
     - build-collector-slim
