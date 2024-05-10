@@ -97,8 +97,8 @@ jobs:
         if: matrix.arch == 'ppc64le'
         run: |
           DRIVER_VERSION="$(cat kernel-modules/MODULE_VERSION)"
-          docker create --name drivers brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0
-          docker create --name power brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
+          docker create --name drivers --platform linux/${{ matrix.arch }} brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0
+          docker create --name power --platform linux/${{ matrix.arch }} brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
           docker cp "drivers:/kernel-modules/${DRIVER_VERSION}/" /tmp/
           docker cp "/tmp/${DRIVER_VERSION}/." power:/kernel-modules/
           docker commit power ${{ needs.init.outputs.collector-image }}-cpaas-${{ matrix.arch }}
