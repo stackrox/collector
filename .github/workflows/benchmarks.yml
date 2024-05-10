@@ -67,7 +67,9 @@ jobs:
           GOOGLE_CREDENTIALS_COLLECTOR_CI_VM_SVC_ACCT: "${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_CI_VM_SVC_ACCT }}"
 
       - name: Update Baseline
-        if: github.ref == 'master'
+        if: |
+          ((github.event_name == 'push' && github.ref == 'master') ||
+          contains(github.event.pull_request.labels.*.name, 'update-baseline'))
         run: |
           ./integration-tests/scripts/baseline/main.py --update integration-tests/perf-all.json
         env:
