@@ -22,6 +22,7 @@ jobs:
       run-benchmarks: true
       collector-tag: ${{ inputs.collector-tag }}
       collector-qa-tag: ${{ inputs.collector-qa-tag }}
+      collector-repo: quay.io/rhacs-eng/collector
     secrets: inherit
 
   calculate-baseline:
