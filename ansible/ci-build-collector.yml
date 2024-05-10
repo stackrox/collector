@@ -40,29 +40,6 @@
       # ensure this action is printed
       tags: [print_action]
 
-    - block:
-      - name: Add drivers
-        community.docker.docker_image:
-          name: "{{ collector_image }}-full"
-          build:
-            platform: "linux/{{ arch }}"
-            target: probe-layer-1
-            args:
-              collector_repo: quay.io/stackrox-io/collector
-              collector_version: "{{ collector_tag }}"
-              module_version: "{{ driver_version }}"
-              max_layer_size: 300
-              required_layers: 0
-            path: "{{ context_path }}"
-
-      - name: Retag image
-        community.docker.docker_image:
-          name: "{{ collector_image }}-full"
-          repository: "{{ collector_image }}"
-          source: local
-
-      when: arch == "ppc64le"
-
     - name: Retag collector image to arch specific
       community.docker.docker_image:
         name: "{{ collector_image }}"

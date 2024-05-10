@@ -44,7 +44,7 @@ jobs:
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
-      CONTEXT_DRIVERS_DIR: ${{ github.workspace }}/kernel-modules/container/kernel-modules
+      CONTEXT_DRIVERS_DIR: ${{ github.workspace }}/collector/kernel-modules
 
     steps:
       - uses: actions/checkout@v4
@@ -77,7 +77,6 @@ jobs:
           collector_tag: ${{ inputs.collector-tag }}
           debug_mode: ${{ github.event_name == 'pull_request' }}
           driver_version: ${DRIVER_VERSION}
-          context_path: ${{ github.workspace }}/kernel-modules/container
           EOF
 
       - name: Download drivers
