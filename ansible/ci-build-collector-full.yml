@@ -19,7 +19,7 @@
     - name: Build full image
       when:
         - build_full_image
-        - arch != 'arm64'
+        - arch == 'ppc64le'
       block:
         - name: Calculate required layers
           shell:

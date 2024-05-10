@@ -1,0 +1,42 @@
+name: Collector Drivers CI
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  init:
+    uses: ./.github/workflows/init.yml
+    secrets: inherit
+    with:
+      cpaas-workflow: false
+
+  build-drivers:
+    uses: ./.github/workflows/drivers.yml
+    with:
+      drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
+      bundles-bucket: ${{ needs.init.outputs.bundles-bucket }}
+      branch-name: ${{ needs.init.outputs.branch-name }}
+    needs: init
+    secrets: inherit
+
+  upload-drivers:
+    uses: ./.github/workflows/upload-drivers.yml
+    with:
+      gcp-bucket: ${{ needs.init.outputs.push-drivers-bucket }}
+      merged-drivers-bucket: ${{ needs.init.outputs.merged-drivers-bucket }}
+    if: ${{ needs.build-drivers.outputs.parallel-jobs > 0 }}
+    needs:
+    - init
+    - build-drivers
+    secrets: inherit
+
+  check-drivers-build:
+    uses: ./.github/workflows/check-drivers-failures.yml
+    needs: build-drivers
+    if: ${{ needs.build-drivers.outputs.parallel-jobs > 0 }}
+    secrets: inherit
+    with:
+      logs-artifact: driver-build-failures-*
+

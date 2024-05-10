@@ -40,10 +40,33 @@
       # ensure this action is printed
       tags: [print_action]
 
+    - block:
+      - name: Add drivers
+        community.docker.docker_image:
+          name: "{{ collector_image }}-full"
+          build:
+            platform: "linux/{{ arch }}"
+            target: probe-layer-1
+            args:
+              collector_repo: quay.io/stackrox-io/collector
+              collector_version: "{{ collector_tag }}"
+              module_version: "{{ driver_version }}"
+              max_layer_size: 300
+              required_layers: 0
+            path: "{{ context_path }}"
+
+      - name: Retag image
+        community.docker.docker_image:
+          name: "{{ collector_image }}-full"
+          repository: "{{ collector_image }}"
+          source: local
+
+      when: arch == "ppc64le"
+
     - name: Retag collector image to arch specific
       community.docker.docker_image:
         name: "{{ collector_image }}"
-        repository: "{{ collector_image }}-{{ arch }}-slim"
+        repository: "{{ collector_image }}-{{ arch }}"
         source: local
 
     - name: Untag collector image to prevent issues with multiarch
@@ -59,7 +82,14 @@
 
     - name: Push slim to quay.io/stackrox-io
       community.docker.docker_image:
-        name: "{{ collector_image }}-{{ arch }}-slim"
+        name: "{{ collector_image }}-{{ arch }}"
+        push: true
+        source: local
+
+    - name: Push base to quay.io/stackrox-io
+      community.docker.docker_image:
+        name: "{{ collector_image }}-{{ arch }}"
+        repository: "{{ collector_image }}-{{ arch }}-slim"
         push: true
         source: local
 
@@ -67,6 +97,13 @@
       community.docker.docker_image:
         name: "{{ collector_image }}-{{ arch }}-slim"
         repository: "{{ collector_image }}-{{ arch }}-base"
+        push: true
+        source: local
+
+    - name: Push latest to quay.io/stackrox-io
+      community.docker.docker_image:
+        name: "{{ collector_image }}-{{ arch }}-slim"
+        repository: "{{ collector_image }}-{{ arch }}-latest"
         push: true
         source: local
 
@@ -78,15 +115,29 @@
 
     - name: Push slim to quay.io/rhacs-eng
       community.docker.docker_image:
-        name: "{{ collector_image }}-{{ arch }}-slim"
+        name: "{{ collector_image }}-{{ arch }}"
+        repository: "{{ rhacs_eng_image }}-{{ arch }}"
+        push: true
+        source: local
+
+    - name: Push base to quay.io/rhacs-eng
+      community.docker.docker_image:
+        name: "{{ rhacs_eng_image }}-{{ arch }}"
         repository: "{{ rhacs_eng_image }}-{{ arch }}-slim"
         push: true
         source: local
 
-    - name: Push base to quay.io/stackrox-io
+    - name: Push base to quay.io/rhacs-eng
       community.docker.docker_image:
-        name: "{{ collector_image }}-{{ arch }}-slim"
+        name: "{{ rhacs_eng_image }}-{{ arch }}"
         repository: "{{ rhacs_eng_image }}-{{ arch }}-base"
+        push: true
+        source: local
+
+    - name: Push base to quay.io/rhacs-eng
+      community.docker.docker_image:
+        name: "{{ rhacs_eng_image }}-{{ arch }}"
+        repository: "{{ rhacs_eng_image }}-{{ arch }}-latest"
         push: true
         source: local
 
@@ -94,10 +145,14 @@
       debug:
         msg:
         - "Pushed the following images:"
+        - "  {{ collector_image }}-{{ arch }}"
         - "  {{ collector_image }}-{{ arch }}-slim"
         - "  {{ collector_image }}-{{ arch }}-base"
+        - "  {{ collector_image }}-{{ arch }}-latest"
+        - "  {{ rhacs_eng_image }}-{{ arch }}"
         - "  {{ rhacs_eng_image }}-{{ arch }}-slim"
         - "  {{ rhacs_eng_image }}-{{ arch }}-base"
+        - "  {{ rhacs_eng_image }}-{{ arch }}-latest"
       tags: [print_action]
 
     - name: Logout of quay.io
