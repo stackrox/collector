@@ -94,8 +94,8 @@ jobs:
       - name: Create Power image
         if: matrix.arch == 'ppc64le'
         run: |
-          docker create drivers brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0
-          docker create power brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
+          docker create --name drivers brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0
+          docker create --name power brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
           docker cp "drivers:/kernel-modules/$(cat kernel-modules/MODULE_VERSION)/*" power:/kernel-modules/
           docker commit power ${{ needs.init.outputs.collector-image }}-cpaas-${{ matrix.arch }}
           docker rm power drivers
