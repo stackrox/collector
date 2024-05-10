@@ -55,7 +55,7 @@ jobs:
       logs-artifact:
         drivers-build-failures
 
-  build-collector-slim:
+  build-collector:
     runs-on: ubuntu-latest
     needs: init
     strategy:
@@ -78,23 +78,54 @@ jobs:
       - name: Retag and push stackrox-io -amd64-slim
         uses: stackrox/actions/images/retag-and-push@v1
         with:
-          src-image: brew.registry.redhat.io/rh-osbs/rhacs-collector-rhel8:0.1.0
-          dst-image: ${{ needs.init.outputs.collector-image }}-cpaas
+          src-image: brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
+          dst-image: ${{ needs.init.outputs.collector-image }}-cpaas-${{ matrix.arch }}
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
-            #  build-collector-full:
-            #    uses: ./.github/workflows/collector-full.yml
-            #    with:
-            #      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
-            #      arch-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
-            #      skip-built-drivers: true
-            #      archs: amd64 ppc64le s390x
-            #    secrets: inherit
-            #    needs:
-            #    - init
-            #    - build-collector-slim
-            #    - sync-drivers-and-support-packages
+      - name: Login to quay.io/stackrox-io
+        if: matrix.arch == 'ppc64le'
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Create Power image
+        if: matrix.arch == 'ppc64le'
+        run: |
+          docker create drivers brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0
+          docker create power brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
+          docker cp "drivers:/kernel-modules/$(cat kernel-modules/MODULE_VERSION)/*" power:/kernel-modules/
+          docker commit power ${{ needs.init.outputs.collector-image }}-cpaas-${{ matrix.arch }}
+          docker rm power drivers
+          docker push ${{ needs.init.outputs.collector-image }}-cpaas-${{ matrix.arch }}
+
+  multiarch-manifest:
+    runs-on: ubuntu-latest
+    env:
+      COLLECTOR_TAG: ${{ needs.init.outputs.collector-tag }}-cpaas
+      ARCHS: amd64 ppc64le s390x
+    needs:
+      - init
+      - build-collector
+      - sync-drivers-and-support-packages
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to quay.io/stackrox-io
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Multiarch manifest stackrox-io
+        uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: ${{ needs.init.outputs.collector-image }}-cpaas
+          archs: ${{ env.ARCHS }}
 
   build-test-containers:
     uses: ./.github/workflows/integration-test-containers.yml
@@ -125,9 +156,10 @@ jobs:
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
       offline-mode: true
       job-tag: cpaas
+      collector-repo: quay.io/stackrox-io/collector
     needs:
     - init
-      #- build-collector-full
+    - multiarch-manifest
     - build-test-containers
     secrets: inherit
 
@@ -137,7 +169,8 @@ jobs:
     needs:
     - init
     - sync-drivers-and-support-packages
-    - build-collector-slim
+    - build-collector
+    - multiarch-manifest
     - integration-tests
     steps:
       - name: Slack notification

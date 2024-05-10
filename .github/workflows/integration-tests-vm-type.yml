@@ -34,13 +34,18 @@ on:
           VMs in GCP.
         type: string
         default: ""
+      collector-repo:
+        description: |
+          Optional repository to use for the collector image
+        type: string
+        required: true
 
 jobs:
   tests:
     name: Testing ${{ inputs.vm_type }}
     runs-on: ubuntu-latest
     env:
-      COLLECTOR_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+      COLLECTOR_IMAGE: ${{ inputs.collector-repo }}:${{ inputs.collector-tag }}
       COLLECTOR_QA_TAG: ${{ inputs.collector-qa-tag }}
       TEST_IMAGE: quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}
     steps:
