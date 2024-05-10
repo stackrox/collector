@@ -65,6 +65,8 @@ jobs:
           - s390x
           - ppc64le
     steps:
+      - uses: actions/checkout@v4
+
       - uses: docker/login-action@v3
         with:
           registry: brew.registry.redhat.io
