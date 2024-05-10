@@ -35,7 +35,7 @@ env:
 
 jobs:
   build-collector-image:
-    name: Build the collector slim image
+    name: Build the collector image
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -57,10 +57,12 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Set environment
+        run: |
+          echo "DRIVER_VERSION=$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)" >> "$GITHUB_ENV"
+
       - name: Create ansible vars
         run: |
-          DRIVER_VERSION="$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)"
-
           cat << EOF > ${{ github.workspace }}/ansible/secrets.yml
           ---
           stackrox_io_username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
