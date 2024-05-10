@@ -1,5 +1,5 @@
 restart_interval = 10
-duration = 10
+duration = 60
 
 [workload]
 type = "endpoints"
