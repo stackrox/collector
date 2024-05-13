@@ -3,7 +3,7 @@ BEGIN {
     print "|---|---|---|---|---|---|---|---|"
 }
 {
-    cpu_warn = ($5 < 0.8) ? ":red_circle:" : ":green_circle:";
-    mem_warn = ($8 < 0.8) ? ":red_circle:" : ":green_circle:";
+    cpu_warn = ($5 < 0.6) ? ":red_circle:" : ":green_circle:";
+    mem_warn = ($8 < 0.6) ? ":red_circle:" : ":green_circle:";
     printf "|%s|%s|%s|%s|%s|%s|%s|%s|%s",$1,$2,$3,$4,cpu_warn,$6,$7,mem_warn,ORS
 }
