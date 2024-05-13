@@ -2,12 +2,12 @@
 
 - name: Check family excluded
   set_fact:
-    excluded: "{{ [vm_family, vm_collection_method] in excluded_pairs }}"
+    excluded: "{{ [vm_family, vm_collection_method] in excluded_pairs or (vm_family != 'p' and vm_collection_method == 'ebpf') }}"
   when: vm_image is not defined
 
 - name: Check image excluded
   set_fact:
-    excluded: "{{ [vm_image, vm_collection_method] in excluded_pairs }}"
+    excluded: "{{ [vm_image, vm_collection_method] in excluded_pairs or (vm_family != 'p' and vm_collection_method == 'ebpf') }}"
   when: vm_image is defined
 
 - name: Create IBM Z VM
