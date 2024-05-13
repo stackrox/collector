@@ -35,7 +35,7 @@ env:
 
 jobs:
   build-collector-image:
-    name: Build the collector image
+    name: Build Collector
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -104,7 +104,7 @@ jobs:
             ansible/ci-build-collector.yml
 
   build-collector-image-remote-vm:
-    name: Build the collector slim image on a remote VM
+    name: Build Collector (Remote)
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     strategy:
