@@ -19,6 +19,7 @@ redhat_password: "{{ lookup('env', 'REDHAT_PASSWORD', default='') }}"
 excluded_pairs:
   # e.g. - ['ubuntu-1804-lts', 'core_bpf']
   - ['rhel-8.8-05102023', 'ebpf']
+  - ['rhel-86-05162022', 'core_bpf']
 
 virtual_machines:
   rhel:
