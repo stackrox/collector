@@ -55,7 +55,7 @@ jobs:
 
           ./integration-tests/scripts/baseline/main.py --test integration-tests/perf-all.json \
             | sort \
-            | awk -f ./integration-tests/scripts/baseline/format.awk > benchmark.md
+            | awk -F "," -f ./integration-tests/scripts/baseline/format.awk > benchmark.md
 
           delimiter=$(openssl rand -hex 8)
           {
