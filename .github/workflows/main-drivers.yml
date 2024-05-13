@@ -40,3 +40,20 @@ jobs:
     with:
       logs-artifact: driver-build-failures-*
 
+  build-support-packages:
+    uses: ./.github/workflows/support-packages.yml
+    with:
+      branch-name: ${{ needs.init.outputs.branch-name }}
+      upstream-drivers-bucket: ${{ needs.init.outputs.drivers-bucket }}
+      downstream-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}/x86_64
+      support-packages-bucket: ${{ needs.init.outputs.support-packages-bucket }}
+      support-packages-index-bucket: ${{ needs.init.outputs.support-packages-index-bucket }}
+      public-support-packages-bucket: ${{ needs.init.outputs.public-support-packages-bucket }}
+    if: |
+      always() &&
+      (github.event_name == 'push' && github.ref_name == 'master')
+    needs:
+    - init
+    - build-drivers
+    - upload-drivers
+    secrets: inherit
