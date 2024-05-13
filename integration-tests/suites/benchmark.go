@@ -25,6 +25,7 @@ type BenchmarkCollectorTestSuite struct {
 type BenchmarkTestSuiteBase struct {
 	IntegrationTestSuiteBase
 	perfContainers []string
+	loadContainers []string
 }
 
 func (b *BenchmarkTestSuiteBase) StartPerfTools() {
@@ -112,6 +113,18 @@ func (b *BenchmarkTestSuiteBase) startContainer(name string, image string, args 
 	b.perfContainers = append(b.perfContainers, containerID)
 }
 
+func (b *BenchmarkTestSuiteBase) FetchWorkloadLogs() {
+	fmt.Println("Berserker logs:")
+	for _, container := range b.loadContainers {
+		log, err := b.containerLogs(container)
+		require.NoError(b.T(), err)
+
+		fmt.Println(log)
+	}
+
+	b.loadContainers = nil
+}
+
 func (b *BenchmarkTestSuiteBase) StopPerfTools() {
 	b.stopContainers(b.perfContainers...)
 
@@ -136,7 +149,7 @@ func (s *BenchmarkCollectorTestSuite) SetupSuite() {
 	s.StartCollector(false, nil)
 }
 
-func (s *IntegrationTestSuiteBase) SpinBerserker(workload string) (string, error) {
+func (s *BenchmarkTestSuiteBase) SpinBerserker(workload string) (string, error) {
 	benchmarkName := fmt.Sprintf("benchmark-%s", workload)
 	benchmarkImage := config.Images().QaImageByKey("performance-berserker")
 
@@ -145,26 +158,19 @@ func (s *IntegrationTestSuiteBase) SpinBerserker(workload string) (string, error
 		return "", err
 	}
 
-	workdir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	volumes := fmt.Sprintf(
-		"%s/container/berserker/workloads/%s/:/etc/berserker/",
-		workdir, workload)
-
-	benchmarkArgs := []string{"-v", volumes, benchmarkImage}
+	configFile := fmt.Sprintf("/etc/berserker/%s/workload.toml", workload)
+	benchmarkArgs := []string{benchmarkImage, configFile}
 
 	containerID, err := s.launchContainer(benchmarkName, benchmarkArgs...)
 	if err != nil {
 		return "", err
 	}
 
+	s.loadContainers = append(s.loadContainers, containerID)
 	return containerID, nil
 }
 
-func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
+func (s *BenchmarkTestSuiteBase) RunCollectorBenchmark() {
 	procContainerID, err := s.SpinBerserker("processes")
 	s.Require().NoError(err)
 
@@ -186,7 +192,7 @@ func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
 
 	s.Require().NoError(err)
 
-	s.stop = time.Now()
+	s.stop = time.Now().UTC()
 }
 
 func (s *BenchmarkCollectorTestSuite) TestBenchmarkCollector() {
@@ -195,6 +201,7 @@ func (s *BenchmarkCollectorTestSuite) TestBenchmarkCollector() {
 
 func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
 	s.StopPerfTools()
+	s.FetchWorkloadLogs()
 
 	s.StopCollector()
 
@@ -214,6 +221,7 @@ func (s *BenchmarkBaselineTestSuite) TestBenchmarkBaseline() {
 
 func (s *BenchmarkBaselineTestSuite) TearDownSuite() {
 	s.StopPerfTools()
+	s.FetchWorkloadLogs()
 	s.cleanupContainers("benchmark")
 	s.WritePerfResults()
 }
