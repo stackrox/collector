@@ -111,7 +111,7 @@
         push: true
         source: local
 
-    - name: Push base to quay.io/rhacs-eng
+    - name: Push latest to quay.io/rhacs-eng
       community.docker.docker_image:
         name: "{{ rhacs_eng_image }}-{{ arch }}"
         repository: "{{ rhacs_eng_image }}-{{ arch }}-latest"

@@ -86,6 +86,7 @@ echo "$module_version"
 
 if (($(compare_version "$module_version" "2.10.0") >= 1)); then
     # Dont build drivers for versions 2.10 or newer
+    echo "Not building drivers for module version $module_version"
     exit 0
 fi
 
