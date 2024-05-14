@@ -26,8 +26,8 @@ echo "If this command fails, you should see the list of modified files below."
 echo "You need to find the reason and prevent it because otherwise the build results will be inconsistent."
 echo ""
 
-if git status --porcelain | grep '.' >&2 ; then
-    >&2 echo "ERROR: Modified files found."
+if git status --porcelain | grep '.' >&2; then
+    echo >&2 "ERROR: Modified files found."
     exit 2
 else
     echo "No modifications to git repo detected."
