@@ -92,6 +92,3 @@
 # Since kmods are not supported anyway, block these combination
 ~.*\.el8_9\..* * mod
 ~.*\.el9_4\..* ~2\.[3-9]\..* *
-
-# Block all kernels for module 2.10 and newer
-* ~2\.\d{2}\..* *

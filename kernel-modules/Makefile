@@ -43,17 +43,6 @@ push-build-containers: push-build-container $(CUSTOM_FLAVORS:%=push-build-contai
 print-custom-flavors:
 	@printf "%s\n" $(CUSTOM_FLAVORS)
 
-.PHONY: drivers
-drivers: build-container-$(DEV_DRIVER_BUILDER)
-	docker run --rm \
-		--entrypoint "/bin/bash" \
-		-v $(DEV_SHARED_VOLUME):/collector \
-		-v /lib/modules/:/lib/modules/:ro \
-		-v /usr/src:/usr/src:ro \
-		-e GIT_COMMIT=$(shell git rev-parse HEAD) \
-		build-kernel-modules-$(DEV_DRIVER_BUILDER):latest \
-		-c /collector/kernel-modules/dev/build-drivers.sh
-
 .PHONY: clean-drivers
 clean-drivers:
 	rm -rf ../falcosecurity-libs/build/

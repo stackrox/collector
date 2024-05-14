@@ -84,6 +84,11 @@ cp -r "${DRIVER_DIR}/." "${DRIVER_SCRATCH}"
 module_version="$(get_module_version .)"
 echo "$module_version"
 
+if (($(compare_version "$module_version" "2.10.0") == 0)); then
+    # Dont build drivers for versions 2.10 or newer
+    exit 0
+fi
+
 res="$(compare_version "$module_version" "2.7.0")"
 
 if ((res == 0)); then
