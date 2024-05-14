@@ -4,5 +4,5 @@ BEGIN {
 }
 {
     mem_warn = ($8 < 0.6) ? ":red_circle:" : ":green_circle:";
-    printf "|%s|%s|%s|%s|%s|%s",$1,$2,$6,$7,mem_warn,ORS
+    printf "|%s|%s|%s|%s|%s|%s|%s",$1,$2,$6,$7,$8,mem_warn,ORS
 }

@@ -53,6 +53,8 @@ jobs:
         run: |
           jq -s 'flatten' ./container-logs/*/*/perf.json > integration-tests/perf-all.json
 
+          cat integration-tests/perf-all.json
+
           ./integration-tests/scripts/baseline/main.py --test integration-tests/perf-all.json \
             | sort \
             | awk -F "," -f ./integration-tests/scripts/baseline/format-cpu.awk > benchmark-cpu.md
