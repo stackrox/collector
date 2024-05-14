@@ -3,6 +3,6 @@ duration = 60
 
 [workload]
 type = "processes"
-arrival_rate = 10.0
+arrival_rate = 50.0
 departure_rate = 200.0
 random_process = true
