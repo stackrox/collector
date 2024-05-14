@@ -17,6 +17,7 @@ extern "C" {
 #include "GetKernelObject.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
+#include "NetworkStatusInspector.h"
 #include "NetworkStatusNotifier.h"
 #include "ProfilerHandler.h"
 #include "Utility.h"
@@ -61,6 +62,7 @@ void CollectorService::RunForever() {
   std::unique_ptr<NetworkStatusNotifier> net_status_notifier;
 
   std::unique_ptr<ContainerInfoInspector> container_info_inspector;
+  std::unique_ptr<NetworkStatusInspector> network_status_inspector;
 
   CLOG(INFO) << "Network scrape interval set to " << config_.ScrapeInterval() << " seconds";
 
@@ -106,6 +108,8 @@ void CollectorService::RunForever() {
   if (config_.IsIntrospectionEnabled()) {
     container_info_inspector = std::make_unique<ContainerInfoInspector>(system_inspector_.GetContainerMetadataInspector());
     server.addHandler(container_info_inspector->kBaseRoute, container_info_inspector.get());
+    network_status_inspector = std::make_unique<NetworkStatusInspector>(conn_tracker);
+    server.addHandler(network_status_inspector->kBaseRoute, network_status_inspector.get());
   }
 
   system_inspector_.Init(config_, conn_tracker);

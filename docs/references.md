@@ -79,6 +79,12 @@ own upper limit on top of that, which is 2^17.
 information could be useful for troubleshooting, but under normal functioning
 is quite verbose. The default is true.
 
+* `ROX_COLLECTOR_INTROSPECTION_ENABLE`: Enable the introspection API and publish the
+corresponding endpoints. With this API, it is possible to dump some of the
+internal state of Collector. Refer to the 
+[troubleshooting](troubleshooting.md#introspection-endpoints) section for more details.
+The default is false.
+
 NOTE: Using environment variables is a preferred way of configuring Collector,
 so if you're adding a new configuration knob, keep this in mind.
 
