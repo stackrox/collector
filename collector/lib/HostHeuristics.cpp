@@ -110,7 +110,7 @@ class PowerHeuristic : public Heuristic {
     }
 
     if (k.kernel == 4 && k.major == 18 && k.build_id < 477) {
-      CLOG(INFO) << "RHEL 8.6 on ppc64le does not support CORE_BPF, switching to eBPF collection method.";
+      CLOG(INFO) << "RHEL 8.6 (kernel < 4.18.0-477) on ppc64le does not support CORE_BPF, switching to eBPF collection method.";
       hconfig->SetCollectionMethod(CollectionMethod::EBPF);
     }
   }

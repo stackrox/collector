@@ -57,13 +57,13 @@
         username: "{{ stackrox_io_username }}"
         password: "{{ stackrox_io_password }}"
 
-    - name: Push slim to quay.io/stackrox-io
+    - name: Push to quay.io/stackrox-io
       community.docker.docker_image:
         name: "{{ collector_image }}-{{ arch }}"
         push: true
         source: local
 
-    - name: Push base to quay.io/stackrox-io
+    - name: Push slim to quay.io/stackrox-io
       community.docker.docker_image:
         name: "{{ collector_image }}-{{ arch }}"
         repository: "{{ collector_image }}-{{ arch }}-slim"
@@ -72,14 +72,14 @@
 
     - name: Push base to quay.io/stackrox-io
       community.docker.docker_image:
-        name: "{{ collector_image }}-{{ arch }}-slim"
+        name: "{{ collector_image }}-{{ arch }}"
         repository: "{{ collector_image }}-{{ arch }}-base"
         push: true
         source: local
 
     - name: Push latest to quay.io/stackrox-io
       community.docker.docker_image:
-        name: "{{ collector_image }}-{{ arch }}-slim"
+        name: "{{ collector_image }}-{{ arch }}"
         repository: "{{ collector_image }}-{{ arch }}-latest"
         push: true
         source: local
@@ -90,14 +90,14 @@
         username: "{{ rhacs_eng_username }}"
         password: "{{ rhacs_eng_password }}"
 
-    - name: Push slim to quay.io/rhacs-eng
+    - name: Push to quay.io/rhacs-eng
       community.docker.docker_image:
         name: "{{ collector_image }}-{{ arch }}"
         repository: "{{ rhacs_eng_image }}-{{ arch }}"
         push: true
         source: local
 
-    - name: Push base to quay.io/rhacs-eng
+    - name: Push slim to quay.io/rhacs-eng
       community.docker.docker_image:
         name: "{{ rhacs_eng_image }}-{{ arch }}"
         repository: "{{ rhacs_eng_image }}-{{ arch }}-slim"

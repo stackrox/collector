@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - master
+  pull_request:
 
 jobs:
   init:
     uses: ./.github/workflows/init.yml
+    if: github.event_name == 'push' || contains(github.event.pull_request.*.name, 'run-driver-builds')
     secrets: inherit
     with:
       cpaas-workflow: false

@@ -64,6 +64,10 @@ jobs:
           - amd64
           - s390x
           - ppc64le
+    env:
+      DRIVER_VERSION: ${{ needs.init.outputs.module-version }}
+      DRIVERS_IMAGE: brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0
+      DOWNSTREAM_COLLECTOR_IMAGE: brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
     steps:
       - uses: actions/checkout@v4
 
@@ -104,14 +108,13 @@ jobs:
           # images are only used for testing, this has been deemed Good Enough (tm)
           #
 
-          DRIVER_VERSION="$(cat kernel-modules/MODULE_VERSION)"
-          docker create --name drivers --platform linux/${{ matrix.arch }} brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0
-          docker create --name power --platform linux/${{ matrix.arch }} brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
+          docker create --name drivers --platform linux/${{ matrix.arch }} "${DRIVERS_IMAGE}"
+          docker create --name power --platform linux/${{ matrix.arch }} "${DOWNSTREAM_COLLECTOR_IMAGE}"
 
           # using - as the src or dest allows streaming between containers
           docker cp "drivers:/kernel-modules/${DRIVER_VERSION}/" - | docker cp - power:/kernel-modules/
 
-          # make and push a new image with the drivers in
+          # make and push a new image that contains the drivers.
           docker commit power ${{ needs.init.outputs.collector-image }}-cpaas-${{ matrix.arch }}
           docker push ${{ needs.init.outputs.collector-image }}-cpaas-${{ matrix.arch }}
 

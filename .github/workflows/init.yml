@@ -63,6 +63,10 @@ on:
         description: |
           Trigger rebuild of QA containers
         value: ${{ jobs.common-variables.outputs.rebuild-qa-containers }}
+      module-version:
+        description: |
+          The version of the drivers to use in this build
+        value: ${{ jobs.common-variables.outputs.module-version }}
 
 jobs:
   common-variables:
@@ -83,6 +87,7 @@ jobs:
       cpaas-support-packages-bucket: ${{ steps.gcp-buckets.outputs.cpaas-support-packages-bucket }}
       support-packages-index-bucket: ${{ steps.gcp-buckets.outputs.support-packages-index-bucket }}
       rebuild-qa-containers: ${{ steps.filter.outputs.container }}
+      module-version: ${{ steps.module-version.outputs.module-version }}
 
     steps:
       - uses: actions/checkout@v4
@@ -182,6 +187,11 @@ jobs:
               echo "support-packages-index-bucket=${SUPPORT_PACKAGES_BUCKET}"
             } >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Set module version
+        id: module-version
+        run: |
+          echo "module-version=$(cat ${{ github.workspace }}/kernel-modules/MODULE_VERSION)" >> "$GITHUB_OUTPUT"
 
   downstream-check:
     runs-on: ubuntu-latest

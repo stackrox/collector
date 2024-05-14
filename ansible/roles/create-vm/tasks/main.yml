@@ -1,30 +1,46 @@
 ---
 
+#
+# Exclusion precedence:
+#   1. ppc64le is the only platform allowed to run eBPF
+#   2. specific exclusions defined group_vars/all.yml
+#
+# Consider each set_fact to be a rule, and subsequent rules are only
+# processed if the previous rules do not exclude this combination of
+# vm and collection method.
+#
+- name: Check eBPF excluded
+  set_fact:
+    excluded: "{{ test_platform != 'rhel-ppc64le' and vm_collection_method == 'ebpf' }}"
+
 - name: Check family excluded
   set_fact:
-    excluded: "{{ [vm_family, vm_collection_method] in excluded_pairs or (test_platform != 'rhel-ppc64le' and vm_collection_method == 'ebpf') }}"
-  when: vm_image is not defined
+    excluded: "{{ [vm_family, vm_collection_method] in excluded_pairs or ebpf_excluded }}"
+  when: vm_image is not defined and excluded == false
 
 - name: Check image excluded
   set_fact:
-    excluded: "{{ [vm_image, vm_collection_method] in excluded_pairs or (test_platform != 'rhel-ppc64le' and vm_collection_method == 'ebpf') }}"
+    excluded: "{{ [vm_image, vm_collection_method] in excluded_pairs or ebpf_excluded }}"
   when: vm_image is defined
 
-- name: Create IBM Z VM
-  include_tasks: create-s390x-vm.yml
-  vars:
-    vsi_name: "{{ vm_name }}"
-  when: vm_arch == "s390x" and excluded == false
+- block:
+  - name: Create IBM Z VM
+    include_tasks: create-s390x-vm.yml
+    vars:
+      vsi_name: "{{ vm_name }}"
+    when: vm_arch == "s390x"
 
-- name: Create IBM POWER VM
-  include_tasks: create-ppc64le-vm.yml
-  vars:
-    pi_name: "{{ vm_name }}"
-  when: vm_arch == "ppc64le" and excluded == false
+  - name: Create IBM POWER VM
+    include_tasks: create-ppc64le-vm.yml
+    vars:
+      pi_name: "{{ vm_name }}"
+    when: vm_arch == "ppc64le"
 
-- name: Create GCP VM
-  include_tasks: create-gcp-vm.yml
-  when: (vm_arch == "amd64" or vm_arch == "arm64") and excluded == false
+  - name: Create GCP VM
+    include_tasks: create-gcp-vm.yml
+    when: (vm_arch == "amd64" or vm_arch == "arm64")
+
+  when: excluded == false
 
 # make sure to reset the instance_result otherwise subsequent VMs arent created
 - set_fact:
