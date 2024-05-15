@@ -455,7 +455,7 @@ output with debugging symbols.
 
 Whenever in doubt about performance implications of your changes, there is an
 option to run a benchmark against the PR and compare the results with the known
-baseline numbers. To do that add a "run-benchmark" label to the PR, the
+baseline numbers. To do that, add a "run-benchmark" label to the PR. The
 performance comparison will be reported via commentary to the PR with metrics
 for CPU utilization and memory consumption. Along with the median values for
 each resource a p-value sign will be reported, which could be interpreted as
