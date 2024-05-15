@@ -451,6 +451,30 @@ $ curl collector:8080/profile/heap
 The resulting profile could be processed with `pprof` to get a human-readable
 output with debugging symbols.
 
+## Benchmark CI step
+
+Whenever in doubt about performance implications of your changes, there is an
+option to run a benchmark against the PR and compare the results with the known
+baseline numbers. To do that add a "run-benchmark" label to the PR, the
+performance comparison will be reported via commentary to the PR with metrics
+for CPU utilization and memory consumption. Along with the median values for
+each resource a p-value sign will be reported, which could be interpreted as
+how high are the chances that the observed difference is purely due to the
+noise. The underlying mechanism is t-test, more than 80% probability it's just
+a noise will result in green, less than that -- in red.
+
+The benchmark will be conducted with two short simultaneous workloads, you can
+find the configuration for them inside the berserker integration test image.
+The baseline numbers are stored on GCS, and contains last 10 runs from the main
+branch. The reporting filters out distinctly different results with small median
+difference, to not bother without significant reasons, e.g. differences in CPU
+utilization less than 1% and in memory less than 10 MiB are ignored. Keep in
+mind, that false-positives are definitely possible due to the noisyness of the
+CI platform.
+
+If for development purposes it's necessary to update the baseline from a PR,
+not only just for the main branch, you can add "update-baseline" label.
+
 ## Introspection endpoints
 
 Another method for troubleshooting collector during development cycles is to
