@@ -53,7 +53,9 @@ jobs:
         run: |
           jq -s 'flatten' ./container-logs/*/*/perf.json > integration-tests/perf-all.json
 
-          cat integration-tests/perf-all.json
+          if [[ "${RUNNER_DEBUG}" == "1" ]]; then
+              cat integration-tests/perf-all.json
+          fi
 
           ./integration-tests/scripts/baseline/main.py --test integration-tests/perf-all.json \
             | sort \
