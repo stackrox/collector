@@ -463,7 +463,7 @@ how high are the chances that the observed difference is purely due to the
 noise. The underlying mechanism is t-test, more than 80% probability it's just
 a noise will result in green, less than that -- in red.
 
-The benchmark will be conducted with two short simultaneous workloads, you can
+The benchmark will be conducted with two short simultaneous workloads. You can
 find the configuration for them inside the berserker integration test image.
 The baseline numbers are stored on GCS, and contains last 10 runs from the main
 branch. The reporting filters out distinctly different results with small median
