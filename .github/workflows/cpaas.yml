@@ -50,6 +50,7 @@ jobs:
   check-drivers-failures:
     uses: ./.github/workflows/check-drivers-failures.yml
     needs: sync-drivers-and-support-packages
+    secrets: inherit
     with:
       logs-artifact:
         drivers-build-failures
