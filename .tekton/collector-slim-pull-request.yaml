@@ -27,7 +27,7 @@ spec:
   - name: image-expires-after
     value: '13w'
   - name: output-image-repo
-    value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/collector-slim
+    value: quay.io/rhacs-eng/collector-slim
   - name: path-context
     value: .
   - name: revision
