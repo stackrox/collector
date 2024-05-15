@@ -14,4 +14,6 @@ podman run --rm -d \
     -v /sys:/host/sys:ro \
     -v /usr/lib:/host/usr/lib:ro \
     --mount type=tmpfs,destination=/module \
+    --network=host \
+    --privileged \
     quay.io/stackrox-io/collector:3.18.x-179-g871fcaec01-slim
