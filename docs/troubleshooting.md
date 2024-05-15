@@ -469,7 +469,7 @@ The baseline numbers are stored on GCS, and contains last 10 runs from the main
 branch. The reporting filters out distinctly different results with small median
 difference, to not bother without significant reasons, e.g. differences in CPU
 utilization less than 1% and in memory less than 10 MiB are ignored. Keep in
-mind, that false-positives are definitely possible due to the noisyness of the
+mind that false-positives are definitely possible due to the noisiness of the
 CI platform.
 
 If for development purposes it's necessary to update the baseline from a PR,
