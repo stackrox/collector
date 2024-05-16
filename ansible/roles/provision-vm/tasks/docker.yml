@@ -1,10 +1,10 @@
 ---
 
-- name: Start docker service
-  service:
-    name: "docker"
-    enabled: true
+- name: Reload service
+  systemd:
     state: started
+    daemon_reload: true
+    name: docker
 
 - name: Add user to docker group
   user:
