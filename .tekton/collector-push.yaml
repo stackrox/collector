@@ -292,7 +292,7 @@ spec:
     - name: build-container
       params:
       - name: IMAGE
-        value: $(params.output-image-repo):$(tasks.determine-image-tag.results.image-tag)
+        value: $(params.output-image-repo):$(tasks.determine-image-tag.results.image-tag)-latest
       - name: DOCKERFILE
         value: $(params.dockerfile)
       - name: CONTEXT

@@ -27,7 +27,7 @@ spec:
     # TODO(ROX-20230): make release images not expire.
     value: '13w'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/collector-slim
+    value: quay.io/rhacs-eng/collector
   - name: path-context
     value: .
   - name: revision
@@ -288,7 +288,7 @@ spec:
     - name: build-container
       params:
       - name: IMAGE
-        value: $(params.output-image-repo):$(tasks.determine-image-tag.results.image-tag)
+        value: $(params.output-image-repo):$(tasks.determine-image-tag.results.image-tag)-slim
       - name: DOCKERFILE
         value: $(params.dockerfile)
       - name: CONTEXT
