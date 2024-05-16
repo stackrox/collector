@@ -40,11 +40,11 @@ spec:
     # No language dependencies are required for collector image.
     - name: prefetch-input
       value: ''
-    - name: clone-submodules
-      value: 'true'
     - name: clone-depth
       value: '0'
     - name: clone-fetch-tags
+      value: 'true'
+    - name: clone-submodules
       value: 'true'
     - name: build-source-image
       value: 'true'
@@ -112,6 +112,7 @@ spec:
             - name: kind
               value: task
           resolver: bundles
+
     params:
       - description: Source Repository URL
         name: git-url
@@ -120,7 +121,7 @@ spec:
         description: Revision of the Source Repository
         name: revision
         type: string
-      - description: Output Image Repo
+      - description: Output Image Repository
         name: output-image-repo
         type: string
       - default: .
@@ -157,10 +158,11 @@ spec:
         description: Image tag expiration time, time values could be something like
           1h, 2d, 3w for hours, days, and weeks, respectively.
         name: image-expires-after
+        type: string
       - default: "true"
         description: Initialize and fetch git submodules during cloning of repository.
         name: clone-submodules
-      - default: "false"
+      - default: "true"
         description: Build a source image.
         name: build-source-image
         type: string
@@ -168,6 +170,7 @@ spec:
         description: Build stage to target in container build
         name: build-target-stage
         type: string
+
     results:
       - description: ""
         name: IMAGE_URL

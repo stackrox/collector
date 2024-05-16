@@ -40,14 +40,16 @@ spec:
     # No language dependencies are required for collector image.
     - name: prefetch-input
       value: ''
-    - name: build-source-image
-      value: 'true'
-    - name: build-target-stage
-      value: collector-slim
     - name: clone-depth
       value: '0'
     - name: clone-fetch-tags
       value: 'true'
+    - name: clone-submodules
+      value: 'true'
+    - name: build-source-image
+      value: 'true'
+    - name: build-target-stage
+      value: collector-slim
 
   workspaces:
     - name: workspace
@@ -158,6 +160,9 @@ spec:
         name: image-expires-after
         type: string
       - default: "true"
+        description: Initialize and fetch git submodules during cloning of repository.
+        name: clone-submodules
+      - default: "true"
         description: Build a source image.
         name: build-source-image
         type: string
@@ -216,6 +221,8 @@ spec:
             value: $(params.git-url)
           - name: revision
             value: $(params.revision)
+          - name: submodules
+            value: $(params.clone-submodules)
           - name: depth
             value: "$(params.clone-depth)"
           - name: fetchTags
@@ -264,14 +271,14 @@ spec:
             # TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available.
             - name: smuggle-activation-key
               image: registry.access.redhat.com/ubi8/ubi:latest
-              script: exec /workspace/source/source/.konflux/scripts/subscription-manager-bro.sh smuggle
+              script: exec "$(workspaces.source.path)/source/.konflux/scripts/subscription-manager-bro.sh" smuggle
 
       - name: prefetch-dependencies
         params:
           - name: input
             value: $(params.prefetch-input)
         runAfter:
-          - prepare-rhel-rpm-subscriptions
+          - determine-image-tag
         taskRef:
           params:
             - name: name
@@ -305,6 +312,7 @@ spec:
             value: $(params.build-target-stage)
         runAfter:
           - prefetch-dependencies
+          - prepare-rhel-rpm-subscriptions
         taskRef:
           params:
             - name: name
