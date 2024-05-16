@@ -17,6 +17,7 @@ on:
 env:
   ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
   COLLECTOR_TESTS_IMAGE: quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}
+  COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
 
 jobs:
   k8s-integration-tests:
@@ -50,7 +51,7 @@ jobs:
           cat << EOF > /tmp/vars.yml
           ---
           tester_image: ${{ env.COLLECTOR_TESTS_IMAGE }}
-          collector_image: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+          collector_image: ${{ env.COLLECTOR_IMAGE }}
           collector_root: ${{ github.workspace }}
           EOF
 
@@ -64,6 +65,12 @@ jobs:
       - name: Pull tests image
         run: |
           docker pull ${{ env.COLLECTOR_TESTS_IMAGE }}
+
+      - name: Pull collector image
+        run: |
+          # Collector image is pulled to prevent timeout errors due
+          # to inconsistent timing
+          docker pull ${{ env.COLLECTOR_IMAGE }}
 
       - name: Run tests
         run: |

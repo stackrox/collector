@@ -1,11 +1,6 @@
 package collector
 
 import (
-	"os"
-	"path/filepath"
-	"strings"
-
-	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
 )
 
@@ -31,15 +26,4 @@ func New(e executor.Executor, name string) Manager {
 		return newK8sManager(*k8sExec, name)
 	}
 	return newDockerManager(e, name)
-}
-
-func prepareLog(m Manager) (*os.File, error) {
-	logDirectory := filepath.Join(".", "container-logs", config.VMInfo().Config, config.CollectionMethod())
-	err := os.MkdirAll(logDirectory, os.ModePerm)
-	if err != nil {
-		return nil, err
-	}
-
-	logPath := filepath.Join(logDirectory, strings.ReplaceAll(m.TestName(), "/", "_")+"-collector.log")
-	return os.Create(logPath)
 }

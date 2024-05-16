@@ -125,13 +125,14 @@ func (s *MockSensor) waitProcessesN(
 	}
 
 	tick := time.Tick(tickSeconds)
+	timer := time.After(timeout)
 
 loop:
 	for {
 		select {
 		case <-tick:
 			tickFn()
-		case <-time.After(timeout):
+		case <-timer:
 			timeoutFn()
 			return make([]types.ProcessInfo, 0)
 		case proc := <-s.LiveProcesses():

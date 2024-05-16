@@ -60,6 +60,19 @@
   tags:
     - run-benchmarks
 
+- name: Run Syscall Latency
+  # using platform_*:&job_id here ensures that ansible imports
+  # group_vars/platform_*.yml for the relevant platform, e.g.
+  # flatcar where we need to use a custom python interpreter.
+  hosts: "platform_*:&job_id_{{ job_id }}"
+  strategy: free
+  roles:
+    - run-test-target
+  vars:
+    collector_test: TestSyscallLatency
+  tags:
+    - run-syscall-latency
+
 - name: Teardown Benchmark VMs
   hosts: "job_id_{{ job_id }}"
   strategy: free

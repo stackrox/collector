@@ -24,3 +24,17 @@ func TestBenchmarkCollector(t *testing.T) {
 	}
 	suite.Run(t, new(suites.BenchmarkCollectorTestSuite))
 }
+
+func TestSyscallLatencyBaseline(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Not running Benchmarks in short mode")
+	}
+	suite.Run(t, new(suites.SyscallLatencyBaselineTestSuite))
+}
+
+func TestSyscallLatencyBenchmark(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Not running Benchmarks in short mode")
+	}
+	suite.Run(t, new(suites.SyscallLatencyBenchmarkTestSuite))
+}

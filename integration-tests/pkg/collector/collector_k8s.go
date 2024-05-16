@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
 	"golang.org/x/exp/maps"
 
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
 const (
@@ -26,6 +28,8 @@ type K8sCollectorManager struct {
 	config       map[string]any
 
 	testName string
+
+	eventWatcher watch.Interface
 }
 
 func newK8sManager(e executor.K8sExecutor, name string) *K8sCollectorManager {
@@ -106,6 +110,12 @@ func (k *K8sCollectorManager) Setup(options *StartupOptions) error {
 }
 
 func (k *K8sCollectorManager) Launch() error {
+	// Start an events watcher before spawning collector
+	err := k.startNamespaceEventWatcher()
+	if err != nil {
+		return err
+	}
+
 	objectMeta := metaV1.ObjectMeta{
 		Name:      "collector",
 		Namespace: TEST_NAMESPACE,
@@ -131,7 +141,7 @@ func (k *K8sCollectorManager) Launch() error {
 		},
 	}
 
-	_, err := k.executor.CreatePod(TEST_NAMESPACE, pod)
+	_, err = k.executor.CreatePod(TEST_NAMESPACE, pod)
 	return err
 }
 
@@ -159,6 +169,8 @@ func (k *K8sCollectorManager) TearDown() error {
 			return fmt.Errorf("Collector container has non-zero exit code (%d)", exitCode)
 		}
 	}
+
+	k.stopNamespaceEventWatcher()
 
 	return k.executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).Delete(context.Background(), "collector", metaV1.DeleteOptions{})
 }
@@ -197,6 +209,15 @@ func replaceOrAppendEnvVar(list []coreV1.EnvVar, newVar coreV1.EnvVar) []coreV1.
 }
 
 func (k *K8sCollectorManager) captureLogs() error {
+	err := k.capturePodLogs()
+	if err != nil {
+		return err
+	}
+
+	return k.capturePodConfiguration()
+}
+
+func (k *K8sCollectorManager) capturePodLogs() error {
 	req := k.executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).GetLogs("collector", &coreV1.PodLogOptions{})
 	podLogs, err := req.Stream(context.Background())
 	if err != nil {
@@ -204,7 +225,7 @@ func (k *K8sCollectorManager) captureLogs() error {
 	}
 	defer podLogs.Close()
 
-	logFile, err := prepareLog(k)
+	logFile, err := common.PrepareLog(k.testName, "collector.log")
 	if err != nil {
 		return err
 	}
@@ -212,4 +233,24 @@ func (k *K8sCollectorManager) captureLogs() error {
 
 	_, err = io.Copy(logFile, podLogs)
 	return err
+}
+
+func (k *K8sCollectorManager) capturePodConfiguration() error {
+	return k.executor.CapturePodConfiguration(k.testName, TEST_NAMESPACE, "collector")
+}
+
+func (k *K8sCollectorManager) startNamespaceEventWatcher() error {
+	eventWatcher, err := k.executor.CreateNamespaceEventWatcher(k.testName, TEST_NAMESPACE)
+	if err != nil {
+		return err
+	}
+
+	k.eventWatcher = eventWatcher
+	return err
+}
+
+func (k *K8sCollectorManager) stopNamespaceEventWatcher() {
+	if k.eventWatcher != nil {
+		k.eventWatcher.Stop()
+	}
 }

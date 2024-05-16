@@ -2,12 +2,15 @@ package executor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -171,4 +174,62 @@ func (e *K8sExecutor) CreatePod(ns string, pod *coreV1.Pod) (*coreV1.Pod, error)
 
 func (e *K8sExecutor) ClientSet() *kubernetes.Clientset {
 	return e.clientset
+}
+
+func (e *K8sExecutor) CapturePodConfiguration(testName, ns, podName string) error {
+	pod, err := e.clientset.CoreV1().Pods(ns).Get(context.Background(), podName, metaV1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	logFile, err := common.PrepareLog(testName, ns+"-"+podName+"-config.json")
+	if err != nil {
+		return err
+	}
+	defer logFile.Close()
+
+	podJson, err := json.Marshal(pod)
+	if err != nil {
+		return err
+	}
+
+	_, err = logFile.Write(podJson)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *K8sExecutor) CreateNamespaceEventWatcher(testName, ns string) (watch.Interface, error) {
+	watcher, err := e.clientset.CoreV1().Events(ns).Watch(context.Background(), metaV1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	logFile, err := common.PrepareLog(testName, ns+"-events.jsonl")
+	if err != nil {
+		return nil, err
+	}
+
+	go func(watcher watch.Interface, logFile *os.File) {
+		defer logFile.Close()
+
+		for event := range watcher.ResultChan() {
+			eventJson, err := json.Marshal(event)
+			if err != nil {
+				fmt.Printf("Failed to marshal event: %+v\n", event)
+				fmt.Printf("%s\n", err)
+				return
+			}
+
+			_, err = logFile.WriteString(string(eventJson) + "\n")
+			if err != nil {
+				fmt.Printf("Failed to write to event file: %s\n", err)
+				return
+			}
+		}
+	}(watcher, logFile)
+
+	return watcher, nil
 }

@@ -28,8 +28,7 @@ type BenchmarkTestSuiteBase struct {
 	loadContainers []string
 }
 
-func (b *BenchmarkTestSuiteBase) StartPerfTools() {
-	benchmark_options := config.BenchmarksInfo()
+func (b *BenchmarkTestSuiteBase) StartPerfTools(benchmark_options *config.Benchmarks) {
 	perf := benchmark_options.PerfCommand
 	bpftrace := benchmark_options.BpftraceCommand
 	bcc := benchmark_options.BccCommand
@@ -107,10 +106,10 @@ func (b *BenchmarkTestSuiteBase) startContainer(name string, image string, args 
 
 	cmd = append(cmd, args...)
 
-	containerID, err := b.launchContainer(name, cmd...)
+	_, err := b.launchContainer(name, cmd...)
 	require.NoError(b.T(), err)
 
-	b.perfContainers = append(b.perfContainers, containerID)
+	b.perfContainers = append(b.perfContainers, name)
 }
 
 func (b *BenchmarkTestSuiteBase) FetchWorkloadLogs() {
@@ -130,9 +129,13 @@ func (b *BenchmarkTestSuiteBase) StopPerfTools() {
 
 	for _, container := range b.perfContainers {
 		log, err := b.containerLogs(container)
-		require.NoError(b.T(), err)
+		b.Require().NoError(err)
 
-		fmt.Println(log)
+		f, err := common.PrepareLog(b.T().Name(), container+".log")
+		b.Require().NoError(err)
+
+		_, err = f.WriteString(log)
+		b.Require().NoError(err)
 	}
 
 	b.removeContainers(b.perfContainers...)
@@ -144,7 +147,7 @@ func (s *BenchmarkCollectorTestSuite) SetupSuite() {
 		"benchmark-processes", "benchmark-endpoints")
 	s.StartContainerStats()
 
-	s.StartPerfTools()
+	s.StartPerfTools(config.BenchmarksInfo())
 
 	s.StartCollector(false, nil)
 }
@@ -212,7 +215,7 @@ func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
 func (s *BenchmarkBaselineTestSuite) SetupSuite() {
 	s.RegisterCleanup("benchmark-processes", "benchmark-endpoints")
 	s.StartContainerStats()
-	s.StartPerfTools()
+	s.StartPerfTools(config.BenchmarksInfo())
 }
 
 func (s *BenchmarkBaselineTestSuite) TestBenchmarkBaseline() {
