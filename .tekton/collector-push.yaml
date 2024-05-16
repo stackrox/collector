@@ -62,7 +62,6 @@ spec:
           resources:
             requests:
               storage: 5Gi
-        status: { }
     - name: git-auth
       secret:
         secretName: '{{ git_auth_secret }}'
@@ -492,5 +491,3 @@ spec:
           - input: $(params.skip-checks)
             operator: in
             values: [ "false" ]
-
-status: { }
