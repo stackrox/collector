@@ -1,26 +1,17 @@
 ---
 
-#
-# Exclusion precedence:
-#   1. ppc64le is the only platform allowed to run eBPF
-#   2. specific exclusions defined group_vars/all.yml
-#
-# Consider each set_fact to be a rule, and subsequent rules are only
-# processed if the previous rules do not exclude this combination of
-# vm and collection method.
-#
-- name: Check eBPF excluded
+- name: Check platform excluded
   set_fact:
-    excluded: "{{ test_platform != 'rhel-ppc64le' and vm_collection_method == 'ebpf' }}"
+    excluded: "{{ test_platform in excluded_vms }}"
 
 - name: Check family excluded
   set_fact:
-    excluded: "{{ [vm_family, vm_collection_method] in excluded_pairs }}"
+    excluded: "{{ vm_family in excluded_vms }}"
   when: vm_image is not defined and excluded == false
 
 - name: Check image excluded
   set_fact:
-    excluded: "{{ [vm_image, vm_collection_method] in excluded_pairs }}"
+    excluded: "{{ vm_image in excluded_vms }}"
   when: vm_image is defined and excluded == false
 
 - block:

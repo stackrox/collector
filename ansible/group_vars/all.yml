@@ -16,10 +16,13 @@ runtime_socket: /var/run/docker.sock
 redhat_username: "{{ lookup('env', 'REDHAT_USERNAME', default='') }}"
 redhat_password: "{{ lookup('env', 'REDHAT_PASSWORD', default='') }}"
 
-excluded_pairs:
-  # e.g. - ['ubuntu-1804-lts', 'core_bpf']
-  - ['rhel-8.8-05102023', 'ebpf']
-  - ['rhel-86-05162022', 'core_bpf']
+excluded_vms:
+  # Specify, family, image, or platform
+  # e.g.
+  # - ubuntu-1804-lts
+  # - rhel-arm64
+  # - rhcos-413-86-202303151429-0-gcp-x86-64
+  -
 
 virtual_machines:
   rhel:
@@ -49,7 +52,6 @@ virtual_machines:
     arch: ppc64le
     ssh_key_file: "~/.ssh/acs-ppc64le-rsa.prv"
     images:
-      - rhel-86-05162022
       - rhel-8.8-05102023
 
   rhel-sap:
