@@ -1,8 +1,8 @@
 #!/bin/bash
 
 if [ -z "$1" ]; then
-  echo "Usage: $0 <ocp-version> [<architectures.path>]"
-  exit 1
+    echo "Usage: $0 <ocp-version> [<architectures.path>]"
+    exit 1
 fi
 
 OCP_VERSION=$1
@@ -14,14 +14,13 @@ URL="https://raw.githubusercontent.com/openshift/installer/release-${OCP_VERSION
 
 json_data=$(curl -s "$URL")
 if [ -z "$json_data" ]; then
-  echo "Failed to fetch JSON data from URL: $URL"
-  exit 1
+    echo "Failed to fetch JSON data from URL: $URL"
+    exit 1
 fi
 
 image_name=$(echo "$json_data" | jq -r ".architectures.${JSONPATH}")
 if [ "$image_name" == "null" ]; then
-  echo "Failed to parse JSON data or path does not exist"
-  exit 1
+    echo "Failed to parse JSON data or path does not exist"
+    exit 1
 fi
 echo "$image_name"
-
