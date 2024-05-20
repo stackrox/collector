@@ -13,6 +13,7 @@ podman run --rm -d \
     -v /proc:/host/proc:ro \
     -v /sys:/host/sys:ro \
     -v /usr/lib:/host/usr/lib:ro \
+    -v /var/run/secrets/stackrox-io/certs:/var/run/secrets/stackrox-io/certs:ro \
     --mount type=tmpfs,destination=/module \
     --network=host \
     --privileged \
