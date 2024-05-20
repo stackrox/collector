@@ -303,10 +303,10 @@ void ConnectionTracker::UpdateKnownIPNetworks(UnorderedMap<Address::Family, std:
   WITH_LOCK(mutex_) {
     known_ip_networks_ = tree;
     known_private_networks_exists_ = std::move(known_private_networks_exists);
-    if (CLOG_ENABLED(DEBUG)) {
-      CLOG(DEBUG) << "known ip networks:";
+    if (CLOG_ENABLED(TRACE)) {
+      CLOG(TRACE) << "known ip networks:";
       for (auto network : known_ip_networks_.GetAll()) {
-        CLOG(DEBUG) << " - " << network;
+        CLOG(TRACE) << " - " << network;
       }
     }
   }
@@ -315,10 +315,10 @@ void ConnectionTracker::UpdateKnownIPNetworks(UnorderedMap<Address::Family, std:
 void ConnectionTracker::UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair>&& ignored_l4proto_port_pairs) {
   WITH_LOCK(mutex_) {
     ignored_l4proto_port_pairs_ = std::move(ignored_l4proto_port_pairs);
-    if (CLOG_ENABLED(DEBUG)) {
-      CLOG(DEBUG) << "ignored l4 protocol and port pairs";
+    if (CLOG_ENABLED(TRACE)) {
+      CLOG(TRACE) << "ignored l4 protocol and port pairs";
       for (const auto& proto_port_pair : ignored_l4proto_port_pairs_) {
-        CLOG(DEBUG) << proto_port_pair.first << "/" << proto_port_pair.second;
+        CLOG(TRACE) << proto_port_pair.first << "/" << proto_port_pair.second;
       }
     }
   }
