@@ -33,8 +33,9 @@
       changed_when: false
 
     - name: Check collector image exists locally
-      community.docker.docker_image_info:
+      containers.podman.podman_image_info:
         name: "{{ collector_image }}"
+        executable: docker
       register: collector_image_info
 
     - name: Load collector image into kind cluster
@@ -44,8 +45,9 @@
       changed_when: false
 
     - name: Check tester image exists locally
-      community.docker.docker_image_info:
+      containers.podman.podman_image_info:
         name: "{{ tester_image }}"
+        executable: docker
       register: tester_image_info
 
     - name: Load tester image into kind cluster

@@ -1,6 +1,6 @@
 ---
 collections:
 - community.general
-- community.docker
+- containers.podman
 - ibm.cloudcollection
 - kubernetes.core
