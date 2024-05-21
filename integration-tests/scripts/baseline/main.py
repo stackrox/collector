@@ -68,7 +68,7 @@ def memory_parser(data):
     }
 
     for k, v in data.items():
-        if k in ('Mem') and isinstance(v, str) and len(v) > 3:
+        if k == 'Mem' and isinstance(v, str) and len(v) > 3:
             suffix = v[-3:]
             multiplier = multipliers.get(suffix, 0)
 
@@ -242,32 +242,36 @@ def normalize_collection_method(method):
 
 def process(content):
     """
-    Transform benchmark data into the format CI scripts work with, and group by
-    VmConfig and CollectionMethod fields.
+    Transform benchmark data into the format CI scripts work with (a flat list
+    [record, statistics]), and group by VmConfig and CollectionMethod fields.
     """
+    flat = []
 
-    processed = [
-        {
-            "kernel": record.get("VmConfig").replace('_', '.'),
-            "collection_method": normalize_collection_method(record.get("CollectionMethod")),
-            "timestamp": stats.get("Timestamp"),
-            "test": record.get("TestName"),
-            "cpu": stats.get("Cpu"),
-            "mem": stats.get("Mem")
-        }
-        for record in content
-        for stats in record.get("ContainerStats")
-
+    def filter_stat(record, stats):
         # Filter statistics from Collector only, bounded to the timeframe when
         # load was actually running. LoadStopTs is adjusted by 1 sec, since
         # this timestamp is taken after the workload container was stopped, so
         # that the actual load might have stopped slightly earlier.
-        if (stats.get("Name") == "collector" and
+        return (
+            stats.get("Name") == "collector" and
             stats.get("Timestamp") > record.get("LoadStartTs") and
-            stats.get("Timestamp") < record.get("LoadStopTs") - timedelta(seconds=1))
-    ]
+            stats.get("Timestamp") < record.get("LoadStopTs") - timedelta(seconds=1)
+        )
 
-    return group_data(processed, "kernel", "collection_method")
+    for record in content:
+        filter_fn = partial(filter_stat, record)
+        stats = filter(filter_fn, record.get("ContainerStats"))
+
+        flat += [{
+            "kernel": record.get("VmConfig").replace('_', '.'),
+            "collection_method": normalize_collection_method(record.get("CollectionMethod")),
+            "timestamp": s.get("Timestamp"),
+            "test": record.get("TestName"),
+            "cpu": s.get("Cpu"),
+            "mem": s.get("Mem")
+        } for s in stats]
+
+    return group_data(flat, "kernel", "collection_method")
 
 
 def group_data(content, *columns):
