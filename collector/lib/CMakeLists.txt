@@ -1,6 +1,7 @@
+add_subdirectory(sources)
+
 file(GLOB COLLECTOR_LIB_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
-     ${CMAKE_CURRENT_SOURCE_DIR}/system-inspector/*.cpp
-     ${CMAKE_CURRENT_SOURCE_DIR}/sources/*.cpp)
+     ${CMAKE_CURRENT_SOURCE_DIR}/system-inspector/*.cpp)
 
 add_library(collector_lib ${DRIVER_HEADERS} ${COLLECTOR_LIB_SRC_FILES})
 add_dependencies(collector_lib sinsp)

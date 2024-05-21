@@ -9,9 +9,10 @@ using Signal = v1::Signal;
 
 class ISource {
  public:
-  ISource() = delete;
-
   virtual std::shared_ptr<Signal> Next() = 0;
+  virtual bool Init(const CollectorConfig& config) override;
+  virtual void Start();
+  virtual void Stop();
 };
 
 }  // namespace sources

@@ -1,5 +1,3 @@
-#include "Service.h"
-
 #include <cap-ng.h>
 #include <thread>
 
@@ -25,53 +23,14 @@
 #include "ProcessSignalHandler.h"
 #include "SelfCheckHandler.h"
 #include "SelfChecks.h"
+#include "Service.h"
 #include "TimeUtil.h"
 #include "Utility.h"
 #include "logger.h"
 
-namespace collector::system_inspector {
+namespace collector::sources {
 
-constexpr char Service::kModulePath[];
-constexpr char Service::kModuleName[];
-constexpr char Service::kProbePath[];
-constexpr char Service::kProbeName[];
-
-Service::Service() {}
-Service::~Service() {}
-
-void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) {
-  // The self-check handlers should only operate during start up,
-  // so they are added to the handler list first, so they have access
-  // to self-check events before the network and process handlers have
-  // a chance to process them and send them to Sensor.
-  AddSignalHandler(MakeUnique<SelfCheckProcessHandler>(inspector_.get()));
-  AddSignalHandler(MakeUnique<SelfCheckNetworkHandler>(inspector_.get()));
-
-  if (conn_tracker) {
-    auto network_signal_handler_ = MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_);
-
-    network_signal_handler_->SetCollectConnectionStatus(config.CollectConnectionStatus());
-
-    AddSignalHandler(std::move(network_signal_handler_));
-  }
-
-  if (config.grpc_channel) {
-    signal_client_.reset(new SignalServiceClient(std::move(config.grpc_channel)));
-  } else {
-    signal_client_.reset(new StdoutSignalServiceClient());
-  }
-  AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(),
-                                                    signal_client_.get(),
-                                                    &userspace_stats_));
-
-  if (signal_handlers_.size() == 2) {
-    // self-check handlers do not count towards this check, because they
-    // do not send signals to Sensor.
-    CLOG(FATAL) << "Internal error: There are no signal handlers.";
-  }
-}
-
-bool Service::InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) {
+bool FalcoSource::Init(const CollectorConfig& config) {
   if (!inspector_) {
     inspector_.reset(new sinsp());
 
@@ -143,7 +102,7 @@ bool Service::InitKernel(const CollectorConfig& config, const DriverCandidate& c
   return true;
 }
 
-sinsp_evt* Service::GetNext() {
+sinsp_evt* FalcoSource::GetNext() {
   std::lock_guard<std::mutex> lock(libsinsp_mutex_);
   sinsp_evt* event = nullptr;
 
@@ -188,13 +147,13 @@ sinsp_evt* Service::GetNext() {
   return event;
 }
 
-bool Service::FilterEvent(sinsp_evt* event) {
+bool FalcoSource::FilterEvent(sinsp_evt* event) {
   const auto* tinfo = event->get_thread_info();
 
   return FilterEvent(tinfo);
 }
 
-bool Service::FilterEvent(const sinsp_threadinfo* tinfo) {
+bool FalcoSource::FilterEvent(const sinsp_threadinfo* tinfo) {
   if (tinfo == nullptr) {
     return false;
   }
@@ -215,7 +174,7 @@ bool Service::FilterEvent(const sinsp_threadinfo* tinfo) {
   return exepath_sv.rfind("/proc/self", 0) != 0;
 }
 
-void Service::Start() {
+void FalcoSource::Start() {
   std::lock_guard<std::mutex> libsinsp_lock(libsinsp_mutex_);
 
   if (!inspector_) {
@@ -258,7 +217,7 @@ void LogUnreasonableEventTime(int64_t time_micros, sinsp_evt* evt) {
   }
 }
 
-void Service::Run(const std::atomic<ControlValue>& control) {
+void FalcoSource::Run(const std::atomic<ControlValue>& control) {
   if (!inspector_) {
     throw CollectorException("Invalid state: system inspector was not initialized");
   }
@@ -295,7 +254,7 @@ void Service::Run(const std::atomic<ControlValue>& control) {
   }
 }
 
-bool Service::SendExistingProcesses(SignalHandler* handler) {
+bool FalcoSource::SendExistingProcesses(SignalHandler* handler) {
   std::lock_guard<std::mutex> lock(libsinsp_mutex_);
 
   if (!inspector_) {
@@ -321,7 +280,7 @@ bool Service::SendExistingProcesses(SignalHandler* handler) {
   });
 }
 
-void Service::CleanUp() {
+void FalcoSource::CleanUp() {
   std::lock_guard<std::mutex> libsinsp_lock(libsinsp_mutex_);
   std::lock_guard<std::mutex> running_lock(running_mutex_);
   running_ = false;
@@ -349,7 +308,7 @@ void Service::CleanUp() {
   }
 }
 
-bool Service::GetStats(system_inspector::Stats* stats) const {
+bool FalcoSource::GetStats(system_inspector::Stats* stats) const {
   std::lock_guard<std::mutex> libsinsp_lock(libsinsp_mutex_);
   std::lock_guard<std::mutex> running_lock(running_mutex_);
   if (!running_ || !inspector_) return false;
@@ -365,7 +324,7 @@ bool Service::GetStats(system_inspector::Stats* stats) const {
   return true;
 }
 
-void Service::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler) {
+void FalcoSource::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler) {
   std::bitset<PPM_EVENT_MAX> event_filter;
   const auto& relevant_events = signal_handler->GetRelevantEvents();
   if (relevant_events.empty()) {
@@ -383,13 +342,13 @@ void Service::AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler) {
   signal_handlers_.emplace_back(std::move(signal_handler), event_filter);
 }
 
-void Service::GetProcessInformation(uint64_t pid, ProcessInfoCallbackRef callback) {
+void FalcoSource::GetProcessInformation(uint64_t pid, ProcessInfoCallbackRef callback) {
   std::lock_guard<std::mutex> lock(process_requests_mutex_);
 
   pending_process_requests_.emplace_back(pid, callback);
 }
 
-void Service::ServePendingProcessRequests() {
+void FalcoSource::ServePendingProcessRequests() {
   std::lock_guard<std::mutex> lock(process_requests_mutex_);
 
   while (!pending_process_requests_.empty()) {
@@ -405,8 +364,8 @@ void Service::ServePendingProcessRequests() {
   }
 }
 
-bool Service::SignalHandlerEntry::ShouldHandle(sinsp_evt* evt) const {
+bool FalcoSource::SignalHandlerEntry::ShouldHandle(sinsp_evt* evt) const {
   return event_filter[evt->get_type()];
 }
 
-}  // namespace collector::system_inspector
+}  // namespace collector::sources
