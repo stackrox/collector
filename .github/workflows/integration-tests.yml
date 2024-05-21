@@ -60,10 +60,10 @@ jobs:
       fail-fast: false
       matrix:
         vm_type:
-          - rhel
           - cos
           - flatcar
           - fedora-coreos
+          - rhel
           - rhel-sap
           - sles
           - garden-linux

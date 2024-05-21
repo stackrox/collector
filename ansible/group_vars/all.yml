@@ -67,8 +67,6 @@ virtual_machines:
       - "{{ lookup('ansible.builtin.pipe', 'group_vars/fetch_ocp_rhcos_bootimage.sh 4.15') }}"
       - "{{ lookup('ansible.builtin.pipe', 'group_vars/fetch_ocp_rhcos_bootimage.sh 4.14') }}"
       - "{{ lookup('ansible.builtin.pipe', 'group_vars/fetch_ocp_rhcos_bootimage.sh 4.12') }}"
-      - rhcos-412-86-202303211731-0-gcp-x86-64
-      - rhcos-413-86-202303151429-0-gcp-x86-64
     username: core
     ignition:
       ignition:
