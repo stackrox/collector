@@ -4,6 +4,7 @@
 
   vars:
     kind_name: "{{ cluster_name | default('collector-tests') }}"
+    container_engine: "{{ container_engine | default('docker') }}"
 
   tasks:
     - name: Check KinD is installed
@@ -33,10 +34,16 @@
       changed_when: false
 
     - name: Check collector image exists locally
+      community.docker.docker_image_info:
+        name: "{{ collector_image }}"
+      register: collector_image_info
+      when: container_engine == 'docker'
+
+    - name: Check collector image exists locally
       containers.podman.podman_image_info:
         name: "{{ collector_image }}"
-        executable: docker
       register: collector_image_info
+      when: container_engine == 'podman'
 
     - name: Load collector image into kind cluster
       ansible.builtin.command:
@@ -45,10 +52,16 @@
       changed_when: false
 
     - name: Check tester image exists locally
+      community.docker.docker_image_info:
+        name: "{{ tester_image }}"
+      register: tester_image_info
+      when: container_engine == 'docker'
+
+    - name: Check tester image exists locally
       containers.podman.podman_image_info:
         name: "{{ tester_image }}"
-        executable: docker
       register: tester_image_info
+      when: container_engine == 'podman'
 
     - name: Load tester image into kind cluster
       ansible.builtin.command:
