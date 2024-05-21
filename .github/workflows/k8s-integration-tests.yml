@@ -74,7 +74,7 @@ jobs:
 
       - name: Run tests
         run: |
-          ansible-playbook -vv \
+          ansible-playbook -vvvv \
             -i /tmp/inventory.yml \
             -e @/tmp/vars.yml \
             ansible/k8s-integration-tests.yml
