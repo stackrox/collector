@@ -75,7 +75,7 @@ class CollectorConfig {
   bool EnableExternalIPs() const { return enable_external_ips_; }
   bool EnableConnectionStats() const { return enable_connection_stats_; }
   bool EnableDetailedMetrics() const { return enable_detailed_metrics_; }
-  bool EnableRuntimeFilters() const { return enable_runtime_filters_; }
+  bool EnableRuntimeConfig() const { return enable_runtime_config_; }
   bool UseDockerCe() const { return use_docker_ce_; }
   bool UsePodmanCe() const { return use_podman_ce_; }
   bool IsIntrospectionEnabled() const { return enable_introspection_; }
@@ -112,7 +112,7 @@ class CollectorConfig {
   bool enable_external_ips_;
   bool enable_connection_stats_;
   bool enable_detailed_metrics_;
-  bool enable_runtime_filters_;
+  bool enable_runtime_config_;
   bool use_docker_ce_;
   bool use_podman_ce_;
   bool enable_introspection_;

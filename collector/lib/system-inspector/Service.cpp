@@ -97,7 +97,7 @@ bool Service::InitKernel(const CollectorConfig& config, const DriverCandidate& c
 
     container_metadata_inspector_.reset(new ContainerMetadata(inspector_.get()));
 
-    if (config.EnableRuntimeFilters()) {
+    if (config.EnableRuntimeConfig()) {
       uint64_t mask = 1 << CT_CRI |
                       1 << CT_CRIO |
                       1 << CT_CONTAINERD;
