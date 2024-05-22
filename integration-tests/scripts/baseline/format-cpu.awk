@@ -6,10 +6,10 @@ BEGIN {
 }
 {
     # Values might be distinctly different, but if the difference is small, we
-    # don't bother. Currently the cut-off line is 1%, which means any
-    # difference in median values less than 1% will be reported as green.
+    # don't bother. Currently the cut-off line is 5%, which means any
+    # difference in median values less than 5% will be reported as green.
     diff = abs($3 - $4);
 
-    cpu_warn = ($5 < 0.8 && diff > 1) ? ":red_circle:" : ":green_circle:";
+    cpu_warn = ($5 < 0.8 && diff > 5) ? ":red_circle:" : ":green_circle:";
     printf "|%s|%s|%s|%s|%s|%s",$1,$2,$3,$4,cpu_warn,ORS
 }
