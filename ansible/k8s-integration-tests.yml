@@ -57,6 +57,10 @@
       register: collector_image_info
       when: c_engine == 'podman'
 
+    - name: print collector image
+      debug:
+        msg: "{{ collector_image_info }}"
+
     - name: Load collector image into kind cluster
       ansible.builtin.command:
         cmd: kind --name {{ kind_name }} load docker-image {{ collector_image }}
