@@ -3,9 +3,3 @@
   containers.podman.podman_image_info:
     name: "{{ image }}"
   register: image_info
-
-- name: Load image into kind cluster
-  ansible.builtin.command:
-    cmd: kind --name {{ kind_name }} load docker-image {{ image }}
-  when: image_info.images | length == 1
-  changed_when: false

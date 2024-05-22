@@ -6,3 +6,9 @@
 - name: Load image via podman
   include_tasks: podman.yml
   when: c_engine == 'podman'
+
+- name: Load image into kind cluster
+  ansible.builtin.command:
+    cmd: kind --name {{ kind_name }} load docker-image {{ image }}
+  when: image_info.images | length == 1
+  changed_when: false
