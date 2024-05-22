@@ -1,5 +1,5 @@
 ansible
-requests
+requests==2.31.0
 google-auth
 selinux
 kubernetes
