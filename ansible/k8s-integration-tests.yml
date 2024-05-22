@@ -7,6 +7,10 @@
     c_engine: "{{ container_engine | default('docker') }}"
 
   tasks:
+    - name: show groups
+      debug:
+        msg: "{{ group_names }}"
+
     - name: Check KinD is installed
       ansible.builtin.command: which kind
       register: is_kind_available
