@@ -89,32 +89,8 @@ RUN ./builder/install/install-dependencies.sh && \
     ctest -V --test-dir ${CMAKE_BUILD_DIR} && \
     strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
-# 0.1.0 is a floating tag and it's used intentionally to pick up the most recent downstream drivers build without
-# having to routinely and frequently bump tags here.
-FROM brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0 AS drivers-build
-
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS ubi-minimal
-FROM ubi-minimal AS unpacker
-
-RUN microdnf install -y findutils
-WORKDIR /staging
-
-COPY kernel-modules/MODULE_VERSION MODULE_VERSION.txt
-RUN mkdir -p "/staging/kernel-modules/$(cat MODULE_VERSION.txt)"
-
-# import modules from downstream build.
-COPY --from=drivers-build /kernel-modules /staging/kernel-modules
-
-# Create destination for drivers.
-RUN mkdir /kernel-modules
-# Move files for the current version to /kernel-modules
-RUN find "/staging/kernel-modules/$(cat MODULE_VERSION.txt)/" -type f -exec mv -t /kernel-modules {} +
-# Fail the build if at the end there were no drivers matching the module version.
-RUN if [[ "$(ls -A /kernel-modules)" == "" ]]; then \
-        >&2 echo "Did not find any kernel drivers for the module version $(cat MODULE_VERSION.txt)."; \
-        exit 1; \
-    fi
 
 # Application
 FROM ubi-normal AS rpm-implanter-app
