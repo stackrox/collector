@@ -1,0 +1,8 @@
+---
+- name: Load image via docker
+  include_tasks: docker.yml
+  when: c_engine == 'docker'
+
+- name: Load image via podman
+  include_tasks: podman.yml
+  when: c_engine == 'podman'
