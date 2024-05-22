@@ -1,4 +1,6 @@
 ansible
+# TODO: unpin after https://github.com/docker/docker-py gets a release with
+# https://github.com/docker/docker-py/commit/7785ad913ddf2d86478f08278bb2c488d05a29ff
 requests==2.31.0
 google-auth
 selinux
