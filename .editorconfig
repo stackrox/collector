@@ -35,3 +35,8 @@ function_next_line = false
 # Ignore submodules
 [{third_party,falcosecurity-libs,collector/proto/third_party}/**]
 ignore = true
+
+# Make JetBrains IDEs format yaml consistently with stackrox/stackrox repo.
+[{*.yaml,*.yml}]
+# ij_ settings meaning can be mapped from https://www.jetbrains.com/help/idea/code-style-yaml.html
+ij_yaml_indent_sequence_value = false
