@@ -173,5 +173,3 @@ LABEL \
     com.redhat.component="rhacs-collector-container" \
     io.k8s.display-name="collector" \
     name="rhacs-collector-rhel8"
-
-COPY --from=unpacker /kernel-modules /kernel-modules
