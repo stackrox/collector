@@ -20,56 +20,56 @@ metadata:
 
 spec:
   params:
-    - name: dockerfile
-      value: collector/container/konflux.Dockerfile
-    - name: git-url
-      value: '{{repo_url}}'
-    - name: image-expires-after
-      value: '13w'
-    - name: output-image-repo
-      value: quay.io/rhacs-eng/collector
-    - name: output-tag-suffix
-      value: '-slim'
-    - name: path-context
-      value: .
-    - name: revision
-      value: '{{revision}}'
-    - name: rebuild
-      value: 'true'
-    # TODO(ROX-20234): Enable hermetic builds
-    # - name: hermetic
-    #   value: "true"
-    # No language dependencies are required for collector image.
-    - name: prefetch-input
-      value: ''
-    - name: clone-depth
-      value: '0'
-    - name: clone-fetch-tags
-      value: 'true'
-    - name: clone-submodules
-      value: 'true'
-    - name: build-source-image
-      value: 'true'
-    - name: build-target-stage
-      value: collector-slim
+  - name: dockerfile
+    value: collector/container/konflux.Dockerfile
+  - name: git-url
+    value: '{{repo_url}}'
+  - name: image-expires-after
+    value: '13w'
+  - name: output-image-repo
+    value: quay.io/rhacs-eng/collector
+  - name: output-tag-suffix
+    value: '-slim'
+  - name: path-context
+    value: .
+  - name: revision
+    value: '{{revision}}'
+  - name: rebuild
+    value: 'true'
+  # TODO(ROX-20234): Enable hermetic builds
+  # - name: hermetic
+  #   value: "true"
+  # No language dependencies are required for collector image.
+  - name: prefetch-input
+    value: ''
+  - name: clone-depth
+    value: '0'
+  - name: clone-fetch-tags
+    value: 'true'
+  - name: clone-submodules
+    value: 'true'
+  - name: build-source-image
+    value: 'true'
+  - name: build-target-stage
+    value: collector-slim
 
   workspaces:
-    - name: workspace
-      volumeClaimTemplate:
-        metadata:
-          creationTimestamp: null
-        spec:
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 5Gi
-    - name: git-auth
-      secret:
-        secretName: '{{ git_auth_secret }}'
-    - name: subscription-manager-activation-key
-      secret:
-        secretName: subscription-manager-activation-key
+  - name: workspace
+    volumeClaimTemplate:
+      metadata:
+        creationTimestamp: null
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+  - name: subscription-manager-activation-key
+    secret:
+      secretName: subscription-manager-activation-key
 
   # The pipeline regularly takes >1h to finish.
   timeouts:
