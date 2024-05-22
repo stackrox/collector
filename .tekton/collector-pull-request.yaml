@@ -28,6 +28,8 @@ spec:
       value: '13w'
     - name: output-image-repo
       value: quay.io/rhacs-eng/collector
+    - name: output-tag-suffix
+      value: '-latest'
     - name: path-context
       value: .
     - name: revision
@@ -122,6 +124,9 @@ spec:
         type: string
       - description: Output Image Repository
         name: output-image-repo
+        type: string
+      - description: Suffix appended to the tag of the output image
+        name: output-tag-suffix
         type: string
       - default: .
         description: Path to the source code of an application's component from where
@@ -294,7 +299,7 @@ spec:
       - name: build-container
         params:
           - name: IMAGE
-            value: $(params.output-image-repo):$(tasks.determine-image-tag.results.image-tag)-latest
+            value: $(params.output-image-repo):$(tasks.determine-image-tag.results.image-tag)$(params.output-tag-suffix)
           - name: DOCKERFILE
             value: $(params.dockerfile)
           - name: CONTEXT
