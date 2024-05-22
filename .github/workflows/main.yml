@@ -158,9 +158,10 @@ jobs:
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
-    # Temporarily disable benchmarks due to baseline calculation
-    # inconsistencies. This will be fixed and re-enabled in the future.
-    if: false # ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
+    if: |
+      always() &&
+      ((github.event_name == 'push' && github.ref_name == 'master') ||
+      contains(github.event.pull_request.labels.*.name, 'run-benchmark'))
     needs:
     - init
     - build-collector-slim

@@ -34,9 +34,10 @@ jobs:
         with:
           python-version: "3.10"
 
-      - uses: 'google-github-actions/auth@v2'
+      - name: Authenticate with GCP
+        uses: 'google-github-actions/auth@v2'
         with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_CI_VM_SVC_ACCT }}'
 
       - uses: 'google-github-actions/setup-gcloud@v2'
 
@@ -48,29 +49,41 @@ jobs:
       - name: Install python deps
         run: python3 -m pip install -r ./integration-tests/scripts/baseline/requirements.txt
 
-      - name: Calculate Baseline
+      - name: Compare with the Baseline
         run: |
-          jq -s 'flatten' perf.json > integration-tests/perf-all.json
+          jq -s 'flatten' ./container-logs/*/*/perf.json > integration-tests/perf-all.json
+
+          if [[ "${RUNNER_DEBUG}" == "1" ]]; then
+              cat integration-tests/perf-all.json
+          fi
 
           ./integration-tests/scripts/baseline/main.py --test integration-tests/perf-all.json \
             | sort \
-            | awk -f ./integration-tests/scripts/baseline/format.awk > benchmark.md
+            | awk -F "," -f ./integration-tests/scripts/baseline/format-cpu.awk > benchmark-cpu.md
+
+          ./integration-tests/scripts/baseline/main.py --test integration-tests/perf-all.json \
+            | sort \
+            | awk -F "," -f ./integration-tests/scripts/baseline/format-mem.awk > benchmark-mem.md
 
           delimiter=$(openssl rand -hex 8)
           {
             echo "PERF_TABLE<<${delimiter}"
-            cat benchmark.md
+            cat benchmark-cpu.md
+            echo "---"
+            cat benchmark-mem.md
             echo "${delimiter}"
           } >> "$GITHUB_ENV"
         env:
-          GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT: "${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}"
+          GOOGLE_CREDENTIALS_COLLECTOR_CI_VM_SVC_ACCT: "${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_CI_VM_SVC_ACCT }}"
 
       - name: Update Baseline
-        if: github.ref == 'master'
+        if: |
+          ((github.event_name == 'push' && github.ref == 'master') ||
+          contains(github.event.pull_request.labels.*.name, 'update-baseline'))
         run: |
           ./integration-tests/scripts/baseline/main.py --update integration-tests/perf-all.json
         env:
-          GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT: "${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}"
+          GOOGLE_CREDENTIALS_COLLECTOR_CI_VM_SVC_ACCT: "${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_CI_VM_SVC_ACCT }}"
 
       - name: Comment on PR
         if: github.event_name == 'pull_request'

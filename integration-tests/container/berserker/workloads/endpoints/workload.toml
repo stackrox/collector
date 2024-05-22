@@ -1,0 +1,8 @@
+restart_interval = 10
+duration = 60
+
+[workload]
+type = "endpoints"
+distribution = "zipf"
+n_ports = 8000
+exponent = 1.4

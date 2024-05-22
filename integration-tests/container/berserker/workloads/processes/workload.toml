@@ -1,0 +1,8 @@
+restart_interval = 10
+duration = 60
+
+[workload]
+type = "processes"
+arrival_rate = 200.0
+departure_rate = 200.0
+random_process = true

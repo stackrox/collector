@@ -2,10 +2,10 @@ package suites
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -42,6 +42,8 @@ type IntegrationTestSuiteBase struct {
 	sensor    *mock_sensor.MockSensor
 	metrics   map[string]float64
 	stats     []ContainerStat
+	start     time.Time
+	stop      time.Time
 }
 
 type ContainerStat struct {
@@ -60,6 +62,8 @@ type PerformanceResult struct {
 	CollectionMethod string
 	Metrics          map[string]float64
 	ContainerStats   []ContainerStat
+	LoadStartTs      string
+	LoadStopTs       string
 }
 
 // StartCollector will start the collector container and optionally
@@ -203,11 +207,42 @@ func (s *IntegrationTestSuiteBase) GetContainerStats() []ContainerStat {
 	return s.stats
 }
 
+// Convert memory string from docker stats into numeric value in MiB
+func Mem2Numeric(value string) (float64, error) {
+	size := len(value)
+
+	// Byte units are too short for following logic
+	if size < 3 {
+		return 0, nil
+	}
+
+	numericPart := value[:size-3]
+	unitsPart := value[size-3 : size]
+
+	if unitsPart == "MiB" {
+		return strconv.ParseFloat(numericPart, 32)
+	} else if unitsPart == "GiB" {
+		value, err := strconv.ParseFloat(numericPart, 32)
+		return value * 1024, err
+	} else if unitsPart == "KiB" {
+		value, err := strconv.ParseFloat(numericPart, 32)
+		return value / 1024, err
+	} else {
+		return 0, errors.New(fmt.Sprintf("Invalid units, %s", value))
+	}
+}
+
 func (s *IntegrationTestSuiteBase) PrintContainerStats() {
 	cpuStats := map[string][]float64{}
+	memStats := map[string][]float64{}
 
 	for _, stat := range s.GetContainerStats() {
 		cpuStats[stat.Name] = append(cpuStats[stat.Name], stat.Cpu)
+
+		memValue, err := Mem2Numeric(stat.Mem)
+		s.Require().NoError(err)
+
+		memStats[stat.Name] = append(memStats[stat.Name], memValue)
 	}
 
 	for name, cpu := range cpuStats {
@@ -216,6 +251,14 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats() {
 
 		fmt.Printf("CPU: Container %s, Mean %v, StdDev %v\n",
 			name, stat.Mean(cpu, nil), stat.StdDev(cpu, nil))
+	}
+
+	for name, mem := range memStats {
+		s.AddMetric(fmt.Sprintf("%s_mem_mean", name), stat.Mean(mem, nil))
+		s.AddMetric(fmt.Sprintf("%s_mem_stddev", name), stat.StdDev(mem, nil))
+
+		fmt.Printf("Mem: Container %s, Mean %v MiB, StdDev %v MiB\n",
+			name, stat.Mean(mem, nil), stat.StdDev(mem, nil))
 	}
 }
 
@@ -230,6 +273,8 @@ func (s *IntegrationTestSuiteBase) WritePerfResults() {
 		CollectionMethod: config.CollectionMethod(),
 		Metrics:          s.metrics,
 		ContainerStats:   s.GetContainerStats(),
+		LoadStartTs:      s.start.Format("2006-01-02 15:04:05"),
+		LoadStopTs:       s.stop.Format("2006-01-02 15:04:05"),
 	}
 
 	perfJson, _ := json.Marshal(perf)
@@ -453,39 +498,6 @@ func (s *IntegrationTestSuiteBase) getPort(containerName string) (string, error)
 	}
 
 	return "", fmt.Errorf("no port mapping found: %v %v", rawString, portMap)
-}
-
-func (s *IntegrationTestSuiteBase) RunCollectorBenchmark() {
-	benchmarkName := "benchmark"
-	benchmarkImage := config.Images().QaImageByKey("performance-phoronix")
-
-	err := s.Executor().PullImage(benchmarkImage)
-	s.Require().NoError(err)
-
-	benchmarkArgs := []string{
-		"--env", "FORCE_TIMES_TO_RUN=1",
-		benchmarkImage,
-		"batch-benchmark", "collector",
-	}
-
-	containerID, err := s.launchContainer(benchmarkName, benchmarkArgs...)
-	s.Require().NoError(err)
-
-	_, err = s.waitForContainerToExit(benchmarkName, containerID, defaultWaitTickSeconds, 0)
-	s.Require().NoError(err)
-
-	benchmarkLogs, err := s.containerLogs("benchmark")
-	re := regexp.MustCompile(`Average: ([0-9.]+) Seconds`)
-	matches := re.FindSubmatch([]byte(benchmarkLogs))
-	if matches != nil {
-		fmt.Printf("Benchmark Time: %s\n", matches[1])
-		f, err := strconv.ParseFloat(string(matches[1]), 64)
-		s.Require().NoError(err)
-		s.AddMetric("hackbench_avg_time", f)
-	} else {
-		fmt.Printf("Benchmark Time: Not found! Logs: %s\n", benchmarkLogs)
-		assert.FailNow(s.T(), "Benchmark Time not found")
-	}
 }
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {

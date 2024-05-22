@@ -24,20 +24,20 @@ import argparse
 import json
 import os
 import sys
-import time
 
-from collections import Counter
 from itertools import groupby
+from functools import partial
+from datetime import (datetime, timedelta)
 from scipy import stats
-import numpy as np
 
 from google.oauth2 import service_account
 from google.cloud import storage
 from google.api_core.exceptions import NotFound
 
 
-DEFAULT_GCS_BUCKET = "stackrox-ci-results"
-DEFAULT_BASELINE_FILE = "circleci/collector/baseline/all.json"
+DEFAULT_GCS_BUCKET = "stackrox-ci-artifacts"
+DEFAULT_BASELINE_PATH = ""
+DEFAULT_BASELINE_FILE = "collector/baseline/all.json"
 DEFAULT_BASELINE_THRESHOLD = 10
 
 # For the sake of simplicity Baseline data stored on GCS is simply an array of
@@ -46,9 +46,60 @@ DEFAULT_BASELINE_THRESHOLD = 10
 # in the empty document to be explicit.
 EMPTY_BASELINE_STRUCTURE = []
 
+# In which format we expect to find dates in the baseline files
+DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+
+def object_parser_hook(data):
+    result = data
+
+    for f in (datetime_parser, memory_parser):
+        result = f(result)
+
+    return result
+
+
+def memory_parser(data):
+    result = {}
+    multipliers = {
+        "GiB": 1024,
+        "MiB": 1,
+        "KiB": 1 / 1024,
+    }
+
+    for k, v in data.items():
+        if k == 'Mem' and isinstance(v, str) and len(v) > 3:
+            suffix = v[-3:]
+            multiplier = multipliers.get(suffix, 0)
+
+            if multiplier == 0:
+                result[k] = 0
+            else:
+                result[k] = float(v[:-3]) * multiplier
+        else:
+            result[k] = v
+
+    return result
+
+
+def datetime_parser(data):
+    result = {}
+
+    for k, v in data.items():
+        if k in ('Timestamp', 'LoadStartTs', 'LoadStopTs'):
+            try:
+                result[k] = datetime.strptime(v, DATE_FORMAT)
+            except Exception as ex:
+                print(f"Could not parse timestamp {v}: {ex}")
+                result[k] = v
+        else:
+            result[k] = v
+
+    return result
+
 
 def get_gcs_blob(bucket_name, filename):
-    credentials = json.loads(os.environ["GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT"])
+    credentials = json.loads(os.environ["GOOGLE_CREDENTIALS_COLLECTOR_CI_VM_SVC_ACCT"])
     storage_credentials = service_account.Credentials.from_service_account_info(credentials)
     storage_client = storage.Client(credentials=storage_credentials)
 
@@ -56,12 +107,17 @@ def get_gcs_blob(bucket_name, filename):
     return bucket.blob(filename)
 
 
-def load_baseline_file(bucket_name, baseline_file):
+def load_baseline_from_file(file_path, baseline_file):
+    with open(f"{file_path}/{baseline_file}", "r") as baseline:
+        return json.loads(baseline.read(), object_hook=object_parser_hook)
+
+
+def load_baseline_from_bucket(bucket_name, baseline_file):
     blob = get_gcs_blob(bucket_name, baseline_file)
 
     try:
         contents = blob.download_as_string()
-        return json.loads(contents)
+        return json.loads(contents, object_hook=object_parser_hook)
 
     except NotFound:
         print(f"File gs://{bucket_name}/{baseline_file} not found. "
@@ -71,9 +127,15 @@ def load_baseline_file(bucket_name, baseline_file):
         return []
 
 
-def save_baseline_file(bucket_name, baseline_file, data):
+def save_baseline_to_file(file_path, baseline_file, data):
+    with open(f"{file_path}/{baseline_file}", "w") as baseline:
+        baseline.write(json.dumps(data, default=str))
+        baseline.truncate()
+
+
+def save_baseline_to_bucket(bucket_name, baseline_file, data):
     blob = get_gcs_blob(bucket_name, baseline_file)
-    blob.upload_from_string(json.dumps(data))
+    blob.upload_from_string(json.dumps(data, default=str))
 
 
 def is_test(test_name, record):
@@ -81,9 +143,7 @@ def is_test(test_name, record):
 
 
 def get_timestamp(record):
-    field = record.get("Timestamp")
-    parsed = time.strptime(field, "%Y-%m-%d %H:%M:%S")
-    return time.mktime(parsed)
+    return record.get("Timestamp")
 
 
 def add_to_baseline_file(input_file_name, baseline_data, threshold):
@@ -91,7 +151,7 @@ def add_to_baseline_file(input_file_name, baseline_data, threshold):
         verify_data(baseline_data)
 
     with open(input_file_name, "r") as measure:
-        new_measurement = json.load(measure)
+        new_measurement = json.load(measure, object_hook=object_parser_hook)
         verify_data(new_measurement)
 
         new_measurement_keys = [
@@ -132,30 +192,11 @@ def add_to_baseline_file(input_file_name, baseline_data, threshold):
 
 def verify_data(data):
     """
-    There are some assumptions made about the date we operate with for both
+    There are some assumptions made about the data we operate with for both
     baseline series and new measurements, they're going to be verified below.
     """
 
     assert data, "Benchmark data must be not empty"
-
-    data_grouped = process(data)
-
-    for group, values in data_grouped:
-        counter = Counter()
-        for v in values:
-            counter.update(v.keys())
-
-        # Data provides equal number of with/without collector benchmark runs.
-        #
-        # NOTE: We rely only on baseline/collector hackbench at the moment. As
-        # soon as data for more tests will be collected, this section has to be
-        # extended accordingly.
-        no_overhead_count = counter.get("baseline_benchmark", 0) + counter.get("TestBenchmarkBaseline", 0)
-        overhead_count = counter.get("collector_benchmark", 0) + counter.get("TestBenchmarkBaseline", 0)
-
-        if (no_overhead_count != overhead_count):
-            raise Exception(f"Number of with/without overhead do not match:"
-                            f" {no_overhead_count}, {overhead_count} ")
 
 
 def intersection(baseline_data, new_data):
@@ -201,27 +242,41 @@ def normalize_collection_method(method):
 
 def process(content):
     """
-    Transform benchmark data into the format CI scripts work with, and group by
-    VmConfig and CollectionMethod fields.
+    Transform benchmark data into the format CI scripts work with (a flat list
+    [record, statistics]), and group by VmConfig and CollectionMethod fields.
     """
+    flat = []
 
-    processed = [
-        {
+    def filter_stat(record, stats):
+        # Filter statistics from Collector only, bounded to the timeframe when
+        # load was actually running. LoadStopTs is adjusted by 1 sec, since
+        # this timestamp is taken after the workload container was stopped, so
+        # that the actual load might have stopped slightly earlier.
+        return (
+            stats.get("Name") == "collector" and
+            stats.get("Timestamp") > record.get("LoadStartTs") and
+            stats.get("Timestamp") < record.get("LoadStopTs") - timedelta(seconds=1)
+        )
+
+    for record in content:
+        filter_fn = partial(filter_stat, record)
+        stats = filter(filter_fn, record.get("ContainerStats"))
+
+        flat += [{
             "kernel": record.get("VmConfig").replace('_', '.'),
             "collection_method": normalize_collection_method(record.get("CollectionMethod")),
-            "timestamp": record.get("Timestamp"),
-            record["TestName"]: record.get("Metrics").get("hackbench_avg_time")
-        }
-        for record in content
-        if record.get("Metrics", {}).get("hackbench_avg_time")
-    ]
+            "timestamp": s.get("Timestamp"),
+            "test": record.get("TestName"),
+            "cpu": s.get("Cpu"),
+            "mem": s.get("Mem")
+        } for s in stats]
 
-    return group_data(processed, "kernel", "collection_method")
+    return group_data(flat, "kernel", "collection_method")
 
 
 def group_data(content, *columns):
     def record_id(record):
-        return " ".join([record.get(c) for c in columns])
+        return ",".join([record.get(c) for c in columns])
 
     ordered = sorted(content, key=record_id)
     return [
@@ -265,6 +320,26 @@ def collector_overhead(measurements):
 
 
 def compare(input_file_name, baseline_data):
+    """
+    Compare the test with the baseline data. The output goes to stdout is in
+    the following comma-separated format:
+        vm:                     What type of VM the test was performed on.
+        collection method:      Which collection method was used.
+        baseline_cpu_median:    For this VM type, the median for CPU
+                                utilization data from the baseline.
+        test_cpu_median:        For this VM type, the median for CPU
+                                utilization from the test.
+        cpu_pvalue:             P-value of a t-test for baseline/test CPU data,
+                                high values indicates that the difference is
+                                due to the noise.
+        baseline_mem_median:    For this VM type, the median for memory
+                                utilization data from the baseline.
+        test_mem_median:        For this VM type, the median for memory
+                                utilization from the test.
+        mem_pvalue:             P-value of a t-test for baseline/test memory data,
+                                high values indicates that the difference is
+                                due to the noise.
+    """
     if not baseline_data:
         print("Baseline file is empty, nothing to compare.", file=sys.stderr)
         return
@@ -272,7 +347,7 @@ def compare(input_file_name, baseline_data):
     verify_data(baseline_data)
 
     with open(input_file_name, "r") as measurement:
-        test_data = json.load(measurement)
+        test_data = json.load(measurement, object_hook=object_parser_hook)
         verify_data(test_data)
 
         baseline_grouped, test_grouped = intersection(baseline_data, test_data)
@@ -283,28 +358,31 @@ def compare(input_file_name, baseline_data):
 
             assert bgroup == tgroup, "Kernel/Method must not be differrent"
 
-            baseline_overhead = collector_overhead(bvalues)
-            test_overhead = collector_overhead(tvalues)[0]
-            # The original implementation used single sample ttest, but it's
-            # too sensitive for such variance.
-            # result, pvalue = stats.ttest_1samp(baseline_overhead,
-            #                                    test_overhead)
+            baseline_cpu = [v.get("cpu") for v in bvalues]
+            baseline_mem = [v.get("mem") for v in bvalues]
 
-            # Test the new data to be a 1.5 outlier
-            iqr = stats.iqr(baseline_overhead)
-            q1, q3 = np.percentile(baseline_overhead, [25, 75])
-            lower = q1 - 1.5 * iqr
-            upper = q3 + 1.5 * iqr
-            outlier = 0 if lower < test_overhead < upper else 1
+            test_cpu = [v.get("cpu") for v in tvalues]
+            test_mem = [v.get("mem") for v in tvalues]
 
-            benchmark_baseline, benchmark_collector = split_benchmark(bvalues)
-            test_baseline, test_collector = split_benchmark(tvalues)
+            # Originally we were doing one-sample test for
+            # the the new data to be a 1.5 outlier
+            #
+            # iqr = stats.iqr(baseline_cpu)
+            # q1, q3 = np.percentile(baseline_cpu, [25, 75])
+            # lower = q1 - 1.5 * iqr
+            # upper = q3 + 1.5 * iqr
+            # outlier = 0 if lower < test_cpu < upper else 1
+            cpu_stats, cpu_pvalue = stats.ttest_ind(baseline_cpu, test_cpu)
+            mem_stats, mem_pvalue = stats.ttest_ind(baseline_mem, test_mem)
 
-            baseline_median = round(stats.tmean(benchmark_baseline), 2)
-            collector_median = round(stats.tmean(benchmark_collector), 2)
+            baseline_cpu_median = round(stats.tmean(baseline_cpu), 2)
+            baseline_mem_median = round(stats.tmean(baseline_mem), 2)
 
-            print(f"{bgroup} {test_baseline[0]} {test_collector[0]} "
-                  f"{baseline_median} {collector_median} {outlier}")
+            test_cpu_median = round(stats.tmean(test_cpu), 2)
+            test_mem_median = round(stats.tmean(test_mem), 2)
+
+            print(f"{bgroup},{baseline_cpu_median},{test_cpu_median},{cpu_pvalue},"
+                  f"{baseline_mem_median},{test_mem_median},{mem_pvalue}")
 
 
 if __name__ == "__main__":
@@ -329,16 +407,34 @@ if __name__ == "__main__":
                         default=DEFAULT_BASELINE_THRESHOLD,
                         help=('Maximum number of benchmark runs in baseline'))
 
+    parser.add_argument('--baseline-path', nargs='?', default=DEFAULT_BASELINE_PATH,
+                        help=('If specified, overrides --gcs-bucket and instructs'
+                              ' to manage baselines by specified file path'))
+
+    parser.add_argument('--reset-baseline', default=False, action='store_true',
+                        help=('Instructs to cleanup the baseline file'))
+
     args = parser.parse_args()
 
+    if args.baseline_path:
+        baseline_data = load_baseline_from_file(args.baseline_path, args.baseline_file)
+
+        save_baseline_file = partial(save_baseline_to_file, args.baseline_path, args.baseline_file)
+    else:
+        baseline_data = load_baseline_from_bucket(args.gcs_bucket, args.baseline_file)
+
+        save_baseline_file = partial(save_baseline_to_bucket, args.gcs_bucket, args.baseline_file)
+
     if args.test:
-        baseline_data = load_baseline_file(args.gcs_bucket, args.baseline_file)
         compare(args.test, baseline_data)
         sys.exit(0)
 
     if args.update:
-        baseline_data = load_baseline_file(args.gcs_bucket, args.baseline_file)
         result = add_to_baseline_file(args.update, baseline_data,
                                       args.baseline_threshold)
-        save_baseline_file(args.gcs_bucket, args.baseline_file, result)
+        save_baseline_file(result)
+        sys.exit(0)
+
+    if args.reset_baseline:
+        save_baseline_file(EMPTY_BASELINE_STRUCTURE)
         sys.exit(0)

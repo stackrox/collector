@@ -19,11 +19,13 @@ type BenchmarkBaselineTestSuite struct {
 
 type BenchmarkCollectorTestSuite struct {
 	BenchmarkTestSuiteBase
+	workloads []string
 }
 
 type BenchmarkTestSuiteBase struct {
 	IntegrationTestSuiteBase
 	perfContainers []string
+	loadContainers []string
 }
 
 func (b *BenchmarkTestSuiteBase) StartPerfTools() {
@@ -111,6 +113,18 @@ func (b *BenchmarkTestSuiteBase) startContainer(name string, image string, args 
 	b.perfContainers = append(b.perfContainers, containerID)
 }
 
+func (b *BenchmarkTestSuiteBase) FetchWorkloadLogs() {
+	fmt.Println("Berserker logs:")
+	for _, container := range b.loadContainers {
+		log, err := b.containerLogs(container)
+		require.NoError(b.T(), err)
+
+		fmt.Println(log)
+	}
+
+	b.loadContainers = nil
+}
+
 func (b *BenchmarkTestSuiteBase) StopPerfTools() {
 	b.stopContainers(b.perfContainers...)
 
@@ -126,12 +140,59 @@ func (b *BenchmarkTestSuiteBase) StopPerfTools() {
 }
 
 func (s *BenchmarkCollectorTestSuite) SetupSuite() {
-	s.RegisterCleanup("perf", "bcc", "bpftrace", "init")
+	s.RegisterCleanup("perf", "bcc", "bpftrace", "init",
+		"benchmark-processes", "benchmark-endpoints")
 	s.StartContainerStats()
 
 	s.StartPerfTools()
 
 	s.StartCollector(false, nil)
+}
+
+func (s *BenchmarkTestSuiteBase) SpinBerserker(workload string) (string, error) {
+	benchmarkName := fmt.Sprintf("benchmark-%s", workload)
+	benchmarkImage := config.Images().QaImageByKey("performance-berserker")
+
+	err := s.Executor().PullImage(benchmarkImage)
+	if err != nil {
+		return "", err
+	}
+
+	configFile := fmt.Sprintf("/etc/berserker/%s/workload.toml", workload)
+	benchmarkArgs := []string{benchmarkImage, configFile}
+
+	containerID, err := s.launchContainer(benchmarkName, benchmarkArgs...)
+	if err != nil {
+		return "", err
+	}
+
+	s.loadContainers = append(s.loadContainers, containerID)
+	return containerID, nil
+}
+
+func (s *BenchmarkTestSuiteBase) RunCollectorBenchmark() {
+	procContainerID, err := s.SpinBerserker("processes")
+	s.Require().NoError(err)
+
+	endpointsContainerID, err := s.SpinBerserker("endpoints")
+	s.Require().NoError(err)
+
+	s.start = time.Now().UTC()
+
+	// The assumption is that the benchmark is short, and to get better
+	// resolution into when relevant metrics start and stop, tick more
+	// frequently
+	waitTick := 1 * time.Second
+
+	// Container name here is used only for reporting
+	_, err = s.waitForContainerToExit("berserker", procContainerID, waitTick, 0)
+	s.Require().NoError(err)
+
+	_, err = s.waitForContainerToExit("berserker", endpointsContainerID, waitTick, 0)
+
+	s.Require().NoError(err)
+
+	s.stop = time.Now().UTC()
 }
 
 func (s *BenchmarkCollectorTestSuite) TestBenchmarkCollector() {
@@ -140,6 +201,7 @@ func (s *BenchmarkCollectorTestSuite) TestBenchmarkCollector() {
 
 func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
 	s.StopPerfTools()
+	s.FetchWorkloadLogs()
 
 	s.StopCollector()
 
@@ -148,6 +210,7 @@ func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
 }
 
 func (s *BenchmarkBaselineTestSuite) SetupSuite() {
+	s.RegisterCleanup("benchmark-processes", "benchmark-endpoints")
 	s.StartContainerStats()
 	s.StartPerfTools()
 }
@@ -158,6 +221,7 @@ func (s *BenchmarkBaselineTestSuite) TestBenchmarkBaseline() {
 
 func (s *BenchmarkBaselineTestSuite) TearDownSuite() {
 	s.StopPerfTools()
+	s.FetchWorkloadLogs()
 	s.cleanupContainers("benchmark")
 	s.WritePerfResults()
 }
