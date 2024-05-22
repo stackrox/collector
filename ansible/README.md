@@ -313,6 +313,7 @@ The following is a list of variables used by the playbook.
 | collector_image | The collector image to be tested. |
 | collector_root | The path to the root of the collector repo, used for dumping logs. |
 | cluster_name | When using a KinD cluster, the name to be used for the cluster where the tests will run. Default: collector-tests |
+| container_engine | Specify the container engine to be used checking for local images to upload to KinD. Default: docker |
 
 Easiest way to manage these variables is to create a yaml file that can later
 be supplied to the `ansible-playbook` command, the following should work as a

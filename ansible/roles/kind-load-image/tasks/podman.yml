@@ -1,0 +1,5 @@
+---
+- name: Check image exists locally
+  containers.podman.podman_image_info:
+    name: "{{ image }}"
+  register: image_info

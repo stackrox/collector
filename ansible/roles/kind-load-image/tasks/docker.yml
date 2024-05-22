@@ -1,0 +1,5 @@
+---
+- name: Check image exists locally
+  community.docker.docker_image_info:
+    name: "{{ image }}"
+  register: image_info

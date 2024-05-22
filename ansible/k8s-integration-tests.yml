@@ -4,6 +4,7 @@
 
   vars:
     kind_name: "{{ cluster_name | default('collector-tests') }}"
+    c_engine: "{{ container_engine | default('docker') }}"
 
   tasks:
     - name: Check KinD is installed
@@ -32,27 +33,17 @@
 
       changed_when: false
 
-    - name: Check collector image exists locally
-      community.docker.docker_image_info:
-        name: "{{ collector_image }}"
-      register: collector_image_info
-
     - name: Load collector image into kind cluster
-      ansible.builtin.command:
-        cmd: kind --name {{ kind_name }} load docker-image {{ collector_image }}
-      when: collector_image_info.images | length == 1
-      changed_when: false
-
-    - name: Check tester image exists locally
-      community.docker.docker_image_info:
-        name: "{{ tester_image }}"
-      register: tester_image_info
+      include_role:
+        name: kind-load-image
+      vars:
+        image: "{{ collector_image }}"
 
     - name: Load tester image into kind cluster
-      ansible.builtin.command:
-        cmd: kind --name {{ kind_name }} load docker-image {{ tester_image }}
-      when: tester_image_info.images | length == 1
-      changed_when: false
+      include_role:
+        name: kind-load-image
+      vars:
+        image: "{{ tester_image }}"
 
     - name: Create a namespace for collector tests
       kubernetes.core.k8s:
