@@ -53,9 +53,6 @@ spec:
   - description: Output Image Repository
     name: output-image-repo
     type: string
-  - description: Suffix appended to the tag of the output image
-    name: output-tag-suffix
-    type: string
   - default: .
     description: Path to the source code of an application's component from where
       to build image.
@@ -226,7 +223,7 @@ spec:
   - name: build-container
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.image-tag)$(params.output-tag-suffix)
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.image-tag)
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
