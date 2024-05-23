@@ -55,8 +55,8 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 
 	err := k.Collector().Setup(&collector.StartupOptions{
 		Env: map[string]string{
-			"ROX_COLLECTOR_RUNTIME_FILTERS_ENABLED": "true",
-			"ROX_COLLECTOR_INTROSPECTION_ENABLE":    "true",
+			"ROX_COLLECTOR_RUNTIME_CONFIG_ENABLED": "true",
+			"ROX_COLLECTOR_INTROSPECTION_ENABLE":   "true",
 		},
 	})
 	k.Require().NoError(err)

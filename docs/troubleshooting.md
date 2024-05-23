@@ -511,7 +511,7 @@ $ curl collector:8080/state/containers/01e8c0454972
 In order for the metadata to be collected, the collector daemonset needs to be
 edited for it to have access to the corresponding CRI socket on the system.
 Since metadata collection is locked behind a feature flag, the
-`ROX_COLLECTOR_RUNTIME_FILTERS_ENABLED` needs to be set to `true` as well.
+`ROX_COLLECTOR_RUNTIME_CONFIG_ENABLED` needs to be set to `true` as well.
 
 ```yaml
 spec:
@@ -520,7 +520,7 @@ spec:
       containers:
         ...
         env:
-        - name: ROX_COLLECTOR_RUNTIME_FILTERS_ENABLED
+        - name: ROX_COLLECTOR_RUNTIME_CONFIG_ENABLED
           value: "true"
         ...
         volumeMounts:
@@ -585,7 +585,7 @@ Example of connection query, limited to container with identifier `c6f030bc4b42`
 ```
 $ curl "http://<collector>:8080/state/network/connection?container=c6f030bc4b42"
 {
-  "c6f030bc4b42" : 
+  "c6f030bc4b42" :
   [
     {
       "active" : true,
