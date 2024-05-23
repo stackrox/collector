@@ -262,6 +262,26 @@ spec:
     - name: source
       workspace: workspace
 
+  - name: apply-tags
+    params:
+    - name: IMAGE
+      value: $(tasks.build-container.results.IMAGE_URL)
+    - name: ADDITIONAL_TAGS
+      value:
+      - $(tasks.determine-image-tag.results.image-tag)-latest
+      - $(tasks.determine-image-tag.results.image-tag)-slim
+    runAfter:
+    - build-container
+    taskRef:
+      params:
+      - name: name
+        value: apply-tags
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-apply-tags:0.1@sha256:29add9a49a2281a3755a9b580d2b9c5cb110231b14cccf8ade2fd7895a9b4b4a
+      - name: kind
+        value: task
+      resolver: bundles
+
   - name: build-source-image
     params:
     - name: BINARY_IMAGE
