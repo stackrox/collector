@@ -112,7 +112,7 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
     rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
 
-FROM scratch as collector-common
+FROM scratch
 
 COPY --from=rpm-implanter-app /mnt /
 
@@ -159,15 +159,6 @@ CMD collector-wrapper.sh \
     --collector-config=$COLLECTOR_CONFIG \
     --collection-method=$COLLECTION_METHOD \
     --grpc-server=$GRPC_SERVER
-
-FROM collector-common AS collector-slim
-
-LABEL \
-    com.redhat.component="rhacs-collector-slim-container" \
-    io.k8s.display-name="collector-slim" \
-    name="rhacs-collector-slim-rhel8"
-
-FROM collector-common AS collector
 
 LABEL \
     com.redhat.component="rhacs-collector-container" \
