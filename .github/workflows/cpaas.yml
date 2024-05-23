@@ -89,37 +89,6 @@ jobs:
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
-      - name: Login to quay.io/stackrox-io
-        if: matrix.arch == 'ppc64le'
-        uses: docker/login-action@v3
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-
-      - name: Create Power image
-        if: matrix.arch == 'ppc64le'
-        run: |
-          #
-          # This is a fairly rough-and-ready approach to full images
-          # because we only need drivers in the Power image. An alternative
-          # would be a separate Dockerfile for this, but considering this
-          # is a temporary edge case to our support matrix, and these upstream
-          # images are only used for testing, this has been deemed Good Enough (tm)
-          #
-
-          docker create --name drivers --platform linux/${{ matrix.arch }} "${DRIVERS_IMAGE}"
-          docker create --name power --platform linux/${{ matrix.arch }} "${DOWNSTREAM_COLLECTOR_IMAGE}"
-
-          # using - as the src or dest allows streaming between containers
-          docker cp "drivers:/kernel-modules/${DRIVER_VERSION}/" - | docker cp - power:/kernel-modules/
-
-          # make and push a new image that contains the drivers.
-          docker commit power ${{ needs.init.outputs.collector-image }}-cpaas-${{ matrix.arch }}
-          docker push ${{ needs.init.outputs.collector-image }}-cpaas-${{ matrix.arch }}
-
-          docker rm power drivers
-
   multiarch-manifest:
     runs-on: ubuntu-latest
     env:

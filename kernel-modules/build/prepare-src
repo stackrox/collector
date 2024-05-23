@@ -84,7 +84,7 @@ cp -r "${DRIVER_DIR}/." "${DRIVER_SCRATCH}"
 module_version="$(get_module_version .)"
 echo "$module_version"
 
-if (($(compare_version "$module_version" "2.10.0") >= 1)) && [[ "$(uname -m)" != "ppc64le" ]]; then
+if (($(compare_version "$module_version" "2.10.0") >= 1)); then
     # Dont build drivers for versions 2.10 or newer
     echo "Not building drivers for module version $module_version on $(uname -m)"
     exit 0

@@ -81,15 +81,6 @@ jobs:
           driver_version: ${DRIVER_VERSION}
           EOF
 
-      - name: Download drivers
-        if: matrix.arch == 'ppc64le'
-        run: |
-          mkdir -p "${CONTEXT_DRIVERS_DIR}"
-
-          GCP_BUCKET="gs://${{ inputs.arch-drivers-bucket }}/${{ matrix.arch }}"
-          gsutil -m rsync -r "${GCP_BUCKET}/${DRIVER_VERSION}/" \
-            "${CONTEXT_DRIVERS_DIR}"
-
       - name: Build images
         if: |
           github.event_name == 'push' ||
