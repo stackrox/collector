@@ -264,9 +264,10 @@ spec:
       value: $(tasks.build-container.results.IMAGE_URL)
     - name: ADDITIONAL_TAGS
       value:
+      - konflux-$(params.revision)
+      # TODO(ROX-24402): don't publish multiple tags when ability to install Slim collector is gone.
       - $(tasks.determine-image-tag.results.image-tag)-latest
       - $(tasks.determine-image-tag.results.image-tag)-slim
-      - konflux-$(params.revision)
     runAfter:
     - build-container
     taskRef:
