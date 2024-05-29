@@ -21,6 +21,7 @@ runs:
     - name: Create driver-matrix.json
       shell: bash
       run: |
+        set -x
         source ${{ github.workspace }}/kernel-modules/support-packages/utils.sh
 
         for mod_ver_dir in ${{ inputs.metadata-dir }}/*; do
