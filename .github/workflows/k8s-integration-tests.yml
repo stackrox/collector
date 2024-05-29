@@ -17,7 +17,7 @@ on:
 env:
   ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
   COLLECTOR_TESTS_IMAGE: quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}
-  COLLECTOR_IMAGE: quay.io/stackrox-io/collector:${{ inputs.collector-tag }}
+  COLLECTOR_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
 
 jobs:
   k8s-integration-tests:

@@ -1,0 +1,85 @@
+name: Run konflux tests
+
+on:
+  workflow_call:
+
+jobs:
+  init:
+    runs-on: ubuntu-latest
+    outputs:
+      collector-tag: ${{ steps.generate-tag.outputs.collector-tag }}
+      collector-qa-tag: ${{ steps.generate-tag.outputs.collector-qa-tag }}
+      rebuild-qa-containers: ${{ steps.filter.outputs.container }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          submodules: true
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          list-files: shell
+
+          # Only trigger a rebuild when the QA tag has changed
+          filters: |
+            container:
+              - integration-tests/container/QA_TAG
+
+      - id: generate-tag
+        run: |
+          echo "collector-tag=$(make tag)-fast" >> "$GITHUB_OUTPUT"
+
+          COLLECTOR_QA_TAG="$(cat ${{ github.workspace }}/integration-tests/container/QA_TAG)"
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" && "${{ steps.filter.outputs.container }}" == "true" ]]; then
+            COLLECTOR_QA_TAG="${COLLECTOR_QA_TAG}-${COLLECTOR_TAG}"
+          fi
+
+          echo "collector-qa-tag=${COLLECTOR_QA_TAG}" >> "$GITHUB_OUTPUT"
+
+  wait-for-images:
+    runs-on: ubuntu-latest
+    needs:
+    - init
+    steps:
+      - uses: stackrox/actions/release/wait-for-image@v1
+        with:
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          image: rhacs-eng/collector:${{ needs.init.outputs.collector-tag }}
+
+  integration-tests-containers:
+    uses: ./.github/workflows/integration-test-containers.yml
+    needs:
+    - init
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}
+      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      rebuild-qa-containers: ${{ needs.init.outputs.rebuild-qa-containers == 'true' }}
+    secrets: inherit
+
+  run-konflux-tests:
+    uses: ./.github/workflows/integration-tests.yml
+    needs:
+    - init
+    - wait-for-images
+    - integration-tests-containers
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}
+      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      is-konflux: true
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
+    secrets: inherit
+
+  k8s-integration-tests:
+    uses: ./.github/workflows/k8s-integration-tests.yml
+    with:
+      collector-tag: ${{ needs.init.outputs.collector-tag }}
+      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
+    needs:
+    - init
+    - wait-for-images
+    - integration-tests-containers
+    secrets: inherit
+

@@ -24,6 +24,13 @@ on:
           Optional repository to use for the collector image
         type: string
         default: "quay.io/rhacs-eng/collector"
+      is-konflux:
+        description: |
+          Marker for workflows triggered for a konflux build.
+          These builds don't support multiarch, so it should only run x86
+          tests
+        type: boolean
+        default: false
 
 jobs:
   amd64-required-integration-tests:
@@ -70,7 +77,11 @@ jobs:
 
   arm64-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+    if: |
+      !inputs.is-konflux && (
+        github.event_name == 'push' ||
+        contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+      )
     strategy:
       # ensure that if one part of the matrix fails, the
       # rest will continue
@@ -92,7 +103,11 @@ jobs:
 
   s390x-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') || github.event_name == 'push'
+    if: |
+      !inputs.is-konflux && (
+        github.event_name == 'push' ||
+        contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+      )
     with:
       vm_type: rhel-s390x
       collector-tag: ${{ inputs.collector-tag }}
@@ -103,7 +118,11 @@ jobs:
 
   ppc64le-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') || github.event_name == 'push'
+    if: |
+      !inputs.is-konflux && (
+        github.event_name == 'push' ||
+        contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+      )
     with:
       vm_type: rhel-ppc64le
       collector-tag: ${{ inputs.collector-tag }}
