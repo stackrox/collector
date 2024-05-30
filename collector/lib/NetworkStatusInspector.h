@@ -2,8 +2,6 @@
 #define COLLECTOR_NETWORKSTATUSINSPECTOR_H
 
 #include <memory>
-#include <optional>
-#include <unordered_map>
 
 #include <json/writer.h>
 
@@ -29,6 +27,9 @@ class NetworkStatusInspector : public IntrospectionEndpoint {
   Json::FastWriter writer_;
 
   static const std::string kQueryParam_container;  // = "container"
+  static const std::string kQueryParam_normalize;  // = "normalize"
+
+  bool shouldNormalize(const QueryParams& queryParams) const;
 
   bool handleGetEndpoints(struct mg_connection* conn, const QueryParams& queryParams);
   bool handleGetConnections(struct mg_connection* conn, const QueryParams& queryParams);

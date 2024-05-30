@@ -15,6 +15,7 @@ const std::string NetworkStatusInspector::kEndpointRoute = kBaseRoute + "/endpoi
 const std::string NetworkStatusInspector::kConnectionRoute = kBaseRoute + "/connection";
 
 const std::string NetworkStatusInspector::kQueryParam_container = "container";
+const std::string NetworkStatusInspector::kQueryParam_normalize = "normalize";
 
 NetworkStatusInspector::NetworkStatusInspector(const std::shared_ptr<ConnectionTracker> conntracker) : conntracker_(conntracker) {
 }
@@ -60,8 +61,18 @@ static void SerializeEndpoint(const Endpoint& ep, Json::Value& node) {
   node["port"] = ep.port();
 }
 
+bool NetworkStatusInspector::shouldNormalize(const QueryParams& query_params) const {
+  std::optional<std::string> normalize_flag = GetParameter(query_params, kQueryParam_normalize);
+
+  if (!normalize_flag) {
+    return true;
+  }
+
+  return *normalize_flag == "true";
+}
+
 bool NetworkStatusInspector::handleGetEndpoints(struct mg_connection* conn, const QueryParams& query_params) {
-  collector::AdvertisedEndpointMap endpoint_states = conntracker_->FetchEndpointState(true, false);
+  collector::AdvertisedEndpointMap endpoint_states = conntracker_->FetchEndpointState(shouldNormalize(query_params), false);
   Json::Value body_root(Json::objectValue);
 
   std::unordered_map<std::string, std::forward_list<collector::ContainerEndpointMap::value_type*>> by_container;
@@ -108,7 +119,7 @@ bool NetworkStatusInspector::handleGetEndpoints(struct mg_connection* conn, cons
 }
 
 bool NetworkStatusInspector::handleGetConnections(struct mg_connection* conn, const QueryParams& query_params) {
-  collector::ConnMap connection_states = conntracker_->FetchConnState(true, false);
+  collector::ConnMap connection_states = conntracker_->FetchConnState(shouldNormalize(query_params), false);
   Json::Value body_root(Json::objectValue);
 
   std::unordered_map<std::string, std::forward_list<collector::ConnMap::value_type*>> by_container;
