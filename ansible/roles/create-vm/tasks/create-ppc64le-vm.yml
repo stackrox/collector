@@ -4,6 +4,9 @@
   collections:
    - ibm.cloudcollection
 
+- debug:
+    var: vars
+
 - name: Check for existing SSH Key
   ibm.cloudcollection.ibm_pi_key_info:
     pi_key_name: "{{ pi_name }}-ssh-key"
@@ -102,7 +105,7 @@
     pi_processors: "{{ processors }}"
     pi_instance_name: "{{ pi_name }}"
     pi_proc_type: "{{ proc_type }}"
-    pi_image_id: "{{ image_dict[pi_image] }}"
+    pi_image_id: "{{ image_dict[vm_image] }}"
     pi_volume_ids: []
     pi_network:
       - network_id: "{{ pi_network_id }}"
