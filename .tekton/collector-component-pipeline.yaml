@@ -238,6 +238,9 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: TARGET_STAGE
       value: $(params.build-target-stage)
+    - name: BUILD_ARGS
+      value:
+        - COLLECTOR_VERSION=$(tasks.determine-image-tag.results.image-tag)
     runAfter:
     - prefetch-dependencies
     - prepare-rhel-rpm-subscriptions

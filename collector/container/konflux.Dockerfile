@@ -116,8 +116,7 @@ FROM scratch
 
 COPY --from=rpm-implanter-app /mnt /
 
-# TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
-ARG COLLECTOR_VERSION=0.0.1-todo
+ARG COLLECTOR_VERSION
 
 WORKDIR /
 
@@ -133,12 +132,13 @@ LABEL \
     source-location="https://github.com/stackrox/collector" \
     summary="Runtime data collection for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
-    version=${COLLECTOR_VERSION} \
+    version="$COLLECTOR_VERSION" \
     vendor="Red Hat, Inc."
 
 ARG BUILD_DIR
 ARG CMAKE_BUILD_DIR
 
+ENV COLLECTOR_VERSION="$COLLECTOR_VERSION"
 ENV COLLECTOR_HOST_ROOT=/host
 
 COPY kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
