@@ -116,7 +116,7 @@ FROM scratch
 
 COPY --from=rpm-implanter-app /mnt /
 
-ARG COLLECTOR_VERSION
+ARG COLLECTOR_TAG
 
 WORKDIR /
 
@@ -132,13 +132,13 @@ LABEL \
     source-location="https://github.com/stackrox/collector" \
     summary="Runtime data collection for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
-    version="$COLLECTOR_VERSION" \
+    version="$COLLECTOR_TAG" \
     vendor="Red Hat, Inc."
 
 ARG BUILD_DIR
 ARG CMAKE_BUILD_DIR
 
-ENV COLLECTOR_VERSION="$COLLECTOR_VERSION"
+ENV COLLECTOR_VERSION="$COLLECTOR_TAG"
 ENV COLLECTOR_HOST_ROOT=/host
 
 COPY kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
