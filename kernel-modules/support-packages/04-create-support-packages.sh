@@ -42,7 +42,7 @@ mkdir -p "${OUT_DIR}" || die "Failed to create output directory '${OUT_DIR}'"
 for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     mod_ver="$(basename "$mod_ver_dir")"
 
-    if dont_build_support_package "$mod_ver"; then
+    if skip_version "$mod_ver"; then
         continue
     fi
 

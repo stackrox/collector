@@ -33,7 +33,7 @@ use_downstream_only() {
     _check_min_version "$1" "2.9.0"
 }
 
-dont_build_support_package() {
+skip_version() {
     _check_min_version "$1" "2.10.0"
 }
 
