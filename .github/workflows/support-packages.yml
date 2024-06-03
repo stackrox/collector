@@ -62,7 +62,7 @@ jobs:
       - name: Create support-packages
         run: |
           ${{ github.workspace }}/kernel-modules/support-packages/04-create-support-packages.sh \
-            ${{ github.workspace }}/collector/LICENSE-kernel-modules.txt \
+            ${{ github.workspace }}/collector/kernel-modules/LICENSE \
             gs://${{ inputs.upstream-drivers-bucket }} \
             /tmp/support-packages/metadata \
             /tmp/support-packages/output \
