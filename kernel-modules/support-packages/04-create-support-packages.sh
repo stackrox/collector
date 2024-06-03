@@ -42,6 +42,10 @@ mkdir -p "${OUT_DIR}" || die "Failed to create output directory '${OUT_DIR}'"
 for mod_ver_dir in "${MD_DIR}/module-versions"/*; do
     mod_ver="$(basename "$mod_ver_dir")"
 
+    if dont_build_support_package "$mod_ver"; then
+        continue
+    fi
+
     package_root="$(mktemp -d)"
     probe_dir="${package_root}/kernel-modules/${mod_ver}"
     mkdir -p "$probe_dir"

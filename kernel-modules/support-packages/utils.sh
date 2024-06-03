@@ -33,6 +33,10 @@ use_downstream_only() {
     _check_min_version "$1" "2.9.0"
 }
 
+dont_build_support_package() {
+    _check_min_version "$1" "2.10.0"
+}
+
 bucket_has_drivers() {
     count=$(gsutil ls "$1" | wc -l)
 
