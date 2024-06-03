@@ -60,7 +60,6 @@ unittest: collector
 .PHONY: txt-files
 txt-files:
 	mkdir -p container/THIRD_PARTY_NOTICES/
-	cp LICENSE-kernel-modules.txt container/
 	cp NOTICE-sysdig.txt container/THIRD_PARTY_NOTICES/sysdig
 
 .PHONY: clean

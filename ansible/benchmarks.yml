@@ -13,20 +13,7 @@
         vm_list:
           rhel: "{{ virtual_machines['rhel'] }}"
           ubuntu-os: "{{ virtual_machines['ubuntu-os'] }}"
-        collection_method: "{{ method }}"
-      loop:
-        # We need to create a new VM for each platform, and each collection_method
-        # to allow a clean-slate upon which to run the benchmarks.
-        #
-        # create-all-vms will populate the name and labels which we
-        # can then filter on later, to only run when we match a certain
-        # collection method
-        "{{ lookup('env', 'COLLECTION_METHODS', default='core_bpf,ebpf') | split(',') }}"
-      loop_control:
-        # use a custom loop variable because ansible variables
-        # are global and "item" may be overwritten later on
-        # due to variable shadowing in each iteration of the loop
-        loop_var: method
+        collection_method: "core_bpf"
   post_tasks:
     # We have all the VMs created now, so refresh the inventory - this allows
     # us to use the provisioning role on the VMs we just created

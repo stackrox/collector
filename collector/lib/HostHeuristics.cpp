@@ -109,9 +109,8 @@ class PowerHeuristic : public Heuristic {
       return;
     }
 
-    if (host.IsRHEL86()) {
-      CLOG(INFO) << "RHEL 8.6 on ppc64le does not support CORE_BPF, switching to eBPF collection method.";
-      hconfig->SetCollectionMethod(CollectionMethod::EBPF);
+    if (k.kernel == 4 && k.major == 18 && k.build_id < 477) {
+      CLOG(FATAL) << "RHEL 8.6 (kernel < 4.18.0-477) on ppc64le does not support CORE_BPF";
     }
   }
 };

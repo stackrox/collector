@@ -1,30 +1,37 @@
 ---
 
+- name: Check platform excluded
+  set_fact:
+    excluded: "{{ test_platform in excluded_vms }}"
+
 - name: Check family excluded
   set_fact:
-    excluded: "{{ [vm_family, vm_collection_method] in excluded_pairs }}"
-  when: vm_image is not defined
+    excluded: "{{ vm_family in excluded_vms }}"
+  when: vm_image is not defined and excluded == false
 
 - name: Check image excluded
   set_fact:
-    excluded: "{{ [vm_image, vm_collection_method] in excluded_pairs }}"
-  when: vm_image is defined
+    excluded: "{{ vm_image in excluded_vms }}"
+  when: vm_image is defined and excluded == false
 
-- name: Create IBM Z VM
-  include_tasks: create-s390x-vm.yml
-  vars:
-    vsi_name: "{{ vm_name }}"
-  when: vm_arch == "s390x" and excluded == false
+- block:
+  - name: Create IBM Z VM
+    include_tasks: create-s390x-vm.yml
+    vars:
+      vsi_name: "{{ vm_name }}"
+    when: vm_arch == "s390x"
 
-- name: Create IBM POWER VM
-  include_tasks: create-ppc64le-vm.yml
-  vars:
-    pi_name: "{{ vm_name }}"
-  when: vm_arch == "ppc64le" and excluded == false
+  - name: Create IBM POWER VM
+    include_tasks: create-ppc64le-vm.yml
+    vars:
+      pi_name: "{{ vm_name }}"
+    when: vm_arch == "ppc64le"
 
-- name: Create GCP VM
-  include_tasks: create-gcp-vm.yml
-  when: (vm_arch == "amd64" or vm_arch == "arm64") and excluded == false
+  - name: Create GCP VM
+    include_tasks: create-gcp-vm.yml
+    when: (vm_arch == "amd64" or vm_arch == "arm64")
+
+  when: excluded == false
 
 # make sure to reset the instance_result otherwise subsequent VMs arent created
 - set_fact:

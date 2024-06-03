@@ -16,20 +16,13 @@ runtime_socket: /var/run/docker.sock
 redhat_username: "{{ lookup('env', 'REDHAT_USERNAME', default='') }}"
 redhat_password: "{{ lookup('env', 'REDHAT_PASSWORD', default='') }}"
 
-excluded_pairs:
-  # e.g. - ['ubuntu-1804-lts', 'core_bpf']
-  # This can be removed once we have downloadable s390x eBPF drivers
-  - [ 'rhel-8-6-s390x', 'ebpf' ]
-  # No ebpf support for arm... Yet...?
-  - [ 'rhel-9-arm64', 'ebpf' ]
-  - [ 'ubuntu-2004-lts-arm64', 'ebpf' ]
-  - [ 'ubuntu-2204-lts-arm64', 'ebpf' ]
-  - [ 'sles-15-arm64', 'ebpf' ]
-  - [ 'fedora-coreos-stable-arm64', 'ebpf' ]
-  # eBPF on Garden Linux is not supported.
-  - [ "{{ lookup('file', 'group_vars/gardenlinux-image.txt') }}", 'ebpf' ]
-
-  - [ 'p', 'ebpf' ]
+excluded_vms:
+  # Specify, family, image, or platform
+  # e.g.
+  # - ubuntu-1804-lts
+  # - rhel-arm64
+  # - rhcos-413-86-202303151429-0-gcp-x86-64
+  -
 
 virtual_machines:
   rhel:
@@ -58,8 +51,8 @@ virtual_machines:
     project: rhel-ppc64le-cloud
     arch: ppc64le
     ssh_key_file: "~/.ssh/acs-ppc64le-rsa.prv"
-    families:
-      - p
+    images:
+      - rhel-8.8-05102023
 
   rhel-sap:
     project: rhel-sap-cloud

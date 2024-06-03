@@ -1,19 +1,32 @@
 ---
+- include_vars: ppc64le.yml
+- include_vars: s390x.yml
 
 - set_fact:
-    vm_hashable_name: "{{ item.1 }}"
+    vm_hashable_name: "{{ item.1 }}-{{ job_id }}"
 
 - set_fact:
-    vm_hashed_name: "{{ vm_hashable_name | hash('md5') }}"
+    vm_hashed_name: "{{ vm_hashable_name | hash('md5') | truncate(8, True, '') }}"
 
 - set_fact:
-    vm_hashed_name_short: "{{ vm_hashed_name | truncate(8, True, '') }}"
+    arch: "{{ item.0.value.arch | default('amd64') }}"
+    vm_full_name: "{{ gcp_instance_prefix }}-{{ item.0.key }}-{{ normalized_collection_method }}-{{ vm_hashed_name }}"
+
+- set_fact:
+    ibm_env: "{{ s390x.env }}"
+  when: arch == 's390x'
+
+- set_fact:
+    ibm_env: "{{ ppc64le.env }}"
+  when: arch == 'ppc64le'
 
 - name: Create VMs From Image
   include_role:
     name: create-vm
+    apply:
+      environment: "{{ ibm_env | default({}) }}"
   vars:
-    vm_name: "{{ gcp_instance_prefix }}-{{ item.0.key }}-{{ normalized_collection_method }}-{{ vm_hashed_name_short }}-{{ job_id }}"
+    vm_name: "{{ vm_full_name }}"
     vm_project: "{{ item.0.value.project }}"
     # still populate the family, since it is used as a label to differentiate
     # VMs

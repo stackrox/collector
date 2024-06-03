@@ -26,7 +26,7 @@ RUN ./install.sh && rm -f install.sh
 COPY container/scripts/collector-wrapper.sh /usr/local/bin
 COPY container/scripts/bootstrap.sh /
 COPY container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
-COPY LICENSE-kernel-modules.txt /kernel-modules/LICENSE
+COPY kernel-modules /kernel-modules
 COPY container/bin/collector /usr/local/bin/
 COPY container/bin/self-checks /usr/local/bin/self-checks
 COPY container/status-check.sh /usr/local/bin/status-check.sh

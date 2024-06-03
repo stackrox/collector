@@ -55,7 +55,7 @@ jobs:
       logs-artifact:
         drivers-build-failures
 
-  build-collector-slim:
+  build-collector:
     runs-on: ubuntu-latest
     needs: init
     strategy:
@@ -64,7 +64,13 @@ jobs:
           - amd64
           - s390x
           - ppc64le
+    env:
+      DRIVER_VERSION: ${{ needs.init.outputs.module-version }}
+      DRIVERS_IMAGE: brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0
+      DOWNSTREAM_COLLECTOR_IMAGE: brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
     steps:
+      - uses: actions/checkout@v4
+
       - uses: docker/login-action@v3
         with:
           registry: brew.registry.redhat.io
@@ -79,22 +85,35 @@ jobs:
         uses: stackrox/actions/images/retag-and-push@v1
         with:
           src-image: brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
-          dst-image: ${{ needs.init.outputs.collector-image }}-cpaas-${{ matrix.arch }}-slim
+          dst-image: ${{ needs.init.outputs.collector-image }}-cpaas-${{ matrix.arch }}
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
-  build-collector-full:
-    uses: ./.github/workflows/collector-full.yml
-    with:
-      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
-      arch-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
-      skip-built-drivers: true
-      archs: amd64 ppc64le s390x
-    secrets: inherit
+  multiarch-manifest:
+    runs-on: ubuntu-latest
+    env:
+      COLLECTOR_TAG: ${{ needs.init.outputs.collector-tag }}-cpaas
+      ARCHS: amd64 ppc64le s390x
     needs:
-    - init
-    - build-collector-slim
-    - sync-drivers-and-support-packages
+      - init
+      - build-collector
+      - sync-drivers-and-support-packages
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to quay.io/stackrox-io
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Multiarch manifest stackrox-io
+        uses: ./.github/actions/create-multiarch-manifest
+        with:
+          base-image: ${{ needs.init.outputs.collector-image }}-cpaas
+          archs: ${{ env.ARCHS }}
 
   build-test-containers:
     uses: ./.github/workflows/integration-test-containers.yml
@@ -118,29 +137,6 @@ jobs:
           - rhel
           - rhel-sap
           - rhel-s390x
-    with:
-      vm_type: ${{ matrix.vm_type }}
-      collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
-      collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
-      offline-mode: true
-      job-tag: cpaas
-    needs:
-    - init
-    - build-collector-full
-    - build-test-containers
-    secrets: inherit
-
-  # Isolating multi-arch testing temporarily while fixes are found for ppc64le
-  multiarch-integration-tests:
-    uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') &&
-      contains(github.event.pull_request.labels.*.name, 'run-multiarch-tests') }}
-    strategy:
-      # ensure that if one part of the matrix fails, the
-      # rest will continue
-      fail-fast: false
-      matrix:
-        vm_type:
           - rhel-ppc64le
     with:
       vm_type: ${{ matrix.vm_type }}
@@ -148,9 +144,11 @@ jobs:
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
       offline-mode: true
       job-tag: cpaas
+      collector-repo: quay.io/stackrox-io/collector
     needs:
     - init
-    - build-collector-full
+    - multiarch-manifest
+    - build-test-containers
     secrets: inherit
 
   notify:
@@ -159,10 +157,9 @@ jobs:
     needs:
     - init
     - sync-drivers-and-support-packages
-    - build-collector-slim
-    - build-collector-full
+    - build-collector
+    - multiarch-manifest
     - integration-tests
-    - multiarch-integration-tests
     steps:
       - name: Slack notification
         uses: rtCamp/action-slack-notify@v2
