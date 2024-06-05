@@ -76,6 +76,9 @@
       - ibm_output_inventory_file != ""
     delegate_to: localhost
 
+  - set_fact:
+      instance_created: true
+
   rescue:
     - name: Check if VSI was created
       ibm.cloudcollection.ibm_is_instance_info:
