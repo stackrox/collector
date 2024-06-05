@@ -19,7 +19,15 @@
     include_tasks: create-s390x-vm.yml
     vars:
       vsi_name: "{{ vm_name }}"
-    when: vm_arch == "s390x"
+      vsi_zone: "{{ zone.name }}"
+      vsi_subnet_id: "{{ zone.subnet_id }}"
+    when: vm_arch == "s390x" and not condition
+    loop: "{{ s390x.zones }}"
+    loop_control:
+      loop_var: zone
+    register: instance_result
+    vars:
+      condition: "{{ (instance_result | default({'changed': false })).changed }}"
 
   - name: Create IBM POWER VM
     include_tasks: create-ppc64le-vm.yml

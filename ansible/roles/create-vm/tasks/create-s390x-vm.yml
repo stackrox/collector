@@ -10,67 +10,104 @@
     - '"No Instance found" not in vsi.stderr'
   register: vsi
 
-- name: Configure VSI
-  ibm.cloudcollection.ibm_is_instance:
-    name: "{{ vsi_name }}"
-    state: available
-    id: "{{ vsi.resource.id | default(omit) }}"
-    vpc: "{{ s390x.vpc_id }}"
-    profile: "{{ s390x.vsi_profile }}"
-    image: "{{ s390x.vsi_image_id }}"
-    resource_group: "{{ s390x.vsi_resource_group_id }}"
-    keys:
-      - "{{ s390x.ssh_key_id }}"
-    primary_network_interface:
-      - subnet: "{{ s390x.subnet_id }}"
-    zone: "{{ s390x.zone }}"
-    boot_volume:
-      - size: "{{ s390x.disk_size }}"
-  register: vsi
+- block:
+  - name: Configure VSI
+    ibm.cloudcollection.ibm_is_instance:
+      name: "{{ vsi_name }}"
+      state: available
+      id: "{{ vsi.resource.id | default(omit) }}"
+      vpc: "{{ s390x.vpc_id }}"
+      profile: "{{ s390x.vsi_profile }}"
+      image: "{{ s390x.vsi_image_id }}"
+      resource_group: "{{ s390x.vsi_resource_group_id }}"
+      keys:
+        - "{{ s390x.ssh_key_id }}"
+      primary_network_interface:
+        - subnet: "{{ vsi_subnet_id }}"
+      zone: "{{ vsi_zone }}"
+      boot_volume:
+        - size: "{{ s390x.disk_size }}"
+    register: vsi
 
-- name: Check for existing Floating IP
-  ibm.cloudcollection.ibm_is_floating_ip_info:
-    name: "{{ vsi_name }}-fip"
-  failed_when:
-    - fip.rc != 0
-    - '"No floatingIP found" not in fip.stderr'
-  register: fip
+  - name: Check for existing Floating IP
+    ibm.cloudcollection.ibm_is_floating_ip_info:
+      name: "{{ vsi_name }}-fip"
+    failed_when:
+      - fip.rc != 0
+      - '"No floatingIP found" not in fip.stderr'
+    register: fip
 
-- name: Configure Floating IP Address
-  ibm.cloudcollection.ibm_is_floating_ip:
-    name: "{{ vsi_name }}-fip"
-    state: available
-    id: "{{ fip.resource.id | default(omit) }}"
-    resource_group: "{{ s390x.vsi_resource_group_id }}"
-    target: "{{ vsi.resource.primary_network_interface[0]['id'] }}"
-  register: fip
+  - name: Configure Floating IP Address
+    ibm.cloudcollection.ibm_is_floating_ip:
+      name: "{{ vsi_name }}-fip"
+      state: available
+      id: "{{ fip.resource.id | default(omit) }}"
+      resource_group: "{{ s390x.vsi_resource_group_id }}"
+      target: "{{ vsi.resource.primary_network_interface[0]['id'] }}"
+    register: fip
 
-- name: Print Floating IP Address
-  debug:
-    msg: "{{ vsi_name }} IP Address: {{ fip.resource.address }}"
+  - name: Print Floating IP Address
+    debug:
+      msg: "{{ vsi_name }} IP Address: {{ fip.resource.address }}"
 
-- name: Add VSI to Ansible inventory
-  add_host:
-    name: "{{ vsi_name }}"
-    ansible_user: root
-    ansible_host: "{{ fip.resource.address }}"
-    groups:
-      - job_id_{{ job_id }}
-      - platform_{{ test_platform }}
-      - vm_arch_s390x
-    ansible_ssh_extra_args: "-o StrictHostKeyChecking=no"
-    ansible_ssh_private_key_file: "{{ vm_ssh_key_file }}"
-    vm_config: "{{ vm_config }}"
-    vm_image_family: "{{ vm_family }}"
-    vm_collection_method: "{{ vm_collection_method }}"
-    vm_arch: "{{ vm_arch }}"
-    ibm_cloud_vm: true
+  - name: Add VSI to Ansible inventory
+    add_host:
+      name: "{{ vsi_name }}"
+      ansible_user: root
+      ansible_host: "{{ fip.resource.address }}"
+      groups:
+        - job_id_{{ job_id }}
+        - platform_{{ test_platform }}
+        - vm_arch_s390x
+      ansible_ssh_extra_args: "-o StrictHostKeyChecking=no"
+      ansible_ssh_private_key_file: "{{ vm_ssh_key_file }}"
+      vm_config: "{{ vm_config }}"
+      vm_image_family: "{{ vm_family }}"
+      vm_collection_method: "{{ vm_collection_method }}"
+      vm_arch: "{{ vm_arch }}"
+      ibm_cloud_vm: true
 
-- name: generate provisioner inventory file
-  template:
-    src: 'ibm-cloud-inventory.j2'
-    dest: "{{ ibm_output_inventory_file }}"
-    mode: '0644'
-  when:
-    - ibm_output_inventory_file != ""
-  delegate_to: localhost
+  - name: generate provisioner inventory file
+    template:
+      src: 'ibm-cloud-inventory.j2'
+      dest: "{{ ibm_output_inventory_file }}"
+      mode: '0644'
+    when:
+      - ibm_output_inventory_file != ""
+    delegate_to: localhost
+
+  rescue:
+    - name: Check if VSI was created
+      ibm.cloudcollection.ibm_is_instance_info:
+        name: "{{ vsi_name }}"
+      failed_when:
+        - vsi.rc != 0
+        - '"No Instance found" not in vsi.stderr'
+      register: failed_vsi
+
+    - name: Delete failed VSI
+      ibm.cloudcollection.ibm_is_instance:
+        state: absent
+        id: "{{ failed_vsi.resource.id }}"
+        vpc: "{{ failed_vsi.resource.vpc }}"
+        keys: []
+        image: "{{ failed_vsi.resource.image }}"
+        profile: "{{ failed_vsi.resource.profile }}"
+        zone: "{{ failed_vsi.resource.zone }}"
+        primary_network_interface:
+          - subnet: "{{ failed_vsi.resource.primary_network_interface[0].subnet }}"
+
+    - name: Check for failed floating IP
+      ibm.cloudcollection.ibm_is_floating_ip_info:
+        name: "{{ vsi_name }}-fip"
+      failed_when:
+        - fip.rc != 0
+        - '"No floatingIP found" not in fip.stderr'
+      register: failed_fip
+
+    - name: Release failed floating IP
+      ibm.cloudcollection.ibm_is_floating_ip:
+        state: absent
+        id: "{{ failed_fip.resource.id }}"
+        zone: "{{ failed_fip.resource.zone }}"
+      when: failed_fip.resource.id is defined
