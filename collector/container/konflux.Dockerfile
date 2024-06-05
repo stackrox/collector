@@ -85,7 +85,7 @@ RUN ./builder/install/install-dependencies.sh && \
            -DUSE_VALGRIND=${USE_VALGRIND} \
            -DADDRESS_SANITIZER=${ADDRESS_SANITIZER} \
            -DTRACE_SINSP_EVENTS=${TRACE_SINSP_EVENTS} && \
-    cmake --build ${CMAKE_BUILD_DIR} --target all -- -j "${NPROCS:-2}" && \
+    cmake --build ${CMAKE_BUILD_DIR} --target all -- -j "${NPROCS:-4}" && \
     ctest -V --test-dir ${CMAKE_BUILD_DIR} && \
     strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
@@ -116,8 +116,7 @@ FROM scratch
 
 COPY --from=rpm-implanter-app /mnt /
 
-# TODO(ROX-20236): configure injection of dynamic version value when it becomes possible.
-ARG COLLECTOR_VERSION=0.0.1-todo
+ARG COLLECTOR_TAG
 
 WORKDIR /
 
@@ -133,12 +132,13 @@ LABEL \
     source-location="https://github.com/stackrox/collector" \
     summary="Runtime data collection for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
-    version=${COLLECTOR_VERSION} \
+    version="${COLLECTOR_TAG}" \
     vendor="Red Hat, Inc."
 
 ARG BUILD_DIR
 ARG CMAKE_BUILD_DIR
 
+ENV COLLECTOR_VERSION="${COLLECTOR_TAG}"
 ENV COLLECTOR_HOST_ROOT=/host
 
 COPY kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
