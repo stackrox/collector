@@ -1,4 +1,4 @@
-ansible
+ansible<10
 requests
 google-auth
 selinux
