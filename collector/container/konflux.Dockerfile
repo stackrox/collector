@@ -1,6 +1,7 @@
 ARG BUILD_DIR=/build
 ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
 
+
 # Builder
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 # TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available.
@@ -37,6 +38,7 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
         systemtap-sdt-devel && \
     /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
     dnf -y --installroot=/mnt clean all
+
 
 FROM scratch as builder
 
@@ -89,8 +91,10 @@ RUN ./builder/install/install-dependencies.sh && \
     ctest -V --test-dir ${CMAKE_BUILD_DIR} && \
     strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
+
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS ubi-minimal
+
 
 # Application
 FROM ubi-normal AS rpm-implanter-app
@@ -112,6 +116,7 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
     rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
 
+
 FROM scratch
 
 COPY --from=rpm-implanter-app /mnt /
@@ -127,13 +132,15 @@ LABEL \
     io.k8s.description="This image supports runtime data collection for Red Hat Advanced Cluster Security for Kubernetes" \
     io.openshift.tags="rhacs,collector,stackrox" \
     maintainer="Red Hat, Inc." \
-    # TODO(ROX-20236): release label is required by EC, figure what to put in the release version on rebuilds.
-    release="0" \
     source-location="https://github.com/stackrox/collector" \
     summary="Runtime data collection for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
+    vendor="Red Hat, Inc." \
+    # We must set version label for EC and to prevent inheriting value set in the base stage.
     version="${COLLECTOR_TAG}" \
-    vendor="Red Hat, Inc."
+    # Release label is required by EC although has no practical semantics.
+    # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
+    release="1"
 
 ARG BUILD_DIR
 ARG CMAKE_BUILD_DIR
