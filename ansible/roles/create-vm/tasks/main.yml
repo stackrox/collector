@@ -14,17 +14,17 @@
     excluded: "{{ vm_image in excluded_vms }}"
   when: vm_image is defined and excluded == false
 
-- set_fact:
-    instance_created: false
-
 - block:
   - name: Create IBM Z VM
-    include_tasks: create-s390x-vm.yml
+    include_tasks:
+      file: create-s390x-vm.yml
+      apply:
+        when: not (instance_created | default(false))
     vars:
       vsi_name: "{{ vm_name }}"
       vsi_zone: "{{ zone.name }}"
       vsi_subnet_id: "{{ zone.subnet_id }}"
-    when: vm_arch == "s390x" and not instance_created
+    when: vm_arch == "s390x"
     loop: "{{ s390x.zones }}"
     loop_control:
       loop_var: zone
@@ -45,3 +45,4 @@
 - set_fact:
     instance_result:
       changed: false
+    instance_created: false

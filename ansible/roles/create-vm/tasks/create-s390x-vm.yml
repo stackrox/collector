@@ -114,3 +114,7 @@
         id: "{{ failed_fip.resource.id }}"
         zone: "{{ failed_fip.resource.zone }}"
       when: failed_fip.resource.id is defined
+
+  always:
+    - set_fact:
+        instance_created: "{{ instance_created | default(false) }}"
