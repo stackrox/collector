@@ -104,8 +104,8 @@
       ibm.cloudcollection.ibm_is_floating_ip_info:
         name: "{{ vsi_name }}-fip"
       failed_when:
-        - fip.rc != 0
-        - '"No floatingIP found" not in fip.stderr'
+        - failed_fip.rc != 0
+        - '"No floatingIP found" not in failed_fip.stderr'
       register: failed_fip
 
     - name: Release failed floating IP
