@@ -65,3 +65,24 @@ jobs:
     - build-drivers
     - upload-drivers
     secrets: inherit
+
+  notify:
+    runs-on: ubuntu-latest
+    if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name == 'push'
+    needs:
+    - init
+    - build-drivers
+    - upload-drivers
+    - build-support-packages
+    steps:
+      - name: Slack notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_ONCALL_WEBHOOK }}
+          SLACK_CHANNEL: team-acs-collector-oncall
+          SLACK_COLOR: failure
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: Driver workflow failed
+          MSG_MINIMAL: actions url,commit
+          SLACK_MESSAGE: |
+            @acs-collector-oncall
