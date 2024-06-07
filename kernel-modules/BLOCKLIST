@@ -92,7 +92,8 @@
 # https://github.com/falcosecurity/libs/issues/918
 # Since kmods are not supported anyway, block these combination
 ~.*\.el8_9\..* * mod
-~.*\.el9_4\..* ~2\.[3-9]\..* *
+~.*\.el9_4\..* ~2\.[3-8]\..* *
+~.*\.el9_4\..* 2.9.0 *
 ~.*\.el[89].* 2.3.0 mod
 # Block unsupported fedora kernels
 ~.*\.fc3[4-8].* 2.9.1 *
