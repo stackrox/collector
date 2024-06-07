@@ -118,7 +118,7 @@ def main(task_file):
     fc39 = Builder("fc39", rf"^{fc39_kernels}", {})
     fc36 = Builder("fc36", rf"^{fc36_kernels}", {})
     rhel7_ebpf = EBPFBuilder("rhel7", rf"^{rhel7_ebpf_kernels}", {})
-    rhel9 = Builder("rhel8", rf"^{rhel9_kernels}", {})
+    rhel9 = Builder("rhel9", rf"^{rhel9_kernels}", {})
     rhel7 = Builder("rhel7", rf"^{rhel7_kernels}", {})
     unknown = Builder("unknown", r".*", {})
 
