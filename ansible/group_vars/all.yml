@@ -63,11 +63,11 @@ virtual_machines:
   rhcos:
     project: rhcos-cloud
     images:
-      - "{{ lookup('ansible.builtin.pipe', 'group_vars/fetch_ocp_rhcos_bootimage.sh 4.17') }}"
-      - "{{ lookup('ansible.builtin.pipe', 'group_vars/fetch_ocp_rhcos_bootimage.sh 4.16') }}"
-      - "{{ lookup('ansible.builtin.pipe', 'group_vars/fetch_ocp_rhcos_bootimage.sh 4.15') }}"
-      - "{{ lookup('ansible.builtin.pipe', 'group_vars/fetch_ocp_rhcos_bootimage.sh 4.14') }}"
-      - "{{ lookup('ansible.builtin.pipe', 'group_vars/fetch_ocp_rhcos_bootimage.sh 4.12') }}"
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.17') }}"
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.16') }}"
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.15') }}"
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.14') }}"
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.12') }}"
     username: core
     ignition:
       ignition:
