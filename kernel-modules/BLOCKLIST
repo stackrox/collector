@@ -94,3 +94,5 @@
 ~.*\.el8_9\..* * mod
 ~.*\.el9_4\..* ~2\.[3-9]\..* *
 ~.*\.el[89].* 2.3.0 mod
+# Block unsupported fedora kernels
+~.*\.fc3[4-8].* 2.9.1 *
