@@ -88,6 +88,9 @@ bool Service::InitKernel(const CollectorConfig& config, const DriverCandidate& c
     inspector_->set_auto_threads_purging_interval_s(60);
     inspector_->m_thread_manager->set_max_thread_table_size(config.GetSinspThreadCacheSize());
 
+    // enable stats v2
+    inspector_->set_sinsp_stats_v2_enabled();
+
     // Connection status tracking is used in NetworkSignalHandler,
     // but only when trying to handle asynchronous connections
     // as a special case.
@@ -355,12 +358,20 @@ bool Service::GetStats(system_inspector::Stats* stats) const {
   if (!running_ || !inspector_) return false;
 
   scap_stats kernel_stats;
+  std::shared_ptr<const sinsp_stats_v2> userspace_stats;
+
   inspector_->get_capture_stats(&kernel_stats);
+  userspace_stats = inspector_->get_sinsp_stats_v2();
+
   *stats = userspace_stats_;
   stats->nEvents = kernel_stats.n_evts;
   stats->nDrops = kernel_stats.n_drops;
+  stats->nDropsBuffer = kernel_stats.n_drops_buffer;
   stats->nPreemptions = kernel_stats.n_preemptions;
   stats->nThreadCacheSize = inspector_->m_thread_manager->get_thread_count();
+
+  if (userspace_stats != nullptr)
+    stats->nDropsThreadCache = userspace_stats->m_n_drops_full_threadtable;
 
   return true;
 }
