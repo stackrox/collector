@@ -313,7 +313,7 @@ void CollectorConfig::HandleSinspEnvVars() {
   if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_TOTAL_BUFFER_SIZE")) != NULL) {
     try {
       sinsp_total_buffer_size_ = std::stoll(envvar);
-      CLOG(INFO) << "Sinsp total buffer size: " << sinsp_buffer_size_;
+      CLOG(INFO) << "Sinsp total buffer size: " << sinsp_total_buffer_size_;
     } catch (...) {
       CLOG(ERROR) << "Invalid total buffer size value: '" << envvar << "'";
     }
