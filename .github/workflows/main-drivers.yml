@@ -73,7 +73,6 @@ jobs:
     - init
     - build-drivers
     - upload-drivers
-    - build-support-packages
     steps:
       - name: Slack notification
         uses: rtCamp/action-slack-notify@v2
