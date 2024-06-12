@@ -303,7 +303,7 @@ void CollectorConfig::HandleSinspEnvVars() {
 
   if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_BUFFER_SIZE")) != NULL) {
     try {
-      sinsp_buffer_size_ = std::stoi(envvar);
+      sinsp_buffer_size_ = std::stoll(envvar);
       CLOG(INFO) << "Sinsp buffer size: " << sinsp_buffer_size_;
     } catch (...) {
       CLOG(ERROR) << "Invalid buffer size value: '" << envvar << "'";
@@ -312,7 +312,7 @@ void CollectorConfig::HandleSinspEnvVars() {
 
   if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_TOTAL_BUFFER_SIZE")) != NULL) {
     try {
-      sinsp_total_buffer_size_ = std::stoi(envvar);
+      sinsp_total_buffer_size_ = std::stoll(envvar);
       CLOG(INFO) << "Sinsp total buffer size: " << sinsp_buffer_size_;
     } catch (...) {
       CLOG(ERROR) << "Invalid total buffer size value: '" << envvar << "'";
@@ -321,7 +321,7 @@ void CollectorConfig::HandleSinspEnvVars() {
 
   if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_THREAD_CACHE_SIZE")) != NULL) {
     try {
-      sinsp_thread_cache_size_ = std::stoi(envvar);
+      sinsp_thread_cache_size_ = std::stoll(envvar);
       CLOG(INFO) << "Sinsp thread cache size: " << sinsp_thread_cache_size_;
     } catch (...) {
       CLOG(ERROR) << "Invalid thread cache size value: '" << envvar << "'";
