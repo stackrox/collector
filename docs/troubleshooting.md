@@ -290,6 +290,8 @@ Units: occurence
 |----------------------------------------|-----------------------------------------------------------------------------------------------------|
 | kernel                                 | number of received kernel events (by the probe)                                                     |
 | drops                                  | number of dropped kernel events                                                                     |
+| threadCacheDrops                       | number of dropped kernel events due to threadcache being full                                       |
+| ringbufferDrops                        | number of dropped kernel events due to ringbuffer being full                                        |
 | preemptions                            | Number of preemptions (?)                                                                           |
 | userspace[syscall]                     | Number of this kind of event                                                                        |
 | grpcSendFailures                       | (not used?)                                                                                         |
