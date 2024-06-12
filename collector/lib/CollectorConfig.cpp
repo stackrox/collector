@@ -395,7 +395,7 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
 // buffer of size 6Mi per CPU core will allow us to fit into the total limit.
 //
 unsigned int CollectorConfig::GetSinspBufferSize() const {
-  unsigned int max_buffer_size, n_buffers;
+  unsigned int max_buffer_size, effective_buffer_size, n_buffers;
 
   if (sinsp_total_buffer_size_ == 0) {
     CLOG(WARNING) << "Trying to calculate buffer size without "
@@ -432,7 +432,15 @@ unsigned int CollectorConfig::GetSinspBufferSize() const {
     magnitude++;
   }
 
-  return std::min(sinsp_buffer_size_, (max_buffer_size << magnitude * 10));
+  effective_buffer_size = std::min(sinsp_buffer_size_,
+                                   (max_buffer_size << magnitude * 10));
+
+  if (effective_buffer_size != sinsp_buffer_size_) {
+    CLOG(INFO) << "Use modified ringbuf size of "
+               << effective_buffer_size << " bytes.";
+  }
+
+  return effective_buffer_size;
 }
 
 void CollectorConfig::SetSinspBufferSize(unsigned int buffer_size) {
