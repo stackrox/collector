@@ -580,10 +580,14 @@ Afterglow is not applied to the data returned by this API.
 It is possible to filter the items returned per container_id by providing
 a query parameter: `container=<container_id>`
 
-Example of connection query, limited to container with identifier `c6f030bc4b42`:
+By default, connections and endpoints are normalized in the result. It is
+possible to disable normalization with a query parameter: `normalize=false`
+
+Example of connection query, limited to container with identifier `c6f030bc4b42`
+and without normalization :
 
 ```
-$ curl "http://<collector>:8080/state/network/connection?container=c6f030bc4b42"
+$ curl "http://<collector>:8080/state/network/connection?container=c6f030bc4b42&normalize=false"
 {
   "c6f030bc4b42" :
   [
