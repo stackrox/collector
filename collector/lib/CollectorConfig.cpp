@@ -303,7 +303,7 @@ void CollectorConfig::HandleSinspEnvVars() {
 
   if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_BUFFER_SIZE")) != NULL) {
     try {
-      sinsp_buffer_size_ = std::stoi(envvar);
+      sinsp_buffer_size_ = std::stoll(envvar);
       CLOG(INFO) << "Sinsp buffer size: " << sinsp_buffer_size_;
     } catch (...) {
       CLOG(ERROR) << "Invalid buffer size value: '" << envvar << "'";
@@ -312,7 +312,7 @@ void CollectorConfig::HandleSinspEnvVars() {
 
   if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_TOTAL_BUFFER_SIZE")) != NULL) {
     try {
-      sinsp_total_buffer_size_ = std::stoi(envvar);
+      sinsp_total_buffer_size_ = std::stoll(envvar);
       CLOG(INFO) << "Sinsp total buffer size: " << sinsp_buffer_size_;
     } catch (...) {
       CLOG(ERROR) << "Invalid total buffer size value: '" << envvar << "'";
@@ -321,7 +321,7 @@ void CollectorConfig::HandleSinspEnvVars() {
 
   if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_THREAD_CACHE_SIZE")) != NULL) {
     try {
-      sinsp_thread_cache_size_ = std::stoi(envvar);
+      sinsp_thread_cache_size_ = std::stoll(envvar);
       CLOG(INFO) << "Sinsp thread cache size: " << sinsp_thread_cache_size_;
     } catch (...) {
       CLOG(ERROR) << "Invalid thread cache size value: '" << envvar << "'";
@@ -382,54 +382,65 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << ", enable_external_ips:" << c.EnableExternalIPs();
 }
 
-// Returns number of CPUs per buffer for the purpose of ring buffer allocation.
+// Returns size of ring buffers to be allocated.
 // The value is adjusted based on the allowed total limit, e.g.:
 //
 // * total limit for ring buffers is 1Gi
 // * one buffer takes 8Mi
-// * maximum allowed number of buffers is 128
+// * there is one buffer per cpu
 // * total number of CPU cores is 150
 //
-// In this scenario, n_buffers = 150 / 1 > 128, thus the adjusted value will be
-// returned: ceil(150 / 128) = 2. Allocating one buffer per 2 CPU cores will
-// allow us to fit into the total limit: (150 / 2) * 8Mi < 1Gi.
+// In this scenario, buffers_total = (150 / cpu_per_buffer) * 8Mi > 1Gi. Thus
+// the adjusted value will be returned: ceil(1Gi / 150) = 6Mi. Allocating one
+// buffer of size 6Mi per CPU core will allow us to fit into the total limit.
 //
-unsigned int CollectorConfig::GetSinspCpuPerBuffer() const {
-  unsigned int n_buffers, max_n_buffers;
+unsigned int CollectorConfig::GetSinspBufferSize() const {
+  unsigned int max_buffer_size, effective_buffer_size, n_buffers;
 
-  if (sinsp_buffer_size_ == 0) {
-    CLOG(WARNING) << "Trying to calculate cpu-per-buffer without"
-                     "initialized buffer size. Return unmodified "
-                  << sinsp_cpu_per_buffer_ << " CPUs per buffer.";
-    return sinsp_cpu_per_buffer_;
+  if (sinsp_total_buffer_size_ == 0) {
+    CLOG(WARNING) << "Trying to calculate buffer size without "
+                     "requested total buffer size. Return unmodified "
+                  << sinsp_buffer_size_ << " bytes.";
+    return sinsp_buffer_size_;
   }
 
   if (sinsp_cpu_per_buffer_ == 0) {
-    CLOG(WARNING) << "Trying to calculate cpu-per-buffer without "
+    CLOG(WARNING) << "Trying to calculate buffer size without "
                      "requested cpu-per-buffer. Return unmodified "
-                  << sinsp_cpu_per_buffer_ << " CPUs per buffer.";
-    return sinsp_cpu_per_buffer_;
+                  << sinsp_buffer_size_ << " bytes.";
+    return sinsp_buffer_size_;
   }
 
   if (host_config_.GetNumPossibleCPUs() == 0) {
-    CLOG(WARNING) << "Trying to calculate cpu-per-buffer without"
+    CLOG(WARNING) << "Trying to calculate buffer size without"
                      "number of possible CPUs. Return unmodified "
-                  << sinsp_cpu_per_buffer_ << " CPUs per buffer.";
-    return sinsp_cpu_per_buffer_;
+                  << sinsp_buffer_size_ << " bytes.";
+    return sinsp_buffer_size_;
   }
 
   // Round to the larger value, since one buffer will be allocated even if the
   // last group of CPUs is less than sinsp_cpu_per_buffer_
-  n_buffers = std::ceil(((float)host_config_.GetNumPossibleCPUs() / (float)sinsp_cpu_per_buffer_));
-  max_n_buffers = std::ceil((float)sinsp_total_buffer_size_ / (float)sinsp_buffer_size_);
+  n_buffers = std::ceil((float)host_config_.GetNumPossibleCPUs() / (float)sinsp_cpu_per_buffer_);
 
-  // Baseline case, nothing to adjust
-  if (n_buffers <= max_n_buffers) {
-    return sinsp_cpu_per_buffer_;
+  max_buffer_size = std::ceil((float)sinsp_total_buffer_size_ / (float)n_buffers);
+
+  // It would be awkward to have a buffer size of e.g. 3.14159..., align by the
+  // highest level, e.g. MiB, KiB.
+  int magnitude = 0;
+  while (max_buffer_size >> 10) {
+    max_buffer_size = max_buffer_size >> 10;
+    magnitude++;
   }
 
-  // Otherwise reduce sinsp_cpu_per_buffer_ to fit into the total limit
-  return std::ceil((float)host_config_.GetNumPossibleCPUs() / (float)max_n_buffers);
+  effective_buffer_size = std::min(sinsp_buffer_size_,
+                                   (max_buffer_size << magnitude * 10));
+
+  if (effective_buffer_size != sinsp_buffer_size_) {
+    CLOG(INFO) << "Use modified ringbuf size of "
+               << effective_buffer_size << " bytes.";
+  }
+
+  return effective_buffer_size;
 }
 
 void CollectorConfig::SetSinspBufferSize(unsigned int buffer_size) {

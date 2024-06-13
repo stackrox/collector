@@ -82,8 +82,8 @@ class CollectorConfig {
   const std::vector<double>& GetConnectionStatsQuantiles() const { return connection_stats_quantiles_; }
   double GetConnectionStatsError() const { return connection_stats_error_; }
   unsigned int GetConnectionStatsWindow() const { return connection_stats_window_; }
-  unsigned int GetSinspBufferSize() const { return sinsp_buffer_size_; }
-  unsigned int GetSinspCpuPerBuffer() const;
+  unsigned int GetSinspCpuPerBuffer() const { return sinsp_cpu_per_buffer_; }
+  unsigned int GetSinspBufferSize() const;
   unsigned int GetSinspTotalBufferSize() const { return sinsp_total_buffer_size_; }
   unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
 
