@@ -19,18 +19,18 @@ namespace collector {
 
 class ProcessSignalHandler : public SignalHandler {
  public:
-  ProcessSignalHandler(sinsp* inspector, ISignalServiceClient* client, system_inspector::Stats* stats)
+  ProcessSignalHandler(sinsp* inspector, output::ISignalServiceClient* client, system_inspector::Stats* stats)
       : client_(client), formatter_(inspector), stats_(stats) {}
 
   bool Start() override;
   bool Stop() override;
-  Result HandleSignal(sinsp_evt* evt) override;
-  Result HandleExistingProcess(sinsp_threadinfo* tinfo) override;
+  SignalHandlerResult HandleSignal(sinsp_evt* evt) override;
+  SignalHandlerResult HandleExistingProcess(sinsp_threadinfo* tinfo) override;
   std::string GetName() override { return "ProcessSignalHandler"; }
   std::vector<std::string> GetRelevantEvents() override;
 
  private:
-  ISignalServiceClient* client_;
+  output::ISignalServiceClient* client_;
   ProcessSignalFormatter formatter_;
   system_inspector::Stats* stats_;
   RateLimitCache rate_limiter_;

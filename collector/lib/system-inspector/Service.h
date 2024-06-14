@@ -13,8 +13,8 @@
 #include "Control.h"
 #include "DriverCandidates.h"
 #include "SignalHandler.h"
-#include "SignalServiceClient.h"
 #include "SystemInspector.h"
+#include "output/SignalServiceClient.h"
 
 // forward declarations
 class sinsp;
@@ -40,6 +40,11 @@ class Service : public SystemInspector {
   void Start() override;
   void Run(const std::atomic<ControlValue>& control) override;
   void CleanUp() override;
+
+  /**
+   * Gets the Next event from the inspector
+   */
+  output::SignalStreamMessage Next();
 
   bool GetStats(Stats* stats) const override;
 
@@ -76,7 +81,7 @@ class Service : public SystemInspector {
   std::unique_ptr<sinsp> inspector_;
   std::shared_ptr<ContainerMetadata> container_metadata_inspector_;
   std::unique_ptr<sinsp_evt_formatter> default_formatter_;
-  std::unique_ptr<ISignalServiceClient> signal_client_;
+  std::unique_ptr<output::ISignalServiceClient> signal_client_;
   std::vector<SignalHandlerEntry> signal_handlers_;
   Stats userspace_stats_;
   std::bitset<PPM_EVENT_MAX> global_event_filter_;

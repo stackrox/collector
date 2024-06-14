@@ -1,10 +1,5 @@
-#ifndef __SIGNAL_SERVICE_CLIENT_H
-#define __SIGNAL_SERVICE_CLIENT_H
-
-// SIGNAL_SERVICE_CLIENT.h
-// This class defines our GRPC client abstraction
-
-#include <mutex>
+#ifndef _COLLECTOR_GRPC_SIGNAL_SVC_CLIENT
+#define _COLLECTOR_GRPC_SIGNAL_SVC_CLIENT
 
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
@@ -14,32 +9,23 @@
 #include "internalapi/sensor/signal_iservice.grpc.pb.h"
 
 #include "DuplexGRPC.h"
+#include "ISignalServiceClient.h"
 #include "SignalHandler.h"
 #include "StoppableThread.h"
 
-namespace collector {
+namespace collector::output {
 
-class ISignalServiceClient {
- public:
-  using SignalStreamMessage = sensor::SignalStreamMessage;
-
-  virtual void Start() = 0;
-  virtual void Stop() = 0;
-  virtual SignalHandler::Result PushSignals(const SignalStreamMessage& msg) = 0;
-
-  virtual ~ISignalServiceClient() {}
-};
-
-class SignalServiceClient : public ISignalServiceClient {
+class GRPCSignalServiceClient : public ISignalServiceClient {
  public:
   using SignalService = sensor::SignalService;
   using SignalStreamMessage = sensor::SignalStreamMessage;
 
-  explicit SignalServiceClient(std::shared_ptr<grpc::Channel> channel)
+  explicit GRPCSignalServiceClient(std::shared_ptr<grpc::Channel> channel)
       : channel_(std::move(channel)), stream_active_(false) {}
 
   void Start();
   void Stop();
+  bool Ready();
 
   SignalHandler::Result PushSignals(const SignalStreamMessage& msg);
 
@@ -60,18 +46,6 @@ class SignalServiceClient : public ISignalServiceClient {
   bool first_write_;
 };
 
-class StdoutSignalServiceClient : public ISignalServiceClient {
- public:
-  using SignalStreamMessage = sensor::SignalStreamMessage;
+};  // namespace collector::output
 
-  explicit StdoutSignalServiceClient() {}
-
-  void Start(){};
-  void Stop(){};
-
-  SignalHandler::Result PushSignals(const SignalStreamMessage& msg);
-};
-
-}  // namespace collector
-
-#endif  // __SIGNAL_SERVICE_CLIENT_H
+#endif

@@ -1,5 +1,6 @@
 #include "ProcessSignalHandler.h"
 
+#include <optional>
 #include <sstream>
 
 #include <sys/sdt.h>
@@ -36,12 +37,12 @@ bool ProcessSignalHandler::Stop() {
   return true;
 }
 
-SignalHandler::Result ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
+SignalHandlerResult ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
   const auto* signal_msg = formatter_.ToProtoMessage(evt);
 
   if (!signal_msg) {
     ++(stats_->nProcessResolutionFailuresByEvt);
-    return IGNORED;
+    return {std::nullopt, IGNORED};
   }
 
   const char* name = signal_msg->signal().process_signal().name().c_str();
@@ -50,39 +51,25 @@ SignalHandler::Result ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
 
   if (!rate_limiter_.Allow(compute_process_key(signal_msg->signal().process_signal()))) {
     ++(stats_->nProcessRateLimitCount);
-    return IGNORED;
+    return {std::nullopt, IGNORED};
   }
 
-  auto result = client_->PushSignals(*signal_msg);
-  if (result == SignalHandler::PROCESSED) {
-    ++(stats_->nProcessSent);
-  } else if (result == SignalHandler::ERROR) {
-    ++(stats_->nProcessSendFailures);
-  }
-
-  return result;
+  return {*signal_msg, PROCESSED};
 }
 
-SignalHandler::Result ProcessSignalHandler::HandleExistingProcess(sinsp_threadinfo* tinfo) {
+SignalHandlerResult ProcessSignalHandler::HandleExistingProcess(sinsp_threadinfo* tinfo) {
   const auto* signal_msg = formatter_.ToProtoMessage(tinfo);
   if (!signal_msg) {
     ++(stats_->nProcessResolutionFailuresByTinfo);
-    return IGNORED;
+    return {std::nullopt, IGNORED};
   }
 
   if (!rate_limiter_.Allow(compute_process_key(signal_msg->signal().process_signal()))) {
     ++(stats_->nProcessRateLimitCount);
-    return IGNORED;
+    return {std::nullopt, IGNORED};
   }
 
-  auto result = client_->PushSignals(*signal_msg);
-  if (result == SignalHandler::PROCESSED) {
-    ++(stats_->nProcessSent);
-  } else if (result == SignalHandler::ERROR) {
-    ++(stats_->nProcessSendFailures);
-  }
-
-  return result;
+  return {*signal_msg, PROCESSED};
 }
 
 std::vector<std::string> ProcessSignalHandler::GetRelevantEvents() {

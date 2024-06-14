@@ -1,5 +1,6 @@
-#include "SignalServiceClient.h"
+#include "GRPCSignalServiceClient.h"
 
+#include <atomic>
 #include <fstream>
 
 #include "GRPCUtil.h"
@@ -7,9 +8,9 @@
 #include "ProtoUtil.h"
 #include "Utility.h"
 
-namespace collector {
+namespace collector::output {
 
-bool SignalServiceClient::EstablishGRPCStreamSingle() {
+bool GRPCSignalServiceClient::EstablishGRPCStreamSingle() {
   std::mutex mtx;
   std::unique_lock<std::mutex> lock(mtx);
   stream_interrupted_.wait(lock, [this]() { return !stream_active_.load(std::memory_order_acquire) || thread_.should_stop(); });
@@ -42,24 +43,29 @@ bool SignalServiceClient::EstablishGRPCStreamSingle() {
   return true;
 }
 
-void SignalServiceClient::EstablishGRPCStream() {
+void GRPCSignalServiceClient::EstablishGRPCStream() {
   while (EstablishGRPCStreamSingle())
     ;
   CLOG(INFO) << "Signal service client terminating.";
 }
 
-void SignalServiceClient::Start() {
+void GRPCSignalServiceClient::Start() {
   thread_.Start([this] { EstablishGRPCStream(); });
 }
 
-void SignalServiceClient::Stop() {
+void GRPCSignalServiceClient::Stop() {
   stream_interrupted_.notify_one();
   thread_.Stop();
   context_->TryCancel();
   context_.reset();
 }
 
-SignalHandler::Result SignalServiceClient::PushSignals(const SignalStreamMessage& msg) {
+bool GRPCSignalServiceClient::Ready() {
+  auto interrupt = [this] { return thread_.should_stop(); };
+  return WaitForChannelReady(channel_, interrupt);
+}
+
+SignalHandler::Result GRPCSignalServiceClient::PushSignals(const SignalStreamMessage& msg) {
   if (!stream_active_.load(std::memory_order_acquire)) {
     CLOG_THROTTLED(ERROR, std::chrono::seconds(10))
         << "GRPC stream is not established";
@@ -87,11 +93,4 @@ SignalHandler::Result SignalServiceClient::PushSignals(const SignalStreamMessage
   return SignalHandler::PROCESSED;
 }
 
-SignalHandler::Result StdoutSignalServiceClient::PushSignals(const SignalStreamMessage& msg) {
-  std::string output;
-  google::protobuf::util::MessageToJsonString(msg, &output, google::protobuf::util::JsonPrintOptions{});
-  CLOG(DEBUG) << "GRPC: " << output;
-  return SignalHandler::PROCESSED;
-}
-
-}  // namespace collector
+}  // namespace collector::output

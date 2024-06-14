@@ -1,6 +1,7 @@
 #include "Service.h"
 
 #include <cap-ng.h>
+#include <optional>
 #include <thread>
 
 #include <linux/ioctl.h>
@@ -56,9 +57,9 @@ void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTrac
   }
 
   if (config.grpc_channel) {
-    signal_client_.reset(new SignalServiceClient(std::move(config.grpc_channel)));
+    signal_client_.reset(new output::GRPCSignalServiceClient(std::move(config.grpc_channel)));
   } else {
-    signal_client_.reset(new StdoutSignalServiceClient());
+    signal_client_.reset(new output::StdoutSignalServiceClient());
   }
   AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(),
                                                     signal_client_.get(),
@@ -293,6 +294,48 @@ void Service::Run(const std::atomic<ControlValue>& control) {
 
     userspace_stats_.event_process_micros[evt->get_type()] += (NowMicros() - process_start);
   }
+}
+
+std::optional<output::SignalStreamMessage> Service::Next() {
+  if (!inspector_) {
+    throw CollectorException("Invalid state: system inspector was not initialized");
+  }
+
+  // TODO: Handle existing processes
+
+  sinsp_evt* evt = GetNext();
+  if (!evt) {
+    return std::nullopt;
+  }
+
+  auto process_start = NowMicros();
+  for (auto it = signal_handlers_.begin(); it != signal_handlers_.end(); it++) {
+    auto& signal_handler = *it;
+    if (!signal_handler.ShouldHandle(evt)) {
+      continue;
+    }
+
+    LogUnreasonableEventTime(process_start, evt);
+
+    auto result = signal_handler.handler->HandleSignal(evt);
+    if (result == SignalHandler::NEEDS_REFRESH) {
+      if (!SendExistingProcesses(signal_handler.handler.get())) {
+        continue;
+      }
+      result = signal_handler.handler->HandleSignal(evt);
+    } else if (result == SignalHandler::FINISHED) {
+      // This signal handler has finished processing events,
+      // so remove it from the signal handler list.
+      //
+      // We don't need to update the iterator post-deletion
+      // because we also stop iteration at this point.
+      signal_handlers_.erase(it);
+      break;
+    }
+  }
+
+  userspace_stats_.event_process_micros[evt->get_type()] += (NowMicros() - process_start);
+  return std::nullopt;
 }
 
 bool Service::SendExistingProcesses(SignalHandler* handler) {

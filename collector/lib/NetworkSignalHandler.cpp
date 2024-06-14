@@ -121,13 +121,15 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   return {Connection(*container_id, *local, *remote, l4proto, is_server)};
 }
 
-SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
+SignalHandlerResult NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
   auto modifier = modifiers[evt->get_type()];
-  if (modifier == Modifier::INVALID) return SignalHandler::IGNORED;
+  if (modifier == Modifier::INVALID) {
+    return {std::nullopt, IGNORED};
+  }
 
   auto result = GetConnection(evt);
   if (!result.has_value() || !IsRelevantConnection(*result)) {
-    return SignalHandler::IGNORED;
+    return {std::nullopt, IGNORED};
   }
 
   conn_tracker_->UpdateConnection(*result, evt->get_ts() / 1000UL, modifier == Modifier::ADD);
