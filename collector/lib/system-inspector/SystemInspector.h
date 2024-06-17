@@ -19,6 +19,7 @@ struct Stats {
   // stats gathered in kernel space
   volatile uint64_t nEvents = 0;       // the number of kernel events
   volatile uint64_t nDrops = 0;        // the number of drops
+  volatile uint64_t nDropsBuffer = 0;  // the number of drops due to full ringbuf
   volatile uint64_t nPreemptions = 0;  // the number of preemptions
 
   // stats gathered in user space
@@ -26,6 +27,7 @@ struct Stats {
   volatile uint64_t nUserspaceEvents[PPM_EVENT_MAX] = {0};  // events processed by userspace
   volatile uint64_t nGRPCSendFailures = 0;                  // number of signals that were not sent on GRPC
   volatile uint64_t nThreadCacheSize = 0;                   // number of thread-info entries stored in the cache
+  volatile uint64_t nDropsThreadCache = 0;                  // the number of drops due to full thread cache
 
   // process related metrics
   volatile uint64_t nProcessSent = 0;                       // number of process signals sent

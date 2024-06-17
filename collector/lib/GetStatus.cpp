@@ -15,11 +15,16 @@ bool GetStatus::handleGet(CivetServer* server, struct mg_connection* conn) {
   bool ready = system_inspector_->GetStats(&stats);
 
   if (ready) {
+    Json::Value drops = Json::Value(Json::objectValue);
+    drops["total"] = Json::UInt64(stats.nDrops);
+    drops["ringbuffer"] = Json::UInt64(stats.nDropsBuffer);
+    drops["threadcache"] = Json::UInt64(stats.nDropsThreadCache);
+
     status["status"] = "ok";
     status["collector"] = Json::Value(Json::objectValue);
     status["collector"]["node"] = node_name_;
     status["collector"]["events"] = Json::UInt64(stats.nEvents);
-    status["collector"]["drops"] = Json::UInt64(stats.nDrops);
+    status["collector"]["drops"] = drops;
     status["collector"]["preemptions"] = Json::UInt64(stats.nPreemptions);
 
     mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");

@@ -112,6 +112,8 @@ void CollectorStatsExporter::run() {
 
   auto& kernel = collectorEventCounters.Add({{"type", "kernel"}});
   auto& drops = collectorEventCounters.Add({{"type", "drops"}});
+  auto& threadCacheDrops = collectorEventCounters.Add({{"type", "threadCacheDrops"}});
+  auto& ringbufferDrops = collectorEventCounters.Add({{"type", "ringbufferDrops"}});
   auto& preemptions = collectorEventCounters.Add({{"type", "preemptions"}});
   auto& grpcSendFailures = collectorEventCounters.Add({{"type", "grpcSendFailures"}});
   auto& threadTableSize = collectorEventCounters.Add({{"type", "threadCacheSize"}});
@@ -223,6 +225,8 @@ void CollectorStatsExporter::run() {
 
     kernel.Set(stats.nEvents);
     drops.Set(stats.nDrops);
+    threadCacheDrops.Set(stats.nDropsThreadCache);
+    ringbufferDrops.Set(stats.nDropsBuffer);
     preemptions.Set(stats.nPreemptions);
     threadTableSize.Set(stats.nThreadCacheSize);
 
