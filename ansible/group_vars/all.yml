@@ -52,7 +52,7 @@ virtual_machines:
     arch: ppc64le
     ssh_key_file: "~/.ssh/acs-ppc64le-rsa.prv"
     images:
-      - rhel-8.8-05102023
+      - RHEL8-SP8
 
   rhel-sap:
     project: rhel-sap-cloud
