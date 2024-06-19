@@ -29,6 +29,7 @@
   ansible.builtin.dnf:
     name:
       - podman
+      - podman-docker
       - git
       - make
     state: latest
