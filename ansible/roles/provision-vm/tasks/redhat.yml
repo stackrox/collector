@@ -25,6 +25,28 @@
   until: registration is not failed
   when: vm_arch == "ppc64le" or vm_arch == "s390x"
 
+- name: Install needed utilities
+  ansible.builtin.dnf:
+    name:
+      - git
+      - make
+
+- name: Add docker repos
+  ansible.builtin.shell: |
+    dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+  when: runtime_command == 'docker'
+
+- name: Install docker
+  ansible.builtin.dnf:
+    name:
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+    - docker-buildx-plugin
+    - docker-compose-plugin
+    state: present
+  when: runtime_command == 'docker'
+
 - name: Install podman
   ansible.builtin.dnf:
     name:
@@ -34,4 +56,5 @@
       - make
     state: latest
     update_cache: true
+  when: runtime_command == 'podman'
 

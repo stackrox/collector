@@ -58,7 +58,7 @@
       - job_id_{{ job_id }}
       - platform_{{ test_platform }}
       - vm_arch_s390x
-      - container_engine_podman
+      - container_engine_docker
     ansible_ssh_extra_args: "-o StrictHostKeyChecking=no"
     ansible_ssh_private_key_file: "{{ vm_ssh_key_file }}"
     vm_config: "{{ vm_config }}"
