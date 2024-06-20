@@ -18,6 +18,9 @@ keyed_groups:
 
   - prefix: vm_arch
     key: labels.vm_arch
+
+  - prefix: container_engine
+    key: labels.container_engine
 groups:
   gcp: true
 auth_kind: serviceaccount
