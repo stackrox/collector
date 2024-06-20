@@ -25,6 +25,11 @@
   until: registration is not failed
   when: vm_arch == "ppc64le" or vm_arch == "s390x"
 
+- name: Disable troublesome repo
+  ansible.builtin.shell: |
+    dnf config-manager --disable rhui-codeready-builder-for-rhel-8-x86_64-rhui-source-rpms
+  when: vm_config.find('-8') != -1
+
 - name: Install needed utilities
   ansible.builtin.dnf:
     name:
