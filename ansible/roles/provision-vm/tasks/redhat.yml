@@ -1,17 +1,4 @@
 ---
-- set_fact:
-    distro: centos
-
-- when: vm_arch == "s390x"
-  block:
-    - name: Get distro info
-      shell: awk -F= '$1=="ID" { print $2 ;}' /etc/os-release
-      register: distro_id
-      when: vm_arch == "s390x"
-
-    - set_fact:
-        distro: "{{ distro_id.stdout }}"
-
 - name: Register server with Red Hat for IBM POWER vms
   tags: attach_subscription
   community.general.redhat_subscription:
@@ -28,7 +15,7 @@
 - name: Disable troublesome repo
   ansible.builtin.shell: |
     dnf config-manager --disable rhui-codeready-builder-for-rhel-8-x86_64-rhui-source-rpms
-  when: vm_config.find('-8') != -1
+  when: vm_config.find('-8') != -1 and vm_arch == 'amd64'
 
 - name: Install needed utilities
   ansible.builtin.dnf:
