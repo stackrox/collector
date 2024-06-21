@@ -77,16 +77,6 @@ cmake -DUSE_BUNDLED_DEPS=OFF \
     -B"${SINSP_BUILD_DIR}"
 make -j"$(nproc)" -C "${SINSP_BUILD_DIR}" sinsp-example
 
-OUTPUT_DIR=/tmp/output
-mkdir -p "${OUTPUT_DIR}"
-for driver_zip in "${COLLECTOR_DIR}/kernel-modules/container/kernel-modules"/*.gz; do
-    driver="$(basename "${driver_zip}")"
-    driver="${driver%.gz}"
-    gunzip -c "${driver_zip}" > "${OUTPUT_DIR}/${driver}"
-done
-
-cp "${SINSP_BUILD_DIR}/libsinsp/examples/sinsp-example" "${OUTPUT_DIR}/sinsp-example"
-
 echo ""
 echo "All done! You should have everything you need under '${OUTPUT_DIR}'"
 echo ""
