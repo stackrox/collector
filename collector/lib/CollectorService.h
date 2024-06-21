@@ -11,7 +11,7 @@ namespace collector {
 
 class CollectorService {
  public:
-  CollectorService(const CollectorConfig& config, std::atomic<ControlValue>* control, const std::atomic<int>* signum);
+  CollectorService(const CollectorConfig& config, std::shared_ptr<grpc::Channel> channel, std::atomic<ControlValue>* control, const std::atomic<int>* signum);
 
   void RunForever();
 
@@ -28,6 +28,7 @@ class CollectorService {
   system_inspector::Service system_inspector_;
 
   std::unique_ptr<output::OutputClient> signal_client_;
+  std::shared_ptr<grpc::Channel> channel_;
 };
 
 bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServer, const CollectorConfig& config);

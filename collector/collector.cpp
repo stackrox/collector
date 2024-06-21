@@ -174,9 +174,7 @@ int main(int argc, char** argv) {
   signal(SIGTERM, ShutdownHandler);
   signal(SIGINT, ShutdownHandler);
 
-  config.grpc_channel = std::move(sensor_connection);
-
-  CollectorService collector(config, &g_control, &g_signum);
+  CollectorService collector(config, std::move(sensor_connection), &g_control, &g_signum);
 
   if (!SetupKernelDriver(collector, args->GRPCServer(), config)) {
     startup_diagnostics.Log();

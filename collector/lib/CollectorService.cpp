@@ -28,10 +28,18 @@ extern unsigned char g_bpf_drop_syscalls[];  // defined in libscap
 
 namespace collector {
 
-CollectorService::CollectorService(const CollectorConfig& config, std::atomic<ControlValue>* control,
+CollectorService::CollectorService(const CollectorConfig& config,
+                                   std::shared_ptr<grpc::Channel> channel,
+                                   std::atomic<ControlValue>* control,
                                    const std::atomic<int>* signum)
-    : config_(config), control_(control), signum_(*signum) {
+    : config_(config), channel_(std::move(channel)), control_(control), signum_(*signum) {
   CLOG(INFO) << "Config: " << config;
+
+  if (channel) {
+    signal_client_.reset(new output::GRPCSignalServiceClient(channel_));
+  } else {
+    signal_client_.reset(new output::StdoutSignalServiceClient());
+  }
 }
 
 void CollectorService::RunForever() {
@@ -66,7 +74,7 @@ void CollectorService::RunForever() {
 
   CLOG(INFO) << "Network scrape interval set to " << config_.ScrapeInterval() << " seconds";
 
-  if (config_.grpc_channel) {
+  if (channel_) {
     CLOG(INFO) << "Waiting for Sensor to become ready ...";
     if (!WaitForGRPCServer()) {
       CLOG(INFO) << "Interrupted while waiting for Sensor to become ready ...";
@@ -75,7 +83,7 @@ void CollectorService::RunForever() {
     CLOG(INFO) << "Sensor connectivity is successful";
   }
 
-  if (!config_.grpc_channel || !config_.DisableNetworkFlows()) {
+  if (!channel_ || !config_.DisableNetworkFlows()) {
     // In case if no GRPC is used, continue to setup networking infrasturcture
     // with empty grpc_channel. NetworkConnectionInfoServiceComm will pick it
     // up and use stdout instead.
@@ -90,7 +98,7 @@ void CollectorService::RunForever() {
     conn_tracker->UpdateIgnoredNetworks(config_.IgnoredNetworks());
     conn_tracker->EnableExternalIPs(config_.EnableExternalIPs());
 
-    auto network_connection_info_service_comm = std::make_shared<NetworkConnectionInfoServiceComm>(config_.Hostname(), config_.grpc_channel);
+    auto network_connection_info_service_comm = std::make_shared<NetworkConnectionInfoServiceComm>(config_.Hostname(), channel_);
 
     net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper,
                                                             conn_tracker,
@@ -110,12 +118,6 @@ void CollectorService::RunForever() {
     server.addHandler(container_info_inspector->kBaseRoute, container_info_inspector.get());
     network_status_inspector = std::make_unique<NetworkStatusInspector>(conn_tracker);
     server.addHandler(network_status_inspector->kBaseRoute, network_status_inspector.get());
-  }
-
-  if (config_.grpc_channel) {
-    signal_client_.reset(new output::GRPCSignalServiceClient(std::move(config_.grpc_channel)));
-  } else {
-    signal_client_.reset(new output::StdoutSignalServiceClient());
   }
 
   system_inspector_.Init(config_, conn_tracker);
@@ -153,7 +155,7 @@ bool CollectorService::InitKernel(const DriverCandidate& candidate) {
 bool CollectorService::WaitForGRPCServer() {
   std::string error_str;
   auto interrupt = [this] { return control_->load(std::memory_order_relaxed) == STOP_COLLECTOR; };
-  return WaitForChannelReady(config_.grpc_channel, interrupt);
+  return WaitForChannelReady(channel_, interrupt);
 }
 
 bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServer, const CollectorConfig& config) {
