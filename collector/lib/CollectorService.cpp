@@ -112,13 +112,22 @@ void CollectorService::RunForever() {
     server.addHandler(network_status_inspector->kBaseRoute, network_status_inspector.get());
   }
 
+  if (config_.grpc_channel) {
+    signal_client_.reset(new output::GRPCSignalServiceClient(std::move(config_.grpc_channel)));
+  } else {
+    signal_client_.reset(new output::StdoutSignalServiceClient());
+  }
+
   system_inspector_.Init(config_, conn_tracker);
   system_inspector_.Start();
 
   ControlValue cv;
   while ((cv = control_->load(std::memory_order_relaxed)) != STOP_COLLECTOR) {
-    system_inspector_.Run(*control_);
-    CLOG(DEBUG) << "Interrupted collector!";
+    auto event = system_inspector_.Next();
+    if (event.has_value()) {
+      CLOG(DEBUG) << "Oh boy here I go outputting an event";
+      signal_client_->PushSignals(event.value());
+    }
   }
 
   int signal = signum_.load();

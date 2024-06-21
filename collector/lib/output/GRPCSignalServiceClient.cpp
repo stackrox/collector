@@ -65,16 +65,16 @@ bool GRPCSignalServiceClient::Ready() {
   return WaitForChannelReady(channel_, interrupt);
 }
 
-SignalHandler::Result GRPCSignalServiceClient::PushSignals(const SignalStreamMessage& msg) {
+bool GRPCSignalServiceClient::PushSignals(const OutputClient::Message& msg) {
   if (!stream_active_.load(std::memory_order_acquire)) {
     CLOG_THROTTLED(ERROR, std::chrono::seconds(10))
         << "GRPC stream is not established";
-    return SignalHandler::ERROR;
+    return false;
   }
 
   if (first_write_) {
     first_write_ = false;
-    return SignalHandler::NEEDS_REFRESH;
+    return false;
   }
 
   if (!writer_->Write(msg)) {
@@ -87,10 +87,10 @@ SignalHandler::Result GRPCSignalServiceClient::PushSignals(const SignalStreamMes
     stream_active_.store(false, std::memory_order_release);
     CLOG(ERROR) << "GRPC stream interrupted";
     stream_interrupted_.notify_one();
-    return SignalHandler::ERROR;
+    return false;
   }
 
-  return SignalHandler::PROCESSED;
+  return false;
 }
 
 }  // namespace collector::output

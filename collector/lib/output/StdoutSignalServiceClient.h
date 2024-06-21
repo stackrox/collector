@@ -1,21 +1,19 @@
 #ifndef _COLLECTOR_STDOUT_SIGNAL_SVC_CLIENT
 #define _COLLECTOR_STDOUT_SIGNAL_SVC_CLIENT
 
-#include "ISignalServiceClient.h"
+#include "OutputClient.h"
 
 namespace collector::output {
 
-class StdoutSignalServiceClient : public ISignalServiceClient {
+class StdoutSignalServiceClient : public OutputClient {
  public:
-  using SignalStreamMessage = sensor::SignalStreamMessage;
-
   explicit StdoutSignalServiceClient() {}
 
   void Start(){};
   void Stop(){};
   bool Ready() { return true; }
 
-  SignalHandler::Result PushSignals(const SignalStreamMessage& msg);
+  bool PushSignals(const OutputClient::Message& msg);
 };
 
 };  // namespace collector::output

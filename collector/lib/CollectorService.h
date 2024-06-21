@@ -4,6 +4,7 @@
 #include "CollectorConfig.h"
 #include "Control.h"
 #include "DriverCandidates.h"
+#include "output/OutputClient.h"
 #include "system-inspector/Service.h"
 
 namespace collector {
@@ -25,6 +26,8 @@ class CollectorService {
   const std::atomic<int>& signum_;
 
   system_inspector::Service system_inspector_;
+
+  std::unique_ptr<output::OutputClient> signal_client_;
 };
 
 bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServer, const CollectorConfig& config);

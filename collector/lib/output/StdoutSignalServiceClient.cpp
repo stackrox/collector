@@ -8,11 +8,11 @@
 
 namespace collector::output {
 
-SignalHandler::Result StdoutSignalServiceClient::PushSignals(const SignalStreamMessage& msg) {
+bool StdoutSignalServiceClient::PushSignals(const OutputClient::Message& msg) {
   std::string output;
   google::protobuf::util::MessageToJsonString(msg, &output, google::protobuf::util::JsonPrintOptions{});
   CLOG(DEBUG) << "GRPC: " << output;
-  return SignalHandler::PROCESSED;
+  return true;
 }
 
 }  // namespace collector::output

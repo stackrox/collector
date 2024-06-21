@@ -13,22 +13,17 @@
 #include "api/v1/signal.pb.h"
 #include "internalapi/sensor/signal_iservice.grpc.pb.h"
 
-#include "DuplexGRPC.h"
-#include "SignalHandler.h"
-#include "StoppableThread.h"
-
 namespace collector::output {
 
-using SignalStreamMessage = sensor::SignalStreamMessage;
-
-class ISignalServiceClient {
+class OutputClient {
  public:
+  using Message = sensor::SignalStreamMessage;
   virtual void Start() = 0;
   virtual void Stop() = 0;
   virtual bool Ready() = 0;
-  virtual SignalHandler::Result PushSignals(const SignalStreamMessage& msg) = 0;
+  virtual bool PushSignals(const Message& msg) = 0;
 
-  virtual ~ISignalServiceClient() {}
+  virtual ~OutputClient() {}
 };
 
 }  // namespace collector::output

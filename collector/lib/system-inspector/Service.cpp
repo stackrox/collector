@@ -275,13 +275,14 @@ void Service::Run(const std::atomic<ControlValue>& control) {
       auto& signal_handler = *it;
       if (!signal_handler.ShouldHandle(evt)) continue;
       LogUnreasonableEventTime(process_start, evt);
-      auto result = signal_handler.handler->HandleSignal(evt);
-      if (result == SignalHandler::NEEDS_REFRESH) {
+      auto [result, ctrl] = signal_handler.handler->HandleSignal(evt);
+      if (ctrl == NEEDS_REFRESH) {
         if (!SendExistingProcesses(signal_handler.handler.get())) {
           continue;
         }
-        result = signal_handler.handler->HandleSignal(evt);
-      } else if (result == SignalHandler::FINISHED) {
+        auto refresh_result = signal_handler.handler->HandleSignal(evt);
+        result = std::get<0>(refresh_result);
+      } else if (ctrl == FINISHED) {
         // This signal handler has finished processing events,
         // so remove it from the signal handler list.
         //
@@ -296,7 +297,7 @@ void Service::Run(const std::atomic<ControlValue>& control) {
   }
 }
 
-std::optional<output::SignalStreamMessage> Service::Next() {
+std::optional<output::OutputClient::Message> Service::Next() {
   if (!inspector_) {
     throw CollectorException("Invalid state: system inspector was not initialized");
   }
@@ -317,13 +318,14 @@ std::optional<output::SignalStreamMessage> Service::Next() {
 
     LogUnreasonableEventTime(process_start, evt);
 
-    auto result = signal_handler.handler->HandleSignal(evt);
-    if (result == SignalHandler::NEEDS_REFRESH) {
+    auto [result, ctrl] = signal_handler.handler->HandleSignal(evt);
+    if (ctrl == NEEDS_REFRESH) {
       if (!SendExistingProcesses(signal_handler.handler.get())) {
         continue;
       }
-      result = signal_handler.handler->HandleSignal(evt);
-    } else if (result == SignalHandler::FINISHED) {
+      auto refresh_result = signal_handler.handler->HandleSignal(evt);
+      return {std::get<0>(refresh_result)};
+    } else if (ctrl == FINISHED) {
       // This signal handler has finished processing events,
       // so remove it from the signal handler list.
       //
@@ -331,9 +333,12 @@ std::optional<output::SignalStreamMessage> Service::Next() {
       // because we also stop iteration at this point.
       signal_handlers_.erase(it);
       break;
+    } else if (ctrl == PROCESSED) {
+      return {result};
     }
   }
 
+  // TODO(giles): figure out better way of setting stats now
   userspace_stats_.event_process_micros[evt->get_type()] += (NowMicros() - process_start);
   return std::nullopt;
 }
@@ -353,8 +358,8 @@ bool Service::SendExistingProcesses(SignalHandler* handler) {
 
   return threads->loop([&](sinsp_threadinfo& tinfo) {
     if (!tinfo.m_container_id.empty() && tinfo.is_main_thread()) {
-      auto result = handler->HandleExistingProcess(&tinfo);
-      if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
+      auto [result, ctrl] = handler->HandleExistingProcess(&tinfo);
+      if (ctrl == ERROR || ctrl == NEEDS_REFRESH) {
         CLOG(WARNING) << "Failed to write existing process signal: " << &tinfo;
         return false;
       }

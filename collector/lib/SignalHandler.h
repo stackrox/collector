@@ -27,7 +27,7 @@ enum SignalHandlerControl {
   FINISHED,
 };
 
-using SignalHandlerResult = std::tuple<std::optional<output::SignalStreamMessage>, SignalHandlerControl>;
+using SignalHandlerResult = std::tuple<std::optional<output::OutputClient::Message>, SignalHandlerControl>;
 
 class SignalHandler {
  public:

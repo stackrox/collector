@@ -133,7 +133,7 @@ SignalHandlerResult NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
   }
 
   conn_tracker_->UpdateConnection(*result, evt->get_ts() / 1000UL, modifier == Modifier::ADD);
-  return SignalHandler::PROCESSED;
+  return {std::nullopt, PROCESSED};
 }
 
 std::vector<std::string> NetworkSignalHandler::GetRelevantEvents() {

@@ -9,16 +9,15 @@
 #include "internalapi/sensor/signal_iservice.grpc.pb.h"
 
 #include "DuplexGRPC.h"
-#include "ISignalServiceClient.h"
+#include "OutputClient.h"
 #include "SignalHandler.h"
 #include "StoppableThread.h"
 
 namespace collector::output {
 
-class GRPCSignalServiceClient : public ISignalServiceClient {
+class GRPCSignalServiceClient : public OutputClient {
  public:
   using SignalService = sensor::SignalService;
-  using SignalStreamMessage = sensor::SignalStreamMessage;
 
   explicit GRPCSignalServiceClient(std::shared_ptr<grpc::Channel> channel)
       : channel_(std::move(channel)), stream_active_(false) {}
@@ -27,7 +26,7 @@ class GRPCSignalServiceClient : public ISignalServiceClient {
   void Stop();
   bool Ready();
 
-  SignalHandler::Result PushSignals(const SignalStreamMessage& msg);
+  bool PushSignals(const OutputClient::Message& msg);
 
  private:
   void EstablishGRPCStream();
@@ -41,7 +40,7 @@ class GRPCSignalServiceClient : public ISignalServiceClient {
 
   // This needs to have the same lifetime as the class.
   std::unique_ptr<grpc::ClientContext> context_;
-  std::unique_ptr<IDuplexClientWriter<SignalStreamMessage>> writer_;
+  std::unique_ptr<IDuplexClientWriter<OutputClient::Message>> writer_;
 
   bool first_write_;
 };

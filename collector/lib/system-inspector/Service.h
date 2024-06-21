@@ -44,7 +44,7 @@ class Service : public SystemInspector {
   /**
    * Gets the Next event from the inspector
    */
-  output::SignalStreamMessage Next();
+  std::optional<output::OutputClient::Message> Next();
 
   bool GetStats(Stats* stats) const override;
 
@@ -81,7 +81,7 @@ class Service : public SystemInspector {
   std::unique_ptr<sinsp> inspector_;
   std::shared_ptr<ContainerMetadata> container_metadata_inspector_;
   std::unique_ptr<sinsp_evt_formatter> default_formatter_;
-  std::unique_ptr<output::ISignalServiceClient> signal_client_;
+  std::unique_ptr<output::OutputClient> signal_client_;
   std::vector<SignalHandlerEntry> signal_handlers_;
   Stats userspace_stats_;
   std::bitset<PPM_EVENT_MAX> global_event_filter_;

@@ -62,7 +62,7 @@ class SelfCheckProcessHandler : public SelfCheckHandler {
     return {"execve<"};
   }
 
-  virtual Result HandleSignal(sinsp_evt* evt) override;
+  virtual SignalHandlerResult HandleSignal(sinsp_evt* evt) override;
 };
 
 class SelfCheckNetworkHandler : public SelfCheckHandler {
@@ -84,7 +84,7 @@ class SelfCheckNetworkHandler : public SelfCheckHandler {
     };
   }
 
-  Result HandleSignal(sinsp_evt* evt) override;
+  SignalHandlerResult HandleSignal(sinsp_evt* evt) override;
 };
 
 }  // namespace collector
