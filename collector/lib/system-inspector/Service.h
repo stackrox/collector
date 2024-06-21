@@ -5,6 +5,7 @@
 #include <bitset>
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <string>
 
 #include <gtest/gtest_prod.h>
@@ -93,6 +94,8 @@ class Service : public SystemInspector {
   mutable std::mutex process_requests_mutex_;
   // [ ( pid, callback ), ( pid, callback ), ... ]
   std::list<std::pair<uint64_t, ProcessInfoCallbackRef>> pending_process_requests_;
+
+  std::queue<output::OutputClient::Message> existing_procs_queue_;
 };
 
 }  // namespace collector::system_inspector

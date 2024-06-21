@@ -296,7 +296,11 @@ std::optional<output::OutputClient::Message> Service::Next() {
     throw CollectorException("Invalid state: system inspector was not initialized");
   }
 
-  // TODO: Handle existing processes
+  if (!existing_procs_queue_.empty()) {
+    auto proc = existing_procs_queue_.front();
+    existing_procs_queue_.pop();
+    return {proc};
+  }
 
   sinsp_evt* evt = GetNext();
   if (!evt) {
@@ -358,6 +362,7 @@ bool Service::SendExistingProcesses(SignalHandler* handler) {
         return false;
       }
       CLOG(DEBUG) << "Found existing process: " << &tinfo;
+      existing_procs_queue_.push(result.value());
     }
     return true;
   });

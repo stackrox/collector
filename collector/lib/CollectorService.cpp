@@ -35,7 +35,7 @@ CollectorService::CollectorService(const CollectorConfig& config,
     : config_(config), channel_(std::move(channel)), control_(control), signum_(*signum) {
   CLOG(INFO) << "Config: " << config;
 
-  if (channel) {
+  if (channel_) {
     signal_client_.reset(new output::GRPCSignalServiceClient(channel_));
   } else {
     signal_client_.reset(new output::StdoutSignalServiceClient());
@@ -123,6 +123,8 @@ void CollectorService::RunForever() {
   system_inspector_.Init(config_, conn_tracker);
   system_inspector_.Start();
 
+  signal_client_->Start();
+
   ControlValue cv;
   while ((cv = control_->load(std::memory_order_relaxed)) != STOP_COLLECTOR) {
     auto event = system_inspector_.Next();
@@ -131,6 +133,8 @@ void CollectorService::RunForever() {
       signal_client_->PushSignals(event.value());
     }
   }
+
+  signal_client_->Stop();
 
   int signal = signum_.load();
 
