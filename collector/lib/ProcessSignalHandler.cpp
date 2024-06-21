@@ -27,22 +27,20 @@ std::string compute_process_key(const ::storage::ProcessSignal& s) {
 }
 
 bool ProcessSignalHandler::Start() {
-  client_->Start();
   return true;
 }
 
 bool ProcessSignalHandler::Stop() {
-  client_->Stop();
   rate_limiter_.ResetRateLimitCache();
   return true;
 }
 
-SignalHandlerResult ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
+SignalHandler::Result ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
   const auto* signal_msg = formatter_.ToProtoMessage(evt);
 
   if (!signal_msg) {
     ++(stats_->nProcessResolutionFailuresByEvt);
-    return {std::nullopt, IGNORED};
+    return {std::nullopt, SignalHandler::IGNORED};
   }
 
   const char* name = signal_msg->signal().process_signal().name().c_str();
@@ -51,25 +49,25 @@ SignalHandlerResult ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
 
   if (!rate_limiter_.Allow(compute_process_key(signal_msg->signal().process_signal()))) {
     ++(stats_->nProcessRateLimitCount);
-    return {std::nullopt, IGNORED};
+    return {std::nullopt, SignalHandler::IGNORED};
   }
 
-  return {*signal_msg, PROCESSED};
+  return {*signal_msg, SignalHandler::PROCESSED};
 }
 
-SignalHandlerResult ProcessSignalHandler::HandleExistingProcess(sinsp_threadinfo* tinfo) {
+SignalHandler::Result ProcessSignalHandler::HandleExistingProcess(sinsp_threadinfo* tinfo) {
   const auto* signal_msg = formatter_.ToProtoMessage(tinfo);
   if (!signal_msg) {
     ++(stats_->nProcessResolutionFailuresByTinfo);
-    return {std::nullopt, IGNORED};
+    return {std::nullopt, SignalHandler::IGNORED};
   }
 
   if (!rate_limiter_.Allow(compute_process_key(signal_msg->signal().process_signal()))) {
     ++(stats_->nProcessRateLimitCount);
-    return {std::nullopt, IGNORED};
+    return {std::nullopt, SignalHandler::IGNORED};
   }
 
-  return {*signal_msg, PROCESSED};
+  return {*signal_msg, SignalHandler::PROCESSED};
 }
 
 std::vector<std::string> ProcessSignalHandler::GetRelevantEvents() {

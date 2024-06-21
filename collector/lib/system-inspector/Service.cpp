@@ -56,13 +56,7 @@ void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTrac
     AddSignalHandler(std::move(network_signal_handler_));
   }
 
-  if (config.grpc_channel) {
-    signal_client_.reset(new output::GRPCSignalServiceClient(std::move(config.grpc_channel)));
-  } else {
-    signal_client_.reset(new output::StdoutSignalServiceClient());
-  }
   AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(),
-                                                    signal_client_.get(),
                                                     &userspace_stats_));
 
   if (signal_handlers_.size() == 2) {
@@ -276,13 +270,13 @@ void Service::Run(const std::atomic<ControlValue>& control) {
       if (!signal_handler.ShouldHandle(evt)) continue;
       LogUnreasonableEventTime(process_start, evt);
       auto [result, ctrl] = signal_handler.handler->HandleSignal(evt);
-      if (ctrl == NEEDS_REFRESH) {
+      if (ctrl == SignalHandler::NEEDS_REFRESH) {
         if (!SendExistingProcesses(signal_handler.handler.get())) {
           continue;
         }
         auto refresh_result = signal_handler.handler->HandleSignal(evt);
         result = std::get<0>(refresh_result);
-      } else if (ctrl == FINISHED) {
+      } else if (ctrl == SignalHandler::FINISHED) {
         // This signal handler has finished processing events,
         // so remove it from the signal handler list.
         //
@@ -319,13 +313,13 @@ std::optional<output::OutputClient::Message> Service::Next() {
     LogUnreasonableEventTime(process_start, evt);
 
     auto [result, ctrl] = signal_handler.handler->HandleSignal(evt);
-    if (ctrl == NEEDS_REFRESH) {
+    if (ctrl == SignalHandler::NEEDS_REFRESH) {
       if (!SendExistingProcesses(signal_handler.handler.get())) {
         continue;
       }
       auto refresh_result = signal_handler.handler->HandleSignal(evt);
       return {std::get<0>(refresh_result)};
-    } else if (ctrl == FINISHED) {
+    } else if (ctrl == SignalHandler::FINISHED) {
       // This signal handler has finished processing events,
       // so remove it from the signal handler list.
       //
@@ -333,7 +327,7 @@ std::optional<output::OutputClient::Message> Service::Next() {
       // because we also stop iteration at this point.
       signal_handlers_.erase(it);
       break;
-    } else if (ctrl == PROCESSED) {
+    } else if (ctrl == SignalHandler::PROCESSED) {
       return {result};
     }
   }
@@ -359,7 +353,7 @@ bool Service::SendExistingProcesses(SignalHandler* handler) {
   return threads->loop([&](sinsp_threadinfo& tinfo) {
     if (!tinfo.m_container_id.empty() && tinfo.is_main_thread()) {
       auto [result, ctrl] = handler->HandleExistingProcess(&tinfo);
-      if (ctrl == ERROR || ctrl == NEEDS_REFRESH) {
+      if (ctrl == SignalHandler::ERROR || ctrl == SignalHandler::NEEDS_REFRESH) {
         CLOG(WARNING) << "Failed to write existing process signal: " << &tinfo;
         return false;
       }
