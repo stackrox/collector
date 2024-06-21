@@ -1,4 +1,15 @@
 ---
+- name: set distro to RHEL
+  set_fact:
+    distro: rhel
+  when: vm_arch != "ppc64le"
+
+# There's currently no ppc64le RHEL docker package, so we use CentOS instead.
+- name: set distro to CentOS
+  set_fact:
+    distro: centos
+  when: vm_arch == "ppc64le"
+
 - name: Register server with Red Hat for IBM POWER vms
   tags: attach_subscription
   community.general.redhat_subscription:
@@ -25,7 +36,7 @@
 
 - name: Add docker repos
   ansible.builtin.shell: |
-    dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+    dnf config-manager --add-repo "https://download.docker.com/linux/{{ distro }}/docker-ce.repo"
   when: runtime_command == 'docker'
 
 - name: Install docker
