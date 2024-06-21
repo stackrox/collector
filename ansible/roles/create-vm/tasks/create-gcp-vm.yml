@@ -39,6 +39,7 @@
       vm_image_family: "{{ vm_family }}"
       vm_collection_method: "{{ vm_collection_method }}"
       vm_arch: "{{ vm_arch }}"
+      container_engine: "{{ container_engine }}"
 
 - name: Get GCP network
   gcp_compute_network:

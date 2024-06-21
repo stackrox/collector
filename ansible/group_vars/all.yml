@@ -30,6 +30,7 @@ virtual_machines:
     families:
       - rhel-8
       - rhel-9
+    container_engine: podman
 
   rhel-arm64:
     project: rhel-cloud
@@ -37,6 +38,7 @@ virtual_machines:
     machine_type: t2a-standard-2
     families:
       - rhel-9-arm64
+    container_engine: podman
 
   rhel-s390x:
     project: rhel-s390x-cloud
@@ -59,6 +61,7 @@ virtual_machines:
     families:
       - rhel-8-4-sap-ha
       - rhel-8-6-sap-ha
+    container_engine: podman
 
   rhcos:
     project: rhcos-cloud
@@ -74,6 +77,7 @@ virtual_machines:
           - name: core
             sshAuthorizedKeys:
               - "{{ lookup('file', gcp_ssh_key_file + '.pub', errors='ignore') }}"
+    container_engine: podman
 
   cos:
     project: cos-cloud

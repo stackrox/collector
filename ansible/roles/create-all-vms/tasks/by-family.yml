@@ -32,3 +32,4 @@
     vm_machine_type: "{{ item.0.value.machine_type | default('e2-standard-2') }}"
     vm_ssh_key_file: "{{ item.0.value.ssh_key_file | default(gcp_ssh_key_file) }}"
     vm_user: "{{ item.0.value.username | default(ansible_user) }}"
+    container_engine: "{{ item.0.value.container_engine | default('docker') }}"
