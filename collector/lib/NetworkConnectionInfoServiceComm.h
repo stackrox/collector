@@ -11,7 +11,7 @@
 
 #include "internalapi/sensor/network_connection_iservice.grpc.pb.h"
 
-#include "DuplexGRPC.h"
+#include "output/DuplexGRPC.h"
 
 namespace collector {
 
@@ -28,7 +28,7 @@ class INetworkConnectionInfoServiceComm {
 
   virtual sensor::NetworkConnectionInfoService::StubInterface* GetStub() = 0;
 
-  virtual std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> PushNetworkConnectionInfoOpenStream(std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) = 0;
+  virtual std::unique_ptr<output::IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> PushNetworkConnectionInfoOpenStream(std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) = 0;
 };
 
 class NetworkConnectionInfoServiceComm : public INetworkConnectionInfoServiceComm {
@@ -43,7 +43,7 @@ class NetworkConnectionInfoServiceComm : public INetworkConnectionInfoServiceCom
     return stub_.get();
   }
 
-  std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> PushNetworkConnectionInfoOpenStream(std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) override;
+  std::unique_ptr<output::IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> PushNetworkConnectionInfoOpenStream(std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) override;
 
  private:
   static constexpr char kHostnameMetadataKey[] = "rox-collector-hostname";

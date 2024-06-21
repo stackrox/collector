@@ -39,7 +39,6 @@ class Service : public SystemInspector {
 
   void Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) override;
   void Start() override;
-  void Run(const std::atomic<ControlValue>& control) override;
   void CleanUp() override;
 
   /**

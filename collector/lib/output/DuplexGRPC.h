@@ -32,7 +32,7 @@
 // 3. auto client = DuplexClient::CreateWithReadsIgnored(&MyService::Stub::MyAsyncMethod, channel, context);
 //    This is a convenience variant of (2) with a `read_callback` that does nothing.
 
-namespace collector {
+namespace collector::output {
 
 // Internal namespace including all common definitions without polluting the surrounding namespace. Having them in a
 // base class is inconvenient due to templating, which would force us to explicit import every definition from the
@@ -800,6 +800,6 @@ using DuplexClientWriter = grpc_duplex_impl::DuplexClientWriter<W>;
 template <typename W, typename R>
 using DuplexClientReaderWriter = grpc_duplex_impl::DuplexClientReaderWriter<W, R>;
 
-}  // namespace collector
+}  // namespace collector::output
 
 #endif  // COLLECTOR_DUPLEXGRPC_H

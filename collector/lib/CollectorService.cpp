@@ -13,7 +13,6 @@ extern "C" {
 #include "ConnTracker.h"
 #include "Containers.h"
 #include "Diagnostics.h"
-#include "GRPCUtil.h"
 #include "GetKernelObject.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
@@ -21,6 +20,7 @@ extern "C" {
 #include "NetworkStatusNotifier.h"
 #include "ProfilerHandler.h"
 #include "Utility.h"
+#include "output/GRPCUtil.h"
 #include "prometheus/exposer.h"
 #include "system-inspector/Service.h"
 
@@ -159,7 +159,7 @@ bool CollectorService::InitKernel(const DriverCandidate& candidate) {
 bool CollectorService::WaitForGRPCServer() {
   std::string error_str;
   auto interrupt = [this] { return control_->load(std::memory_order_relaxed) == STOP_COLLECTOR; };
-  return WaitForChannelReady(channel_, interrupt);
+  return output::WaitForChannelReady(channel_, interrupt);
 }
 
 bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServer, const CollectorConfig& config) {

@@ -3,12 +3,12 @@
 #include <google/protobuf/util/time_util.h>
 
 #include "CollectorStats.h"
-#include "DuplexGRPC.h"
-#include "GRPCUtil.h"
 #include "Profiler.h"
 #include "ProtoUtil.h"
 #include "TimeUtil.h"
 #include "Utility.h"
+#include "output/DuplexGRPC.h"
+#include "output/GRPCUtil.h"
 
 namespace collector {
 
@@ -150,7 +150,7 @@ void NetworkStatusNotifier::Stop() {
   thread_.Stop();
 }
 
-void NetworkStatusNotifier::WaitUntilWriterStarted(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time_seconds) {
+void NetworkStatusNotifier::WaitUntilWriterStarted(output::IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time_seconds) {
   if (!writer->WaitUntilStarted(std::chrono::seconds(wait_time_seconds))) {
     CLOG(ERROR) << "Failed to establish network connection info stream.";
     return;
@@ -219,7 +219,7 @@ bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
   return true;
 }
 
-void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
+void NetworkStatusNotifier::RunSingle(output::IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
   WaitUntilWriterStarted(writer, 10);
 
   ConnMap old_conn_state;
@@ -265,7 +265,7 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
   }
 }
 
-void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
+void NetworkStatusNotifier::RunSingleAfterglow(output::IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
   WaitUntilWriterStarted(writer, 10);
 
   ConnMap old_conn_state;

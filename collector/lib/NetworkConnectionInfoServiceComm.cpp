@@ -1,7 +1,7 @@
 #include "NetworkConnectionInfoServiceComm.h"
 
-#include "GRPCUtil.h"
 #include "Utility.h"
+#include "output/GRPCUtil.h"
 
 namespace collector {
 
@@ -33,7 +33,7 @@ bool NetworkConnectionInfoServiceComm::WaitForConnectionReady(const std::functio
     return true;
   }
 
-  return WaitForChannelReady(channel_, check_interrupted);
+  return output::WaitForChannelReady(channel_, check_interrupted);
 }
 
 void NetworkConnectionInfoServiceComm::TryCancel() {
@@ -42,16 +42,16 @@ void NetworkConnectionInfoServiceComm::TryCancel() {
   }
 }
 
-std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> NetworkConnectionInfoServiceComm::PushNetworkConnectionInfoOpenStream(std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) {
+std::unique_ptr<output::IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> NetworkConnectionInfoServiceComm::PushNetworkConnectionInfoOpenStream(std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) {
   if (!context_)
     ResetClientContext();
 
   if (channel_) {
-    return DuplexClient::CreateWithReadCallback(
+    return output::DuplexClient::CreateWithReadCallback(
         &sensor::NetworkConnectionInfoService::Stub::AsyncPushNetworkConnectionInfo,
         channel_, context_.get(), std::move(receive_func));
   } else {
-    return MakeUnique<collector::grpc_duplex_impl::StdoutDuplexClientWriter<sensor::NetworkConnectionInfoMessage>>();
+    return MakeUnique<output::grpc_duplex_impl::StdoutDuplexClientWriter<sensor::NetworkConnectionInfoMessage>>();
   }
 }
 

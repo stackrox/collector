@@ -253,44 +253,6 @@ void LogUnreasonableEventTime(int64_t time_micros, sinsp_evt* evt) {
   }
 }
 
-void Service::Run(const std::atomic<ControlValue>& control) {
-  if (!inspector_) {
-    throw CollectorException("Invalid state: system inspector was not initialized");
-  }
-
-  while (control.load(std::memory_order_relaxed) == ControlValue::RUN) {
-    ServePendingProcessRequests();
-
-    sinsp_evt* evt = GetNext();
-    if (!evt) continue;
-
-    auto process_start = NowMicros();
-    for (auto it = signal_handlers_.begin(); it != signal_handlers_.end(); it++) {
-      auto& signal_handler = *it;
-      if (!signal_handler.ShouldHandle(evt)) continue;
-      LogUnreasonableEventTime(process_start, evt);
-      auto [result, ctrl] = signal_handler.handler->HandleSignal(evt);
-      if (ctrl == SignalHandler::NEEDS_REFRESH) {
-        if (!SendExistingProcesses(signal_handler.handler.get())) {
-          continue;
-        }
-        auto refresh_result = signal_handler.handler->HandleSignal(evt);
-        result = std::get<0>(refresh_result);
-      } else if (ctrl == SignalHandler::FINISHED) {
-        // This signal handler has finished processing events,
-        // so remove it from the signal handler list.
-        //
-        // We don't need to update the iterator post-deletion
-        // because we also stop iteration at this point.
-        signal_handlers_.erase(it);
-        break;
-      }
-    }
-
-    userspace_stats_.event_process_micros[evt->get_type()] += (NowMicros() - process_start);
-  }
-}
-
 std::optional<output::OutputClient::Message> Service::Next() {
   if (!inspector_) {
     throw CollectorException("Invalid state: system inspector was not initialized");
