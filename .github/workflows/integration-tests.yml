@@ -41,7 +41,7 @@ jobs:
       fail-fast: false
       matrix:
         vm_type:
-          - rhel
+          - rhcos
           - ubuntu-os
     with:
       vm_type: ${{ matrix.vm_type }}
@@ -63,10 +63,10 @@ jobs:
           - cos
           - flatcar
           - fedora-coreos
+          - rhel
           - rhel-sap
           - sles
           - garden-linux
-          - rhcos
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ inputs.collector-tag }}
