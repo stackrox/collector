@@ -5,13 +5,18 @@
 - set_fact:
     vm_hashable_name: "{{ item.1 }}-{{ job_id }}"
     vm_image_short: "{{ item.1 | truncate(16, True, '') }}"
+    arch: "{{ item.0.value.arch | default('amd64') }}"
 
 - set_fact:
     vm_hashed_name: "{{ vm_hashable_name | hash('md5') | truncate(8, True, '') }}"
 
 - set_fact:
-    arch: "{{ item.0.value.arch | default('amd64') }}"
-    vm_full_name: "{{ gcp_instance_prefix }}-{{ item.0.key }}-{{ vm_image_short }}-{{ normalized_collection_method }}-{{ vm_hashed_name }}"
+    vm_full_name: "{{ gcp_instance_prefix }}-{{ vm_image_short }}-{{ vm_hashed_name }}"
+  when: item.0.key != 'rhel-ppc64le'
+
+- set_fact:
+    vm_full_name: "{{ gcp_instance_prefix }}-rhel-ppc64le-{{ vm_hashed_name }}"
+  when: item.0.key == 'rhel-ppc64le'
 
 - set_fact:
     ibm_env: "{{ s390x.env }}"
