@@ -1,4 +1,4 @@
-FROM ubuntu:jammy
+FROM ubuntu:noble
 
 COPY sched_process_exit.c /sched_process_exit.c
 COPY entrypoint.sh /entrypoint.sh
