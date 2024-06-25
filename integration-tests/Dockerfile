@@ -21,7 +21,7 @@ COPY k8s_test.go "$TEST_ROOT"
 
 RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go test -tags bench,k8s -c -o collector-tests
 
-FROM alpine:3.18
+FROM alpine:3.20
 
 ARG TEST_ROOT
 
