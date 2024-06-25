@@ -87,7 +87,8 @@ virtual_machines:
     families:
       - cos-stable
       - cos-beta
-      - cos-dev
+      # ROX-24938: disabled until the verifier issue is fixed.
+      # - cos-dev
 
   sles:
     project: suse-cloud
