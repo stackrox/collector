@@ -102,7 +102,7 @@ bool ParseLogLevelName(std::string name, LogLevel* level) {
 
 void InspectorLogCallback(std::string&& msg, sinsp_logger::severity severity) {
   auto collector_severity = (LogLevel)severity;
-  collector::logging::LogMessage(__FILE__, __LINE__, false, collector_severity) << msg;
+  collector::logging::LogMessage(__FILE__, __LINE__, collector_severity) << msg;
 }
 
 const char* GetGlobalLogPrefix() {

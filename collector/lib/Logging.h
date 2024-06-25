@@ -56,8 +56,8 @@ const size_t LevelPaddingWidth = 7;
 
 class LogMessage {
  public:
-  LogMessage(const char* file, int line, bool throttled, LogLevel level)
-      : file_(file), line_(line), level_(level), throttled_(throttled) {
+  LogMessage(const char* file, int line, LogLevel level, unsigned long throttled_times = 0)
+      : file_(file), line_(line), level_(level), throttled_times_(throttled_times) {
     // if in debug mode, output file names associated with log messages
     include_file_ = CheckLogLevel(LogLevel::DEBUG);
   }
@@ -72,8 +72,8 @@ class LogMessage {
               << " " << std::put_time(nowTm, "%Y/%m/%d %H:%M:%S")
               << "] ";
 
-    if (throttled_) {
-      std::cerr << "[Throttled] ";
+    if (throttled_times_ != 0) {
+      std::cerr << "[Throttled " << throttled_times_ << " messages] ";
     }
 
     if (include_file_) {
@@ -107,7 +107,7 @@ class LogMessage {
   LogLevel level_;
   std::stringstream buf_;
   bool include_file_;
-  bool throttled_;
+  bool throttled_times_;
 };
 
 }  // namespace logging
@@ -118,16 +118,20 @@ class LogMessage {
 
 #define CLOG_IF(cond, lvl)                                                            \
   if (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl) && (cond)) \
-  collector::logging::LogMessage(__FILE__, __LINE__, false, collector::logging::LogLevel::lvl)
+  collector::logging::LogMessage(__FILE__, __LINE__, collector::logging::LogLevel::lvl)
 
 #define CLOG(lvl) CLOG_IF(true, lvl)
 
 #define CLOG_THROTTLED_IF(cond, lvl, interval)                                          \
   static std::chrono::steady_clock::time_point _clog_lastlog_##__LINE__;                \
-  if (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl) && (cond) && \
-      (std::chrono::steady_clock::now() - _clog_lastlog_##__LINE__ >= interval))        \
-  _clog_lastlog_##__LINE__ = std::chrono::steady_clock::now(),                          \
-  collector::logging::LogMessage(__FILE__, __LINE__, true, collector::logging::LogLevel::lvl)
+  static unsigned long _clog_lastlog_##__LINE__##_times_ = 0;                           \
+  if (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl) && (cond)) { \
+    if (std::chrono::steady_clock::now() - _clog_lastlog_##__LINE__ < interval)         \
+      _clog_lastlog_##__LINE__##_times_++;                                              \
+  } else                                                                                \
+    _clog_lastlog_##__LINE__ = std::chrono::steady_clock::now(),                        \
+    _clog_lastlog_##__LINE__##_times_ = 0,                                              \
+    collector::logging::LogMessage(__FILE__, __LINE__, collector::logging::LogLevel::lvl, _clog_lastlog_##__LINE__##_times_)
 
 #define CLOG_THROTTLED(lvl, interval) CLOG_THROTTLED_IF(true, lvl, interval)
 
