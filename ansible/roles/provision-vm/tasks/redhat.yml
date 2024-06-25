@@ -26,7 +26,7 @@
 - name: Disable troublesome repo
   ansible.builtin.shell: |
     dnf config-manager --disable rhui-codeready-builder-for-rhel-8-x86_64-rhui-source-rpms
-  when: vm_config.find('-8') != -1 and vm_arch == 'amd64'
+  when: vm_image_family == 'rhel-8'
 
 - name: Install needed utilities
   ansible.builtin.dnf:
