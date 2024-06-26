@@ -98,7 +98,7 @@ void CollectorService::RunForever() {
     conn_tracker->UpdateIgnoredNetworks(config_.IgnoredNetworks());
     conn_tracker->EnableExternalIPs(config_.EnableExternalIPs());
 
-    auto network_connection_info_service_comm = std::make_shared<NetworkConnectionInfoServiceComm>(config_.Hostname(), channel_);
+    auto network_connection_info_service_comm = std::make_shared<output::NetworkConnectionInfoServiceComm>(config_.Hostname(), channel_);
 
     net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper,
                                                             conn_tracker,

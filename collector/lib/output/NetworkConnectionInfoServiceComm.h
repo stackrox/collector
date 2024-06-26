@@ -11,9 +11,9 @@
 
 #include "internalapi/sensor/network_connection_iservice.grpc.pb.h"
 
-#include "output/DuplexGRPC.h"
+#include "DuplexGRPC.h"
 
-namespace collector {
+namespace collector::output {
 
 // Gathers all the communication routines targeted at NetworkConnectionInfoService.
 // A simple gRPC mock is not sufficient for testing, since it doesn't abstract Streams.
@@ -62,6 +62,6 @@ class NetworkConnectionInfoServiceComm : public INetworkConnectionInfoServiceCom
   std::unique_ptr<grpc::ClientContext> context_;
 };
 
-}  // namespace collector
+}  // namespace collector::output
 
 #endif

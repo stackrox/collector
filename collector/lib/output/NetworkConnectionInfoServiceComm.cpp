@@ -3,7 +3,7 @@
 #include "Utility.h"
 #include "output/GRPCUtil.h"
 
-namespace collector {
+namespace collector::output {
 
 constexpr char NetworkConnectionInfoServiceComm::kHostnameMetadataKey[];
 constexpr char NetworkConnectionInfoServiceComm::kCapsMetadataKey[];
@@ -55,4 +55,4 @@ std::unique_ptr<output::IDuplexClientWriter<sensor::NetworkConnectionInfoMessage
   }
 }
 
-}  // namespace collector
+}  // namespace collector::output

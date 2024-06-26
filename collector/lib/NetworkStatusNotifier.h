@@ -6,10 +6,10 @@
 #include "CollectorConfig.h"
 #include "CollectorStats.h"
 #include "ConnTracker.h"
-#include "NetworkConnectionInfoServiceComm.h"
 #include "ProcfsScraper.h"
 #include "ProtoAllocator.h"
 #include "StoppableThread.h"
+#include "output/NetworkConnectionInfoServiceComm.h"
 
 namespace collector {
 
@@ -17,7 +17,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
  public:
   NetworkStatusNotifier(std::shared_ptr<IConnScraper> conn_scraper,
                         std::shared_ptr<ConnectionTracker> conn_tracker,
-                        std::shared_ptr<INetworkConnectionInfoServiceComm> comm,
+                        std::shared_ptr<output::INetworkConnectionInfoServiceComm> comm,
                         const CollectorConfig& config,
                         std::shared_ptr<CollectorConnectionStats<unsigned int>> connections_total_reporter = 0,
                         std::shared_ptr<CollectorConnectionStats<float>> connections_rate_reporter = 0)
@@ -66,7 +66,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
 
   int64_t afterglow_period_micros_;
   bool enable_afterglow_;
-  std::shared_ptr<INetworkConnectionInfoServiceComm> comm_;
+  std::shared_ptr<output::INetworkConnectionInfoServiceComm> comm_;
 
   std::shared_ptr<CollectorConnectionStats<unsigned int>> connections_total_reporter_;
   std::shared_ptr<CollectorConnectionStats<float>> connections_rate_reporter_;
