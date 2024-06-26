@@ -1,5 +1,5 @@
-#ifndef __SIGNAL_SERVICE_CLIENT_H
-#define __SIGNAL_SERVICE_CLIENT_H
+#ifndef __COLLECTOR_OUTPUT_CLIENT_H
+#define __COLLECTOR_OUTPUT_CLIENT_H
 
 // SIGNAL_SERVICE_CLIENT.h
 // This class defines our GRPC client abstraction
@@ -28,4 +28,4 @@ class OutputClient {
 
 }  // namespace collector::output
 
-#endif  // __SIGNAL_SERVICE_CLIENT_H
+#endif  // __COLLECTOR_OUTPUT_CLIENT_H
