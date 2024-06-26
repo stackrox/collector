@@ -7,8 +7,8 @@
 
 #include "CollectorConfig.h"
 #include "ConnTracker.h"
-#include "Control.h"
 #include "DriverCandidates.h"
+#include "common/Control.h"
 #include "ppm_events_public.h"
 
 namespace collector::system_inspector {

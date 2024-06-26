@@ -1,7 +1,7 @@
 #include <random>
 
-#include "Containers.h"
-#include "NRadix.h"
+#include "common/Containers.h"
+#include "common/NRadix.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

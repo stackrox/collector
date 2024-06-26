@@ -5,11 +5,11 @@
 #include <libsinsp/sinsp.h>
 
 #include "CollectorArgs.h"
-#include "EnvVar.h"
 #include "HostHeuristics.h"
-#include "HostInfo.h"
-#include "Logging.h"
-#include "Utility.h"
+#include "common/EnvVar.h"
+#include "common/HostInfo.h"
+#include "common/Logging.h"
+#include "common/Utility.h"
 
 namespace collector {
 

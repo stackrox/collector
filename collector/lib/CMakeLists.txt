@@ -1,14 +1,15 @@
+add_subdirectory(common)
 add_subdirectory(output)
+add_subdirectory(system-inspector)
 
-file(GLOB COLLECTOR_LIB_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
-     ${CMAKE_CURRENT_SOURCE_DIR}/system-inspector/*.cpp)
+file(GLOB COLLECTOR_LIB_SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
 add_library(collector_lib ${DRIVER_HEADERS} ${COLLECTOR_LIB_SRC_FILES})
 
 add_dependencies(collector_lib sinsp)
 target_link_libraries(collector_lib sinsp)
 
-target_link_libraries(collector_lib collector_output)
+target_link_libraries(collector_lib collector_common collector_output collector_system_inspector)
 
 target_link_libraries(collector_lib stdc++fs) # This is needed for GCC-8 to link
                                               # against the filesystem library

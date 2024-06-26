@@ -12,9 +12,9 @@ extern "C" {
 
 #include "CollectionMethod.h"
 #include "FileDownloader.h"
-#include "FileSystem.h"
-#include "Logging.h"
-#include "Utility.h"
+#include "common/FileSystem.h"
+#include "common/Logging.h"
+#include "common/Utility.h"
 #include "system-inspector/Service.h"
 
 namespace collector {

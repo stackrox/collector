@@ -4,8 +4,8 @@
 #include <optional>
 #include <string_view>
 
-#include "HostInfo.h"
-#include "Utility.h"
+#include "common/HostInfo.h"
+#include "common/Utility.h"
 #include "system-inspector/Service.h"
 
 namespace collector {

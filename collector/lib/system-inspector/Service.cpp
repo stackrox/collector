@@ -19,15 +19,14 @@
 #include "ContainerMetadata.h"
 #include "EventExtractor.h"
 #include "EventNames.h"
-#include "HostInfo.h"
 #include "KernelDriver.h"
-#include "Logging.h"
 #include "NetworkSignalHandler.h"
 #include "ProcessSignalHandler.h"
 #include "SelfCheckHandler.h"
-#include "SelfChecks.h"
-#include "TimeUtil.h"
-#include "Utility.h"
+#include "common/HostInfo.h"
+#include "common/Logging.h"
+#include "common/TimeUtil.h"
+#include "common/Utility.h"
 #include "logger.h"
 
 namespace collector::system_inspector {
@@ -224,12 +223,6 @@ void Service::Start() {
   }
 
   inspector_->start_capture();
-
-  // trigger the self check process only once capture has started,
-  // to verify the driver is working correctly. SelfCheckHandlers will
-  // verify the live events.
-  std::thread self_checks_thread(self_checks::start_self_check_process);
-  self_checks_thread.detach();
 
   std::lock_guard<std::mutex> running_lock(running_mutex_);
   running_ = true;

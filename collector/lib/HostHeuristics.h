@@ -2,8 +2,8 @@
 #define COLLECTOR_HOSTHEURISTICS_H
 
 #include "CollectorConfig.h"
-#include "HostConfig.h"
-#include "HostInfo.h"
+#include "common/HostConfig.h"
+#include "common/HostInfo.h"
 
 namespace collector {
 

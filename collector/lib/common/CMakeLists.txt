@@ -1,0 +1,4 @@
+
+file(GLOB COLLECTOR_COMMON_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+
+add_library(collector_common STATIC "${COLLECTOR_COMMON_SRCS}")

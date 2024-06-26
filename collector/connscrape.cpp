@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-#include "EnvVar.h"
 #include "ProcfsScraper.h"
+#include "common/EnvVar.h"
 
 using namespace collector;
 

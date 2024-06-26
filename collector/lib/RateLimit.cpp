@@ -1,9 +1,9 @@
 #include "RateLimit.h"
 
-#include "CollectorStats.h"
-#include "Logging.h"
-#include "TimeUtil.h"
-#include "Utility.h"
+#include "common/Logging.h"
+#include "common/TimeUtil.h"
+#include "common/Utility.h"
+#include "stats/CollectorStats.h"
 
 namespace collector {
 

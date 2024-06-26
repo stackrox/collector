@@ -9,7 +9,7 @@
 #include "CollectorArgs.h"
 #include "CollectorConfig.h"
 #include "NetworkStatusNotifier.h"
-#include "Utility.h"
+#include "common/Utility.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "output/DuplexGRPC.h"

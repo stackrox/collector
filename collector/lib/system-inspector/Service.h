@@ -11,10 +11,10 @@
 #include <gtest/gtest_prod.h>
 
 #include "ContainerMetadata.h"
-#include "Control.h"
 #include "DriverCandidates.h"
 #include "SignalHandler.h"
 #include "SystemInspector.h"
+#include "common/Control.h"
 #include "output/SignalServiceClient.h"
 
 // forward declarations

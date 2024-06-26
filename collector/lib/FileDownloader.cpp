@@ -9,8 +9,8 @@
 #include <unistd.h>
 #include <utils.h>
 
-#include "Logging.h"
-#include "Utility.h"
+#include "common/Logging.h"
+#include "common/Utility.h"
 
 namespace collector {
 

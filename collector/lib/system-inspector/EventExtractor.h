@@ -7,9 +7,11 @@
 #include "libsinsp/filterchecks.h"
 #include "libsinsp/sinsp.h"
 
-#include "Logging.h"
+#include "common/Logging.h"
 
 namespace collector::system_inspector {
+
+std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo* t);
 
 // This class allows extracting a predefined set of system_inspector event fields in an efficient manner.
 class EventExtractor {

@@ -15,8 +15,8 @@
 #include <string>
 #include <vector>
 
-#include "Hash.h"
 #include "Process.h"
+#include "common/Hash.h"
 
 namespace collector {
 

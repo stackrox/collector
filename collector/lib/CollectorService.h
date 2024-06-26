@@ -2,8 +2,8 @@
 #define _COLLECTOR_SERVICE_H_
 
 #include "CollectorConfig.h"
-#include "Control.h"
 #include "DriverCandidates.h"
+#include "common/Control.h"
 #include "output/OutputClient.h"
 #include "system-inspector/Service.h"
 

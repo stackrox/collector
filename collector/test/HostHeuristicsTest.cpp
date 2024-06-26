@@ -22,8 +22,8 @@ You should have received a copy of the GNU General Public License along with thi
 */
 
 #include "CollectorConfig.cpp"
-#include "HostConfig.h"
 #include "HostHeuristics.cpp"
+#include "common/HostConfig.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

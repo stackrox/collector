@@ -8,7 +8,7 @@
 #include "ConnTracker.h"
 #include "ProcfsScraper.h"
 #include "ProtoAllocator.h"
-#include "StoppableThread.h"
+#include "common/StoppableThread.h"
 #include "output/NetworkConnectionInfoServiceComm.h"
 
 namespace collector {

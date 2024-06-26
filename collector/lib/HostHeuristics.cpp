@@ -1,6 +1,6 @@
 #include "HostHeuristics.h"
 
-#include "Logging.h"
+#include "common/Logging.h"
 
 namespace collector {
 

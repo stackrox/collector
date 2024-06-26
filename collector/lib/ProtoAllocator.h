@@ -5,7 +5,7 @@
 #  include <google/protobuf/arena.h>
 #endif
 
-#include "Logging.h"
+#include "common/Logging.h"
 
 namespace collector {
 

@@ -1,7 +1,7 @@
 #include <utility>
 
 #include "NetworkConnection.h"
-#include "Utility.h"
+#include "common/Utility.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

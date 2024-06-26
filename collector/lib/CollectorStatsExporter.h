@@ -5,7 +5,7 @@
 
 #include "CollectorConfig.h"
 #include "CollectorStats.h"
-#include "StoppableThread.h"
+#include "common/StoppableThread.h"
 #include "prometheus/registry.h"
 #include "system-inspector/Service.h"
 

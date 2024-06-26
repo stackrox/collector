@@ -4,9 +4,9 @@
 #include <fstream>
 
 #include "GRPCUtil.h"
-#include "Logging.h"
-#include "ProtoUtil.h"
-#include "Utility.h"
+#include "common/Logging.h"
+#include "common/ProtoUtil.h"
+#include "common/Utility.h"
 
 namespace collector::output {
 

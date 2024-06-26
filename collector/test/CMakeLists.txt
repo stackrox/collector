@@ -7,7 +7,7 @@ foreach(test_file ${TEST_SRC_FILES})
     get_filename_component(test_name ${test_file} NAME_WE)
     add_executable("${test_name}" "${test_file}")
 
-    target_link_libraries(${test_name} collector_lib)
+    target_link_libraries(${test_name} collector_lib collector_output collector_common)
 
     if(DEFINED ENV{WITH_RHEL_RPMS})
         target_link_libraries(${test_name} gtest gtest_main gmock gmock_main)

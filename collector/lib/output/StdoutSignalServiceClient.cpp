@@ -3,8 +3,8 @@
 
 #include <string>
 
-#include "Logging.h"
-#include "ProtoUtil.h"
+#include "common/Logging.h"
+#include "common/ProtoUtil.h"
 
 namespace collector::output {
 

@@ -8,7 +8,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/grpcpp.h>
 
-#include "Logging.h"
+#include "common/Logging.h"
 
 namespace collector::output {
 

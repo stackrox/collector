@@ -11,7 +11,7 @@
 #include "DuplexGRPC.h"
 #include "OutputClient.h"
 #include "SignalHandler.h"
-#include "StoppableThread.h"
+#include "common/StoppableThread.h"
 
 namespace collector::output {
 

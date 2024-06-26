@@ -3,7 +3,7 @@
 
 #include "CollectionMethod.h"
 #include "DriverCandidates.cpp"
-#include "HostInfo.h"
+#include "common/HostInfo.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

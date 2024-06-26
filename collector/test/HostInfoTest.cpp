@@ -21,7 +21,7 @@ You should have received a copy of the GNU General Public License along with thi
 * version.
 */
 
-#include "HostInfo.cpp"
+#include "common/HostInfo.cpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

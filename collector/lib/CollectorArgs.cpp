@@ -6,8 +6,8 @@
 #include <sstream>
 #include <string>
 
-#include "Logging.h"
-#include "optionparser.h"
+#include "common/Logging.h"
+#include "common/optionparser.h"
 
 namespace collector {
 

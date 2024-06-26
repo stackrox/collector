@@ -4,9 +4,9 @@
 
 #include "CollectorStats.h"
 #include "Profiler.h"
-#include "ProtoUtil.h"
-#include "TimeUtil.h"
-#include "Utility.h"
+#include "common/ProtoUtil.h"
+#include "common/TimeUtil.h"
+#include "common/Utility.h"
 #include "output/DuplexGRPC.h"
 #include "output/GRPCUtil.h"
 

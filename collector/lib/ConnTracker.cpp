@@ -3,9 +3,9 @@
 #include <utility>
 
 #include "CollectorStats.h"
-#include "Containers.h"
-#include "Logging.h"
-#include "Utility.h"
+#include "common/Containers.h"
+#include "common/Logging.h"
+#include "common/Utility.h"
 
 namespace collector {
 

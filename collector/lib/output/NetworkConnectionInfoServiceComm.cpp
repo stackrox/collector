@@ -1,6 +1,6 @@
 #include "NetworkConnectionInfoServiceComm.h"
 
-#include "Utility.h"
+#include "common/Utility.h"
 #include "output/GRPCUtil.h"
 
 namespace collector::output {

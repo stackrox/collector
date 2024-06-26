@@ -11,15 +11,16 @@ extern "C" {
 #include "CivetServer.h"
 #include "CollectorStatsExporter.h"
 #include "ConnTracker.h"
-#include "Containers.h"
-#include "Diagnostics.h"
 #include "GetKernelObject.h"
 #include "GetStatus.h"
-#include "LogLevel.h"
 #include "NetworkStatusInspector.h"
 #include "NetworkStatusNotifier.h"
 #include "ProfilerHandler.h"
-#include "Utility.h"
+#include "SelfChecks.h"
+#include "common/Containers.h"
+#include "common/Diagnostics.h"
+#include "common/LogLevel.h"
+#include "common/Utility.h"
 #include "output/GRPCUtil.h"
 #include "prometheus/exposer.h"
 #include "system-inspector/Service.h"
@@ -124,6 +125,12 @@ void CollectorService::RunForever() {
   system_inspector_.Start();
 
   signal_client_->Start();
+
+  // trigger the self check process only once capture has started,
+  // to verify the driver is working correctly. SelfCheckHandlers will
+  // verify the live events.
+  std::thread self_checks_thread(self_checks::start_self_check_process);
+  self_checks_thread.detach();
 
   ControlValue cv;
   while ((cv = control_->load(std::memory_order_relaxed)) != STOP_COLLECTOR) {

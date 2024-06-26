@@ -8,8 +8,8 @@
 
 #include "CollectorStats.h"
 #include "EventMap.h"
-#include "Logging.h"
-#include "Utility.h"
+#include "common/Logging.h"
+#include "common/Utility.h"
 #include "system-inspector/EventExtractor.h"
 
 namespace collector {

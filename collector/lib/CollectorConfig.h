@@ -9,8 +9,8 @@
 #include <grpcpp/channel.h>
 
 #include "CollectionMethod.h"
-#include "HostConfig.h"
 #include "NetworkConnection.h"
+#include "common/HostConfig.h"
 
 namespace collector {
 

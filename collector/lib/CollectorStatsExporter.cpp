@@ -4,10 +4,10 @@
 #include <iostream>
 #include <math.h>
 
-#include "Containers.h"
-#include "EventNames.h"
-#include "Logging.h"
-#include "Utility.h"
+#include "system-inspector/EventNames.h"
+#include "common/Containers.h"
+#include "common/Logging.h"
+#include "common/Utility.h"
 #include "prometheus/gauge.h"
 #include "prometheus/summary.h"
 #include "system-inspector/Service.h"

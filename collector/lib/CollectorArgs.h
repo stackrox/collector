@@ -5,7 +5,7 @@
 
 #include <json/json.h>
 
-#include "optionparser.h"
+#include "common/optionparser.h"
 
 namespace collector {
 

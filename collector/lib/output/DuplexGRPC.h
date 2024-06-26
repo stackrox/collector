@@ -7,7 +7,7 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/async_stream.h>
 
-#include "Logging.h"
+#include "common/Logging.h"
 
 // This file defines an alternative client interface for bidirectional GRPC streams. The interface supports:
 // - simultaneous reading and writing without multithreading or low-level completion queue/tag work.

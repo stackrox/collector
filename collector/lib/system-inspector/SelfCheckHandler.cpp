@@ -3,8 +3,8 @@
 #include <array>
 #include <chrono>
 
-#include "Logging.h"
 #include "SelfChecks.h"
+#include "common/Logging.h"
 #include "system-inspector/EventExtractor.h"
 
 namespace collector {
