@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+source "${SCRIPT_DIR}/utils.sh"
+
 die() {
     echo >&2 "$@"
     exit 1
@@ -16,6 +20,10 @@ for version_dir in "${MD_DIR}/collector-versions"/*; do
     [[ -d "$version_dir" ]] || continue
 
     module_version="$(< "${version_dir}/MODULE_VERSION")"
+
+    if skip_version "$module_version"; then
+        continue
+    fi
 
     mod_ver_dir="${MD_DIR}/module-versions/${module_version}"
     mkdir -p "$mod_ver_dir"
