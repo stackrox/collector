@@ -3,7 +3,9 @@ name: Notify MODULE_VERSION changed
 on:
   push:
     branches:
-    - master
+    # As of collector 3.19, module version changes do not require
+    # downstream work, but we want to still notify for other released
+    # versions.
     - release-*
     paths:
     - kernel-modules/MODULE_VERSION
