@@ -104,6 +104,7 @@
     pi_proc_type: "{{ proc_type }}"
     pi_image_id: "{{ image_dict[vm_image] }}"
     pi_volume_ids: []
+    pi_health_status: "WARNING"
     pi_network:
       - network_id: "{{ pi_network_id }}"
     pi_key_pair_name: "{{ pi_ssh_key.pi_key_name }}"
