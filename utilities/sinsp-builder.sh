@@ -64,9 +64,6 @@ elif [[ "${COLLECTOR_BRANCH:-}" != "" ]]; then
     using_branch=0
 fi
 
-# Build the drivers for the current system
-make -C "${COLLECTOR_DIR}/kernel-modules" drivers
-
 mkdir -p "${COLLECTOR_DIR}"/falcosecurity-libs/build
 cd "${COLLECTOR_DIR}"/falcosecurity-libs/build
 
@@ -75,19 +72,10 @@ if [[ "${SINSP_BUILD_DIR:-}" == "" ]]; then
 fi
 
 cmake -DUSE_BUNDLED_DEPS=OFF \
+    -DBUILD_LIBSCAP_MODERN_BPF=ON \
     -S"${COLLECTOR_DIR}/falcosecurity-libs" \
     -B"${SINSP_BUILD_DIR}"
 make -j"$(nproc)" -C "${SINSP_BUILD_DIR}" sinsp-example
-
-OUTPUT_DIR=/tmp/output
-mkdir -p "${OUTPUT_DIR}"
-for driver_zip in "${COLLECTOR_DIR}/kernel-modules/container/kernel-modules"/*.gz; do
-    driver="$(basename "${driver_zip}")"
-    driver="${driver%.gz}"
-    gunzip -c "${driver_zip}" > "${OUTPUT_DIR}/${driver}"
-done
-
-cp "${SINSP_BUILD_DIR}/libsinsp/examples/sinsp-example" "${OUTPUT_DIR}/sinsp-example"
 
 echo ""
 echo "All done! You should have everything you need under '${OUTPUT_DIR}'"
