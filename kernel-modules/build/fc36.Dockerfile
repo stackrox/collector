@@ -1,4 +1,4 @@
-FROM registry.fedoraproject.org/fedora:36 AS builder
+FROM registry.fedoraproject.org/fedora:41 AS builder
 
 ENV DISTRO=fc36
 
