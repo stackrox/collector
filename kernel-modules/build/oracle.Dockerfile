@@ -1,4 +1,4 @@
-FROM oraclelinux:7
+FROM oraclelinux:9
 
 RUN yum -y update && yum -y install yum-utils && \
     yum-config-manager --enable ol7_UEKR6 && \
