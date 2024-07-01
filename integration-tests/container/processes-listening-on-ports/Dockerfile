@@ -1,4 +1,4 @@
-FROM ubuntu:jammy
+FROM ubuntu:noble
 
 COPY process-listening-on-ports.c /process-listening-on-ports.c
 
