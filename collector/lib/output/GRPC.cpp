@@ -6,7 +6,7 @@
 
 #include <grpcpp/create_channel.h>
 
-namespace collector {
+namespace collector::output {
 
 namespace {
 
@@ -45,4 +45,4 @@ std::shared_ptr<grpc::Channel> CreateChannel(const std::string& server_address, 
   return grpc::CreateCustomChannel(server_address, creds, chan_args);
 }
 
-}  // namespace collector
+}  // namespace collector::output

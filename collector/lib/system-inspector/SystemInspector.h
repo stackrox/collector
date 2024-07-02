@@ -48,7 +48,6 @@ class SystemInspector {
   virtual void Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) = 0;
   virtual bool InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) = 0;
   virtual void Start() = 0;
-  virtual void Run(const std::atomic<ControlValue>& control) = 0;
   virtual void CleanUp() = 0;
 
   virtual bool GetStats(Stats* stats) const = 0;

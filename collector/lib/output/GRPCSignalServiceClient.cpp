@@ -1,5 +1,6 @@
-#include "SignalServiceClient.h"
+#include "GRPCSignalServiceClient.h"
 
+#include <atomic>
 #include <fstream>
 
 #include "GRPCUtil.h"
@@ -7,9 +8,9 @@
 #include "ProtoUtil.h"
 #include "Utility.h"
 
-namespace collector {
+namespace collector::output {
 
-bool SignalServiceClient::EstablishGRPCStreamSingle() {
+bool GRPCSignalServiceClient::EstablishGRPCStreamSingle() {
   std::mutex mtx;
   std::unique_lock<std::mutex> lock(mtx);
   stream_interrupted_.wait(lock, [this]() { return !stream_active_.load(std::memory_order_acquire) || thread_.should_stop(); });
@@ -42,33 +43,38 @@ bool SignalServiceClient::EstablishGRPCStreamSingle() {
   return true;
 }
 
-void SignalServiceClient::EstablishGRPCStream() {
+void GRPCSignalServiceClient::EstablishGRPCStream() {
   while (EstablishGRPCStreamSingle())
     ;
   CLOG(INFO) << "Signal service client terminating.";
 }
 
-void SignalServiceClient::Start() {
+void GRPCSignalServiceClient::Start() {
   thread_.Start([this] { EstablishGRPCStream(); });
 }
 
-void SignalServiceClient::Stop() {
+void GRPCSignalServiceClient::Stop() {
   stream_interrupted_.notify_one();
   thread_.Stop();
   context_->TryCancel();
   context_.reset();
 }
 
-SignalHandler::Result SignalServiceClient::PushSignals(const SignalStreamMessage& msg) {
+bool GRPCSignalServiceClient::Ready() {
+  auto interrupt = [this] { return thread_.should_stop(); };
+  return WaitForChannelReady(channel_, interrupt);
+}
+
+bool GRPCSignalServiceClient::PushSignals(const OutputClient::Message& msg) {
   if (!stream_active_.load(std::memory_order_acquire)) {
     CLOG_THROTTLED(ERROR, std::chrono::seconds(10))
         << "GRPC stream is not established";
-    return SignalHandler::ERROR;
+    return false;
   }
 
   if (first_write_) {
     first_write_ = false;
-    return SignalHandler::NEEDS_REFRESH;
+    return false;
   }
 
   if (!writer_->Write(msg)) {
@@ -81,17 +87,10 @@ SignalHandler::Result SignalServiceClient::PushSignals(const SignalStreamMessage
     stream_active_.store(false, std::memory_order_release);
     CLOG(ERROR) << "GRPC stream interrupted";
     stream_interrupted_.notify_one();
-    return SignalHandler::ERROR;
+    return false;
   }
 
-  return SignalHandler::PROCESSED;
+  return false;
 }
 
-SignalHandler::Result StdoutSignalServiceClient::PushSignals(const SignalStreamMessage& msg) {
-  std::string output;
-  google::protobuf::util::MessageToJsonString(msg, &output, google::protobuf::util::JsonPrintOptions{});
-  CLOG(DEBUG) << "GRPC: " << output;
-  return SignalHandler::PROCESSED;
-}
-
-}  // namespace collector
+}  // namespace collector::output

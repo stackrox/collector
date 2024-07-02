@@ -8,13 +8,13 @@
 
 #include "CollectorArgs.h"
 #include "CollectorConfig.h"
-#include "DuplexGRPC.h"
 #include "NetworkStatusNotifier.h"
 #include "Utility.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "output/DuplexGRPC.h"
 
-namespace collector {
+namespace collector::output {
 
 namespace {
 
@@ -336,4 +336,4 @@ TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
 
 }  // namespace
 
-}  // namespace collector
+}  // namespace collector::output

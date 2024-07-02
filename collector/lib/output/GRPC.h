@@ -4,13 +4,13 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/security/credentials.h>
 
-namespace collector {
+namespace collector::output {
 
 std::shared_ptr<grpc::ChannelCredentials> TLSCredentialsFromFiles(
     const std::string& ca_cert_path, const std::string& client_cert_path, const std::string& client_key_path);
 
 std::shared_ptr<grpc::Channel> CreateChannel(const std::string& server_address, const std::string& hostname_override, const std::shared_ptr<grpc::ChannelCredentials>& creds);
 
-}  // namespace collector
+}  // namespace collector::output
 
 #endif  // COLLECTOR_GRPC_H

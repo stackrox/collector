@@ -1,8 +1,12 @@
 #ifndef COLLECTOR_SIGNALHANDLER_H
 #define COLLECTOR_SIGNALHANDLER_H
 
+#include <optional>
 #include <string>
+#include <tuple>
 #include <vector>
+
+#include "output/SignalServiceClient.h"
 
 // forward declarations
 class sinsp_evt;
@@ -12,7 +16,7 @@ namespace collector {
 
 class SignalHandler {
  public:
-  enum Result {
+  enum Control {
     // The event was processed correctly
     PROCESSED = 0,
     // The signal handler can't handle this event
@@ -25,12 +29,13 @@ class SignalHandler {
     FINISHED,
   };
 
+  using Result = std::tuple<std::optional<output::OutputClient::Message>, Control>;
   virtual std::string GetName() = 0;
   virtual bool Start() { return true; }
   virtual bool Stop() { return true; }
   virtual Result HandleSignal(sinsp_evt* evt) = 0;
   virtual Result HandleExistingProcess(sinsp_threadinfo* tinfo) {
-    return IGNORED;
+    return {std::nullopt, SignalHandler::IGNORED};
   }
   virtual std::vector<std::string> GetRelevantEvents() = 0;
 };

@@ -35,40 +35,40 @@ bool SelfCheckHandler::hasTimedOut() {
 SignalHandler::Result SelfCheckProcessHandler::HandleSignal(sinsp_evt* evt) {
   if (hasTimedOut()) {
     CLOG(WARNING) << "Failed to detect any self-check process events within the timeout.";
-    return FINISHED;
+    return {std::nullopt, SignalHandler::FINISHED};
   }
 
   if (isSelfCheckEvent(evt)) {
     CLOG(INFO) << "Found self-check process event.";
-    return FINISHED;
+    return {std::nullopt, SignalHandler::FINISHED};
   }
 
-  return IGNORED;
+  return {std::nullopt, SignalHandler::IGNORED};
 }
 
 SignalHandler::Result SelfCheckNetworkHandler::HandleSignal(sinsp_evt* evt) {
   if (hasTimedOut()) {
     CLOG(WARNING) << "Failed to detect any self-check networking events within the timeout.";
-    return FINISHED;
+    return {std::nullopt, SignalHandler::IGNORED};
   }
 
   if (!isSelfCheckEvent(evt)) {
-    return IGNORED;
+    return {std::nullopt, SignalHandler::IGNORED};
   }
 
   const uint16_t* server_port = event_extractor_->get_server_port(evt);
   const uint16_t* client_port = event_extractor_->get_client_port(evt);
 
   if (server_port == nullptr || client_port == nullptr) {
-    return IGNORED;
+    return {std::nullopt, SignalHandler::IGNORED};
   }
 
   if (*server_port == self_checks::kSelfCheckServerPort && *client_port != (uint16_t)-1) {
     CLOG(INFO) << "Found self-check connection event.";
-    return FINISHED;
+    return {std::nullopt, SignalHandler::FINISHED};
   }
 
-  return IGNORED;
+  return {std::nullopt, SignalHandler::IGNORED};
 }
 
 }  // namespace collector

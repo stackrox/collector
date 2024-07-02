@@ -34,14 +34,14 @@ extern "C" {
 #include "DriverCandidates.h"
 #include "EventNames.h"
 #include "FileSystem.h"
-#include "GRPC.h"
-#include "GRPCUtil.h"
 #include "GetKernelObject.h"
 #include "GetStatus.h"
 #include "HostInfo.h"
 #include "LogLevel.h"
 #include "Logging.h"
 #include "Utility.h"
+#include "output/GRPC.h"
+#include "output/GRPCUtil.h"
 
 static const int MAX_GRPC_CONNECTION_POLLS = 30;
 
@@ -71,7 +71,7 @@ std::shared_ptr<grpc::Channel> createChannel(CollectorArgs* args) {
     std::string client_key_path = tls_config["clientKeyPath"].asString();
 
     if (!ca_cert_path.empty() && !client_cert_path.empty() && !client_key_path.empty()) {
-      creds = collector::TLSCredentialsFromFiles(ca_cert_path, client_cert_path, client_key_path);
+      creds = collector::output::TLSCredentialsFromFiles(ca_cert_path, client_cert_path, client_key_path);
     } else {
       CLOG(ERROR)
           << "Partial TLS config: CACertPath=" << ca_cert_path << ", ClientCertPath=" << client_cert_path
@@ -79,7 +79,7 @@ std::shared_ptr<grpc::Channel> createChannel(CollectorArgs* args) {
     }
   }
 
-  return {collector::CreateChannel(args->GRPCServer(), GetSNIHostname(), creds)};
+  return {collector::output::CreateChannel(args->GRPCServer(), GetSNIHostname(), creds)};
 }
 
 // attempts to connect to the GRPC server, up to a timeout
@@ -90,7 +90,7 @@ bool attemptGRPCConnection(std::shared_ptr<grpc::Channel>& channel) {
     // polling, so keep going until we hit 0
     return (polls-- == 0);
   };
-  return WaitForChannelReady(channel, poll_check);
+  return collector::output::WaitForChannelReady(channel, poll_check);
 }
 
 void setCoreDumpLimit(bool enableCoreDump) {
@@ -174,9 +174,7 @@ int main(int argc, char** argv) {
   signal(SIGTERM, ShutdownHandler);
   signal(SIGINT, ShutdownHandler);
 
-  config.grpc_channel = std::move(sensor_connection);
-
-  CollectorService collector(config, &g_control, &g_signum);
+  CollectorService collector(config, std::move(sensor_connection), &g_control, &g_signum);
 
   if (!SetupKernelDriver(collector, args->GRPCServer(), config)) {
     startup_diagnostics.Log();
