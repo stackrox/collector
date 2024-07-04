@@ -194,7 +194,7 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
     std::optional<IPNet> net = IPNet::parse(str);
 
     if (net) {
-      CLOG(INFO) << "Detail network : " << *net;
+      CLOG(INFO) << "Non-aggregated network : " << *net;
       non_aggregated_networks_.emplace_back(std::move(*net));
     } else {
       CLOG(ERROR) << "Invalid network in ROX_NON_AGGREGATED_NETWORKS : " << str;
