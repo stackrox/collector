@@ -37,6 +37,7 @@ jobs:
           filters: |
             tests-changed:
               - integration-tests/pkg/**
+              - integration-tests/suites/**
               - integration-tests/*.go
               - integration-tests/images.yml
               - integration-tests/Dockerfile
