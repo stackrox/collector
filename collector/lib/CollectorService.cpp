@@ -86,7 +86,7 @@ void CollectorService::RunForever() {
     UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs(config_.IgnoredL4ProtoPortPairs());
     conn_tracker->UpdateIgnoredL4ProtoPortPairs(std::move(ignored_l4proto_port_pairs));
     conn_tracker->UpdateIgnoredNetworks(config_.IgnoredNetworks());
-    conn_tracker->UpdateDetailedNetworks(config_.DetailedNetworks());
+    conn_tracker->UpdateNonAggregatedNetworks(config_.NonAggregatedNetworks());
     conn_tracker->EnableExternalIPs(config_.EnableExternalIPs());
 
     auto network_connection_info_service_comm = std::make_shared<NetworkConnectionInfoServiceComm>(config_.Hostname(), config_.grpc_channel);

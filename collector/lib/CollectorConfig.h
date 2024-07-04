@@ -65,7 +65,7 @@ class CollectorConfig {
   bool DisableNetworkFlows() const { return disable_network_flows_; }
   const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }
   const std::vector<IPNet>& IgnoredNetworks() const { return ignored_networks_; }
-  const std::vector<IPNet>& DetailedNetworks() const { return detailed_networks_; }
+  const std::vector<IPNet>& NonAggregatedNetworks() const { return non_aggregated_networks_; }
   bool CurlVerbose() const { return curl_verbose_; }
   bool EnableAfterglow() const { return enable_afterglow_; }
   bool IsCoreDumpEnabled() const;
@@ -101,7 +101,7 @@ class CollectorConfig {
   bool scrape_listen_endpoints_ = false;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
   std::vector<IPNet> ignored_networks_;
-  std::vector<IPNet> detailed_networks_;
+  std::vector<IPNet> non_aggregated_networks_;
   bool curl_verbose_ = false;
 
   HostConfig host_config_;
