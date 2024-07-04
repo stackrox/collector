@@ -173,7 +173,7 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
     ignored_l4proto_port_pairs_ = kIgnoredL4ProtoPortPairs;
   }
 
-  for (const std::string &str : ignored_networks.value()) {
+  for (const std::string& str : ignored_networks.value()) {
     if (str.empty())
       continue;
 
@@ -187,7 +187,7 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
     }
   }
 
-  for (const std::string &str : non_aggregated_networks.value()) {
+  for (const std::string& str : non_aggregated_networks.value()) {
     if (str.empty())
       continue;
 
