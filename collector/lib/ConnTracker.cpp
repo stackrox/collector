@@ -76,8 +76,12 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
     return {};
   }
 
+  bool private_addr = !address.IsPublic();
+  bool do_not_aggregate_addr = !non_aggregated_networks_.Find(address).IsNull();
+
   // We want to keep private addresses and explicitely requested ones.
-  bool keep_addr = !address.IsPublic() || !non_aggregated_networks_.Find(address).IsNull();
+  bool keep_addr = private_addr || do_not_aggregate_addr;
+
   const bool* known_private_networks_exists = Lookup(known_private_networks_exists_, address.family());
   if (keep_addr && (known_private_networks_exists && !*known_private_networks_exists)) {
     return IPNet(address, 0, true);
