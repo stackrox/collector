@@ -173,35 +173,33 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
     ignored_l4proto_port_pairs_ = kIgnoredL4ProtoPortPairs;
   }
 
-  std::for_each(ignored_networks.value().begin(), ignored_networks.value().end(),
-                [&ignored_networks = this->ignored_networks_](const std::string& str) {
-                  if (str.empty())
-                    return;
+  for (const std::string &str : ignored_networks.value()) {
+    if (str.empty())
+      continue;
 
-                  std::optional<IPNet> net = IPNet::parse(str);
+    std::optional<IPNet> net = IPNet::parse(str);
 
-                  if (net) {
-                    CLOG(INFO) << "Ignore network : " << *net;
-                    ignored_networks.emplace_back(std::move(*net));
-                  } else {
-                    CLOG(ERROR) << "Invalid network in ROX_IGNORE_NETWORKS : " << str;
-                  }
-                });
+    if (net) {
+      CLOG(INFO) << "Ignore network : " << *net;
+      ignored_networks_.emplace_back(std::move(*net));
+    } else {
+      CLOG(ERROR) << "Invalid network in ROX_IGNORE_NETWORKS : " << str;
+    }
+  }
 
-  std::for_each(non_aggregated_networks.value().begin(), non_aggregated_networks.value().end(),
-                [&non_aggregated_networks = this->non_aggregated_networks_](const std::string& str) {
-                  if (str.empty())
-                    return;
+  for (const std::string &str : non_aggregated_networks.value()) {
+    if (str.empty())
+      continue;
 
-                  std::optional<IPNet> net = IPNet::parse(str);
+    std::optional<IPNet> net = IPNet::parse(str);
 
-                  if (net) {
-                    CLOG(INFO) << "Detail network : " << *net;
-                    non_aggregated_networks.emplace_back(std::move(*net));
-                  } else {
-                    CLOG(ERROR) << "Invalid network in ROX_NON_AGGREGATED_NETWORKS : " << str;
-                  }
-                });
+    if (net) {
+      CLOG(INFO) << "Detail network : " << *net;
+      non_aggregated_networks_.emplace_back(std::move(*net));
+    } else {
+      CLOG(ERROR) << "Invalid network in ROX_NON_AGGREGATED_NETWORKS : " << str;
+    }
+  }
 
   if (set_curl_verbose) {
     curl_verbose_ = true;
