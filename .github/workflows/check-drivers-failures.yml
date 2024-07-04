@@ -26,7 +26,7 @@ jobs:
         run: |
           set -eo pipefail
 
-          FAILURES_DIR=${FAILURES_DIR:-/tmp/failures}
+          FAILURES_DIR=${FAILURES_DIR:-/tmp/FAILURES}
 
           shopt -s nullglob
           cd "$FAILURES_DIR"
