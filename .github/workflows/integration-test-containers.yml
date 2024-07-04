@@ -16,14 +16,46 @@ on:
         type: boolean
         required: true
         description: Whether the QA containers should be rebuilt
+    outputs:
+      collector-tests-tag:
+        description: The tag used for the integration test image
+        value: ${{ jobs.build-test-image.outputs.collector-tests-tag || 'master' }}
 
 jobs:
+  should-build-test-image:
+    name: Determine if tests image needs to be built
+    runs-on: ubuntu-latest
+    outputs:
+      build-image: ${{ steps.changed.outputs.tests-changed }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: changed
+        with:
+          filters: |
+            tests-changed:
+              - integration-tests/pkg/**
+              - integration-tests/*.go
+              - integration-tests/images.yml
+              - integration-tests/Dockerfile
+              - .github/workflows/integration-test-container.yml
+
   build-test-image:
     name: Build the integration test image
     runs-on: ubuntu-latest
+    needs:
+      - should-build-test-image
     if: |
-      github.event_name != 'pull_request' ||
+      (github.event_name != 'pull_request' || needs.should-build-test-image.outputs.build-image) &&
       !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests')
+
+    outputs:
+      collector-tests-tag: ${{ steps.tests-tag.outputs.collector-tests-tag }}
+
+    env:
+      DEFAULT_TESTS_TAG: collector-tests-master
 
     steps:
       - uses: actions/checkout@v4
@@ -46,6 +78,19 @@ jobs:
             echo "ANSIBLE_STDOUT_CALLBACK=debug" >> "${GITHUB_ENV}"
           fi
 
+      - name: Define tests tag
+        id: tests-tag
+        run: |
+          COLLECTOR_TESTS_TAG="${DEFAULT_TESTS_TAG}"
+          if [[ "${{ github.event_name }}" == 'pull_request' || \
+                "${{ github.ref_type }}" == 'tag' || \
+                "${{ github.ref_name }}" =~ ^release- ]]; then
+            COLLECTOR_TESTS_TAG="collector-tests-${{ inputs.collector-tag }}"
+          fi
+
+          echo "COLLECTOR_TESTS_TAG=${COLLECTOR_TESTS_TAG}" >> "$GITHUB_ENV"
+          echo "collector-tests-tag=${COLLECTOR_TESTS_TAG}" >> "$GITHUB_OUTPUT"
+
       - name: Build images
         run: |
           ansible-galaxy install -r ansible/requirements.yml
@@ -55,7 +100,7 @@ jobs:
           # build_multi_arch passed in as json to ensure boolean type
           ansible-playbook \
             --connection local -i localhost, --limit localhost \
-            -e test_image='quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}' \
+            -e test_image="quay.io/rhacs-eng/qa-multi-arch:${COLLECTOR_TESTS_TAG}" \
             -e "{\"build_multi_arch\": $BUILD_MULTI_ARCH}" \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-tests.yml

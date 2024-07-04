@@ -18,6 +18,11 @@ on:
           Tag used for QA containers
         type: string
         required: true
+      collector-tests-tag:
+        description: |
+          Tag used for the test container
+        type: string
+        required: true
       offline-mode:
         description: |
           Set to true to enable collector running in offline mode
@@ -47,7 +52,7 @@ jobs:
     env:
       COLLECTOR_IMAGE: ${{ inputs.collector-repo }}:${{ inputs.collector-tag }}
       COLLECTOR_QA_TAG: ${{ inputs.collector-qa-tag }}
-      TEST_IMAGE: quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}
+      TEST_IMAGE: quay.io/rhacs-eng/qa-multi-arch:${{ inputs.collector-tests-tag }}
     steps:
       - uses: actions/checkout@v4
 

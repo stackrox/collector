@@ -13,10 +13,15 @@ on:
           Tag used for QA containers
         type: string
         required: true
+      collector-tests-tag:
+        description: |
+          Tag used for the test container
+        type: string
+        required: true
 
 env:
   ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
-  COLLECTOR_TESTS_IMAGE: quay.io/rhacs-eng/qa-multi-arch:collector-tests-${{ inputs.collector-tag }}
+  COLLECTOR_TESTS_IMAGE: quay.io/rhacs-eng/qa-multi-arch:${{ inputs.collector-tests-tag }}
   COLLECTOR_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
 
 jobs:
