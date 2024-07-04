@@ -122,16 +122,16 @@ class LogMessage {
 
 #define CLOG(lvl) CLOG_IF(true, lvl)
 
-#define CLOG_THROTTLED_IF(cond, lvl, interval)                                          \
-  static std::chrono::steady_clock::time_point _clog_lastlog_##__LINE__;                \
-  static unsigned long _clog_lastlog_##__LINE__##_times_ = 0;                           \
-  if (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl) && (cond)) { \
-    if (std::chrono::steady_clock::now() - _clog_lastlog_##__LINE__ < interval)         \
-      _clog_lastlog_##__LINE__##_times_++;                                              \
-  } else                                                                                \
-    _clog_lastlog_##__LINE__ = std::chrono::steady_clock::now(),                        \
-    _clog_lastlog_##__LINE__##_times_ = 0,                                              \
-    collector::logging::LogMessage(__FILE__, __LINE__, collector::logging::LogLevel::lvl, _clog_lastlog_##__LINE__##_times_)
+#define CLOG_THROTTLED_IF(cond, lvl, interval)                                        \
+  static std::chrono::steady_clock::time_point _clog_lastlog_##__LINE__;              \
+  static unsigned long _clog_lastlog_##__LINE__##_times_ = 0;                         \
+  if (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl) && (cond)) \
+    if (std::chrono::steady_clock::now() - _clog_lastlog_##__LINE__ < interval)       \
+      _clog_lastlog_##__LINE__##_times_++;                                            \
+    else                                                                              \
+      _clog_lastlog_##__LINE__ = std::chrono::steady_clock::now(),                    \
+      _clog_lastlog_##__LINE__##_times_ = 0,                                          \
+      collector::logging::LogMessage(__FILE__, __LINE__, collector::logging::LogLevel::lvl, _clog_lastlog_##__LINE__##_times_)
 
 #define CLOG_THROTTLED(lvl, interval) CLOG_THROTTLED_IF(true, lvl, interval)
 
