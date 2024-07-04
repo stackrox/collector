@@ -13,6 +13,11 @@ on:
           Tag used for QA containers
         type: string
         required: true
+      collector-tests-tag:
+        description: |
+          Tag used for the test container
+        type: string
+        required: true
 
 jobs:
   benchmarks:
@@ -22,6 +27,7 @@ jobs:
       run-benchmarks: true
       collector-tag: ${{ inputs.collector-tag }}
       collector-qa-tag: ${{ inputs.collector-qa-tag }}
+      collector-tests-tag: ${{ inputs.collector-tests-tag }}
       collector-repo: quay.io/rhacs-eng/collector
     secrets: inherit
 

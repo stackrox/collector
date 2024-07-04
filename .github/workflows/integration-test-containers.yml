@@ -40,7 +40,7 @@ jobs:
               - integration-tests/*.go
               - integration-tests/images.yml
               - integration-tests/Dockerfile
-              - .github/workflows/integration-test-container.yml
+                #- .github/workflows/integration-test-container.yml
 
   build-test-image:
     name: Build the integration test image
