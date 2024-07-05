@@ -19,7 +19,7 @@ on:
     outputs:
       collector-tests-tag:
         description: The tag used for the integration test image
-        value: ${{ jobs.build-test-image.outputs.collector-tests-tag || 'master' }}
+        value: ${{ jobs.build-test-image.outputs.collector-tests-tag || 'collector-tests-master' }}
 
 jobs:
   should-build-test-image:
