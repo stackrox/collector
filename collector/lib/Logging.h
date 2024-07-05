@@ -57,7 +57,7 @@ const size_t LevelPaddingWidth = 7;
 class LogMessage {
  public:
   LogMessage(const char* file, int line, LogLevel level, unsigned long* throttled_times = 0)
-      : file_(file), line_(line), level_(level), throttled_times_(throttled_times) {
+      : file_(file), line_(line), level_(level), throttled_times_(0) {
     // if in debug mode, output file names associated with log messages
     include_file_ = CheckLogLevel(LogLevel::DEBUG);
     if (throttled_times) {
@@ -112,7 +112,7 @@ class LogMessage {
   LogLevel level_;
   std::stringstream buf_;
   bool include_file_;
-  bool throttled_times_;
+  unsigned long throttled_times_;
 };
 
 }  // namespace logging
