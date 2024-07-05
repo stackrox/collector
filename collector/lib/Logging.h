@@ -56,10 +56,15 @@ const size_t LevelPaddingWidth = 7;
 
 class LogMessage {
  public:
-  LogMessage(const char* file, int line, LogLevel level, unsigned long throttled_times = 0)
+  LogMessage(const char* file, int line, LogLevel level, unsigned long* throttled_times = 0)
       : file_(file), line_(line), level_(level), throttled_times_(throttled_times) {
     // if in debug mode, output file names associated with log messages
     include_file_ = CheckLogLevel(LogLevel::DEBUG);
+    if (throttled_times) {
+      // this is a throttled message, take the occurrences number and reset it
+      throttled_times_ = *throttled_times;
+      *throttled_times = 0;
+    }
   }
 
   ~LogMessage() {
@@ -130,8 +135,7 @@ class LogMessage {
       _clog_lastlog_##__LINE__##_times_++;                                            \
     else                                                                              \
       _clog_lastlog_##__LINE__ = std::chrono::steady_clock::now(),                    \
-      _clog_lastlog_##__LINE__##_times_ = 0,                                          \
-      collector::logging::LogMessage(__FILE__, __LINE__, collector::logging::LogLevel::lvl, _clog_lastlog_##__LINE__##_times_)
+      collector::logging::LogMessage(__FILE__, __LINE__, collector::logging::LogLevel::lvl, &_clog_lastlog_##__LINE__##_times_)
 
 #define CLOG_THROTTLED(lvl, interval) CLOG_THROTTLED_IF(true, lvl, interval)
 
