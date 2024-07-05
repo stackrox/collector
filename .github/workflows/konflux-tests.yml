@@ -67,6 +67,7 @@ jobs:
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      collector-tests-tag: ${{ needs.integration-tests-containers.outputs.collector-tests-tag }}
       is-konflux: true
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     secrets: inherit
@@ -76,6 +77,7 @@ jobs:
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      collector-tests-tag: ${{ needs.integration-tests-containers.outputs.collector-tests-tag }}
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init

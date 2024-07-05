@@ -92,6 +92,7 @@ jobs:
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      collector-tests-tag: ${{ needs.build-test-containers.outputs.collector-tests-tag }}
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init
@@ -104,6 +105,7 @@ jobs:
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      collector-tests-tag: ${{ needs.build-test-containers.outputs.collector-tests-tag }}
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init
@@ -116,6 +118,7 @@ jobs:
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
+      collector-tests-tag: ${{ needs.build-test-containers.outputs.collector-tests-tag }}
     if: |
       always() &&
       ((github.event_name == 'push' && github.ref_name == 'master') ||
