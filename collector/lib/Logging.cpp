@@ -109,7 +109,7 @@ void InspectorLogCallback(std::string&& msg, sinsp_logger::severity severity) {
     collector_severity = LogLevel::TRACE;
   }
 
-  if (collector::Logging::CheckLogLevel(collector_severity)) {
+  if (collector::logging::CheckLogLevel(collector_severity)) {
     collector::logging::LogMessage(__FILE__, __LINE__, false, collector_severity) << msg;
   }
 }
