@@ -22,9 +22,19 @@ on:
         description: |
           Branch CI is running on
         value: ${{ jobs.common-variables.outputs.branch-name }}
+      drivers-bucket:
+        description: Bucket used to pull collector drivers from
+        value: ${{ jobs.common-variables.outputs.drivers-bucket }}
       merged-drivers-bucket:
         description: Bucket used to push collector drivers into
         value: ${{ jobs.common-variables.outputs.merged-drivers-bucket }}
+      push-drivers-bucket:
+        description: Bucket used to push collector drivers into
+        value: ${{ jobs.common-variables.outputs.push-drivers-bucket }}
+      bundles-bucket:
+        description: |
+          Bucket used to download kernel bundles when building drivers
+        value: ${{ jobs.common-variables.outputs.bundles-bucket }}
       support-packages-bucket:
         description: |
           Bucket to push built support-packages into
@@ -66,7 +76,10 @@ jobs:
       collector-qa-tag: ${{ steps.collector-env.outputs.collector-qa-tag }}
       collector-image: ${{ steps.collector-env.outputs.collector-image }}
       branch-name: ${{ steps.collector-env.outputs.branch-name }}
+      drivers-bucket: ${{ steps.gcp-buckets.outputs.drivers-bucket }}
       merged-drivers-bucket: ${{ steps.gcp-buckets.outputs.merged-drivers-bucket }}
+      push-drivers-bucket: ${{ steps.gcp-buckets.outputs.push-drivers-bucket }}
+      bundles-bucket: ${{ steps.gcp-buckets.outputs.bundles-bucket }}
       support-packages-bucket: ${{ steps.gcp-buckets.outputs.support-packages-bucket }}
       public-support-packages-bucket: ${{ steps.gcp-buckets.outputs.public-support-packages-bucket }}
       cpaas-drivers-bucket: ${{ steps.gcp-buckets.outputs.cpaas-drivers-bucket }}
@@ -127,6 +140,7 @@ jobs:
           MERGED_DRIVER_BUCKET="${MAIN_DRIVER_BUCKET}/merged-build"
           STAGING_DRIVER_BUCKET="stackrox-collector-modules-staging/pr-builds/${STAGING_RELATIVE_PATH}"
           STAGING_MERGED_DRIVER_BUCKET="${STAGING_DRIVER_BUCKET}/merged-build"
+          BUNDLES_BUCKET="collector-kernel-bundles-public"
           SUPPORT_PACKAGES_BUCKET="sr-roxc/collector/support-packages"
           STAGING_SUPPORT_PACKAGES_BUCKET="${SUPPORT_PACKAGES_BUCKET}/${STAGING_RELATIVE_PATH}"
           PUBLIC_SUPPORT_PACKAGES_BUCKET="collector-support-public/offline/v1/support-packages"
@@ -139,11 +153,14 @@ jobs:
           CPAAS_STAGING_SUPPORT_PACKAGES_BUCKET="${STAGING_SUPPORT_PACKAGES_BUCKET}"
 
           {
+            echo "drivers-bucket=${MAIN_DRIVER_BUCKET}"
+            echo "bundles-bucket=${BUNDLES_BUCKET}"
             echo "public-support-packages-bucket=${PUBLIC_SUPPORT_PACKAGES_BUCKET}"
           } >> "$GITHUB_OUTPUT"
 
           if [[ ${{ github.event_name }} == "pull_request" ]]; then
             {
+              echo "push-drivers-bucket=${STAGING_DRIVER_BUCKET}"
               echo "merged-drivers-bucket=${STAGING_MERGED_DRIVER_BUCKET}"
               echo "support-packages-bucket=${STAGING_SUPPORT_PACKAGES_BUCKET}"
               if [[ "${{ inputs.cpaas-workflow }}" == "true" &&
@@ -161,6 +178,7 @@ jobs:
             } >> "$GITHUB_OUTPUT"
           else
             {
+              echo "push-drivers-bucket=${MAIN_DRIVER_BUCKET}"
               echo "merged-drivers-bucket=${MERGED_DRIVER_BUCKET}"
               echo "support-packages-bucket=${SUPPORT_PACKAGES_BUCKET}"
               echo "cpaas-drivers-bucket=${CPAAS_DRIVERS_BUCKET}"

@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+build_ko() (
+    local kernel_version="$1"
+    local module_version="$2"
+    local probe_type="$3"
+
+    local module_src_dir
+    if ((OSCI_RUN)); then
+        module_src_dir="/kobuild-tmp/shards/${CURRENT_SHARD}/${module_version}"
+    elif ((DOCKERIZED)); then
+        module_src_dir="/kobuild-tmp/versions-src/${module_version}"
+    else
+        mkdir -p /scratch/module-src
+        module_src_dir="/scratch/module-src/${module_version}"
+        [[ -d "$module_src_dir" ]] || cp -r "/sources/${module_version}" "$module_src_dir"
+    fi
+
+    cd "$module_src_dir"
+
+    local rhel7_kernel_with_ebpf=false
+    if ((bundle_version == 3 && bundle_major >= 10)); then
+        # shellcheck disable=SC2154
+        if [[ "$bundle_distro" == "redhat" ]]; then
+            # shellcheck disable=SC2154
+            rhel_build_id="$(echo "$bundle_uname" | awk -F'[-.]' '{ print $4 }')"
+            if ((rhel_build_id >= 957)); then
+                echo "Kernel ${bundle_uname} has backported eBPF support"
+                rhel7_kernel_with_ebpf=true
+            fi
+        fi
+    fi
+
+    if [[ "$probe_type" == "mod" ]]; then
+        # Attempting to run modpost will fail if it requires glibc version newer than
+        # available in this distro. We skip building such kernel drivers for now.
+        # shellcheck disable=SC2154
+        if ((DOCKERIZED)) && ! "${kernel_build_dir}/scripts/mod/modpost"; then
+            echo >&2 "Failed to run kbuild tools, skipping module for ${kernel_version}"
+            return 1
+        fi
+
+        echo "Building collector module for kernel version ${kernel_version} and module version ${module_version}."
+
+        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${KERNEL_SRC_DIR}" make clean
+        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${KERNEL_SRC_DIR}" make -j 6 all
+
+        collector_ko=collector.ko
+        strip -g "$collector_ko"
+
+        ko_version="$(/sbin/modinfo "$collector_ko" | grep vermagic | tr -s " " | cut -d " " -f 2)"
+        if [[ "$ko_version" != "$bundle_uname" ]]; then
+            echo "Corrupted probe, KO_VERSION=$ko_version, BUNDLE_UNAME=$bundle_uname" >&2
+            return 1
+        fi
+
+        mkdir -p "${MODULE_BASE_DIR}/${module_version}"
+        gzip -c "$collector_ko" > "${MODULE_BASE_DIR}/${module_version}/collector-${kernel_version}.ko.gz"
+        rm "$collector_ko"
+    elif [[ "$probe_type" == "bpf" ]]; then
+        # Build eBPF probe, if possible
+
+        if [[ ! -d "${module_src_dir}/bpf" ]]; then
+            echo "Module version does not support eBPF probe building, skipping ..."
+            touch "${MODULE_BASE_DIR}/${module_version}/.collector-ebpf-${kernel_version}.unavail"
+            return 0
+        fi
+
+        [[ -n "$bundle_version" && -n "$bundle_major" ]] || {
+            echo >&2 "Bundle does not contain major/minor version information!"
+            return 1
+        }
+
+        # Check if this module version supports RHEL 7.6 with backported eBPF support
+        if [[ "$rhel7_kernel_with_ebpf" == true ]]; then
+            if ! grep -qRIs "SUPPORTS_RHEL76_EBPF" "${module_src_dir}/bpf/quirks.h"; then
+                echo "Module version ${module_version} does not support eBPF on RHEL 7"
+                mkdir -p "${MODULE_BASE_DIR}/${module_version}"
+                touch "${MODULE_BASE_DIR}/${module_version}/.collector-ebpf-${kernel_version}.unavail"
+                return 0
+            fi
+        else
+            # Check kernel version is at least 4.14 (unless RHEL 7.6 kernel detected)
+            if ((bundle_version < 4 || (bundle_version == 4 && bundle_major < 14))); then
+                echo "Kernel version ${kernel_version} does not support eBPF probe building, skipping ..."
+                mkdir -p "${MODULE_BASE_DIR}/${module_version}"
+                touch "${MODULE_BASE_DIR}/${module_version}/.collector-ebpf-${kernel_version}.unavail"
+                return 0
+            fi
+        fi
+
+        collector_probe="${module_src_dir}/bpf/probe.o"
+        probe_dir="${module_src_dir}/bpf"
+
+        if [[ -d "${module_src_dir}/collector-probe" ]]; then
+            collector_probe="${module_src_dir}/collector-probe/probe.o"
+            probe_dir="${module_src_dir}/collector-probe"
+            # minor verification of probe directory
+            ls -alh "$probe_dir"
+        fi
+
+        echo "Building collector eBPF probe for kernel version ${kernel_version} and module version ${module_version}."
+        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${KERNEL_SRC_DIR}" FALCO_DIR="$(pwd)/bpf" make -C "${probe_dir}" clean
+        KERNELDIR="$kernel_build_dir" BUILD_ROOT="${KERNEL_SRC_DIR}" FALCO_DIR="$(pwd)/bpf" make -j 6 -C "${probe_dir}"
+
+        if [[ ! -f "$collector_probe" || ! -s "$collector_probe" ]]; then
+            echo "Empty or missing compiled bpf output"
+            return 1
+        fi
+
+        mkdir -p "${MODULE_BASE_DIR}/${module_version}"
+        gzip -c "$collector_probe" > "${MODULE_BASE_DIR}/${module_version}/collector-ebpf-${kernel_version}.o.gz"
+        rm "$collector_probe"
+
+    else
+        echo >&2 "Invalid probe type '${probe_type}'"
+        return 1
+    fi
+)
