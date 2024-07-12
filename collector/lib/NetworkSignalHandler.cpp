@@ -24,6 +24,17 @@ EventMap<Modifier> modifiers = {
         {"connect<", Modifier::ADD},
         {"accept<", Modifier::ADD},
         {"getsockopt<", Modifier::ADD},
+        {"sendto<", Modifier::ADD},
+        {"sendto>", Modifier::ADD},
+        {"sendmsg<", Modifier::ADD},
+        {"sendmsg>", Modifier::ADD},
+        {"sendmmsg<", Modifier::ADD},
+        {"recvfrom<", Modifier::ADD},
+        {"recvfrom>", Modifier::ADD},
+        {"recvmsg<", Modifier::ADD},
+        {"recvmsg>", Modifier::ADD},
+        {"recvmmsg<", Modifier::ADD},
+        {"recvmmsg>", Modifier::ADD},
     },
     Modifier::INVALID,
 };
@@ -31,7 +42,7 @@ EventMap<Modifier> modifiers = {
 }  // namespace
 
 NetworkSignalHandler::NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker, system_inspector::Stats* stats)
-    : event_extractor_(std::make_unique<system_inspector::EventExtractor>()), conn_tracker_(std::move(conn_tracker)), stats_(stats), collect_connection_status_(true) {
+    : event_extractor_(std::make_unique<system_inspector::EventExtractor>()), conn_tracker_(std::move(conn_tracker)), stats_(stats), collect_connection_status_(true), track_send_recv_(false) {
   event_extractor_->Init(inspector);
 }
 
@@ -141,6 +152,28 @@ SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
 }
 
 std::vector<std::string> NetworkSignalHandler::GetRelevantEvents() {
+  if (track_send_recv_) {
+    return {
+        "close<",
+        "shutdown<",
+        "connect<",
+        "accept<",
+        "getsockopt<",
+        "sendto<",
+        "sendto>",
+        "sendmsg<",
+        "sendmsg>",
+        "sendmmsg<",
+        "recvfrom<",
+        "recvfrom>",
+        "recvmsg<",
+        "recvmsg>",
+        "recvmmsg<",
+        "recvmmsg>",
+        "recvmsg<",
+        "recvmsg>",
+    };
+  }
   return {"close<", "shutdown<", "connect<", "accept<", "getsockopt<"};
 }
 
