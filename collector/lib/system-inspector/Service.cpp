@@ -46,6 +46,7 @@ void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTrac
     auto network_signal_handler_ = MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_);
 
     network_signal_handler_->SetCollectConnectionStatus(config.CollectConnectionStatus());
+    network_signal_handler_->SetTrackSendRecv(config.TrackingSendRecv());
 
     AddSignalHandler(std::move(network_signal_handler_));
   }

@@ -34,10 +34,6 @@ class CollectorConfig {
       "getsockopt",
       "procexit",
       "procinfo",
-      "recvmmsg",
-      "recvmsg",
-      "sendmmsg",
-      "sendmsg",
       "setresgid",
       "setresuid",
       "setgid",
@@ -48,6 +44,12 @@ class CollectorConfig {
       "syscall",
 #endif
       "vfork",
+  };
+  static constexpr const char* kSendRecvSyscalls[] = {
+      "sendmsg",
+      "sendmmsg",
+      "recvmsg",
+      "recvmmsg",
   };
   static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
   static constexpr bool kEnableProcessesListeningOnPorts = true;
@@ -83,6 +85,7 @@ class CollectorConfig {
   bool UseDockerCe() const { return use_docker_ce_; }
   bool UsePodmanCe() const { return use_podman_ce_; }
   bool IsIntrospectionEnabled() const { return enable_introspection_; }
+  bool TrackingSendRecv() const { return track_send_recv_; }
   const std::vector<double>& GetConnectionStatsQuantiles() const { return connection_stats_quantiles_; }
   double GetConnectionStatsError() const { return connection_stats_error_; }
   unsigned int GetConnectionStatsWindow() const { return connection_stats_window_; }
@@ -120,6 +123,7 @@ class CollectorConfig {
   bool use_docker_ce_;
   bool use_podman_ce_;
   bool enable_introspection_;
+  bool track_send_recv_;
   std::vector<double> connection_stats_quantiles_;
   double connection_stats_error_;
   unsigned int connection_stats_window_;

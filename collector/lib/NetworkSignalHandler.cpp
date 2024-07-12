@@ -1,5 +1,6 @@
 #include "NetworkSignalHandler.h"
 
+#include <cstring>
 #include <optional>
 
 #include <libsinsp/sinsp.h>
@@ -35,7 +36,7 @@ EventMap<Modifier> modifiers = {
 }  // namespace
 
 NetworkSignalHandler::NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker, system_inspector::Stats* stats)
-    : event_extractor_(std::make_unique<system_inspector::EventExtractor>()), conn_tracker_(std::move(conn_tracker)), stats_(stats), collect_connection_status_(true) {
+    : event_extractor_(std::make_unique<system_inspector::EventExtractor>()), conn_tracker_(std::move(conn_tracker)), stats_(stats), collect_connection_status_(true), track_send_recv_(false) {
   event_extractor_->Init(inspector);
 }
 
@@ -139,7 +140,10 @@ SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
 }
 
 std::vector<std::string> NetworkSignalHandler::GetRelevantEvents() {
-  return {"close<", "shutdown<", "connect<", "accept<", "getsockopt<", "recvmsg<", "sendmsg<", "recvmsg>", "sendmsg>"};
+  if (track_send_recv_) {
+    return {"close<", "shutdown<", "connect<", "accept<", "getsockopt<", "recvmsg<", "sendmsg<", "recvmsg>", "sendmsg>"};
+  }
+  return {"close<", "shutdown<", "connect<", "accept<", "getsockopt<"};
 }
 
 bool NetworkSignalHandler::Stop() {
