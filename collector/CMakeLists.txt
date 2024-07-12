@@ -31,6 +31,10 @@ if(TRACE_SINSP_EVENTS)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTRACE_SINSP_EVENTS")
 endif()
 
+if(NOT BPF_DEBUG_MODE)
+	set(BPF_DEBUG_MODE OFF)
+endif()
+
 set(FALCO_DIR ${PROJECT_SOURCE_DIR}/../falcosecurity-libs)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/proto)
@@ -103,6 +107,7 @@ set(DRIVER_DEVICE_NAME "${DRIVER_NAME}" CACHE STRING "Driver device name" FORCE)
 set(SCAP_HOST_ROOT_ENV_VAR_NAME "COLLECTOR_HOST_ROOT" CACHE STRING "Host root environment variable name" FORCE)
 
 set(BUILD_LIBSCAP_MODERN_BPF ON CACHE BOOL "Enable modern bpf engine" FORCE)
+set(MODERN_BPF_DEBUG_MODE ${BPF_DEBUG_MODE} CACHE BOOL "Enable BPF debug prints" FORCE)
 
 set(MODERN_BPF_EXCLUDE_PROGS "^(openat2|ppoll|setsockopt|clone3|io_uring_setup|nanosleep)$" CACHE STRING "Set of syscalls to exclude from modern bpf engine " FORCE)
 

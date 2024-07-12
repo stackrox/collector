@@ -18,6 +18,7 @@ COLLECTOR_APPEND_CID ?= false
 PLATFORM ?= linux/amd64
 TRACE_SINSP_EVENTS ?= false
 DISABLE_PROFILING ?= false
+BPF_DEBUG_MODE ?= false
 
 COLLECTOR_BUILD_CONTEXT = collector/
 COLLECTOR_BUILDER_NAME ?= collector_builder
