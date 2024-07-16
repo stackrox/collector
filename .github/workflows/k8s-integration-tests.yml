@@ -94,7 +94,7 @@ jobs:
 
   notify:
     runs-on: ubuntu-latest
-    if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name == 'push'
+    if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name != 'pull_request'
     needs:
       - k8s-integration-tests
     steps:

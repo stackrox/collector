@@ -59,7 +59,7 @@ jobs:
 
   amd64-all-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: contains(github.event.pull_request.labels.*.name, 'all-integration-tests') || github.event_name == 'push'
+    if: contains(github.event.pull_request.labels.*.name, 'all-integration-tests') || github.event_name != 'pull_request'
     strategy:
       # ensure that if one part of the matrix fails, the
       # rest will continue
@@ -86,7 +86,7 @@ jobs:
     uses: ./.github/workflows/integration-tests-vm-type.yml
     if: |
       !inputs.is-konflux && (
-        github.event_name == 'push' ||
+        github.event_name != 'pull_request' ||
         contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
       )
     strategy:
@@ -113,7 +113,7 @@ jobs:
     uses: ./.github/workflows/integration-tests-vm-type.yml
     if: |
       !inputs.is-konflux && (
-        github.event_name == 'push' ||
+        github.event_name != 'pull_request' ||
         contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
       )
     with:
@@ -129,7 +129,7 @@ jobs:
     uses: ./.github/workflows/integration-tests-vm-type.yml
     if: |
       !inputs.is-konflux && (
-        github.event_name == 'push' ||
+        github.event_name != 'pull_request' ||
         contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
       )
     with:
@@ -143,7 +143,7 @@ jobs:
 
   notify:
     runs-on: ubuntu-latest
-    if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name == 'push'
+    if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name != 'pull_request'
     needs:
       - amd64-required-integration-tests
       - amd64-all-integration-tests
