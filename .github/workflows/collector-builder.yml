@@ -51,7 +51,7 @@ jobs:
         github.ref_type == 'tag' || startsWith(github.ref_name, 'release-')
       )) ||
       contains(github.event.pull_request.labels.*.name, 'build-builder-image') ||
-      github.event_name == "schedule"
+      github.event_name == 'schedule'
     outputs:
       collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag }}
     strategy:

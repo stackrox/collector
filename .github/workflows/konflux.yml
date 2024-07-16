@@ -2,8 +2,7 @@ name: Run konflux workflows
 
 on:
   schedule:
-    cron:
-      - 0 6 * * *
+    - cron: 0 6 * * *
   push:
     branches:
       - master

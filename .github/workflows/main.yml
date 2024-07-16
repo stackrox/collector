@@ -2,8 +2,7 @@ name: Main collector CI
 
 on:
   schedule:
-    cron:
-      - 0 6 * * *
+    - cron: 0 6 * * *
   push:
     branches:
       - master
@@ -33,7 +32,7 @@ jobs:
     secrets: inherit
     with:
       cpaas-workflow: false
-      nightly-run: ${{ github.event_name == "schedule" }}
+      nightly-run: ${{ github.event_name == 'schedule' }}
 
   build-builder-image:
     uses: ./.github/workflows/collector-builder.yml
