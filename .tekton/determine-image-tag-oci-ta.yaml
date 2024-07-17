@@ -20,6 +20,7 @@ spec:
     description: Image Tag determined by custom logic.
   volumes:
     - name: workdir
+      emptyDir: {}
   stepTemplate:
     volumeMounts:
       - mountPath: /var/workdir
