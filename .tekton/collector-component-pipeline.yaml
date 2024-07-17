@@ -183,6 +183,13 @@ spec:
     workspaces:
     - name: subscription-manager-activation-key
       workspace: subscription-manager-activation-key
+    volumes:
+      - name: workdir
+        emptyDir: {}
+    stepTemplate:
+      volumeMounts:
+        - mountPath: /var/workdir
+          name: workdir
     taskSpec:
       steps:
       - name: use-trusted-artifact
