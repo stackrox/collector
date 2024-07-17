@@ -1,6 +1,8 @@
 name: Main collector CI
 
 on:
+  schedule:
+    - cron: 0 6 * * *
   push:
     branches:
       - master
@@ -19,7 +21,9 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: ${{ github.head_ref || github.run_id }}
+  # append event name on the off chance that a push to master
+  # runs at the same time as the nightlies - we want both to run
+  group: ${{ github.head_ref || github.run_id }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
@@ -28,6 +32,7 @@ jobs:
     secrets: inherit
     with:
       cpaas-workflow: false
+      nightly-run: ${{ github.event_name == 'schedule' }}
 
   build-builder-image:
     uses: ./.github/workflows/collector-builder.yml
@@ -121,7 +126,7 @@ jobs:
       collector-tests-tag: ${{ needs.build-test-containers.outputs.collector-tests-tag }}
     if: |
       always() &&
-      ((github.event_name == 'push' && github.ref_name == 'master') ||
+      ((github.event_name != 'pull_request' && github.ref_name == 'master') ||
       contains(github.event.pull_request.labels.*.name, 'run-benchmark'))
     needs:
     - init

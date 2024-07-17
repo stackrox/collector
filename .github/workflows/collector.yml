@@ -83,7 +83,7 @@ jobs:
 
       - name: Build images
         if: |
-          github.event_name == 'push' ||
+          github.event_name != 'pull_request' ||
           matrix.arch == 'amd64' ||
           contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
         timeout-minutes: 480
@@ -99,7 +99,7 @@ jobs:
   build-collector-image-remote-vm:
     name: Build Collector on a remote VM
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     strategy:
       fail-fast: false
       matrix:
@@ -179,7 +179,7 @@ jobs:
     name: Create Multiarch manifest
     runs-on: ubuntu-latest
     if: |
-      github.event_name == 'push' ||
+      github.event_name != 'pull_request' ||
       contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     env:
       ARCHS: amd64 ppc64le s390x arm64

@@ -85,7 +85,7 @@ jobs:
 
       - name: Update Baseline
         if: |
-          ((github.event_name == 'push' && github.ref == 'master') ||
+          ((github.event_name != 'pull_request' && github.ref == 'master') ||
           contains(github.event.pull_request.labels.*.name, 'update-baseline'))
         run: |
           ./integration-tests/scripts/baseline/main.py --update integration-tests/perf-all.json
