@@ -103,14 +103,14 @@ bool ParseLogLevelName(std::string name, LogLevel* level) {
 void InspectorLogCallback(std::string&& msg, sinsp_logger::severity severity) {
   auto collector_severity = (LogLevel)severity;
 
-  if (!collector::logging::CheckLogLevel(collector_severity)) {
-    return;
-  }
-
-  if (msg.rfind("libbpf:", 0) == 0 && collector_severity == LogLevel::DEBUG) {
+  if (collector_severity == LogLevel::DEBUG && msg.rfind("libbpf:", 0) == 0) {
     // downgrade libbpf debug logs to TRACE to avoid thousands of lines
     // of verbose relocation logging
     collector_severity = LogLevel::TRACE;
+  }
+
+  if (!collector::logging::CheckLogLevel(collector_severity)) {
+    return;
   }
 
   // remove any newlines to avoid additional empty log lines
