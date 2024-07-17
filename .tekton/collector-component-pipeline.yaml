@@ -270,9 +270,9 @@ spec:
     - name: BASE_IMAGES
       value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
     - name: SOURCE_ARTIFACT
-      value: $(tasks.build-container.results.SOURCE_ARTIFACT)
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
-      value: $(tasks.build-container.results.CACHI2_ARTIFACT)
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     taskRef:
       params:
       - name: name
