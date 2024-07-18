@@ -189,10 +189,17 @@ spec:
         value: task
       resolver: bundles
 
-  - name: build-container
+  - name: build-container-multi-arch
+    matrix:
+      params:
+        - name: arch
+          value:
+            - amd64
+            - s390x
+            - ppc64le
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-$(params.arch)
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -209,13 +216,15 @@ spec:
       value: $(params.build-target-stage)
     - name: BUILD_ARGS
       value:
-        - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+        - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-$(params.arch)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     - name: ACTIVATION_KEY
       value: subscription-manager-activation-key
+    - name: PLATFORM
+      value: linux/$(matrix.arch)
     taskRef:
       params:
       - name: name
@@ -229,6 +238,31 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
+
+  - name: build-container
+    params:
+      - name: IMAGE
+        value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
+      - name: COMMIT_SHA
+        value: $(tasks.clone-repository.results.commit)
+      - name: IMAGES
+        value: $(tasks.build-container-multi-arch.results.IMAGE_URL[*])
+    runAfter:
+      - build-container-multi-arch
+    taskRef:
+      params:
+        - name: name
+          value: build-image-manifest
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-build-image-manifest:0.1@sha256:fd0a0cf019621d6b577f1b9ab774bb1832f7cba61b4ceee2fd1bffc96895abf9
+        - name: kind
+          value: task
+      resolver: bundles
+    when:
+      - input: $(tasks.init.results.build)
+        operator: in
+        values:
+          - "true"
 
   - name: apply-tags
     params:
