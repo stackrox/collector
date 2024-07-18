@@ -187,7 +187,7 @@ spec:
     workspaces:
     - name: subscription-manager-activation-key
       workspace: subscription-manager-activation-key
-    taskSpec:
+    taskRef:
       name: copy-subscription-manager-activation-key-oci-ta
 
   - name: prefetch-dependencies
