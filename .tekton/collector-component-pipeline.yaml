@@ -144,8 +144,6 @@ spec:
       value: $(params.output-image-repo):konflux-$(params.revision).git
     - name: ociArtifactExpiresAfter
       value: $(params.oci-artifact-expires-after)
-    runAfter:
-      - init
     taskRef:
       params:
       - name: name
@@ -169,8 +167,6 @@ spec:
       value: $(params.output-tag-suffix)
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-    runAfter:
-      - clone-repository
     taskRef:
       name: determine-image-tag-oci-ta
 
@@ -182,8 +178,6 @@ spec:
         value: $(params.output-image-repo):konflux-$(params.revision).subscription-manager
       - name: ociArtifactExpiresAfter
         value: $(params.oci-artifact-expires-after)
-    runAfter:
-      - determine-image-tag
     workspaces:
     - name: subscription-manager-activation-key
       workspace: subscription-manager-activation-key
@@ -200,8 +194,6 @@ spec:
       value: $(params.output-image-repo):konflux-$(params.revision).prefetch
     - name: ociArtifactExpiresAfter
       value: $(params.oci-artifact-expires-after)
-    runAfter:
-      - prepare-rhel-rpm-subscriptions
     taskRef:
       params:
       - name: name
@@ -237,9 +229,6 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    runAfter:
-      - prefetch-dependencies
-      - prepare-rhel-rpm-subscriptions
     taskRef:
       params:
       - name: name
@@ -264,8 +253,6 @@ spec:
       # TODO(ROX-24402): don't publish multiple tags when ability to install Slim collector is gone.
       - $(tasks.determine-image-tag.results.IMAGE_TAG)-latest
       - $(tasks.determine-image-tag.results.IMAGE_TAG)-slim
-    runAfter:
-      - build-container
     taskRef:
       params:
       - name: name
@@ -286,8 +273,6 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    runAfter:
-      - build-container
     taskRef:
       params:
       - name: name
@@ -313,8 +298,6 @@ spec:
       value: $(tasks.build-container.results.IMAGE_URL)
     - name: IMAGE_DIGEST
       value: $(tasks.build-container.results.IMAGE_DIGEST)
-    runAfter:
-      - build-container
     taskRef:
       params:
       - name: name
@@ -335,8 +318,6 @@ spec:
       value: $(tasks.build-container.results.IMAGE_DIGEST)
     - name: image-url
       value: $(tasks.build-container.results.IMAGE_URL)
-    runAfter:
-      - build-container
     taskRef:
       params:
       - name: name
@@ -355,8 +336,6 @@ spec:
     params:
       - name: SOURCE_ARTIFACT
         value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    runAfter:
-      - build-container
     taskRef:
       params:
       - name: name
@@ -377,8 +356,6 @@ spec:
       value: $(tasks.build-container.results.IMAGE_DIGEST)
     - name: image-url
       value: $(tasks.build-container.results.IMAGE_URL)
-    runAfter:
-      - build-container
     taskRef:
       params:
       - name: name
@@ -399,8 +376,6 @@ spec:
       value: $(tasks.build-container.results.IMAGE_URL)
     - name: IMAGE_DIGEST
       value: $(tasks.build-container.results.IMAGE_DIGEST)
-    runAfter:
-      - build-container
     taskRef:
       params:
       - name: name
