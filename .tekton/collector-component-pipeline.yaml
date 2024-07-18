@@ -199,7 +199,7 @@ spec:
             - ppc64le
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-$(params.arch)
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-$(matrix.arch)
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -216,7 +216,7 @@ spec:
       value: $(params.build-target-stage)
     - name: BUILD_ARGS
       value:
-        - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-$(params.arch)
+        - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-$(matrix.arch)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
