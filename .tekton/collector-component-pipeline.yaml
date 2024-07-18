@@ -360,9 +360,9 @@ spec:
     taskRef:
       params:
       - name: name
-        value: sast-snyk-check
+        value: sast-snyk-check-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-sast-snyk-check:0.1@sha256:5aa816e7d7f5e03448d658edfeb26e086aa8a2102c4c3c1113651cf5ccfe55b1
+        value: quay.io/redhat-appstudio-tekton-catalog/task-sast-snyk-check-oci-ta:0.1@sha256:45f7edd80cde6c303d0bc7060ad2a98f2d84d96dc19e9973cdb6179d0e6ae7eb
       - name: kind
         value: task
       resolver: bundles
