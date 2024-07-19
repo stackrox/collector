@@ -115,7 +115,7 @@ virtual_machines:
       - ubuntu-2004-lts
       - ubuntu-2204-lts
 
-  ubuntu-os-arm64:
+  ubuntu-arm:
     project: ubuntu-os-cloud
     arch: arm64
     machine_type: t2a-standard-2

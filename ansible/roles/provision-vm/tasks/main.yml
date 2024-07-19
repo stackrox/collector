@@ -14,7 +14,7 @@
 - set_fact:
     is_rhel: "{{ vm_config.find('rhel') != -1 }}"
     is_coreos: "{{ vm_config.find('coreos') != -1 }}"
-    is_ubuntu: "{{ vm_config.find('ubuntu-os') != -1 }}"
+    is_ubuntu: "{{ vm_config.find('ubuntu') != -1 }}"
     is_flatcar: "{{ vm_config.find('flatcar') != -1 }}"
 
 # Wait for SSH to be available on the remote host

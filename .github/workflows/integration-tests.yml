@@ -89,7 +89,7 @@ jobs:
       matrix:
         vm_type:
           - rhel-arm64
-          - ubuntu-os-arm64
+          - ubuntu-arm
           - sles-arm64
           - fcarm
 
