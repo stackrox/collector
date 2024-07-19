@@ -206,15 +206,35 @@ spec:
 
   - name: build-container-multi-arch
     matrix:
-      params:
-        - name: arch
-          value:
-            - amd64
-            - s390x
-            - ppc64le
+      include:
+        - name: amd64
+          params:
+            - name: PLATFORM
+              value: linux/amd64
+            - name: IMAGE
+              value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-amd64
+            - name: BUILD_ARGS
+              value:
+                - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-amd64
+        - name: s390x
+          params:
+            - name: PLATFORM
+              value: linux/s390x
+            - name: IMAGE
+              value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x
+            - name: BUILD_ARGS
+              value:
+                - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x
+        - name: ppc64le
+          params:
+            - name: PLATFORM
+              value: linux/ppc64le
+            - name: IMAGE
+              value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le
+            - name: BUILD_ARGS
+              value:
+                - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le
     params:
-    - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-$(matrix.arch)
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -229,15 +249,10 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: TARGET_STAGE
       value: $(params.build-target-stage)
-    - name: BUILD_ARGS
-      value:
-        - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-$(matrix.arch)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: PLATFORM
-      value: linux/$(matrix.arch)
     taskRef:
       params:
       - name: name
