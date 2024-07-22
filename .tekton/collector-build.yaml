@@ -56,11 +56,36 @@ spec:
       secretName: '{{ git_auth_secret }}'
 
   taskRunSpecs:
-  - pipelineTaskName: build-container
+  # For all build-container-* tasks:
+  # CPU requests are increased to speed up builds compared to the defaults.
+  # Defaults: https://github.com/redhat-appstudio/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L126
+  - pipelineTaskName: build-container-amd64
     stepSpecs:
     - name: build
-      # CPU requests are increased to speed up builds compared to the defaults.
-      # Defaults: https://github.com/redhat-appstudio/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L126
+      computeResources:
+        limits:
+          cpu: 4
+        requests:
+          cpu: 4
+  - pipelineTaskName: build-container-s390x
+    stepSpecs:
+    - name: build
+      computeResources:
+        limits:
+          cpu: 4
+        requests:
+          cpu: 4
+  - pipelineTaskName: build-container-ppc64le
+    stepSpecs:
+    - name: build
+      computeResources:
+        limits:
+          cpu: 4
+        requests:
+          cpu: 4
+  - pipelineTaskName: build-container-arm64
+    stepSpecs:
+    - name: build
       computeResources:
         limits:
           cpu: 4
