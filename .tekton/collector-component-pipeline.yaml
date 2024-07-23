@@ -105,7 +105,6 @@ spec:
 
   workspaces:
   - name: git-auth
-  - name: subscription-manager-activation-key
 
   tasks:
 
@@ -170,26 +169,12 @@ spec:
     taskRef:
       name: determine-image-tag-oci-ta
 
-  - name: prepare-rhel-rpm-subscriptions
-    params:
-      - name: SOURCE_ARTIFACT
-        value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-      - name: ociStorage
-        value: $(params.output-image-repo):konflux-$(params.revision).subscription-manager
-      - name: ociArtifactExpiresAfter
-        value: $(params.oci-artifact-expires-after)
-    workspaces:
-    - name: subscription-manager-activation-key
-      workspace: subscription-manager-activation-key
-    taskRef:
-      name: copy-subscription-manager-activation-key-oci-ta
-
   - name: prefetch-dependencies
     params:
     - name: input
       value: $(params.prefetch-input)
     - name: SOURCE_ARTIFACT
-      value: $(tasks.prepare-rhel-rpm-subscriptions.results.SOURCE_ARTIFACT)
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     - name: ociStorage
       value: $(params.output-image-repo):konflux-$(params.revision).prefetch
     - name: ociArtifactExpiresAfter
@@ -229,6 +214,8 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: ACTIVATION_KEY
+      value: subscription-manager-activation-key
     taskRef:
       params:
       - name: name
@@ -287,6 +274,8 @@ spec:
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     - name: PLATFORM
       value: linux/s390x
+    - name: ACTIVATION_KEY
+      value: subscription-manager-activation-key
     taskRef:
       params:
       - name: name
@@ -345,6 +334,8 @@ spec:
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     - name: PLATFORM
       value: linux/ppc64le
+    - name: ACTIVATION_KEY
+      value: subscription-manager-activation-key
     taskRef:
       params:
       - name: name
@@ -403,6 +394,8 @@ spec:
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     - name: PLATFORM
       value: linux/arm64
+    - name: ACTIVATION_KEY
+      value: subscription-manager-activation-key
     taskRef:
       params:
       - name: name
