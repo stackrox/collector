@@ -1,6 +1,6 @@
 # Taken from https://github.com/pstauffer/docker-curl/blob/40794bf1d3958068eb32e30ce55d04c7a0d8991d/Dockerfile
 
-FROM alpine:3.8
+FROM alpine:3.20
 
 #
 # Install all required dependencies.
