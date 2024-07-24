@@ -298,7 +298,11 @@ spec:
         value:
           - $(tasks.build-container-amd64.results.IMAGE_REF)
           - $(tasks.build-container-multi-arch.results.IMAGE_REF[*])
-
+    runAfter:
+      # tekton doesn't work out the dependencies for the matrix, so we have
+      # to be explicit
+      - build-container-multi-arch
+      - build-container-amd64
     taskRef:
       params:
         - name: name
