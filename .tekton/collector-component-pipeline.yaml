@@ -239,24 +239,18 @@ spec:
               value: linux/s390x
             - name: IMAGE
               value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x
-            - name: BUILD_ARGS
-              value: ["COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x"]
         - name: ppc64le
           params:
             - name: PLATFORM
               value: linux/ppc64le
             - name: IMAGE
               value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le
-            - name: BUILD_ARGS
-              value: ["COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le"]
         - name: arm64
           params:
             - name: PLATFORM
               value: linux/arm64
             - name: IMAGE
               value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-arm64
-            - name: BUILD_ARGS
-              value: ["COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-arm64"]
     params:
     - name: DOCKERFILE
       value: $(params.dockerfile)
@@ -272,6 +266,9 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: TARGET_STAGE
       value: $(params.build-target-stage)
+    - name: BUILD_ARGS
+      value:
+        - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT

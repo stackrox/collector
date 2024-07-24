@@ -137,7 +137,7 @@ LABEL \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     vendor="Red Hat, Inc." \
     # We must set version label for EC and to prevent inheriting value set in the base stage.
-    version="${COLLECTOR_TAG}" \
+    version="${COLLECTOR_TAG}-${TARGETARCH}" \
     # Release label is required by EC although has no practical semantics.
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"
@@ -145,7 +145,7 @@ LABEL \
 ARG BUILD_DIR
 ARG CMAKE_BUILD_DIR
 
-ENV COLLECTOR_VERSION="${COLLECTOR_TAG}"
+ENV COLLECTOR_VERSION="${COLLECTOR_TAG}-{TARGETARCH}"
 ENV COLLECTOR_HOST_ROOT=/host
 
 COPY kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
