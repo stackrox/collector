@@ -318,7 +318,7 @@ spec:
         values:
           - "true"
 
-  - name: apply-tags-amd64
+  - name: apply-tags
     params:
     - name: IMAGE
       value: $(tasks.build-image-manifest.results.IMAGE_URL)
