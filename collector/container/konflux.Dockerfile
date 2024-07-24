@@ -12,7 +12,8 @@ COPY --from=ubi-normal / /mnt
 COPY ./.konflux /tmp/.konflux
 
 # TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
-RUN dnf -y --installroot=/mnt upgrade --nobest && \
+RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
+    dnf -y --installroot=/mnt upgrade --nobest && \
     dnf -y --installroot=/mnt install --nobest \
         make \
         wget \
@@ -34,9 +35,8 @@ RUN dnf -y --installroot=/mnt upgrade --nobest && \
         jq-devel \
         c-ares-devel \
         # for USDT support
-        systemtap-sdt-devel
-
-RUN /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
+        systemtap-sdt-devel && \
+    /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
     dnf -y --installroot=/mnt clean all
 
 
