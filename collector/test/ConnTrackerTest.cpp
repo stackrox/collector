@@ -171,6 +171,30 @@ TEST(ConnTrackerTest, TestUpdateIgnoredNetworks) {
   EXPECT_TRUE(tracker.FetchConnState().empty());
 }
 
+TEST(ConnTrackerTest, TestUpdateNonAggregatedNetworks) {
+  Endpoint a(Address(192, 168, 1, 10), 9999);
+  Endpoint b(Address(245, 1, 1, 1), 80);
+
+  Connection conn1("xyz", a, b, L4Proto::TCP, false);
+
+  int64_t time_micros = 1000;
+
+  Connection conn_aggregated("xyz", Endpoint(IPNet(Address(), 0, true), 0), Endpoint(IPNet(Address(255, 255, 255, 255), 0), 80), L4Proto::TCP, false);
+  Connection conn_detailed("xyz", Endpoint(IPNet(Address(), 0, true), 0), Endpoint(IPNet(Address(245, 1, 1, 1), 0, true), 80), L4Proto::TCP, false);
+
+  ConnectionTracker tracker;
+
+  tracker.Update({conn1}, {}, time_micros);
+
+  auto state = tracker.FetchConnState(true);
+  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn_aggregated, ConnStatus(time_micros, true))));
+
+  tracker.UpdateNonAggregatedNetworks({IPNet(Address(240, 0, 0, 0), 4)});
+
+  state = tracker.FetchConnState(true);
+  EXPECT_THAT(state, UnorderedElementsAre(std::make_pair(conn_detailed, ConnStatus(time_micros, true))));
+}
+
 TEST(ConnTrackerTest, TestUpdateNormalized) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);

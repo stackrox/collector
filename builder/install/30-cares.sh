@@ -7,7 +7,7 @@ if [ -n "${WITH_RHEL_RPMS}" ]; then
     exit 0
 fi
 
-wget "https://c-ares.haxx.se/download/c-ares-${CARES_VERSION}.tar.gz"
+wget "https://github.com/c-ares/c-ares/releases/download/cares-${CARES_VERSION//./_}/c-ares-${CARES_VERSION}.tar.gz"
 tar -zxf "c-ares-${CARES_VERSION}.tar.gz"
 cd "c-ares-${CARES_VERSION}"
 cp LICENSE.md "${LICENSE_DIR}/c-ares-${CARES_VERSION}"
