@@ -9,7 +9,7 @@ spec:
   - name: show-sbom
     params:
     - name: IMAGE_URL
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL[0])
     taskRef:
       params:
       - name: name
@@ -89,10 +89,10 @@ spec:
   results:
   - description: ""
     name: IMAGE_URL
-    value: $(tasks.build-image-manifest.results.IMAGE_URL)
+    value: $(tasks.build-image-manifest.results.IMAGE_URL[0])
   - description: ""
     name: IMAGE_DIGEST
-    value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
+    value: $(tasks.build-image-manifest.results.IMAGE_DIGEST[0])
   - description: ""
     name: CHAINS-GIT_URL
     value: $(tasks.clone-repository.results.url)
@@ -289,9 +289,15 @@ spec:
     timeout: 2h0m0s
 
   - name: build-image-manifest
+    matrix:
+      params:
+        - name: IMAGE
+          value:
+            - $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
+            - $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-latest
+            - $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-slim
+            - $(params.output-image-repo):konflux-$(params.revision)
     params:
-      - name: IMAGE
-        value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
       - name: COMMIT_SHA
         value: $(tasks.clone-repository.results.commit)
       - name: IMAGES
@@ -318,30 +324,10 @@ spec:
         values:
           - "true"
 
-  - name: apply-tags
-    params:
-    - name: IMAGE
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
-    - name: ADDITIONAL_TAGS
-      value:
-      - konflux-$(params.revision)
-      - $(tasks.determine-image-tag.results.IMAGE_TAG)-latest
-      - $(tasks.determine-image-tag.results.IMAGE_TAG)-slim
-      - $(tasks.determine-image-tag.results.IMAGE_TAG)-full
-    taskRef:
-      params:
-      - name: name
-        value: apply-tags
-      - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-apply-tags:0.1@sha256:29add9a49a2281a3755a9b580d2b9c5cb110231b14cccf8ade2fd7895a9b4b4a
-      - name: kind
-        value: task
-      resolver: bundles
-
   - name: build-source-image
     params:
     - name: BINARY_IMAGE
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL[0])
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -366,9 +352,9 @@ spec:
   - name: deprecated-base-image-check
     params:
     - name: IMAGE_URL
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL[0])
     - name: IMAGE_DIGEST
-      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
+      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST[0])
     taskRef:
       params:
       - name: name
@@ -386,9 +372,9 @@ spec:
   - name: clair-scan
     params:
     - name: image-digest
-      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
+      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST[0])
     - name: image-url
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL[0])
     taskRef:
       params:
       - name: name
@@ -424,9 +410,9 @@ spec:
   - name: clamav-scan
     params:
     - name: image-digest
-      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
+      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST[0])
     - name: image-url
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL[0])
     taskRef:
       params:
       - name: name
@@ -444,9 +430,9 @@ spec:
   - name: sbom-json-check
     params:
     - name: IMAGE_URL
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL[0])
     - name: IMAGE_DIGEST
-      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
+      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST[0])
     taskRef:
       params:
       - name: name
