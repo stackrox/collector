@@ -1,5 +1,6 @@
 #include "ProcessSignalHandler.h"
 
+#include <optional>
 #include <sstream>
 
 #include <sys/sdt.h>
@@ -26,12 +27,10 @@ std::string compute_process_key(const ::storage::ProcessSignal& s) {
 }
 
 bool ProcessSignalHandler::Start() {
-  client_->Start();
   return true;
 }
 
 bool ProcessSignalHandler::Stop() {
-  client_->Stop();
   rate_limiter_.ResetRateLimitCache();
   return true;
 }
@@ -41,7 +40,7 @@ SignalHandler::Result ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
 
   if (!signal_msg) {
     ++(stats_->nProcessResolutionFailuresByEvt);
-    return IGNORED;
+    return {std::nullopt, SignalHandler::IGNORED};
   }
 
   const char* name = signal_msg->signal().process_signal().name().c_str();
@@ -50,39 +49,25 @@ SignalHandler::Result ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
 
   if (!rate_limiter_.Allow(compute_process_key(signal_msg->signal().process_signal()))) {
     ++(stats_->nProcessRateLimitCount);
-    return IGNORED;
+    return {std::nullopt, SignalHandler::IGNORED};
   }
 
-  auto result = client_->PushSignals(*signal_msg);
-  if (result == SignalHandler::PROCESSED) {
-    ++(stats_->nProcessSent);
-  } else if (result == SignalHandler::ERROR) {
-    ++(stats_->nProcessSendFailures);
-  }
-
-  return result;
+  return {*signal_msg, SignalHandler::PROCESSED};
 }
 
 SignalHandler::Result ProcessSignalHandler::HandleExistingProcess(sinsp_threadinfo* tinfo) {
   const auto* signal_msg = formatter_.ToProtoMessage(tinfo);
   if (!signal_msg) {
     ++(stats_->nProcessResolutionFailuresByTinfo);
-    return IGNORED;
+    return {std::nullopt, SignalHandler::IGNORED};
   }
 
   if (!rate_limiter_.Allow(compute_process_key(signal_msg->signal().process_signal()))) {
     ++(stats_->nProcessRateLimitCount);
-    return IGNORED;
+    return {std::nullopt, SignalHandler::IGNORED};
   }
 
-  auto result = client_->PushSignals(*signal_msg);
-  if (result == SignalHandler::PROCESSED) {
-    ++(stats_->nProcessSent);
-  } else if (result == SignalHandler::ERROR) {
-    ++(stats_->nProcessSendFailures);
-  }
-
-  return result;
+  return {*signal_msg, SignalHandler::PROCESSED};
 }
 
 std::vector<std::string> ProcessSignalHandler::GetRelevantEvents() {

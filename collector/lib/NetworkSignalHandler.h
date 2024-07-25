@@ -24,7 +24,7 @@ class NetworkSignalHandler final : public SignalHandler {
   explicit NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker, system_inspector::Stats* stats);
 
   std::string GetName() override { return "NetworkSignalHandler"; }
-  Result HandleSignal(sinsp_evt* evt) override;
+  SignalHandler::Result HandleSignal(sinsp_evt* evt) override;
   std::vector<std::string> GetRelevantEvents() override;
   bool Stop() override;
 

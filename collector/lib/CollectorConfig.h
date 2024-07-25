@@ -88,8 +88,6 @@ class CollectorConfig {
   unsigned int GetSinspTotalBufferSize() const { return sinsp_total_buffer_size_; }
   unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
 
-  std::shared_ptr<grpc::Channel> grpc_channel;
-
  protected:
   int scrape_interval_;
   CollectionMethod collection_method_;

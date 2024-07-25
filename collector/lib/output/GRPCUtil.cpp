@@ -1,6 +1,6 @@
 #include "GRPCUtil.h"
 
-namespace collector {
+namespace collector::output {
 
 bool WaitForChannelReady(const std::shared_ptr<grpc::Channel>& channel,
                          const std::function<bool()>& check_interrupted,
@@ -17,4 +17,4 @@ bool WaitForChannelReady(const std::shared_ptr<grpc::Channel>& channel,
   return false;
 }
 
-}  // namespace collector
+}  // namespace collector::output

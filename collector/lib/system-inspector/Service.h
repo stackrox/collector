@@ -5,6 +5,7 @@
 #include <bitset>
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <string>
 
 #include <gtest/gtest_prod.h>
@@ -13,8 +14,8 @@
 #include "Control.h"
 #include "DriverCandidates.h"
 #include "SignalHandler.h"
-#include "SignalServiceClient.h"
 #include "SystemInspector.h"
+#include "output/SignalServiceClient.h"
 
 // forward declarations
 class sinsp;
@@ -38,8 +39,12 @@ class Service : public SystemInspector {
 
   void Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) override;
   void Start() override;
-  void Run(const std::atomic<ControlValue>& control) override;
   void CleanUp() override;
+
+  /**
+   * Gets the Next event from the inspector
+   */
+  std::optional<output::OutputClient::Message> Next();
 
   bool GetStats(Stats* stats) const override;
 
@@ -76,7 +81,7 @@ class Service : public SystemInspector {
   std::unique_ptr<sinsp> inspector_;
   std::shared_ptr<ContainerMetadata> container_metadata_inspector_;
   std::unique_ptr<sinsp_evt_formatter> default_formatter_;
-  std::unique_ptr<ISignalServiceClient> signal_client_;
+  std::unique_ptr<output::OutputClient> signal_client_;
   std::vector<SignalHandlerEntry> signal_handlers_;
   Stats userspace_stats_;
   std::bitset<PPM_EVENT_MAX> global_event_filter_;
@@ -88,6 +93,8 @@ class Service : public SystemInspector {
   mutable std::mutex process_requests_mutex_;
   // [ ( pid, callback ), ( pid, callback ), ... ]
   std::list<std::pair<uint64_t, ProcessInfoCallbackRef>> pending_process_requests_;
+
+  std::queue<output::OutputClient::Message> existing_procs_queue_;
 };
 
 }  // namespace collector::system_inspector
