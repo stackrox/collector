@@ -9,7 +9,7 @@ spec:
   - name: show-sbom
     params:
     - name: IMAGE_URL
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
+      value: $(tasks.build-container-amd64.results.IMAGE_URL)
     taskRef:
       params:
       - name: name
@@ -286,7 +286,6 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
-    timeout: 2h0m0s
 
   - name: build-image-manifest
     params:
