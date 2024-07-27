@@ -440,16 +440,10 @@ unsigned int CollectorConfig::GetSinspBufferSize() const {
 
   max_buffer_size = std::ceil((float)sinsp_total_buffer_size_ / (float)n_buffers);
 
-  // It would be awkward to have a buffer size of e.g. 3.14159..., align by the
-  // highest level, e.g. MiB, KiB.
-  int magnitude = 0;
-  while (max_buffer_size >> 10) {
-    max_buffer_size = max_buffer_size >> 10;
-    magnitude++;
-  }
-
-  effective_buffer_size = std::min(sinsp_buffer_size_,
-                                   (max_buffer_size << magnitude * 10));
+  // Determine largest power of two that is not greater than max_buffer_size
+  // to meet the requirements for ringbuffer dimensions in falcosecurity-libs/driver/ppm_ringbuffer.h
+  unsigned int maximum_power_of_two_exponent = static_cast<unsigned int>(std::log2(max_buffer_size));
+  effective_buffer_size = std::min(sinsp_buffer_size_, (unsigned int)(1 << maximum_power_of_two_exponent));
 
   if (effective_buffer_size != sinsp_buffer_size_) {
     CLOG(INFO) << "Use modified ringbuf size of "
