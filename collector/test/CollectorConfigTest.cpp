@@ -84,7 +84,7 @@ TEST(CollectorConfigTest, TestSinspCpuPerBufferAdjusted) {
   config.MockSetSinspTotalBufferSize(512 * 1024);
   hconfig.SetNumPossibleCPUs(1024);
   config.MockSetHostConfig(&hconfig);
-  EXPECT_EQ(4096, config.GetSinspBufferSize());
+  EXPECT_EQ(16384, config.GetSinspBufferSize());
 }
 
 }  // namespace collector
