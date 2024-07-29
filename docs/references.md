@@ -67,7 +67,8 @@ special, it instructs sinsp to allocate only one buffer no matter how many CPUs
 are there. This parameter affects CO-RE BPF only.
 
 * `ROX_COLLECTOR_SINSP_BUFFER_SIZE`: Specifies the size of a sinsp buffer in
-bytes. The default value is 16 MB.
+bytes. The default value is 8MB. This value must be a power of 2, a multiple
+of the system page size and greater than `2 * page_size`.
 
 * `ROX_COLLECTOR_SINSP_TOTAL_BUFFER_SIZE`: Specifies the allowed total size of
 all sinsp buffer in bytes. If the actual value will be larger than that due to
@@ -87,7 +88,7 @@ is quite verbose. The default is true.
 
 * `ROX_COLLECTOR_INTROSPECTION_ENABLE`: Enable the introspection API and publish the
 corresponding endpoints. With this API, it is possible to dump some of the
-internal state of Collector. Refer to the 
+internal state of Collector. Refer to the
 [troubleshooting](troubleshooting.md#introspection-endpoints) section for more details.
 The default is false.
 
