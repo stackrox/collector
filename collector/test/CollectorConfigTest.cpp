@@ -69,15 +69,22 @@ TEST(CollectorConfigTest, TestSinspCpuPerBufferAdjusted) {
   config.MockSetHostConfig(&hconfig);
   EXPECT_EQ(8 * 1024 * 1024, config.GetSinspBufferSize());
 
-  // High number of CPUs, adjusted value, aligned to MiB
+  // High number of CPUs, adjusted value to power of 2
   hconfig.SetNumPossibleCPUs(150);
   config.MockSetHostConfig(&hconfig);
-  EXPECT_EQ(3 * 1024 * 1024, config.GetSinspBufferSize());
+  EXPECT_EQ(2 * 1024 * 1024, config.GetSinspBufferSize());
 
-  // Extreme number of CPUs, adjusted value, aligned to KiB
+  // Extreme number of CPUs, adjusted value to power of 2
   hconfig.SetNumPossibleCPUs(1024);
   config.MockSetHostConfig(&hconfig);
   EXPECT_EQ(512 * 1024, config.GetSinspBufferSize());
+
+  // Extreme number of CPUs and low total buffer size, adjusted value is not
+  // less than one page
+  config.MockSetSinspTotalBufferSize(512 * 1024);
+  hconfig.SetNumPossibleCPUs(1024);
+  config.MockSetHostConfig(&hconfig);
+  EXPECT_EQ(16384, config.GetSinspBufferSize());
 }
 
 }  // namespace collector
