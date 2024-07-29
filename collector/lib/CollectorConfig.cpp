@@ -441,8 +441,15 @@ unsigned int CollectorConfig::GetSinspBufferSize() const {
   max_buffer_size = std::ceil((float)sinsp_total_buffer_size_ / (float)n_buffers);
 
   // Determine largest power of two that is not greater than max_buffer_size
-  // to meet the requirements for ringbuffer dimensions in falcosecurity-libs/driver/ppm_ringbuffer.h
+  // and a multiple of the page size (4096) to meet the requirements for
+  // ringbuffer dimensions in falcosecurity-libs/driver/ppm_ringbuffer.h
   unsigned int maximum_power_of_two_exponent = static_cast<unsigned int>(std::log2(max_buffer_size));
+
+  // A power of two is always a multiple of one page size if the exponent is
+  // larger than 12 (2^12 = 4096). The max_buffer_size could be arbitrary small
+  // here, so verify that the resuling exponent value is at least 12.
+  maximum_power_of_two_exponent = std::max((unsigned int)12, maximum_power_of_two_exponent);
+
   effective_buffer_size = std::min(sinsp_buffer_size_, (unsigned int)(1 << maximum_power_of_two_exponent));
 
   if (effective_buffer_size != sinsp_buffer_size_) {
