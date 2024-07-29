@@ -250,7 +250,7 @@ spec:
       value: $(params.build-target-stage)
     - name: BUILD_ARGS
       value:
-      - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x
+      - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -292,7 +292,7 @@ spec:
       value: $(params.build-target-stage)
     - name: BUILD_ARGS
       value:
-      - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le
+      - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -334,7 +334,7 @@ spec:
       value: $(params.build-target-stage)
     - name: BUILD_ARGS
       value:
-      - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)-arm64
+      - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
