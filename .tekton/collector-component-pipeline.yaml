@@ -105,7 +105,6 @@ spec:
 
   workspaces:
   - name: git-auth
-  - name: subscription-manager-activation-key
 
   tasks:
 
@@ -170,26 +169,12 @@ spec:
     taskRef:
       name: determine-image-tag-oci-ta
 
-  - name: prepare-rhel-rpm-subscriptions
-    params:
-      - name: SOURCE_ARTIFACT
-        value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-      - name: ociStorage
-        value: $(params.output-image-repo):konflux-$(params.revision).subscription-manager
-      - name: ociArtifactExpiresAfter
-        value: $(params.oci-artifact-expires-after)
-    workspaces:
-    - name: subscription-manager-activation-key
-      workspace: subscription-manager-activation-key
-    taskRef:
-      name: copy-subscription-manager-activation-key-oci-ta
-
   - name: prefetch-dependencies
     params:
     - name: input
       value: $(params.prefetch-input)
     - name: SOURCE_ARTIFACT
-      value: $(tasks.prepare-rhel-rpm-subscriptions.results.SOURCE_ARTIFACT)
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     - name: ociStorage
       value: $(params.output-image-repo):konflux-$(params.revision).prefetch
     - name: ociArtifactExpiresAfter
@@ -229,12 +214,14 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: ACTIVATION_KEY
+      value: subscription-manager-activation-key
     taskRef:
       params:
       - name: name
         value: buildah-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-oci-ta:0.1@sha256:2a42822363c83b95a84c2f6a10c4d957835431d812b1e4a045b51fab1cca9769
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-oci-ta:0.1@sha256:c4f5ad3ce5a5c60c58b8ae093c807bdf6963b243cc46d78abb60cff25ccbe587
       - name: kind
         value: task
       resolver: bundles
