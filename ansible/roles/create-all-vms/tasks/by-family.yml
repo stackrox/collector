@@ -5,6 +5,7 @@
 
 - set_fact:
     arch: "{{ item.0.value.arch | default('amd64') }}"
+    hashed_job_id: "{{ job_id | hash('md5') | truncate(16, True, '') }}"
 
 - set_fact:
     ibm_env: "{{ s390x.env }}"
@@ -20,7 +21,7 @@
     apply:
       environment: "{{ ibm_env | default({}) }}"
   vars:
-    vm_name: "{{ gcp_instance_prefix }}-{{ normalized_collection_method }}-{{ item.1 }}-{{ job_id }}"
+    vm_name: "{{ gcp_instance_prefix }}-{{ item.1 }}-{{ hashed_job_id }}"
     vm_project: "{{ item.0.value.project }}"
     vm_family: "{{ item.1 }}"
     vm_platform: "{{ item.0.key }}"

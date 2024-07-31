@@ -1,8 +1,5 @@
 ---
 
-- set_fact:
-    normalized_collection_method: "{{ collection_method | default('any') | replace('core_bpf', 'core') }}"
-
 - name: Create VMs From Family
   include_tasks: by-family.yml
   #
