@@ -56,7 +56,9 @@ spec:
       secretName: '{{ git_auth_secret }}'
 
   taskRunSpecs:
-  - pipelineTaskName: build-container
+  # Only adjusting computeResources for amd64 build because
+  # multi-arch builds happen off cluster
+  - pipelineTaskName: build-container-amd64
     stepSpecs:
     - name: build
       # CPU requests are increased to speed up builds compared to the defaults.
@@ -77,7 +79,7 @@ spec:
 
   # The pipeline regularly takes >1h to finish.
   timeouts:
-    pipeline: 1h30m0s
+    pipeline: 2h00m0s
 
   pipelineRef:
     name: collector-component-pipeline
