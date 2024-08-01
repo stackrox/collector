@@ -131,14 +131,8 @@ bool Service::InitKernel(const CollectorConfig& config, const DriverCandidate& c
                                                      EventExtractor::FilterList()));
   }
 
-  std::unique_ptr<IKernelDriver> driver;
-  if (candidate.GetCollectionMethod() == CollectionMethod::EBPF) {
-    driver = std::make_unique<KernelDriverEBPF>(KernelDriverEBPF());
-  } else if (candidate.GetCollectionMethod() == CollectionMethod::CORE_BPF) {
-    driver = std::make_unique<KernelDriverCOREEBPF>(KernelDriverCOREEBPF());
-  }
-
-  if (!driver->Setup(config, *inspector_)) {
+  KernelDriverCOREEBPF driver;
+  if (!driver.Setup(config, *inspector_)) {
     CLOG(ERROR) << "Failed to setup " << candidate.GetName();
     return false;
   }
