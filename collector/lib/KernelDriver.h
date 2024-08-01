@@ -58,33 +58,6 @@ class IKernelDriver {
   }
 };
 
-class KernelDriverEBPF : public IKernelDriver {
- public:
-  KernelDriverEBPF() = default;
-
-  bool Setup(const CollectorConfig& config, sinsp& inspector) override {
-    FDHandle fd = FDHandle(open(system_inspector::Service::kProbePath, O_RDONLY));
-    if (!fd.valid()) {
-      CLOG(ERROR) << "Cannot open eBPF probe at " << system_inspector::Service::kProbePath;
-      return false;
-    }
-
-    /* Get only necessary tracepoints. */
-    std::unordered_set<ppm_sc_code> ppm_sc = GetSyscallList(config);
-
-    try {
-      inspector.open_bpf(system_inspector::Service::kProbePath,
-                         config.GetSinspBufferSize(),
-                         ppm_sc);
-    } catch (const sinsp_exception& ex) {
-      CLOG(WARNING) << ex.what();
-      return false;
-    }
-
-    return true;
-  }
-};
-
 class KernelDriverCOREEBPF : public IKernelDriver {
  public:
   KernelDriverCOREEBPF() = default;

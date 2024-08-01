@@ -31,14 +31,9 @@ using namespace testing;
 
 namespace collector {
 
-class MockS390xHeuristics : public S390XHeuristic {
+class MockCPUHeuristic : public CPUHeuristic {
  public:
-  MockS390xHeuristics() = default;
-};
-
-class MockARM64Heuristics : public ARM64Heuristic {
- public:
-  MockARM64Heuristics() = default;
+  MockCPUHeuristic() = default;
 };
 
 class MockHostInfoHeuristics : public HostInfo {
@@ -50,6 +45,7 @@ class MockHostInfoHeuristics : public HostInfo {
   MOCK_METHOD0(GetKernelVersion, KernelVersion());
   MOCK_METHOD0(IsGarden, bool());
   MOCK_METHOD0(GetDistro, std::string&());
+  MOCK_METHOD0(NumPossibleCPU, int());
 };
 
 class MockCollectorConfig : public CollectorConfig {
@@ -65,36 +61,17 @@ class MockCollectorConfig : public CollectorConfig {
   }
 };
 
-TEST(HostHeuristicsTest, TestS390XRHEL84) {
-  MockS390xHeuristics s390xHeuristics;
+TEST(HostHeuristicsTest, TestCPUHeuristic) {
+  MockCPUHeuristic cpuHeuristic;
   MockHostInfoHeuristics host;
-  KernelVersion version = KernelVersion("4.18.0-305.88.1.el8_4.s390x", "", "s390x");
   MockCollectorConfig config;
   HostConfig hconfig;
 
-  config.SetCollectionMethod(CollectionMethod::EBPF);
-  hconfig.SetCollectionMethod(CollectionMethod::EBPF);
-  EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(version));
+  EXPECT_CALL(host, NumPossibleCPU()).WillOnce(Return(10));
 
-  s390xHeuristics.Process(host, config, &hconfig);
+  cpuHeuristic.Process(host, config, &hconfig);
 
-  EXPECT_EQ(hconfig.GetCollectionMethod(), CollectionMethod::CORE_BPF);
-}
-
-TEST(HostHeuristicsTest, TestARM64Heuristic) {
-  MockARM64Heuristics heuristic;
-  MockHostInfoHeuristics host;
-  KernelVersion version = KernelVersion("6.5.5-200.fc38.aarch64", "", "aarch64");
-  MockCollectorConfig config;
-  HostConfig hconfig;
-
-  config.SetCollectionMethod(CollectionMethod::EBPF);
-  hconfig.SetCollectionMethod(CollectionMethod::EBPF);
-  EXPECT_CALL(host, GetKernelVersion()).WillOnce(Return(version));
-
-  heuristic.Process(host, config, &hconfig);
-
-  EXPECT_EQ(hconfig.GetCollectionMethod(), CollectionMethod::CORE_BPF);
+  EXPECT_EQ(hconfig.GetNumPossibleCPUs(), 10);
 }
 
 }  // namespace collector

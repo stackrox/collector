@@ -251,7 +251,7 @@ class HostInfo {
   // 	online if they are present.
   //
   // In case of failure, logs the error and returns 0.
-  int NumPossibleCPU();
+  virtual int NumPossibleCPU();
 
   // The system was booted in UEFI mode.
   virtual bool IsUEFI();
