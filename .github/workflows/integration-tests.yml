@@ -38,7 +38,7 @@ on:
         default: false
 
 jobs:
-  amd64-required-integration-tests:
+  amd64-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
     strategy:
       # ensure that if one part of the matrix fails, the
@@ -48,24 +48,6 @@ jobs:
         vm_type:
           - rhcos
           - ubuntu-os
-    with:
-      vm_type: ${{ matrix.vm_type }}
-      collector-tag: ${{ inputs.collector-tag }}
-      collector-qa-tag: ${{ inputs.collector-qa-tag }}
-      collector-tests-tag: ${{ inputs.collector-tests-tag }}
-      job-tag: ${{ inputs.job-tag }}
-      collector-repo: ${{ inputs.collector-repo }}
-    secrets: inherit
-
-  amd64-all-integration-tests:
-    uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: contains(github.event.pull_request.labels.*.name, 'all-integration-tests') || github.event_name != 'pull_request'
-    strategy:
-      # ensure that if one part of the matrix fails, the
-      # rest will continue
-      fail-fast: false
-      matrix:
-        vm_type:
           - cos
           - flatcar
           - fedora-coreos
@@ -145,8 +127,7 @@ jobs:
     runs-on: ubuntu-latest
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name != 'pull_request'
     needs:
-      - amd64-required-integration-tests
-      - amd64-all-integration-tests
+      - amd64-integration-tests
       - arm64-integration-tests
       - s390x-integration-tests
       - ppc64le-integration-tests
