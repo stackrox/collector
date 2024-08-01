@@ -40,15 +40,6 @@ function test {
     return $status
 }
 
-function remove_module() {
-    local module_name="$1"
-    if lsmod | grep -q "$module_name"; then
-        log "Collector kernel module has already been loaded."
-        log "Removing so that collector can insert it at startup."
-        test rmmod "$module_name"
-    fi
-}
-
 exit_with_error() {
     log ""
     log "Please provide this complete error message to StackRox support."
@@ -93,12 +84,6 @@ function main() {
     PID=$!
     wait $PID
     status=$?
-
-    # Always try to remove the module after collector exits.
-    # If collector is using eBPF then nothing is unloaded, and if it is
-    # the host state is cleaned up and allows collector to reload the module
-    # upon next start up.
-    remove_module "collector"
 
     exit $status
 }
