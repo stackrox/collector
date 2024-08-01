@@ -85,7 +85,7 @@ jobs:
   arm64-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
     if: |
-      !inputs.is-konflux && (
+      (
         github.event_name != 'pull_request' ||
         contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
       )
@@ -112,7 +112,7 @@ jobs:
   s390x-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
     if: |
-      !inputs.is-konflux && (
+      (
         github.event_name != 'pull_request' ||
         contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
       )
@@ -128,7 +128,7 @@ jobs:
   ppc64le-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
     if: |
-      !inputs.is-konflux && (
+      (
         github.event_name != 'pull_request' ||
         contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
       )
