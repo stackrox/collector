@@ -43,7 +43,7 @@ class EventExtractor {
  public:                                                                                                   \
   const type* get_##id(sinsp_evt* event) {                                                                 \
     uint32_t len;                                                                                          \
-    auto buf = filter_check_##id##_->extract_single(event, &len);                                                 \
+    auto buf = filter_check_##id##_->extract_single(event, &len);                                          \
     if (!buf) return nullptr;                                                                              \
     if (len != sizeof(type)) {                                                                             \
       CLOG_THROTTLED(WARNING, std::chrono::seconds(30))                                                    \
@@ -57,16 +57,16 @@ class EventExtractor {
  private:                                                                                                  \
   DECLARE_FILTER_CHECK(id, fieldname)
 
-#define FIELD_CSTR(id, fieldname)                          \
- public:                                                   \
-  const char* get_##id(sinsp_evt* event) {                 \
-    uint32_t len;                                          \
+#define FIELD_CSTR(id, fieldname)                                 \
+ public:                                                          \
+  const char* get_##id(sinsp_evt* event) {                        \
+    uint32_t len;                                                 \
     auto buf = filter_check_##id##_->extract_single(event, &len); \
-    if (!buf) return nullptr;                              \
-    return reinterpret_cast<const char*>(buf);             \
-  }                                                        \
-                                                           \
- private:                                                  \
+    if (!buf) return nullptr;                                     \
+    return reinterpret_cast<const char*>(buf);                    \
+  }                                                               \
+                                                                  \
+ private:                                                         \
   DECLARE_FILTER_CHECK(id, fieldname)
 
 #define EVT_ARG(name) FIELD_CSTR(evt_arg_##name, "evt.arg." #name)
