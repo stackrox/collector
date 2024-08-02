@@ -7,10 +7,11 @@ namespace collector {
 enum class CollectionMethod : uint8_t {
   EBPF = 0,
   CORE_BPF,
-
 };
 
 std::ostream& operator<<(std::ostream& os, CollectionMethod method);
+
+const char* CollectionMethodName(CollectionMethod method);
 
 }  // namespace collector
 

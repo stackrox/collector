@@ -11,7 +11,6 @@
 
 #include "ContainerMetadata.h"
 #include "Control.h"
-#include "DriverCandidates.h"
 #include "SignalHandler.h"
 #include "SignalServiceClient.h"
 #include "SystemInspector.h"
@@ -43,7 +42,7 @@ class Service : public SystemInspector {
 
   bool GetStats(Stats* stats) const override;
 
-  bool InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) override;
+  bool InitKernel(const CollectorConfig& config) override;
 
   typedef std::weak_ptr<std::function<void(std::shared_ptr<sinsp_threadinfo>)>> ProcessInfoCallbackRef;
 
