@@ -55,7 +55,6 @@ ARG CMAKE_BUILD_DIR
 ARG CMAKE_BUILD_TYPE=Release
 # Appends an argument to the driver download URL that is used for filtering alerts on missing kernels.
 # TODO(ROX-20240): This needs to be true on PRs only.
-ARG COLLECTOR_APPEND_CID=false
 ARG USE_VALGRIND=false
 ARG ADDRESS_SANITIZER=false
 ARG TRACE_SINSP_EVENTS=false
@@ -67,7 +66,6 @@ RUN mkdir kernel-modules \
     && ln -s builder/third_party third_party \
     && cp -a ${SOURCES_DIR}/collector collector \
     && cp -a ${SOURCES_DIR}/falcosecurity-libs falcosecurity-libs \
-    && cp -a ${SOURCES_DIR}/kernel-modules/MODULE_VERSION kernel-modules/MODULE_VERSION \
     && cp -a ${SOURCES_DIR}/CMakeLists.txt CMakeLists.txt
 
 # WITH_RHEL_RPMS controls for dependency installation, ie if they were already installed as RPMs.
@@ -83,7 +81,6 @@ RUN ./builder/install/install-dependencies.sh && \
     cmake -S ${SRC_ROOT_DIR} -B ${CMAKE_BUILD_DIR} \
            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
            -DDISABLE_PROFILING=${DISABLE_PROFILING} \
-           -DCOLLECTOR_APPEND_CID=${COLLECTOR_APPEND_CID} \
            -DUSE_VALGRIND=${USE_VALGRIND} \
            -DADDRESS_SANITIZER=${ADDRESS_SANITIZER} \
            -DTRACE_SINSP_EVENTS=${TRACE_SINSP_EVENTS} && \
@@ -148,7 +145,6 @@ ARG CMAKE_BUILD_DIR
 ENV COLLECTOR_VERSION="${COLLECTOR_TAG}"
 ENV COLLECTOR_HOST_ROOT=/host
 
-COPY kernel-modules/MODULE_VERSION /kernel-modules/MODULE_VERSION.txt
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
 COPY --from=builder ${BUILD_DIR}/collector/container/scripts /

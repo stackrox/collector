@@ -25,13 +25,6 @@ namespace collector::system_inspector {
 
 class Service : public SystemInspector {
  public:
-  static constexpr char kModulePath[] = "/module/collector.ko";
-  static constexpr char kModuleName[] = "collector";
-  static constexpr char kProbePath[] = "/module/collector-ebpf.o";
-  static constexpr char kProbeName[] = "collector-ebpf";
-  static constexpr int kMessageBufferSize = 8192;
-  static constexpr int kKeyBufferSize = 48;
-
   Service();
   ~Service();
 

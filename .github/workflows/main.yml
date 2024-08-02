@@ -50,8 +50,6 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-image: ${{ needs.init.outputs.collector-image }}
       collector-builder-tag: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
-      arch-drivers-bucket: ${{ needs.init.outputs.cpaas-drivers-bucket }}
-      module-version: ${{ needs.init.outputs.module-version }}
     secrets: inherit
 
   build-test-containers:

@@ -10,25 +10,10 @@ is stored in a certain directory structure. For simplicity, we assume the root d
 For every relevant Rox version, writes a file `METADATA/rox-versions/<rox version>/COLLECTOR_VERSION`
 that contains the Collector version for this Rox release.
 
-2. Determine Collector version -> Module version and base image inventory
--------------------------------------------------
-For every relevant Collector version, writes a file `METADATA/collector-versions/<collector version>/MODULE_VERSION`
-containing the relevant module version, and a file `METADATA/collector-versions/<collector version>/INVENTORY`
-that contains all probe files that are present in the *immutable* collector image.
-
 3. Determine Module version -> Rox versions
 -------------------------------------------------
 For every relevant module version, writes a file `METADATA/module-versions/<module version>/ROX_VERSIONS`
 that contains all Rox versions that use a collector with the respective module version.
-
-4. Generate support package files
--------------------------------------------------
-For every relevant module version, creates a file `OUTPUT/<module version>/<support package filename>.zip`
-containing the relevant probes.
-
-We also calculate the sha256 for each support package and dump it to files with the format
-`OUTPUT/<module version>/<support package filename>.zip.sha256`, making it possible to validate the integrity of the
-packages.
 
 5. Generate index.html file
 -------------------------------------------------

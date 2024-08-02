@@ -31,11 +31,6 @@
 
 namespace collector::system_inspector {
 
-constexpr char Service::kModulePath[];
-constexpr char Service::kModuleName[];
-constexpr char Service::kProbePath[];
-constexpr char Service::kProbeName[];
-
 Service::Service() {}
 Service::~Service() {}
 

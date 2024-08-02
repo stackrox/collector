@@ -23,10 +23,6 @@ if(NOT DISABLE_PROFILING)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOLLECTOR_PROFILING")
 endif()
 
-if(COLLECTOR_APPEND_CID)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOLLECTOR_APPEND_CID")
-endif()
-
 if(TRACE_SINSP_EVENTS)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTRACE_SINSP_EVENTS")
 endif()
@@ -85,7 +81,6 @@ add_subdirectory(test)
 set(BUILD_DRIVER OFF CACHE BOOL "Build the driver on Linux" FORCE)
 set(USE_BUNDLED_DEPS OFF CACHE BOOL "Enable bundled dependencies instead of using the system ones" FORCE)
 set(USE_BUNDLED_CARES OFF CACHE BOOL "Enable bundled dependencies instead of using the system ones" FORCE)
-set(WITH_CHISEL OFF CACHE BOOL "Include chisel implementation" FORCE)
 set(BUILD_LIBSCAP_GVISOR OFF CACHE BOOL "Do not build gVisor support" FORCE)
 set(MINIMAL_BUILD OFF CACHE BOOL "Minimal" FORCE)
 set(SINSP_SLIM_THREADINFO ON CACHE BOOL "Slim threadinfo" FORCE)
@@ -96,13 +91,6 @@ set(LIBELF_LIB_SUFFIX ".so" CACHE STRING "Use libelf.so" FORCE)
 set(CREATE_TEST_TARGETS OFF CACHE BOOL "Enable make-targets for unit testing" FORCE)
 set(BUILD_LIBSCAP_EXAMPLES OFF CACHE BOOL "Build libscap examples" FORCE)
 set(BUILD_LIBSINSP_EXAMPLES OFF CACHE BOOL "Build libsinsp examples" FORCE)
-
-set(DRIVER_NAME "collector" CACHE STRING "Falco driver name" FORCE)
-
-file(STRINGS "${PROJECT_SOURCE_DIR}/../kernel-modules/MODULE_VERSION" DRIVER_VERSION)
-
-set(DRIVER_VERSION "${DRIVER_VERSION}" CACHE STRING "Falco driver version" FORCE)
-set(DRIVER_DEVICE_NAME "${DRIVER_NAME}" CACHE STRING "Driver device name" FORCE)
 
 set(SCAP_HOST_ROOT_ENV_VAR_NAME "COLLECTOR_HOST_ROOT" CACHE STRING "Host root environment variable name" FORCE)
 

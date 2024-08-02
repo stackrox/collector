@@ -18,23 +18,12 @@ on:
         required: true
         description: |
           The builder tag to use in the build
-      arch-drivers-bucket:
-        type: string
-        required: true
-        description: |
-          The bucket containing mutli-arch drivers
-      module-version:
-        type: string
-        required: true
-        description: |
-          The module version to use for full images
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
   COLLECTOR_BUILDER_TAG: ${{ inputs.collector-builder-tag }}
   RHACS_ENG_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
   ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
-  COLLECTOR_APPEND_CID: ${{ github.event_name == 'pull_request' }}
   TRACE_SINSP_EVENTS: ${{ github.event_name == 'pull_request' }}
   ADDRESS_SANITIZER: ${{ contains(github.event.pull_request.labels.*.name, 'address-sanitizer') }}
 
@@ -50,7 +39,6 @@ jobs:
     env:
       PLATFORM: linux/${{ matrix.arch }}
       CONTEXT_DRIVERS_DIR: ${{ github.workspace }}/collector/kernel-modules
-      DRIVER_VERION: ${{ inputs.module-version }}
 
     steps:
       - uses: actions/checkout@v4
