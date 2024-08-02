@@ -71,7 +71,7 @@ void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTrac
   }
 }
 
-bool Service::InitKernel(const CollectorConfig& config, const DriverCandidate& candidate) {
+bool Service::InitKernel(const CollectorConfig& config) {
   if (!inspector_) {
     inspector_.reset(new sinsp());
 
@@ -133,7 +133,7 @@ bool Service::InitKernel(const CollectorConfig& config, const DriverCandidate& c
 
   KernelDriverCOREEBPF driver;
   if (!driver.Setup(config, *inspector_)) {
-    CLOG(ERROR) << "Failed to setup " << candidate.GetName();
+    CLOG(ERROR) << "Failed to setup " << config.GetCollectionMethod() << " driver.";
     return false;
   }
 

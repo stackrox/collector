@@ -3,7 +3,6 @@
 
 #include "CollectorConfig.h"
 #include "Control.h"
-#include "DriverCandidates.h"
 #include "system-inspector/Service.h"
 
 namespace collector {
@@ -14,7 +13,7 @@ class CollectorService {
 
   void RunForever();
 
-  bool InitKernel(const DriverCandidate& candidate);
+  bool InitKernel();
 
  private:
   bool WaitForGRPCServer();
