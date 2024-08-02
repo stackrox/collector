@@ -1,5 +1,6 @@
 #include "CollectorService.h"
 
+#include "CollectionMethod.h"
 #include "ContainerInfoInspector.h"
 
 extern "C" {
@@ -14,7 +15,6 @@ extern "C" {
 #include "Containers.h"
 #include "Diagnostics.h"
 #include "GRPCUtil.h"
-#include "GetKernelObject.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
 #include "NetworkStatusInspector.h"
@@ -138,8 +138,8 @@ void CollectorService::RunForever() {
   system_inspector_.CleanUp();
 }
 
-bool CollectorService::InitKernel(const DriverCandidate& candidate) {
-  return system_inspector_.InitKernel(config_, candidate);
+bool CollectorService::InitKernel() {
+  return system_inspector_.InitKernel(config_);
 }
 
 bool CollectorService::WaitForGRPCServer() {
@@ -150,31 +150,13 @@ bool CollectorService::WaitForGRPCServer() {
 
 bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServer, const CollectorConfig& config) {
   auto& startup_diagnostics = StartupDiagnostics::GetInstance();
+  std::string cm_name = CollectionMethodName(config.GetCollectionMethod());
 
-  std::vector<DriverCandidate> candidates = GetKernelCandidates(config.GetCollectionMethod());
-  if (candidates.empty()) {
-    CLOG(ERROR) << "No kernel candidates available";
-    return false;
-  }
+  startup_diagnostics.DriverAvailable(cm_name);
 
-  CLOG(INFO) << "Candidate drivers: ";
-  for (const auto& candidate : candidates) {
-    CLOG(INFO) << candidate.GetName();
-  }
-
-  for (const auto& candidate : candidates) {
-    if (!GetKernelObject(GRPCServer, config.TLSConfiguration(), candidate, config.CurlVerbose())) {
-      CLOG(WARNING) << "No suitable kernel object downloaded for " << candidate.GetName();
-      startup_diagnostics.DriverUnavailable(candidate.GetName());
-      continue;
-    }
-
-    startup_diagnostics.DriverAvailable(candidate.GetName());
-
-    if (collector.InitKernel(candidate)) {
-      startup_diagnostics.DriverSuccess(candidate.GetName());
-      return true;
-    }
+  if (collector.InitKernel()) {
+    startup_diagnostics.DriverSuccess(cm_name);
+    return true;
   }
 
   CLOG(ERROR) << "Failed to initialize collector kernel components.";

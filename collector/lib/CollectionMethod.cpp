@@ -1,5 +1,7 @@
 #include "CollectionMethod.h"
 
+#include <sstream>
+
 namespace collector {
 
 std::ostream& operator<<(std::ostream& os, CollectionMethod method) {
@@ -11,6 +13,12 @@ std::ostream& operator<<(std::ostream& os, CollectionMethod method) {
     default:
       return os << "unknown(" << static_cast<uint8_t>(method) << ")";
   }
+}
+
+std::string CollectionMethodName(CollectionMethod method) {
+  std::stringstream ss;
+  ss << method;
+  return ss.str();
 }
 
 }  // namespace collector
