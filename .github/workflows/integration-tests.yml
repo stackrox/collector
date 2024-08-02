@@ -67,10 +67,8 @@ jobs:
   arm64-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
     if: |
-      !inputs.is-konflux && (
-        github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
-      )
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     strategy:
       # ensure that if one part of the matrix fails, the
       # rest will continue
@@ -94,10 +92,8 @@ jobs:
   s390x-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
     if: |
-      !inputs.is-konflux && (
-        github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
-      )
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     with:
       vm_type: rhel-s390x
       collector-tag: ${{ inputs.collector-tag }}
@@ -110,10 +106,8 @@ jobs:
   ppc64le-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
     if: |
-      !inputs.is-konflux && (
-        github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
-      )
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     with:
       vm_type: rhel-ppc64le
       collector-tag: ${{ inputs.collector-tag }}
