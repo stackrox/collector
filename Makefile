@@ -11,9 +11,6 @@ BUILD_BUILDER_IMAGE ?= false
 export COLLECTOR_VERSION := $(COLLECTOR_TAG)
 export MODULE_VERSION := $(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION)
 
-dev-build: image
-	make -C integration-tests TestProcessNetwork
-
 .PHONY: tag
 tag:
 	@echo "$(COLLECTOR_TAG)"
@@ -47,14 +44,6 @@ connscrape:
 unittest:
 	make -C collector unittest
 
-.PHONY: build-kernel-modules
-build-kernel-modules:
-	make -C kernel-modules build-container
-
-.PHONY: build-drivers
-build-drivers:
-	make -C kernel-modules drivers
-
 image: collector unittest
 	make -C collector txt-files
 	docker buildx build --load --platform ${PLATFORM} \
@@ -72,18 +61,6 @@ image-dev: collector unittest container-dockerfile-dev
 		-f collector/container/Dockerfile.dev \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
-
-image-dev-full: image-dev build-drivers
-	docker tag quay.io/stackrox-io/collector:$(COLLECTOR_TAG) quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-slim
-	docker build \
-		--target=probe-layer-1 \
-		--tag quay.io/stackrox-io/collector:$(COLLECTOR_TAG)-full \
-		--build-arg collector_repo=quay.io/stackrox-io/collector \
-		--build-arg collector_version=$(COLLECTOR_TAG) \
-		--build-arg module_version=$(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION) \
-		--build-arg max_layer_size=300 \
-		--build-arg max_layer_depth=1 \
-		$(CURDIR)/kernel-modules/container
 
 .PHONY: integration-tests-report
 integration-tests-report:
@@ -161,7 +138,3 @@ $(eval $(call linter,flake8))
 $(eval $(call linter,clang-format))
 $(eval $(call linter,shellcheck))
 $(eval $(call linter,shfmt))
-
-.PHONY: linters
-linters:
-	@$(CURDIR)/utilities/lint.sh
