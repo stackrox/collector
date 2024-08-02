@@ -2,23 +2,26 @@
 
 #include <sstream>
 
+#include <sys/types.h>
+
+#include "Logging.h"
+
 namespace collector {
 
 std::ostream& operator<<(std::ostream& os, CollectionMethod method) {
-  switch (method) {
-    case CollectionMethod::EBPF:
-      return os << "ebpf";
-    case CollectionMethod::CORE_BPF:
-      return os << "core_bpf";
-    default:
-      return os << "unknown(" << static_cast<uint8_t>(method) << ")";
-  }
+  return os << CollectionMethodName(method);
 }
 
-std::string CollectionMethodName(CollectionMethod method) {
-  std::stringstream ss;
-  ss << method;
-  return ss.str();
+const char* CollectionMethodName(CollectionMethod method) {
+  switch (method) {
+    case CollectionMethod::EBPF:
+      return "ebpf";
+    case CollectionMethod::CORE_BPF:
+      return "core_bpf";
+    default:
+      CLOG(WARNING) << "Unexpected CollectionMethod: " << static_cast<uint8_t>(method);
+      return "unknown";
+  }
 }
 
 }  // namespace collector

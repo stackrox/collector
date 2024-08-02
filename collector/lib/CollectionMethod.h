@@ -11,7 +11,7 @@ enum class CollectionMethod : uint8_t {
 
 std::ostream& operator<<(std::ostream& os, CollectionMethod method);
 
-std::string CollectionMethodName(CollectionMethod method);
+const char* CollectionMethodName(CollectionMethod method);
 
 }  // namespace collector
 
