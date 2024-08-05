@@ -80,8 +80,6 @@ type Runtime struct {
 type CollectorOptions struct {
 	// The collector log level, e.g. DEBUG, TRACE
 	LogLevel string
-	// Whether to run collector in offline mode
-	Offline bool
 	// Any arguments to prepend to the collector command
 	PreArguments string
 }
@@ -153,7 +151,6 @@ func CollectorInfo() *CollectorOptions {
 	if collector_options == nil {
 		collector_options = &CollectorOptions{
 			LogLevel:     ReadEnvVarWithDefault(envCollectorLogLevel, "debug"),
-			Offline:      ReadBoolEnvVar(envCollectorOfflineMode),
 			PreArguments: ReadEnvVar(envCollectorPreArguments),
 		}
 	}
