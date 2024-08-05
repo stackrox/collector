@@ -9,7 +9,6 @@ find_package(Threads)
 set(ROX_PROTO_FILES
     api/v1/empty.proto
     api/v1/signal.proto
-    gogoproto/gogo.proto
     internalapi/sensor/collector.proto
     internalapi/sensor/network_connection_info.proto
     internalapi/sensor/network_connection_iservice.proto
