@@ -31,9 +31,6 @@ StringListEnvVar ignored_networks("ROX_IGNORE_NETWORKS", std::vector<std::string
 // Connection endpoints matching a network prefix listed here will never be aggregated.
 StringListEnvVar non_aggregated_networks("ROX_NON_AGGREGATED_NETWORKS", std::vector<std::string>());
 
-// If true, set curl to be verbose, adding further logging that might be useful for debugging.
-BoolEnvVar set_curl_verbose("ROX_COLLECTOR_SET_CURL_VERBOSE", false);
-
 BoolEnvVar set_enable_afterglow("ROX_ENABLE_AFTERGLOW", true);
 
 BoolEnvVar set_enable_core_dump("ENABLE_CORE_DUMP", false);
@@ -201,10 +198,6 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
     } else {
       CLOG(ERROR) << "Invalid network in ROX_NON_AGGREGATED_NETWORKS : " << str;
     }
-  }
-
-  if (set_curl_verbose) {
-    curl_verbose_ = true;
   }
 
   if (set_enable_core_dump) {

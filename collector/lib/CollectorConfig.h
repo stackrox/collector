@@ -66,7 +66,6 @@ class CollectorConfig {
   const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }
   const std::vector<IPNet>& IgnoredNetworks() const { return ignored_networks_; }
   const std::vector<IPNet>& NonAggregatedNetworks() const { return non_aggregated_networks_; }
-  bool CurlVerbose() const { return curl_verbose_; }
   bool EnableAfterglow() const { return enable_afterglow_; }
   bool IsCoreDumpEnabled() const;
   Json::Value TLSConfiguration() const { return tls_config_; }
@@ -102,7 +101,6 @@ class CollectorConfig {
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
   std::vector<IPNet> ignored_networks_;
   std::vector<IPNet> non_aggregated_networks_;
-  bool curl_verbose_ = false;
 
   HostConfig host_config_;
   int64_t afterglow_period_micros_ = 300000000;  // 5 minutes in microseconds

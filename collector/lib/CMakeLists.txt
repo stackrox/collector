@@ -24,4 +24,4 @@ if(NOT DISABLE_PROFILING)
     target_link_libraries(collector_lib profiler tcmalloc)
 endif()
 
-target_link_libraries(collector_lib z ssl crypto CURL::libcurl bpf)
+target_link_libraries(collector_lib z ssl crypto bpf)
