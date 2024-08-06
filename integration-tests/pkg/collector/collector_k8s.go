@@ -49,10 +49,6 @@ func newK8sManager(e executor.K8sExecutor, name string) *K8sCollectorManager {
 		{Name: "ENABLE_CORE_DUMP", Value: "false"},
 	}
 
-	if !collectorOptions.Offline {
-		env = append(env, coreV1.EnvVar{Name: "MODULE_DOWNLOAD_BASE_URL", Value: "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"})
-	}
-
 	propagationHostToContainer := coreV1.MountPropagationHostToContainer
 	mounts := []coreV1.VolumeMount{
 		{Name: "proc-ro", ReadOnly: true, MountPath: "/host/proc", MountPropagation: &propagationHostToContainer},
@@ -62,7 +58,6 @@ func newK8sManager(e executor.K8sExecutor, name string) *K8sCollectorManager {
 		{Name: "var-rw", ReadOnly: false, MountPath: "/host/var", MountPropagation: &propagationHostToContainer},
 		{Name: "run-rw", ReadOnly: false, MountPath: "/host/run", MountPropagation: &propagationHostToContainer},
 		{Name: "tmp", ReadOnly: false, MountPath: "/tmp", MountPropagation: &propagationHostToContainer},
-		{Name: "module", ReadOnly: false, MountPath: "/module"},
 	}
 
 	volumes := []coreV1.Volume{

@@ -43,19 +43,12 @@ func newDockerManager(e executor.Executor, name string) *DockerCollectorManager 
 		"ENABLE_CORE_DUMP":        "true",
 	}
 
-	if !collectorOptions.Offline {
-		env["MODULE_DOWNLOAD_BASE_URL"] = "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656"
-	}
-
 	mounts := map[string]string{
 		"/host/proc:ro":             "/proc",
 		"/host/etc:ro":              "/etc",
 		"/host/usr/lib:ro":          "/usr/lib",
 		"/host/sys/kernel/debug:ro": "/sys/kernel/debug",
 		"/tmp":                      "/tmp",
-		// /module is an anonymous volume to reflect the way collector
-		// is usually run in kubernetes (with in-memory volume for /module)
-		"/module": "",
 	}
 
 	return &DockerCollectorManager{

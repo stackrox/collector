@@ -64,10 +64,6 @@ jobs:
           - amd64
           - s390x
           - ppc64le
-    env:
-      DRIVER_VERSION: ${{ needs.init.outputs.module-version }}
-      DRIVERS_IMAGE: brew.registry.redhat.io/rh-osbs/rhacs-drivers-build-rhel8:0.1.0
-      DOWNSTREAM_COLLECTOR_IMAGE: brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
     steps:
       - uses: actions/checkout@v4
 

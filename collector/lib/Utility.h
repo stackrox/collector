@@ -44,11 +44,6 @@ std::string GetHostname();
 
 // Allows Splitting a std::string_view into a vector of strings
 std::vector<std::string> SplitStringView(const std::string_view sv, char delim = ' ');
-// Get base URL for kernel modules downloads from MODULE_DOWNLOAD_BASE_URL
-const char* GetModuleDownloadBaseURL();
-
-// Get the module version used by collector.
-std::string GetModuleVersion();
 
 // Wrapper around unlink(2) to handle error conditions.
 void TryUnlink(const char* path);
@@ -111,8 +106,6 @@ ScopedLock<Mutex> Lock(Mutex& mutex) {
 
 // ssizeof(x) returns the same value as sizeof(x), but as a signed integer.
 #define ssizeof(x) static_cast<ssize_t>(sizeof(x))
-
-extern const std::string kKernelModulesDir;
 
 std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cgroup);
 }  // namespace collector

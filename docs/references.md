@@ -11,9 +11,6 @@ of a crash. Allowed values are true and false. The default is false.
 networking usage. See the corresponding [Afterglow](design-overview.md#Afterglow)
 section for more details. The default is true.
 
-* `ROX_COLLECTOR_SET_CURL_VERBOSE`: Sets verbose mode and debug callback for
-curl, when loading kernel objects. The default is false.
-
 * `ROX_NETWORK_DROP_IGNORED`: Ignore connections with configured protocol and
 port pairs (at the moment only `udp/9`). The default is true.
 

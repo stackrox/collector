@@ -10,7 +10,6 @@ const (
 	envCollectorImage   = "COLLECTOR_IMAGE"
 
 	envCollectorLogLevel     = "COLLECTOR_LOG_LEVEL"
-	envCollectorOfflineMode  = "COLLECTOR_OFFLINE_MODE"
 	envCollectorPreArguments = "COLLECTOR_PRE_ARGUMENTS"
 
 	envHostType    = "REMOTE_HOST_TYPE"

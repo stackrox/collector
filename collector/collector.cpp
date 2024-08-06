@@ -120,11 +120,6 @@ void initialChecks() {
   if (!g_control.is_lock_free()) {
     CLOG(FATAL) << "Internal error: could not create a lock-free control variable.";
   }
-
-  struct stat st;
-  if (stat("/module", &st) != 0 || !S_ISDIR(st.st_mode)) {
-    CLOG(FATAL) << "Internal error: /module directory does not exist.";
-  }
 }
 
 int main(int argc, char** argv) {
@@ -163,8 +158,6 @@ int main(int argc, char** argv) {
   } else {
     CLOG(INFO) << "GRPC is disabled. Specify GRPC_SERVER='server addr' env and signalFormat = 'signal_summary' and  signalOutput = 'grpc'";
   }
-
-  CLOG(INFO) << "Module version: " << GetModuleVersion();
 
   // Register signal handlers
   signal(SIGABRT, AbortHandler);

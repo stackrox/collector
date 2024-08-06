@@ -57,8 +57,6 @@ services:
       - GRPC_SERVER=localhost:9999
       - COLLECTOR_CONFIG={"logLevel":"debug","turnOffScrape":true,"scrapeInterval":2}
       - COLLECTION_METHOD=core-bpf
-      - MODULE_DOWNLOAD_BASE_URL=https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656
-      - MODULE_VERSION=b6745d795b8497aaf387843dc8aa07463c944d3ad67288389b754daaebea4b62
       - COLLECTOR_HOST_ROOT=/host
     volumes:
       - /var/run/docker.sock:/host/var/run/docker.sock:ro
@@ -67,8 +65,6 @@ services:
       - /usr/lib:/host/usr/lib:ro
       - /sys/:/host/sys/:ro
       - /dev:/host/dev:ro
-      - type: tmpfs
-        target: /module
     depends_on:
       - grpc-server-debug
   grpc-server-debug:

@@ -14,7 +14,6 @@ endif
 USE_VALGRIND ?= false
 ADDRESS_SANITIZER ?= false
 CMAKE_BUILD_TYPE ?= Release
-COLLECTOR_APPEND_CID ?= false
 PLATFORM ?= linux/amd64
 TRACE_SINSP_EVENTS ?= false
 DISABLE_PROFILING ?= false

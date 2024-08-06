@@ -3,13 +3,10 @@ include Makefile-constants.mk
 
 NPROCS ?= $(shell nproc)
 
-MOD_VER_FILE=$(CURDIR)/kernel-modules/kobuild-tmp/MODULE_VERSION.txt
-
 DEV_SSH_SERVER_KEY ?= $(CURDIR)/.collector_dev_ssh_host_ed25519_key
 BUILD_BUILDER_IMAGE ?= false
 
 export COLLECTOR_VERSION := $(COLLECTOR_TAG)
-export MODULE_VERSION := $(shell cat $(CURDIR)/kernel-modules/MODULE_VERSION)
 
 .PHONY: tag
 tag:
@@ -48,7 +45,6 @@ image: collector unittest
 	make -C collector txt-files
 	docker buildx build --load --platform ${PLATFORM} \
 		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
-		--build-arg MODULE_VERSION="$(MODULE_VERSION)" \
 		-f collector/container/Dockerfile \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
@@ -57,7 +53,6 @@ image-dev: collector unittest container-dockerfile-dev
 	make -C collector txt-files
 	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
 		--build-arg BUILD_TYPE=devel \
-		--build-arg MODULE_VERSION="$(MODULE_VERSION)" \
 		-f collector/container/Dockerfile.dev \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)

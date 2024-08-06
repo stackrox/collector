@@ -169,33 +169,6 @@ std::vector<std::string> SplitStringView(const std::string_view sv, char delim) 
   return parts;
 }
 
-const char* GetModuleDownloadBaseURL() {
-  const char* module_download_base_url = std::getenv("MODULE_DOWNLOAD_BASE_URL");
-  if (module_download_base_url && *module_download_base_url) return module_download_base_url;
-
-  CLOG(DEBUG) << "MODULE_DOWNLOAD_BASE_URL not set";
-  return "";
-}
-
-const std::string kKernelModulesDir = "/kernel-modules";
-
-std::string GetModuleVersion() {
-  // This function is expected to be called a handful of times
-  // during initialization. If this condition changes, consider
-  // adding a lazy initialized static variable and prevent
-  // reading MODULE_VERSION.txt on every call.
-  std::ifstream file(kKernelModulesDir + "/MODULE_VERSION.txt");
-  if (!file.is_open()) {
-    CLOG(ERROR) << "Failed to open '" << kKernelModulesDir << "/MODULE_VERSION.txt'";
-    return "";
-  }
-
-  static std::string module_version;
-  getline(file, module_version);
-
-  return module_version;
-}
-
 void TryUnlink(const char* path) {
   if (unlink(path) != 0) {
     CLOG(WARNING) << "Failed to unlink '" << path << "': " << StrError();
