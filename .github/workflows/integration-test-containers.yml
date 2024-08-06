@@ -39,6 +39,8 @@ jobs:
               - integration-tests/pkg/**
               - integration-tests/suites/**
               - integration-tests/*.go
+              - integration-tests/go.mod
+              - integration-tests/go.sum
               - integration-tests/images.yml
               - integration-tests/Dockerfile
               - .github/workflows/integration-test-containers.yml

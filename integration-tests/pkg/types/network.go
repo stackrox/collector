@@ -1,7 +1,7 @@
 package types
 
 const (
-	NilTimestamp = "(timestamp: nil Timestamp)"
+	NilTimestamp = "<nil>"
 )
 
 type NetworkInfo struct {
