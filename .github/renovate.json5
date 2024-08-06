@@ -27,7 +27,7 @@
     "includePaths": [
       // Instruct Renovate not try to update Dockerfiles other than konflux.Dockerfile (or konflux.anything.Dockerfile)
       // to have less PR noise.
-      "**/konflux.*Dockerfile",
+      "**/*konflux*.Dockerfile",
     ],
   },
   "enabledManagers": [
