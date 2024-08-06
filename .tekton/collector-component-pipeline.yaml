@@ -167,7 +167,7 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     taskRef:
-      name: determine-image-tag-oci-ta
+      name: determine-image-tag
 
   - name: prefetch-dependencies
     params:
@@ -209,7 +209,7 @@ spec:
       value: $(params.build-target-stage)
     - name: BUILD_ARGS
       value:
-        - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+      - COLLECTOR_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -364,60 +364,60 @@ spec:
 
   - name: build-image-manifest
     params:
-      - name: IMAGE
-        value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
-      - name: COMMIT_SHA
-        value: $(tasks.clone-repository.results.commit)
-      - name: IMAGES
-        value:
-          - $(tasks.build-container-amd64.results.IMAGE_REF)
-          - $(tasks.build-container-s390x.results.IMAGE_REF)
-          - $(tasks.build-container-ppc64le.results.IMAGE_REF)
-          - $(tasks.build-container-arm64.results.IMAGE_REF)
+    - name: IMAGE
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
+    - name: COMMIT_SHA
+      value: $(tasks.clone-repository.results.commit)
+    - name: IMAGES
+      value:
+      - $(tasks.build-container-amd64.results.IMAGE_REF)
+      - $(tasks.build-container-s390x.results.IMAGE_REF)
+      - $(tasks.build-container-ppc64le.results.IMAGE_REF)
+      - $(tasks.build-container-arm64.results.IMAGE_REF)
     taskRef:
       params:
-        - name: name
-          value: build-image-manifest
-        - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-build-image-manifest:0.1@sha256:71cdb1cedcfe5ea97c51d3b2a4e6bef4e04bd035efd90c9bb5a28ef5e48640ea
-        - name: kind
-          value: task
+      - name: name
+        value: build-image-manifest
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-build-image-manifest:0.1@sha256:71cdb1cedcfe5ea97c51d3b2a4e6bef4e04bd035efd90c9bb5a28ef5e48640ea
+      - name: kind
+        value: task
       resolver: bundles
     when:
-      - input: $(tasks.init.results.build)
-        operator: in
-        values: [ "true" ]
+    - input: $(tasks.init.results.build)
+      operator: in
+      values: [ "true" ]
 
   - name: build-image-manifest-extra
     matrix:
       params:
-        - name: IMAGE
-          value:
-            - $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-latest
-            - $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-slim
-            - $(params.output-image-repo):konflux-$(params.revision)
-    params:
-      - name: COMMIT_SHA
-        value: $(tasks.clone-repository.results.commit)
-      - name: IMAGES
+      - name: IMAGE
         value:
-          - $(tasks.build-container-amd64.results.IMAGE_REF)
-          - $(tasks.build-container-s390x.results.IMAGE_REF)
-          - $(tasks.build-container-ppc64le.results.IMAGE_REF)
-          - $(tasks.build-container-arm64.results.IMAGE_REF)
+        - $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-latest
+        - $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-slim
+        - $(params.output-image-repo):konflux-$(params.revision)
+    params:
+    - name: COMMIT_SHA
+      value: $(tasks.clone-repository.results.commit)
+    - name: IMAGES
+      value:
+      - $(tasks.build-container-amd64.results.IMAGE_REF)
+      - $(tasks.build-container-s390x.results.IMAGE_REF)
+      - $(tasks.build-container-ppc64le.results.IMAGE_REF)
+      - $(tasks.build-container-arm64.results.IMAGE_REF)
     taskRef:
       params:
-        - name: name
-          value: build-image-manifest
-        - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-build-image-manifest:0.1@sha256:71cdb1cedcfe5ea97c51d3b2a4e6bef4e04bd035efd90c9bb5a28ef5e48640ea
-        - name: kind
-          value: task
+      - name: name
+        value: build-image-manifest
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-build-image-manifest:0.1@sha256:71cdb1cedcfe5ea97c51d3b2a4e6bef4e04bd035efd90c9bb5a28ef5e48640ea
+      - name: kind
+        value: task
       resolver: bundles
     when:
-      - input: $(tasks.init.results.build)
-        operator: in
-        values: [ "true" ]
+    - input: $(tasks.init.results.build)
+      operator: in
+      values: [ "true" ]
 
   - name: build-source-image
     params:
@@ -546,8 +546,8 @@ spec:
 
   - name: sast-snyk-check
     params:
-      - name: SOURCE_ARTIFACT
-        value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     taskRef:
       params:
       - name: name
