@@ -1,6 +1,8 @@
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 
+# A dummy change
+
 metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/stackrox/collector?rev={{revision}}
