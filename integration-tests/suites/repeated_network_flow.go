@@ -65,8 +65,6 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 		s.Require().NoError(err)
 	}
 
-	time.Sleep(10 * time.Second)
-
 	// invokes default nginx
 	containerID, err := s.launchContainer("nginx", image_store.ImageByKey("nginx"))
 	s.Require().NoError(err)
@@ -82,7 +80,6 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 
 	s.ServerPort, err = s.getPort("nginx")
 	s.Require().NoError(err)
-	time.Sleep(30 * time.Second)
 
 	serverAddress := fmt.Sprintf("%s:%s", s.ServerIP, s.ServerPort)
 
