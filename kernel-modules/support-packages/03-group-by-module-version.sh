@@ -18,6 +18,7 @@ MD_DIR="$1"
 
 for version_dir in "${MD_DIR}/collector-versions"/*; do
     [[ -d "$version_dir" ]] || continue
+    [[ -f "${version_dir}/MODULE_VERSION" ]] || continue
 
     module_version="$(< "${version_dir}/MODULE_VERSION")"
 
