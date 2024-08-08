@@ -23,11 +23,6 @@ on:
           Tag used for the test container
         type: string
         required: true
-      offline-mode:
-        description: |
-          Set to true to enable collector running in offline mode
-        type: boolean
-        default: false
       run-benchmarks:
         description: |
           Whether to run the benchmarks instead of the integration tests
@@ -56,9 +51,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v5
         with:
-          go-version: '1.19' # to match the requirement in the integration tests
+          go-version-file: integration-tests/go.mod
 
       - uses: actions/setup-python@v5
         with:
@@ -94,14 +89,17 @@ jobs:
       - name: Run Tests
         if: ${{ ! inputs.run-benchmarks }}
         run: |
-          if [[ "${{ inputs.offline-mode }}" == "true" ]]; then
-            export COLLECTOR_OFFLINE_MODE="true"
-          fi
-
           make -C "${{ github.workspace }}/ansible" integration-tests
         env:
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Test summary
+        uses: test-summary/action@v2
+        if: |
+          (success() || failure()) && !inputs.run-benchmarks
+        with:
+          paths: integration-tests/container-logs/**/integration-test-report.xml
 
       - name: Create Benchmark VMs
         if: inputs.run-benchmarks
