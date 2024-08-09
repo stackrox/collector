@@ -30,7 +30,7 @@ var (
 
 	authFiles = []string{
 		"$HOME/.config/containers/auth.json",
-		"$HOME/.docker/auth.json",
+		"$HOME/.docker/config.json",
 	}
 )
 
