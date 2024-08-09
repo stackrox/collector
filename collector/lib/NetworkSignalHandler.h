@@ -29,6 +29,7 @@ class NetworkSignalHandler final : public SignalHandler {
   bool Stop() override;
 
   void SetCollectConnectionStatus(bool collect_connection_status) { collect_connection_status_ = collect_connection_status; }
+  void SetTrackSendRecv(bool track_send_recv) { track_send_recv_ = track_send_recv; }
 
  private:
   std::optional<Connection> GetConnection(sinsp_evt* evt);
@@ -38,6 +39,7 @@ class NetworkSignalHandler final : public SignalHandler {
   system_inspector::Stats* stats_;
 
   bool collect_connection_status_;
+  bool track_send_recv_;
 };
 
 }  // namespace collector

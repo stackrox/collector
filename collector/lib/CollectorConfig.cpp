@@ -55,6 +55,8 @@ BoolEnvVar use_podman_ce("ROX_COLLECTOR_CE_USE_PODMAN", false);
 
 BoolEnvVar enable_introspection("ROX_COLLECTOR_INTROSPECTION_ENABLE", false);
 
+BoolEnvVar track_send_recv("ROX_COLLECTOR_TRACK_SEND_RECV", false);
+
 }  // namespace
 
 constexpr bool CollectorConfig::kTurnOffScrape;
@@ -84,9 +86,16 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   use_docker_ce_ = use_docker_ce.value();
   use_podman_ce_ = use_podman_ce.value();
   enable_introspection_ = enable_introspection.value();
+  track_send_recv_ = track_send_recv.value();
 
   for (const auto& syscall : kSyscalls) {
-    syscalls_.push_back(syscall);
+    syscalls_.emplace_back(syscall);
+  }
+
+  if (track_send_recv_) {
+    for (const auto& syscall : kSendRecvSyscalls) {
+      syscalls_.emplace_back(syscall);
+    }
   }
 
   // Get hostname
@@ -388,7 +397,8 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << ", set_import_users:" << c.ImportUsers()
          << ", collect_connection_status:" << c.CollectConnectionStatus()
          << ", enable_detailed_metrics:" << c.EnableDetailedMetrics()
-         << ", enable_external_ips:" << c.EnableExternalIPs();
+         << ", enable_external_ips:" << c.EnableExternalIPs()
+         << ", track_send_recv:" << c.TrackingSendRecv();
 }
 
 // Returns size of ring buffers to be allocated.
