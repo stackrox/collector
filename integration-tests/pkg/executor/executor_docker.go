@@ -37,8 +37,9 @@ var (
 const MAIN_REGISTRY = "quay.io"
 
 type dockerExecutor struct {
-	builder CommandBuilder
-	cli     *client.Client
+	builder    CommandBuilder
+	cli        *client.Client
+	authConfig string
 }
 
 type localCommandBuilder struct {
@@ -64,9 +65,15 @@ func newDockerExecutor() (*dockerExecutor, error) {
 		return nil, err
 	}
 
+	b64auth, err := registry.EncodeAuthConfig(*auth)
+	if err != nil {
+		return nil, err
+	}
+
 	return &dockerExecutor{
-		builder: newLocalCommandBuilder(),
-		cli:     cli,
+		builder:    newLocalCommandBuilder(),
+		cli:        cli,
+		authConfig: b64auth,
 	}, nil
 }
 
@@ -203,10 +210,34 @@ func (e *dockerExecutor) CopyFromHost(src string, dst string) (res string, err e
 }
 
 func (e *dockerExecutor) PullImage(ref string) error {
-	_, err := e.cli.ImagePull(context.TODO(), ref, image.PullOptions{})
+	imgFilter := filters.NewArgs(filters.KeyValuePair{
+		Key:   "reference",
+		Value: ref,
+	})
+
+	images, err := e.cli.ImageList(context.TODO(), image.ListOptions{
+		Filters: imgFilter,
+	})
+
 	if err != nil {
 		return err
 	}
+
+	if len(images) != 0 {
+		// image already exists; don't pull
+		// TODO: might want to enable force pull
+		return nil
+	}
+
+	reader, err := e.cli.ImagePull(context.TODO(), ref, image.PullOptions{
+		RegistryAuth: e.authConfig,
+	})
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	io.Copy(ioutil.Discard, reader)
 	return nil
 }
 
