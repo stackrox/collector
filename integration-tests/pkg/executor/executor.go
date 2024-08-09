@@ -22,9 +22,9 @@ type Executor interface {
 	ExecWithErrorCheck(errCheckFn func(string, error) error, args ...string) (string, error)
 	ExecWithStdin(pipedContent string, args ...string) (string, error)
 	ExecWithoutRetry(args ...string) (string, error)
-	KillContainer(name string) (string, error)
-	RemoveContainer(filter ContainerFilter) (string, error)
-	StopContainer(name string) (string, error)
+	KillContainer(name string) error
+	RemoveContainer(filter ContainerFilter) error
+	StopContainer(name string) error
 }
 
 type CommandBuilder interface {

@@ -1,15 +1,19 @@
 package executor
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os/exec"
-	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
+
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/client"
 )
 
 var (
@@ -22,45 +26,10 @@ var (
 
 type dockerExecutor struct {
 	builder CommandBuilder
-}
-
-type sshCommandBuilder struct {
-	user    string
-	address string
-	keyPath string
-}
-
-type gcloudCommandBuilder struct {
-	user     string
-	instance string
-	options  string
-	vmType   string
+	cli     *client.Client
 }
 
 type localCommandBuilder struct {
-}
-
-func newSSHCommandBuilder() CommandBuilder {
-	host_info := config.HostInfo()
-	return &sshCommandBuilder{
-		user:    host_info.User,
-		address: host_info.Address,
-		keyPath: host_info.Options,
-	}
-}
-
-func newGcloudCommandBuilder() CommandBuilder {
-	host_info := config.HostInfo()
-	gcb := &gcloudCommandBuilder{
-		user:     host_info.User,
-		instance: host_info.Address,
-		options:  host_info.Options,
-		vmType:   config.VMInfo().Config,
-	}
-	if gcb.user == "" && (strings.Contains(gcb.vmType, "coreos") || strings.Contains(gcb.vmType, "flatcar")) {
-		gcb.user = "core"
-	}
-	return gcb
 }
 
 func newLocalCommandBuilder() CommandBuilder {
@@ -68,16 +37,15 @@ func newLocalCommandBuilder() CommandBuilder {
 }
 
 func newDockerExecutor() (*dockerExecutor, error) {
-	e := dockerExecutor{}
-	switch config.HostInfo().Kind {
-	case "ssh":
-		e.builder = newSSHCommandBuilder()
-	case "gcloud":
-		e.builder = newGcloudCommandBuilder()
-	case "local":
-		e.builder = newLocalCommandBuilder()
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		return nil, err
 	}
-	return &e, nil
+
+	return &dockerExecutor{
+		builder: newLocalCommandBuilder(),
+		cli:     cli,
+	}, nil
 }
 
 // Exec executes the provided command with retries on non-zero error from the command.
@@ -166,46 +134,57 @@ func (e *dockerExecutor) CopyFromHost(src string, dst string) (res string, err e
 	return res, err
 }
 
-func (e *dockerExecutor) PullImage(image string) error {
-	_, err := e.Exec(RuntimeCommand, "image", "inspect", image)
-	if err == nil {
-		return nil
+func (e *dockerExecutor) PullImage(ref string) error {
+	_, err := e.cli.ImagePull(context.TODO(), ref, image.PullOptions{})
+	if err != nil {
+		return err
 	}
-	_, err = e.Exec(RuntimeCommand, "pull", image)
-	return err
+	return nil
 }
 
 func (e *dockerExecutor) IsContainerRunning(containerID string) (bool, error) {
-	result, err := e.ExecWithoutRetry(RuntimeCommand, "inspect", containerID, "--format='{{.State.Running}}'")
+	containerJSON, err := e.cli.ContainerInspect(context.TODO(), containerID)
 	if err != nil {
 		return false, err
 	}
-	return strconv.ParseBool(strings.Trim(result, "\"'"))
+
+	return containerJSON.State.Running, nil
 }
 
 func (e *dockerExecutor) ContainerID(cf ContainerFilter) string {
-	result, err := e.ExecWithoutRetry(RuntimeCommand, "ps", "-aqf", "name=^"+cf.Name+"$")
-	if err != nil {
+	filter := filters.NewArgs(filters.KeyValuePair{
+		Key:   "name",
+		Value: cf.Name,
+	})
+
+	lops := container.ListOptions{
+		Filters: filter,
+	}
+
+	containers, err := e.cli.ContainerList(context.TODO(), lops)
+	if err != nil || len(containers) != 1 {
 		return ""
 	}
 
-	return strings.Trim(result, "\"")
+	return containers[0].ID
 }
 
 func (e *dockerExecutor) ContainerExists(cf ContainerFilter) (bool, error) {
-	_, err := e.ExecWithoutRetry(RuntimeCommand, "inspect", cf.Name)
+	_, err := e.cli.ContainerInspect(context.TODO(), cf.Name)
 	if err != nil {
 		return false, err
 	}
+
 	return true, nil
 }
 
 func (e *dockerExecutor) ExitCode(cf ContainerFilter) (int, error) {
-	result, err := e.Exec(RuntimeCommand, "inspect", cf.Name, "--format='{{.State.ExitCode}}'")
+	containerJSON, err := e.cli.ContainerInspect(context.TODO(), cf.Name)
 	if err != nil {
 		return -1, err
 	}
-	return strconv.Atoi(strings.Trim(result, "\"'"))
+
+	return containerJSON.State.ExitCode, nil
 }
 
 // checkContainerCommandError returns nil if the output of the container
@@ -230,18 +209,18 @@ func containerErrorCheckFunction(name string, cmd string) func(string, error) er
 }
 
 // KillContainer runs the kill operation on the provided container name
-func (e *dockerExecutor) KillContainer(name string) (string, error) {
-	return e.ExecWithErrorCheck(containerErrorCheckFunction(name, "kill"), RuntimeCommand, "kill", name)
+func (e *dockerExecutor) KillContainer(name string) error {
+	return e.cli.ContainerKill(context.TODO(), name, "KILL")
 }
 
 // RemoveContainer runs the remove operation on the provided container name
-func (e *dockerExecutor) RemoveContainer(cf ContainerFilter) (string, error) {
-	return e.ExecWithErrorCheck(containerErrorCheckFunction(cf.Name, "remove"), RuntimeCommand, "rm", cf.Name)
+func (e *dockerExecutor) RemoveContainer(cf ContainerFilter) error {
+	return e.cli.ContainerRemove(context.TODO(), cf.Name, container.RemoveOptions{})
 }
 
 // StopContainer runs the stop operation on the provided container name
-func (e *dockerExecutor) StopContainer(name string) (string, error) {
-	return e.ExecWithErrorCheck(containerErrorCheckFunction(name, "stop"), RuntimeCommand, "stop", name)
+func (e *dockerExecutor) StopContainer(name string) error {
+	return e.cli.ContainerStop(context.TODO(), name, container.StopOptions{})
 }
 
 func (e *localCommandBuilder) ExecCommand(execArgs ...string) *exec.Cmd {
@@ -253,50 +232,4 @@ func (e *localCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst strin
 		return exec.Command("cp", remoteSrc, localDst)
 	}
 	return nil
-}
-
-func (e *gcloudCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
-	cmdArgs := []string{"compute", "ssh"}
-	if len(e.options) > 0 {
-		opts := strings.Split(e.options, " ")
-		cmdArgs = append(cmdArgs, opts...)
-	}
-	userInstance := e.instance
-	if e.user != "" {
-		userInstance = e.user + "@" + e.instance
-	}
-
-	cmdArgs = append(cmdArgs, userInstance, "--", "-T")
-	cmdArgs = append(cmdArgs, common.QuoteArgs(args)...)
-	return exec.Command("gcloud", cmdArgs...)
-}
-
-func (e *gcloudCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst string) *exec.Cmd {
-	cmdArgs := []string{"compute", "scp"}
-	if len(e.options) > 0 {
-		opts := strings.Split(e.options, " ")
-		cmdArgs = append(cmdArgs, opts...)
-	}
-	userInstance := e.instance
-	if e.user != "" {
-		userInstance = e.user + "@" + e.instance
-	}
-	cmdArgs = append(cmdArgs, userInstance+":"+remoteSrc, localDst)
-	return exec.Command("gcloud", cmdArgs...)
-}
-
-func (e *sshCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
-	cmdArgs := []string{
-		"-o", "StrictHostKeyChecking=no", "-i", e.keyPath,
-		e.user + "@" + e.address}
-
-	cmdArgs = append(cmdArgs, common.QuoteArgs(args)...)
-	return exec.Command("ssh", cmdArgs...)
-}
-
-func (e *sshCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst string) *exec.Cmd {
-	args := []string{
-		"-o", "StrictHostKeyChecking=no", "-i", e.keyPath,
-		e.user + "@" + e.address + ":" + remoteSrc, localDst}
-	return exec.Command("scp", args...)
 }
