@@ -117,7 +117,7 @@ void InspectorLogCallback(std::string&& msg, sinsp_logger::severity severity) {
   // because our logging already appends a newline
   msg.erase(std::remove(msg.begin(), msg.end(), '\n'), msg.cend());
 
-  collector::logging::LogMessage(__FILE__, __LINE__, false, collector_severity) << msg;
+  collector::logging::LogMessage(__FILE__, __LINE__, collector_severity) << msg;
 }
 
 const char* GetGlobalLogPrefix() {
