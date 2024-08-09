@@ -37,7 +37,7 @@ func newLocalCommandBuilder() CommandBuilder {
 }
 
 func newDockerExecutor() (*dockerExecutor, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, err
 	}
