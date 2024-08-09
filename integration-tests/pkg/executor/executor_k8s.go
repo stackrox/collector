@@ -137,17 +137,16 @@ func (e *K8sExecutor) ExecWithoutRetry(args ...string) (string, error) {
 	return "", fmt.Errorf("Unimplemented")
 }
 
-func (e *K8sExecutor) KillContainer(name string) (string, error) {
-	return "", fmt.Errorf("Unimplemented")
+func (e *K8sExecutor) KillContainer(name string) error {
+	return fmt.Errorf("Unimplemented")
 }
 
-func (e *K8sExecutor) RemoveContainer(podFilter ContainerFilter) (string, error) {
-	err := e.clientset.CoreV1().Pods(podFilter.Namespace).Delete(context.Background(), podFilter.Name, metaV1.DeleteOptions{})
-	return "", err
+func (e *K8sExecutor) RemoveContainer(podFilter ContainerFilter) error {
+	return e.clientset.CoreV1().Pods(podFilter.Namespace).Delete(context.Background(), podFilter.Name, metaV1.DeleteOptions{})
 }
 
-func (e *K8sExecutor) StopContainer(name string) (string, error) {
-	return "", fmt.Errorf("Unimplemented")
+func (e *K8sExecutor) StopContainer(name string) error {
+	return fmt.Errorf("Unimplemented")
 }
 
 func (e *K8sExecutor) CreateNamespace(ns string) (*coreV1.Namespace, error) {
