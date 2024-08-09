@@ -97,7 +97,7 @@ jobs:
       - name: Test summary
         uses: test-summary/action@v2
         if: |
-          (success() || failure()) && !inputs.run-benchmarks
+           failure() && !inputs.run-benchmarks
         with:
           paths: integration-tests/container-logs/**/integration-test-report.xml
 
