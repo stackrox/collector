@@ -2,8 +2,12 @@ package executor
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -13,6 +17,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 )
 
@@ -22,7 +27,14 @@ var (
 	RuntimeCommand = config.RuntimeInfo().Command
 	RuntimeSocket  = config.RuntimeInfo().Socket
 	RuntimeAsRoot  = config.RuntimeInfo().RunAsRoot
+
+	authFiles = []string{
+		"$HOME/.config/containers/auth.json",
+		"$HOME/.docker/auth.json",
+	}
 )
+
+const MAIN_REGISTRY = "quay.io"
 
 type dockerExecutor struct {
 	builder CommandBuilder
@@ -42,10 +54,66 @@ func newDockerExecutor() (*dockerExecutor, error) {
 		return nil, err
 	}
 
+	auth, err := findAuth()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = cli.RegistryLogin(context.TODO(), *auth)
+	if err != nil {
+		return nil, err
+	}
+
 	return &dockerExecutor{
 		builder: newLocalCommandBuilder(),
 		cli:     cli,
 	}, nil
+}
+
+func findAuth() (*registry.AuthConfig, error) {
+	for _, path := range authFiles {
+		expanded := os.ExpandEnv(path)
+
+		file, err := os.Open(expanded)
+		if err != nil {
+			continue
+		}
+		defer file.Close()
+
+		// if we find a file, then we should use it
+		// so propagage errors up the stack after this point
+
+		bytes, err := ioutil.ReadAll(file)
+		if err != nil {
+			return nil, err
+		}
+
+		var auths struct {
+			Auths map[string]registry.AuthConfig
+		}
+
+		err = json.Unmarshal(bytes, &auths)
+		if err != nil {
+			return nil, err
+		}
+
+		main_auth := auths.Auths[MAIN_REGISTRY]
+		main_auth.ServerAddress = MAIN_REGISTRY
+
+		if main_auth.Username == "" && main_auth.Auth != "" {
+			auth_plain, err := base64.StdEncoding.DecodeString(main_auth.Auth)
+			if err != nil {
+				return nil, err
+			}
+			split := strings.Split(string(auth_plain), ":")
+			main_auth.Username = split[0]
+			main_auth.Password = split[1]
+		}
+
+		return &main_auth, nil
+	}
+
+	return nil, fmt.Errorf("Unable to find any auth json files")
 }
 
 // Exec executes the provided command with retries on non-zero error from the command.
