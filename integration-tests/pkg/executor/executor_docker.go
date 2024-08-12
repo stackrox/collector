@@ -228,7 +228,6 @@ func (e *dockerExecutor) PullImage(ref string) error {
 		// TODO: might want to enable force pull
 		return nil
 	}
-
 	reader, err := e.cli.ImagePull(context.TODO(), ref, image.PullOptions{
 		RegistryAuth: e.authConfig,
 	})
