@@ -12,7 +12,6 @@ metadata:
     pipelinesascode.tekton.dev/on-cel-expression: |
       (event == "push" && target_branch.matches("^(master|release-.*)$")) ||
       (event == "pull_request" && (source_branch.matches("(konflux|appstudio|rhtap)") || body.pull_request.labels.exists(l, l.name == "konflux-build")))
-  creationTimestamp: null
   labels:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: collector
