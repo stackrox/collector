@@ -4,6 +4,7 @@
 integration-tests/container-logs/
 integration-tests/*.log
 integration-tests/*.logs
+integration-tests/*.xml
 integration-tests/bin/
 integration-tests/perf.json
 falcosecurity-libs/cmake-build
