@@ -521,7 +521,7 @@ func (s *IntegrationTestSuiteBase) waitForFileToBeDeleted(file string) error {
 		case <-timer:
 			return fmt.Errorf("Timed out waiting for %s to be deleted", file)
 		case <-ticker.C:
-			if config.HostInfo().Kind == "local" {
+			if config.HostInfo().IsLocal() {
 				if _, err := os.Stat(file); os.IsNotExist(err) {
 					return nil
 				}
