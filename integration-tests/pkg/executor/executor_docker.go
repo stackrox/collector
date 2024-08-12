@@ -24,43 +24,7 @@ type dockerExecutor struct {
 	builder CommandBuilder
 }
 
-type sshCommandBuilder struct {
-	user    string
-	address string
-	keyPath string
-}
-
-type gcloudCommandBuilder struct {
-	user     string
-	instance string
-	options  string
-	vmType   string
-}
-
 type localCommandBuilder struct {
-}
-
-func newSSHCommandBuilder() CommandBuilder {
-	host_info := config.HostInfo()
-	return &sshCommandBuilder{
-		user:    host_info.User,
-		address: host_info.Address,
-		keyPath: host_info.Options,
-	}
-}
-
-func newGcloudCommandBuilder() CommandBuilder {
-	host_info := config.HostInfo()
-	gcb := &gcloudCommandBuilder{
-		user:     host_info.User,
-		instance: host_info.Address,
-		options:  host_info.Options,
-		vmType:   config.VMInfo().Config,
-	}
-	if gcb.user == "" && (strings.Contains(gcb.vmType, "coreos") || strings.Contains(gcb.vmType, "flatcar")) {
-		gcb.user = "core"
-	}
-	return gcb
 }
 
 func newLocalCommandBuilder() CommandBuilder {
@@ -68,16 +32,12 @@ func newLocalCommandBuilder() CommandBuilder {
 }
 
 func newDockerExecutor() (*dockerExecutor, error) {
-	e := dockerExecutor{}
-	switch config.HostInfo().Kind {
-	case "ssh":
-		e.builder = newSSHCommandBuilder()
-	case "gcloud":
-		e.builder = newGcloudCommandBuilder()
-	case "local":
-		e.builder = newLocalCommandBuilder()
-	}
-	return &e, nil
+	// While this function can't fail, to conform to the
+	// same construction API as other executors, we keep the
+	// error return value.
+	return &dockerExecutor{
+		builder: newLocalCommandBuilder(),
+	}, nil
 }
 
 // Exec executes the provided command with retries on non-zero error from the command.
@@ -253,50 +213,4 @@ func (e *localCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst strin
 		return exec.Command("cp", remoteSrc, localDst)
 	}
 	return nil
-}
-
-func (e *gcloudCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
-	cmdArgs := []string{"compute", "ssh"}
-	if len(e.options) > 0 {
-		opts := strings.Split(e.options, " ")
-		cmdArgs = append(cmdArgs, opts...)
-	}
-	userInstance := e.instance
-	if e.user != "" {
-		userInstance = e.user + "@" + e.instance
-	}
-
-	cmdArgs = append(cmdArgs, userInstance, "--", "-T")
-	cmdArgs = append(cmdArgs, common.QuoteArgs(args)...)
-	return exec.Command("gcloud", cmdArgs...)
-}
-
-func (e *gcloudCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst string) *exec.Cmd {
-	cmdArgs := []string{"compute", "scp"}
-	if len(e.options) > 0 {
-		opts := strings.Split(e.options, " ")
-		cmdArgs = append(cmdArgs, opts...)
-	}
-	userInstance := e.instance
-	if e.user != "" {
-		userInstance = e.user + "@" + e.instance
-	}
-	cmdArgs = append(cmdArgs, userInstance+":"+remoteSrc, localDst)
-	return exec.Command("gcloud", cmdArgs...)
-}
-
-func (e *sshCommandBuilder) ExecCommand(args ...string) *exec.Cmd {
-	cmdArgs := []string{
-		"-o", "StrictHostKeyChecking=no", "-i", e.keyPath,
-		e.user + "@" + e.address}
-
-	cmdArgs = append(cmdArgs, common.QuoteArgs(args)...)
-	return exec.Command("ssh", cmdArgs...)
-}
-
-func (e *sshCommandBuilder) RemoteCopyCommand(remoteSrc string, localDst string) *exec.Cmd {
-	args := []string{
-		"-o", "StrictHostKeyChecking=no", "-i", e.keyPath,
-		e.user + "@" + e.address + ":" + remoteSrc, localDst}
-	return exec.Command("scp", args...)
 }
