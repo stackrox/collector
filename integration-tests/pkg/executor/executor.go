@@ -33,7 +33,7 @@ type CommandBuilder interface {
 }
 
 func New() (Executor, error) {
-	if config.HostInfo().Kind == "k8s" {
+	if config.HostInfo().IsK8s() {
 		return newK8sExecutor()
 	}
 	return newDockerExecutor()

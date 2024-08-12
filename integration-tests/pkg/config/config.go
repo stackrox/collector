@@ -48,14 +48,15 @@ func init() {
 // Host contains information about how to connect to the host upon
 // which the tests are running
 type Host struct {
-	Kind    string
-	User    string
-	Address string
-	Options string
+	Kind string
 }
 
 func (h *Host) IsLocal() bool {
 	return h.Kind == "local"
+}
+
+func (h *Host) IsK8s() bool {
+	return h.Kind == "k8s"
 }
 
 // VM contains metadata about the machine upon which the tests are
@@ -116,10 +117,7 @@ func StopTimeout() string {
 func HostInfo() *Host {
 	if host_options == nil {
 		host_options = &Host{
-			Kind:    ReadEnvVarWithDefault(envHostType, "local"),
-			User:    ReadEnvVar(envHostUser),
-			Address: ReadEnvVar(envHostAddress),
-			Options: ReadEnvVar(envHostOptions),
+			Kind: ReadEnvVarWithDefault(envHostType, "local"),
 		}
 	}
 

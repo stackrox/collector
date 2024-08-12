@@ -21,7 +21,7 @@ func TestImageLabelJSON(t *testing.T) {
 
 // TestMissingProcScrape only works with local fake proc directory
 func TestMissingProcScrape(t *testing.T) {
-	if config.HostInfo().IsLocal() {
+	if !config.HostInfo().IsK8s() {
 		suite.Run(t, new(suites.MissingProcScrapeTestSuite))
 	}
 }
