@@ -56,7 +56,7 @@ func (s *SocatTestSuite) SetupSuite() {
 
 	s.serverContainer = common.ContainerShortID(containerID)
 
-	time.Sleep(6 * time.Second)
+	common.Sleep(6 * time.Second)
 }
 
 func (s *SocatTestSuite) TearDownSuite() {

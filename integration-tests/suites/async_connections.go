@@ -58,7 +58,7 @@ func (s *AsyncConnectionTestSuite) SetupSuite() {
 	s.serverIP, err = s.getIPAddress("server")
 	s.Require().NoError(err)
 
-	time.Sleep(5 * time.Second) // TODO use the endpoint declaration
+	common.Sleep(5 * time.Second) // TODO use the endpoint declaration
 
 	target := s.serverIP
 
@@ -71,7 +71,7 @@ func (s *AsyncConnectionTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.clientContainer = common.ContainerShortID(containerID)
 
-	time.Sleep(10 * time.Second) // give some time to the connection to fail
+	common.Sleep(10 * time.Second) // give some time to the connection to fail
 }
 
 func (s *AsyncConnectionTestSuite) TearDownSuite() {

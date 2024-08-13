@@ -95,7 +95,7 @@ func (s *DuplicateEndpointsTestSuite) TestDuplicateEndpoints() {
 	s.Sensor().ExpectEndpointsN(s.T(), containerID, gScrapeInterval*time.Second, 2)
 
 	// (5) kill the process after a delay
-	time.Sleep(2 * time.Second)
+	common.Sleep(2 * time.Second)
 	s.killSocatProcess(81)
 
 	// (6) start an idential process
@@ -104,7 +104,7 @@ func (s *DuplicateEndpointsTestSuite) TestDuplicateEndpoints() {
 
 	// (7) wait for another scrape interval, and verify we have still only
 	// seen 2 endpoints
-	time.Sleep(gScrapeInterval * time.Second)
+	common.Sleep(gScrapeInterval * time.Second)
 	s.Assert().Len(s.Sensor().Endpoints(containerID), 2, "Got more endpoints than expected")
 
 	// additional final check to ensure there are no additional reports

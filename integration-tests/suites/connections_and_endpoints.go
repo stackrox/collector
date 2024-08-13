@@ -66,12 +66,12 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	_, err = s.execContainer(serverName, []string{"/bin/sh", "-c", serverCmd})
 	s.Require().NoError(err)
 
-	time.Sleep(3 * time.Second)
+	common.Sleep(3 * time.Second)
 
 	clientCmd := strings.Replace(s.Client.Cmd, "SERVER_IP", s.Server.IP, -1)
 	_, err = s.execContainer(clientName, []string{"/bin/sh", "-c", clientCmd})
 	s.Require().NoError(err)
-	time.Sleep(6 * time.Second)
+	common.Sleep(6 * time.Second)
 }
 
 func (s *ConnectionsAndEndpointsTestSuite) TearDownSuite() {

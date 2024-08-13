@@ -53,7 +53,7 @@ func (s *GperftoolsTestSuite) TestFetchHeapProfile() {
 	s.Assert().Equal(response.StatusCode, 200, "Failed to start heap profiling")
 
 	// Wait a bit to collect something in the heap profile
-	time.Sleep(1 * time.Second)
+	common.Sleep(1 * time.Second)
 
 	response, err = http.Post(heap_api_url, data_type, strings.NewReader("off"))
 	s.Require().NoError(err)
