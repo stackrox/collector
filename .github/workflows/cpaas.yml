@@ -139,7 +139,6 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
       collector-tests-tag: ${{ needs.build-test-containers.outputs.collector-tests-tag }}
-      offline-mode: true
       job-tag: cpaas
       collector-repo: quay.io/stackrox-io/collector
     needs:
