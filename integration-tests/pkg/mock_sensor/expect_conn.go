@@ -18,7 +18,7 @@ import (
 func (s *MockSensor) ExpectConnections(t *testing.T, containerID string, timeout time.Duration, expected ...types.NetworkInfo) bool {
 
 	to_find := funk.Filter(expected, func(x types.NetworkInfo) bool {
-		return s.HasConnection(containerID, x)
+		return !s.HasConnection(containerID, x)
 	}).([]types.NetworkInfo)
 
 	if len(to_find) == 0 {
@@ -40,7 +40,7 @@ loop:
 			}
 
 			to_find = funk.Filter(expected, func(x types.NetworkInfo) bool {
-				return s.HasConnection(containerID, x)
+				return !s.HasConnection(containerID, x)
 			}).([]types.NetworkInfo)
 
 			if len(to_find) == 0 {
@@ -87,7 +87,7 @@ loop:
 func (s *MockSensor) ExpectEndpoints(t *testing.T, containerID string, timeout time.Duration, expected ...types.EndpointInfo) bool {
 
 	to_find := funk.Filter(expected, func(x types.EndpointInfo) bool {
-		return s.HasEndpoint(containerID, x)
+		return !s.HasEndpoint(containerID, x)
 	}).([]types.EndpointInfo)
 
 	if len(to_find) == 0 {
@@ -109,7 +109,7 @@ loop:
 			}
 
 			to_find = funk.Filter(expected, func(x types.EndpointInfo) bool {
-				return s.HasEndpoint(containerID, x)
+				return !s.HasEndpoint(containerID, x)
 			}).([]types.EndpointInfo)
 
 			if len(to_find) == 0 {
