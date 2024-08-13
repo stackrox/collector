@@ -13,8 +13,8 @@ BPF_PERF_OUTPUT(latency_events);
 
 // attach to do_syscall_64 and record the current timestamp
 // as well as the syscall ID to separate individual syscalls
-void enter_probe(struct pt_regs *ctx, u32 arg0) {
-  u32 pid = (u32) bpf_get_current_pid_tgid();
+void enter_probe(struct pt_regs* ctx, u32 arg0) {
+  u32 pid = (u32)bpf_get_current_pid_tgid();
   u64 ts = bpf_ktime_get_ns();
   u32 id = arg0;
 
@@ -30,11 +30,11 @@ void enter_probe(struct pt_regs *ctx, u32 arg0) {
 //
 // the probe will be attached with a high maxactive to allow a high number of
 // parallel kretprobe executions.
-void exit_probe(struct pt_regs *ctx) {
-  u32 pid = (u32) bpf_get_current_pid_tgid();
+void exit_probe(struct pt_regs* ctx) {
+  u32 pid = (u32)bpf_get_current_pid_tgid();
 
-  u64 *ts = start.lookup(&pid);
-  u32 *id = ids.lookup(&pid);
+  u64* ts = start.lookup(&pid);
+  u32* id = ids.lookup(&pid);
   if (ts == 0 || id == 0) {
     return;
   }
