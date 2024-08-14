@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
-	//"github.com/stackrox/collector/integration-tests/pkg/common"
+	// "github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stretchr/testify/assert"
 )

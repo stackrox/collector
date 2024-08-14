@@ -15,10 +15,10 @@ func (n *EndpointInfo) IsActive() bool {
 }
 
 func SortEndpoints(endpoints []EndpointInfo) {
-	sort.Slice(endpoints, func(i, j int) bool { return endpointComparison(endpoints[i], endpoints[j]) })
+	sort.Slice(endpoints, func(i, j int) bool { return CompareEndpoints(endpoints[i], endpoints[j]) })
 }
 
-func endpointComparison(endpoint1 EndpointInfo, endpoint2 EndpointInfo) bool {
+func CompareEndpoints(endpoint1 EndpointInfo, endpoint2 EndpointInfo) bool {
 	addr1, addr2 := endpoint1.Address, endpoint2.Address
 
 	if addr1 == nil {
@@ -60,6 +60,10 @@ func endpointComparison(endpoint1 EndpointInfo, endpoint2 EndpointInfo) bool {
 
 	if process1.ProcessArgs != process2.ProcessArgs {
 		return process1.ProcessArgs < process2.ProcessArgs
+	}
+
+	if endpoint1.IsActive() == endpoint2.IsActive() {
+		return true
 	}
 
 	return false

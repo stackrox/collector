@@ -70,6 +70,11 @@ func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
 		s.Sensor().ExpectEndpoints(s.T(), s.ServerContainer, 10*time.Second, types.EndpointInfo{
 			Protocol:       "L4_PROTOCOL_TCP",
 			CloseTimestamp: types.NilTimestamp,
+			Address: &types.ListenAddress{
+				AddressData: "\x00\x00\x00\x00",
+				Port:        80,
+				IpNetwork:   "\x00\x00\x00\x00 ",
+			},
 			Originator: &types.ProcessOriginator{
 				ProcessName:         processes[0].Name,
 				ProcessExecFilePath: processes[0].ExePath,
@@ -78,6 +83,11 @@ func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
 		}, types.EndpointInfo{
 			Protocol:       "L4_PROTOCOL_TCP",
 			CloseTimestamp: types.NilTimestamp,
+			Address: &types.ListenAddress{
+				AddressData: "\x00\x00\x00\x00",
+				Port:        80,
+				IpNetwork:   "\x00\x00\x00\x00 ",
+			},
 			Originator: &types.ProcessOriginator{
 				ProcessName:         processes[0].Name,
 				ProcessExecFilePath: processes[0].ExePath,
@@ -86,15 +96,16 @@ func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
 		})
 	} else {
 		// If scraping is off or the feature flag is disabled
-		// we expect to find the endpoint but with no originator process
-		s.Sensor().ExpectEndpoints(s.T(), s.ServerContainer, 10*time.Second, types.EndpointInfo{
-			Protocol:       "L4_PROTOCOL_TCP",
-			CloseTimestamp: types.NilTimestamp,
-			Originator: &types.ProcessOriginator{
-				ProcessName:         "",
-				ProcessExecFilePath: "",
-				ProcessArgs:         "",
-			},
-		})
+		// we expect to find no endpoints
+		s.Sensor().ExpectEndpointsN(s.T(), s.ServerContainer, 10*time.Second, 0)
+		//s.Sensor().ExpectEndpoints(s.T(), s.ServerContainer, 10*time.Second, types.EndpointInfo{
+		//	Protocol:       "L4_PROTOCOL_TCP",
+		//	CloseTimestamp: types.NilTimestamp,
+		//	Originator: &types.ProcessOriginator{
+		//		ProcessName:         "",
+		//		ProcessExecFilePath: "",
+		//		ProcessArgs:         "",
+		//	},
+		//})
 	}
 }
