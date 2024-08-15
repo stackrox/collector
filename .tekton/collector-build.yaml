@@ -78,8 +78,9 @@ spec:
         requests:
           cpu: 1
 
-  # The pipeline regularly takes >1h to finish.
   timeouts:
+    # The pipeline regularly takes >1h to finish.
+    # When changing the value here, make sure to adjust wait-for-images time limit in .github/workflows/konflux-tests.yml
     pipeline: 2h00m0s
 
   pipelineRef:
