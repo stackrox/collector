@@ -97,6 +97,12 @@ set(SCAP_HOST_ROOT_ENV_VAR_NAME "COLLECTOR_HOST_ROOT" CACHE STRING "Host root en
 set(BUILD_LIBSCAP_MODERN_BPF ON CACHE BOOL "Enable modern bpf engine" FORCE)
 set(MODERN_BPF_DEBUG_MODE ${BPF_DEBUG_MODE} CACHE BOOL "Enable BPF debug prints" FORCE)
 
-set(MODERN_BPF_EXCLUDE_PROGS "^(openat2|ppoll|setsockopt|clone3|io_uring_setup|nanosleep)$" CACHE STRING "Set of syscalls to exclude from modern bpf engine " FORCE)
+# Exclude unneeded progs, generated in a straightforward way as follow:
+# $ bpftool prog | grep tracing | awk '{print $4}' > all_progs.list
+# $ grep -v -f progs_in_use.list all_progs.list > collector/excluded_progs.list
+file(STRINGS "excluded_progs.list" EXCLUDED_PROGS_LIST)
+list(JOIN EXCLUDED_PROGS_LIST "|" EXCLUDED_PROGS)
+set(MODERN_BPF_EXCLUDE_PROGS "^(${EXCLUDED_PROGS})$" CACHE STRING "Set of syscalls to exclude from modern bpf engine " FORCE)
+message(INFO " Excluding ${MODERN_BPF_EXCLUDE_PROGS}")
 
 add_subdirectory(${FALCO_DIR} falco)
