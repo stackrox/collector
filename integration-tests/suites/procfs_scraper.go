@@ -64,5 +64,10 @@ func (s *ProcfsScraperTestSuite) TearDownSuite() {
 }
 
 func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
-	s.Sensor().ExpectEndpoints(s.T(), s.ServerContainer, 10*time.Second, s.Expected...)
+	if len(s.Expected) == 0 {
+		// if we expect no endpoints, this Expect function is more precise
+		s.Sensor().ExpectEndpointsN(s.T(), s.ServerContainer, 10*time.Second, 0)
+	} else {
+		s.Sensor().ExpectEndpoints(s.T(), s.ServerContainer, 10*time.Second, s.Expected...)
+	}
 }

@@ -92,12 +92,12 @@ func TestProcfsScraper(t *testing.T) {
 			{
 				Protocol:       "L4_PROTOCOL_TCP",
 				CloseTimestamp: types.NilTimestamp,
-				Address: &types.ListenAddress{
+				Address: types.ListenAddress{
 					AddressData: "\x00\x00\x00\x00",
 					Port:        80,
 					IpNetwork:   "\x00\x00\x00\x00 ",
 				},
-				Originator: &types.ProcessOriginator{
+				Originator: types.ProcessOriginator{
 					ProcessName:         "nginx",
 					ProcessExecFilePath: "/usr/sbin/nginx",
 					ProcessArgs:         "",
@@ -105,12 +105,12 @@ func TestProcfsScraper(t *testing.T) {
 			}, {
 				Protocol:       "L4_PROTOCOL_TCP",
 				CloseTimestamp: types.NilTimestamp,
-				Address: &types.ListenAddress{
+				Address: types.ListenAddress{
 					AddressData: "\x00\x00\x00\x00",
 					Port:        80,
 					IpNetwork:   "\x00\x00\x00\x00 ",
 				},
-				Originator: &types.ProcessOriginator{
+				Originator: types.ProcessOriginator{
 					ProcessName:         "nginx",
 					ProcessExecFilePath: "/usr/sbin/nginx",
 					ProcessArgs:         "",
@@ -138,7 +138,13 @@ func TestProcfsScraperDisableFeatureFlag(t *testing.T) {
 			{
 				Protocol:       "L4_PROTOCOL_TCP",
 				CloseTimestamp: types.NilTimestamp,
-				Originator: &types.ProcessOriginator{
+				Address: types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        80,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				// expect endpoint but no originator
+				Originator: types.ProcessOriginator{
 					ProcessName:         "",
 					ProcessExecFilePath: "",
 					ProcessArgs:         "",
@@ -183,7 +189,7 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 			ExpectedEndpoints: []types.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
-					Address: &types.ListenAddress{
+					Address: types.ListenAddress{
 						AddressData: "\x00\x00\x00\x00",
 						Port:        40,
 						IpNetwork:   "\x00\x00\x00\x00 ",
@@ -228,7 +234,7 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 			ExpectedEndpoints: []types.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
-					Address: &types.ListenAddress{
+					Address: types.ListenAddress{
 						AddressData: "\x00\x00\x00\x00",
 						Port:        40000,
 						IpNetwork:   "\x00\x00\x00\x00 ",
@@ -273,7 +279,7 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 			ExpectedEndpoints: []types.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
-					Address: &types.ListenAddress{
+					Address: types.ListenAddress{
 						AddressData: "\x00\x00\x00\x00",
 						Port:        60999,
 						IpNetwork:   "\x00\x00\x00\x00 ",
@@ -318,7 +324,7 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 			ExpectedEndpoints: []types.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
-					Address: &types.ListenAddress{
+					Address: types.ListenAddress{
 						AddressData: "\x00\x00\x00\x00",
 						Port:        10000,
 						IpNetwork:   "\x00\x00\x00\x00 ",

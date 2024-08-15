@@ -208,9 +208,8 @@ func (m *MockSensor) HasEndpoint(containerID string, endpoint types.EndpointInfo
 	defer m.networkMutex.Unlock()
 
 	if endpoints, ok := m.endpoints[containerID]; ok {
-		// _, exists := endpoints[endpoint]
-		for ep, _ := range endpoints {
-			if types.CompareEndpoints(ep, endpoint) {
+		for ep := range endpoints {
+			if ep.Equal(endpoint) {
 				return true
 			}
 		}
@@ -478,9 +477,9 @@ func (m *MockSensor) pushEndpoint(containerID string, endpoint *sensorAPI.Networ
 
 	ep := types.EndpointInfo{
 		Protocol:       endpoint.GetProtocol().String(),
-		Originator:     &originator,
+		Originator:     originator,
 		CloseTimestamp: endpoint.GetCloseTimestamp().String(),
-		Address:        &listen,
+		Address:        listen,
 	}
 
 	if endpoints, ok := m.endpoints[containerID]; ok {
