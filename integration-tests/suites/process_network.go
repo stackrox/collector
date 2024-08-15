@@ -137,15 +137,21 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 	s.Sensor().ExpectConnections(s.T(), s.serverContainer, 10*time.Second,
 		types.NetworkInfo{
-			LocalAddress:  fmt.Sprintf("%s:%d", s.clientIP, 0),
-			RemoteAddress: fmt.Sprintf(":%s", s.serverPort),
+			LocalAddress:   fmt.Sprintf(":%s", s.serverPort),
+			RemoteAddress:  s.clientIP,
+			Role:           "ROLE_SERVER",
+			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			CloseTimestamp: types.NilTimestamp,
 		},
 	)
 
 	s.Sensor().ExpectConnections(s.T(), s.clientContainer, 10*time.Second,
 		types.NetworkInfo{
-			LocalAddress:  "",
-			RemoteAddress: fmt.Sprintf("%s:%s", s.serverIP, s.serverPort),
+			LocalAddress:   "",
+			RemoteAddress:  fmt.Sprintf("%s:%s", s.serverIP, s.serverPort),
+			Role:           "ROLE_CLIENT",
+			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			CloseTimestamp: types.NilTimestamp,
 		},
 	)
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
+	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
@@ -93,7 +94,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	totalTime := (s.SleepBetweenCurlTime*s.NumIter+s.SleepBetweenIterations)*s.NumMetaIter + s.AfterglowPeriod + 10
-	time.Sleep(time.Duration(totalTime) * time.Second)
+	common.Sleep(time.Duration(totalTime) * time.Second)
 }
 
 func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {

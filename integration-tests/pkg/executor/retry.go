@@ -2,6 +2,8 @@ package executor
 
 import (
 	"time"
+
+	"github.com/stackrox/collector/integration-tests/pkg/common"
 )
 
 const (
@@ -24,7 +26,7 @@ func RetryWithErrorCheck(ec errorchecker, f retryable) (output string, err error
 		if ec(output, err) == nil {
 			return output, nil
 		} else if i != max_retries-1 {
-			time.Sleep(retry_wait_time)
+			common.Sleep(retry_wait_time)
 		}
 	}
 

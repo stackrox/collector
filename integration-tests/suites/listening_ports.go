@@ -51,7 +51,7 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	err = s.waitForFileToBeDeleted(actionFile)
 	s.Require().NoError(err)
 
-	time.Sleep(6 * time.Second)
+	common.Sleep(6 * time.Second)
 
 	_, err = s.executor.Exec("sh", "-c", "echo close 8081 > "+actionFile)
 	err = s.waitForFileToBeDeleted(actionFile)

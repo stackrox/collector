@@ -2,10 +2,13 @@ package common
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"golang.org/x/sys/unix"
@@ -63,4 +66,10 @@ func PrepareLog(testName string, logName string) (*os.File, error) {
 
 	logPath := filepath.Join(logDirectory, strings.ReplaceAll(testName, "/", "_")+"-"+logName)
 	return os.Create(logPath)
+}
+
+func Sleep(duration time.Duration) {
+	_, filename, line, _ := runtime.Caller(1)
+	fmt.Printf("%s:%d sleeping for %f s\n", filename, line, duration.Seconds())
+	time.Sleep(duration)
 }

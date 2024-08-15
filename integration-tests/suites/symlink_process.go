@@ -45,7 +45,7 @@ func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
 	err = s.waitForFileToBeDeleted(actionFile)
 	s.Require().NoError(err)
 
-	time.Sleep(6 * time.Second)
+	common.Sleep(6 * time.Second)
 }
 
 func (s *SymbolicLinkProcessTestSuite) TearDownSuite() {

@@ -15,6 +15,7 @@ type ProcfsScraperTestSuite struct {
 	ServerContainer             string
 	TurnOffScrape               bool
 	RoxProcessesListeningOnPort bool
+	Expected                    []types.EndpointInfo
 }
 
 // Launches nginx container
@@ -63,38 +64,10 @@ func (s *ProcfsScraperTestSuite) TearDownSuite() {
 }
 
 func (s *ProcfsScraperTestSuite) TestProcfsScraper() {
-	if !s.TurnOffScrape && s.RoxProcessesListeningOnPort {
-		// If scraping is on and the feature flag is enables we expect to find the nginx endpoint
-		processes := s.Sensor().Processes(s.ServerContainer)
-
-		s.Sensor().ExpectEndpoints(s.T(), s.ServerContainer, 10*time.Second, types.EndpointInfo{
-			Protocol:       "L4_PROTOCOL_TCP",
-			CloseTimestamp: types.NilTimestamp,
-			Originator: &types.ProcessOriginator{
-				ProcessName:         processes[0].Name,
-				ProcessExecFilePath: processes[0].ExePath,
-				ProcessArgs:         processes[0].Args,
-			},
-		}, types.EndpointInfo{
-			Protocol:       "L4_PROTOCOL_TCP",
-			CloseTimestamp: types.NilTimestamp,
-			Originator: &types.ProcessOriginator{
-				ProcessName:         processes[0].Name,
-				ProcessExecFilePath: processes[0].ExePath,
-				ProcessArgs:         processes[0].Args,
-			},
-		})
+	if len(s.Expected) == 0 {
+		// if we expect no endpoints, this Expect function is more precise
+		s.Sensor().ExpectEndpointsN(s.T(), s.ServerContainer, 10*time.Second, 0)
 	} else {
-		// If scraping is off or the feature flag is disabled
-		// we expect to find the endpoint but with no originator process
-		s.Sensor().ExpectEndpoints(s.T(), s.ServerContainer, 10*time.Second, types.EndpointInfo{
-			Protocol:       "L4_PROTOCOL_TCP",
-			CloseTimestamp: types.NilTimestamp,
-			Originator: &types.ProcessOriginator{
-				ProcessName:         "",
-				ProcessExecFilePath: "",
-				ProcessArgs:         "",
-			},
-		})
+		s.Sensor().ExpectEndpoints(s.T(), s.ServerContainer, 10*time.Second, s.Expected...)
 	}
 }
