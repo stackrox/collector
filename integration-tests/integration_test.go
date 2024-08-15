@@ -88,6 +88,35 @@ func TestProcfsScraper(t *testing.T) {
 	connScraperTestSuite := &suites.ProcfsScraperTestSuite{
 		TurnOffScrape:               false,
 		RoxProcessesListeningOnPort: true,
+		Expected: []types.EndpointInfo{
+			{
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Address: &types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        80,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				Originator: &types.ProcessOriginator{
+					ProcessName:         "nginx",
+					ProcessExecFilePath: "/usr/sbin/nginx",
+					ProcessArgs:         "",
+				},
+			}, {
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Address: &types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        80,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				Originator: &types.ProcessOriginator{
+					ProcessName:         "nginx",
+					ProcessExecFilePath: "/usr/sbin/nginx",
+					ProcessArgs:         "",
+				},
+			},
+		},
 	}
 	suite.Run(t, connScraperTestSuite)
 }
@@ -96,6 +125,7 @@ func TestProcfsScraperNoScrape(t *testing.T) {
 	connScraperTestSuite := &suites.ProcfsScraperTestSuite{
 		TurnOffScrape:               true,
 		RoxProcessesListeningOnPort: true,
+		Expected:                    []types.EndpointInfo{},
 	}
 	suite.Run(t, connScraperTestSuite)
 }
@@ -104,6 +134,17 @@ func TestProcfsScraperDisableFeatureFlag(t *testing.T) {
 	connScraperTestSuite := &suites.ProcfsScraperTestSuite{
 		TurnOffScrape:               false,
 		RoxProcessesListeningOnPort: false,
+		Expected: []types.EndpointInfo{
+			{
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Originator: &types.ProcessOriginator{
+					ProcessName:         "",
+					ProcessExecFilePath: "",
+					ProcessArgs:         "",
+				},
+			},
+		},
 	}
 	suite.Run(t, connScraperTestSuite)
 }
