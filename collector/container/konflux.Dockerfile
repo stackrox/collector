@@ -52,7 +52,7 @@ ARG BUILD_DIR
 ARG SRC_ROOT_DIR=${BUILD_DIR}
 ARG CMAKE_BUILD_DIR
 # TODO(ROX-20240): CMAKE_BUILD_TYPE should probably not be Release for PR, normal branch builds
-ARG CMAKE_BUILD_TYPE=Release
+ARG CMAKE_BUILD_TYPE=Debug
 # Appends an argument to the driver download URL that is used for filtering alerts on missing kernels.
 # TODO(ROX-20240): This needs to be true on PRs only.
 ARG COLLECTOR_APPEND_CID=false
