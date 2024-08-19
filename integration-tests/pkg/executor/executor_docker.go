@@ -1,7 +1,6 @@
 package executor
 
 import (
-	"fmt"
 	"io"
 	"os/exec"
 	"strconv"
@@ -9,11 +8,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 )
 
 var (
-	debug = false
-
 	RuntimeCommand = config.RuntimeInfo().Command
 	RuntimeSocket  = config.RuntimeInfo().Socket
 	RuntimeAsRoot  = config.RuntimeInfo().RunAsRoot
@@ -73,14 +71,10 @@ func (e *dockerExecutor) RunCommand(cmd *exec.Cmd) (string, error) {
 		return "", nil
 	}
 	commandLine := strings.Join(cmd.Args, " ")
-	if debug {
-		fmt.Printf("Run: %s\n", commandLine)
-	}
+	log.Info("%s\n", commandLine)
 	stdoutStderr, err := cmd.CombinedOutput()
 	trimmed := strings.Trim(string(stdoutStderr), "\"\n")
-	if debug {
-		fmt.Printf("Run Output: %s\n", trimmed)
-	}
+	log.Debug("Run Output: %s\n", trimmed)
 	if err != nil {
 		err = errors.Wrapf(err, "Command Failed: %s\nOutput: %s\n", commandLine, trimmed)
 	}
@@ -114,7 +108,7 @@ func (e *dockerExecutor) CopyFromHost(src string, dst string) (res string, err e
 	for attempt < maxAttempts {
 		cmd := e.builder.RemoteCopyCommand(src, dst)
 		if attempt > 0 {
-			fmt.Printf("Retrying (%v) (%d of %d) Error: %v\n", cmd, attempt, maxAttempts, err)
+			log.Error("Retrying (%v) (%d of %d) Error: %v\n", cmd, attempt, maxAttempts, err)
 		}
 		attempt++
 		res, err = e.RunCommand(cmd)

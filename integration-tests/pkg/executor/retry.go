@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/common"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 )
 
 const (
@@ -26,6 +27,7 @@ func RetryWithErrorCheck(ec errorchecker, f retryable) (output string, err error
 		if ec(output, err) == nil {
 			return output, nil
 		} else if i != max_retries-1 {
+			log.Error("Retrying (%d of %d) Error: %v\n", i, max_retries, err)
 			common.Sleep(retry_wait_time)
 		}
 	}

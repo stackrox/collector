@@ -2,7 +2,6 @@ package common
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 	"golang.org/x/sys/unix"
 	"k8s.io/utils/strings/slices"
 )
@@ -70,6 +70,6 @@ func PrepareLog(testName string, logName string) (*os.File, error) {
 
 func Sleep(duration time.Duration) {
 	_, filename, line, _ := runtime.Caller(1)
-	fmt.Printf("%s:%d sleeping for %f s\n", filename, line, duration.Seconds())
+	log.Info("%s:%d sleeping for %f s\n", filename, line, duration.Seconds())
 	time.Sleep(duration)
 }
