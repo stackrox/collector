@@ -68,7 +68,10 @@ void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTrac
 
 bool Service::InitKernel(const CollectorConfig& config) {
   if (!inspector_) {
-    inspector_.reset(new sinsp());
+    // TODO: https://github.com/falcosecurity/libs/pull/2016
+    // Once that change is pulled, fix compilation here by removing the first
+    // 4 arguments.
+    inspector_.reset(new sinsp(false, "", "", "", true));
 
     // peeking into arguments has a big overhead, so we prevent it from happening
     inspector_->set_snaplen(0);
@@ -82,9 +85,6 @@ bool Service::InitKernel(const CollectorConfig& config) {
     inspector_->set_thread_timeout_s(30);
     inspector_->set_auto_threads_purging_interval_s(60);
     inspector_->m_thread_manager->set_max_thread_table_size(config.GetSinspThreadCacheSize());
-
-    // enable stats v2
-    inspector_->set_sinsp_stats_v2_enabled();
 
     // Connection status tracking is used in NetworkSignalHandler,
     // but only when trying to handle asynchronous connections
