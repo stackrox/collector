@@ -1,5 +1,7 @@
 .idea/
 .rox/
+.ccls-cache/
+falcosecurity-libs/.ccls-cache/
 
 integration-tests/container-logs/
 integration-tests/*.log
@@ -7,11 +9,9 @@ integration-tests/*.logs
 integration-tests/*.xml
 integration-tests/bin/
 integration-tests/perf.json
-falcosecurity-libs/cmake-build
-falcosecurity-libs/cmake-build-rhel
 kernel-modules/kobuild-tmp
 utilities/PerformanceTesting/TestResults
-cmake-build/
+cmake-build*/
 
 # Mac OS hidden file
 .DS_Store
