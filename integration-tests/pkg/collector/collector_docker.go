@@ -2,6 +2,7 @@ package collector
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"golang.org/x/exp/maps"
@@ -94,16 +95,22 @@ func (c *DockerCollectorManager) TearDown() error {
 	}
 
 	if !isRunning {
-		c.captureLogs("collector")
+		logs, logsErr := c.captureLogs("collector")
+		logsEnd := logs
+		if logsErr == nil {
+			logsSplit := strings.Split(logs, "\n")
+			logsEnd = strings.Join(logsSplit[max(0, len(logsSplit)-24):], "\n")
+			logsEnd = fmt.Sprintf("\ncollector logs:\n%s\n", logsEnd)
+		}
 		// Check if collector container segfaulted or exited with error
 		exitCode, err := c.executor.ExitCode(executor.ContainerFilter{
 			Name: "collector",
 		})
 		if err != nil {
-			return log.Error("Failed to get container exit code: %s", err)
+			return fmt.Errorf("Failed to get container exit code%s: %w", logsEnd, err)
 		}
 		if exitCode != 0 {
-			return log.Error("Collector container has non-zero exit code (%d)", exitCode)
+			return fmt.Errorf("Collector container has non-zero exit code (%d)%s", exitCode, logsEnd)
 		}
 	} else {
 		c.stopContainer("collector")
