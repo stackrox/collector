@@ -113,10 +113,6 @@ void InspectorLogCallback(std::string&& msg, sinsp_logger::severity severity) {
     return;
   }
 
-  // remove any newlines to avoid additional empty log lines
-  // because our logging already appends a newline
-  msg.erase(std::remove(msg.begin(), msg.end(), '\n'), msg.cend());
-
   collector::logging::LogMessage(__FILE__, __LINE__, false, collector_severity) << msg;
 }
 
