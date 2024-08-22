@@ -36,6 +36,12 @@ on:
           tests
         type: boolean
         default: false
+      large-box:
+        description: |
+          Marker for workflows that suppose to run tests on nodes with large
+          number of CPU cores.
+        type: boolean
+        default: false
 
 jobs:
   amd64-integration-tests:
@@ -55,6 +61,25 @@ jobs:
           - rhel-sap
           - sles
           - garden-linux
+    with:
+      vm_type: ${{ matrix.vm_type }}
+      collector-tag: ${{ inputs.collector-tag }}
+      collector-qa-tag: ${{ inputs.collector-qa-tag }}
+      collector-tests-tag: ${{ inputs.collector-tests-tag }}
+      job-tag: ${{ inputs.job-tag }}
+      collector-repo: ${{ inputs.collector-repo }}
+    secrets: inherit
+
+  amd64-integration-tests-large-box:
+    uses: ./.github/workflows/integration-tests-vm-type.yml
+    if: contains(github.event.pull_request.labels.*.name, 'large-box-integration-tests') || inputs.large-box
+    strategy:
+      # ensure that if one part of the matrix fails, the
+      # rest will continue
+      fail-fast: false
+      matrix:
+        vm_type:
+          - fedora-coreos-large-node
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ inputs.collector-tag }}

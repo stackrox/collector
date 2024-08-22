@@ -530,3 +530,7 @@ func TestPerfEvent(t *testing.T) {
 func TestGperftools(t *testing.T) {
 	suite.Run(t, new(suites.GperftoolsTestSuite))
 }
+
+func TestRingBuffer(t *testing.T) {
+	suite.Run(t, new(suites.RingBufferTestSuite))
+}

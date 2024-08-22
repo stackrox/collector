@@ -140,6 +140,13 @@ virtual_machines:
     families:
       - fedora-coreos-stable
 
+  fedora-coreos-large-node:
+    project: fedora-coreos-cloud
+    machine_type: n2-standard-128
+    username: core
+    families:
+      - fedora-coreos-stable
+
   # This should be 'fedora-coreos-arm64', but because of
   # GCP VM name length restrictions, we need it to be shorter
   fcarm:
