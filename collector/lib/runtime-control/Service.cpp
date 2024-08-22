@@ -45,7 +45,7 @@ void Service::Run() {
   while (should_run_) {
     if (WaitForChannelReady(control_channel_, [this]() -> bool { return !should_run_; })) {
       CLOG(DEBUG) << "[runtime-control::Service] Channel is ready";
-      reader_ = DuplexClient::CreateWithReadCallback(
+      writer_ = DuplexClient::CreateWithReadCallback(
           &sensor::CollectorService::Stub::AsyncCommunicate,
           control_channel_,
           &client_context_,
@@ -55,7 +55,7 @@ void Service::Run() {
 
       SessionLoop();
 
-      reader_->Finish();
+      writer_->Finish();
     }
   }
 
@@ -64,7 +64,7 @@ void Service::Run() {
 
 void Service::SessionLoop() {
   while (should_run_) {
-    if (!reader_->Sleep(1s)) {
+    if (!writer_->Sleep(1s)) {
       CLOG(WARNING) << "[runtime-control::Service] Connection interrupted";
       break;
     }
@@ -79,12 +79,12 @@ void Service::Receive(const sensor::MsgToCollector* message) {
   }
 
   switch (message->msg_case()) {
-    //case sensor::MsgToCollector::kConfigWithCluster: {
     case sensor::MsgToCollector::kCollectorConfig: {
       sensor::MsgToCollector msg;
 
       CLOG(INFO) << "[runtime-control::Service] Receive: CollectorRuntimeConfig";
-      Config::GetOrCreate().Update(message->config_with_cluster());
+      Config::GetOrCreate().Update(message->collector_config());
+      //Config::GetOrCreate().Update(message->config_with_cluster());
 
       //msg.mutable_collector_runtime_config_ack();
       //writer_->WriteAsync(msg);

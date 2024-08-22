@@ -9,10 +9,6 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include <grpcpp/client_context.h> // For grpc::ClientContext
-#include <grpcpp/create_channel.h> // For grpc::CreateChannel
-#include <grpcpp/support/client_callback.h> // For grpc::ClientReader
-
 #include <internalapi/sensor/collector_iservice.grpc.pb.h>
 
 namespace collector::runtime_control {
@@ -35,7 +31,6 @@ class Service {
   std::atomic_bool should_run_ = true;
   grpc::ClientContext client_context_;
   std::unique_ptr<IDuplexClientWriter<sensor::MsgToCollector>> writer_;
-  std::unique_ptr<IDuplexClient<sensor::MsgToCollector>> reader_;
 
   void Receive(const sensor::MsgToCollector* message);
 
