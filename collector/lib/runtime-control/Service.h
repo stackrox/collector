@@ -30,7 +30,7 @@ class Service {
   std::mutex global_mutex_;
   std::atomic_bool should_run_ = true;
   grpc::ClientContext client_context_;
-  std::unique_ptr<IDuplexClientWriter<sensor::MsgToCollector>> writer_;
+  std::unique_ptr<IDuplexClientWriter<sensor::MsgFromCollector>> writer_;
 
   void Receive(const sensor::MsgToCollector* message);
 
