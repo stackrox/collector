@@ -78,11 +78,11 @@ void Service::Receive(const sensor::MsgToCollector* message) {
   if (!message) {
     return;
   }
-  
+
   CLOG(INFO) << "Before switch";
   switch (message->msg_case()) {
     case sensor::MsgToCollector::kCollectorConfig: {
-      //sensor::MsgToCollector msg;
+      // sensor::MsgToCollector msg;
 
       CLOG(INFO) << "[runtime-control::Service] Receive: CollectorRuntimeConfig";
       CLOG(INFO) << "Before Update";
