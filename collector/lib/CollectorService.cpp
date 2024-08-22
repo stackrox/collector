@@ -22,6 +22,7 @@ extern "C" {
 #include "ProfilerHandler.h"
 #include "Utility.h"
 #include "prometheus/exposer.h"
+#include "runtime-control/Service.h"
 #include "system-inspector/Service.h"
 
 extern unsigned char g_bpf_drop_syscalls[];  // defined in libscap
@@ -64,6 +65,8 @@ void CollectorService::RunForever() {
   std::unique_ptr<ContainerInfoInspector> container_info_inspector;
   std::unique_ptr<NetworkStatusInspector> network_status_inspector;
 
+  runtime_control::Service runtime_control_service;
+
   CLOG(INFO) << "Network scrape interval set to " << config_.ScrapeInterval() << " seconds";
 
   if (config_.grpc_channel) {
@@ -73,6 +76,9 @@ void CollectorService::RunForever() {
       return;
     }
     CLOG(INFO) << "Sensor connectivity is successful";
+
+    runtime_control_service.Init(config_.grpc_channel);
+    runtime_control_service.Start();
   }
 
   if (!config_.grpc_channel || !config_.DisableNetworkFlows()) {
@@ -136,6 +142,8 @@ void CollectorService::RunForever() {
   server.close();
 
   system_inspector_.CleanUp();
+
+  runtime_control_service.Stop();
 }
 
 bool CollectorService::InitKernel() {
