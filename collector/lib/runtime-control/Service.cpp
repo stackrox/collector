@@ -84,10 +84,10 @@ void Service::Receive(const sensor::MsgToCollector* message) {
 
       CLOG(INFO) << "[runtime-control::Service] Receive: CollectorRuntimeConfig";
       Config::GetOrCreate().Update(message->collector_config());
-      //Config::GetOrCreate().Update(message->config_with_cluster());
+      // Config::GetOrCreate().Update(message->config_with_cluster());
 
-      //msg.mutable_collector_runtime_config_ack();
-      //writer_->WriteAsync(msg);
+      // msg.mutable_collector_runtime_config_ack();
+      // writer_->WriteAsync(msg);
 
       break;
     }

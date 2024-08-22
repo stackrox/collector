@@ -1,5 +1,7 @@
 #include <runtime-control/Config.h>
 
+#include "Logging.h"
+
 namespace collector::runtime_control {
 
 Config& Config::GetOrCreate() {
@@ -18,7 +20,8 @@ void Config::Update(const storage::CollectorConfig& msg) {
   std::unique_lock<std::mutex> lock(mutex_);
 
   config_message_.emplace(msg);
-
+  bool process_enabled = msg.collector_cluster_level_config().process_status().enabled();
+  CLOG(INFO) << "process_enabled= " << process_enabled;
   condition_.notify_all();
 }
 
