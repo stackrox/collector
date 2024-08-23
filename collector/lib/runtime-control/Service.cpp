@@ -64,10 +64,10 @@ void Service::Run() {
 
 void Service::SessionLoop() {
   while (should_run_) {
-    if (!writer_->Sleep(1s)) {
-      CLOG(WARNING) << "[runtime-control::Service] Connection interrupted";
-      break;
-    }
+    //if (!writer_->Sleep(1s)) {
+    //  CLOG(WARNING) << "[runtime-control::Service] Connection interrupted";
+    //  break;
+    //}
 
     // TODO
   }
@@ -76,6 +76,7 @@ void Service::SessionLoop() {
 void Service::Receive(const sensor::MsgToCollector* message) {
   CLOG(INFO) << "In Receive";
   if (!message) {
+    CLOG(INFO) << "No message return";
     return;
   }
 
