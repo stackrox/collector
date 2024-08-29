@@ -616,6 +616,33 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   CollectorStats::Reset();
 }
 
+TEST(ProcessSignalFormatterTest, EmptyArgument) {
+  std::unique_ptr<sinsp> inspector(new sinsp());
+
+  ProcessSignalFormatter processSignalFormatter(inspector.get());
+
+  auto tinfo = inspector->build_threadinfo();
+  tinfo->m_pid = 3;
+  tinfo->m_tid = 3;
+  tinfo->m_ptid = -1;
+  tinfo->m_vpid = 0;
+  tinfo->m_user.set_uid(42);
+  tinfo->m_container_id = "";
+  tinfo->m_exepath = "qwerty";
+
+  std::vector<std::string> args = {""};
+  tinfo->set_args(args);
+
+  sinsp_evt* evt = new sinsp_evt();
+  scap_evt* s_evt = new scap_evt();
+
+  s_evt->type = PPME_SYSCALL_EXECVE_19_X;
+  evt->set_tinfo(tinfo.get());
+  evt->set_scap_evt(s_evt);
+
+  processSignalFormatter.ToProtoMessage(evt);
+}
+
 }  // namespace
 
 }  // namespace collector
