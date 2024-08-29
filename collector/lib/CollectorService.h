@@ -24,6 +24,8 @@ class CollectorService {
   const std::atomic<int>& signum_;
 
   system_inspector::Service system_inspector_;
+
+  void QueryKubelet();
 };
 
 bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServer, const CollectorConfig& config);

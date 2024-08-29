@@ -1,0 +1,28 @@
+version: "3.9"
+services:
+  collector:
+    image: quay.io/stackrox-io/collector:3.19.x-61-g18fbe6077a-dirty
+    container_name: collector-debug
+    network_mode: host
+    privileged: true
+    environment:
+      - GRPC_SERVER=localhost:9999
+      - COLLECTOR_CONFIG={"logLevel":"info","turnOffScrape":true,"scrapeInterval":2}
+      - COLLECTION_METHOD=core-bpf
+      - COLLECTOR_HOST_ROOT=/host
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock:ro
+      - /proc:/host/proc:ro
+      - /etc:/host/etc:ro
+      - /usr/lib:/host/usr/lib:ro
+      - /sys/:/host/sys/:ro
+      - /dev:/host/dev:ro
+    depends_on:
+      - grpc-server-debug
+  grpc-server-debug:
+    image: quay.io/rhacs-eng/grpc-server:4.3.8
+    container_name: grpc-server
+    network_mode: host
+    user: 1000:1000
+    volumes:
+      - /tmp:/tmp:rw

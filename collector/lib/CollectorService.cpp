@@ -23,6 +23,7 @@ extern "C" {
 #include "Utility.h"
 #include "prometheus/exposer.h"
 #include "system-inspector/Service.h"
+#include "curl/curl.h"
 
 extern unsigned char g_bpf_drop_syscalls[];  // defined in libscap
 
@@ -65,6 +66,9 @@ void CollectorService::RunForever() {
   std::unique_ptr<NetworkStatusInspector> network_status_inspector;
 
   CLOG(INFO) << "Network scrape interval set to " << config_.ScrapeInterval() << " seconds";
+  
+  CLOG(INFO) << "HALLO DMITRII";
+  CollectorService::QueryKubelet();
 
   if (config_.grpc_channel) {
     CLOG(INFO) << "Waiting for Sensor to become ready ...";
@@ -136,6 +140,20 @@ void CollectorService::RunForever() {
   server.close();
 
   system_inspector_.CleanUp();
+}
+
+void CollectorService::QueryKubelet() {
+  CLOG(INFO) << "Query Kubelet Example";
+  CURL *curl = curl_easy_init();
+  if(curl) {
+    CURLcode res;
+    curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
+    res = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+    if (res) {
+      CLOG(INFO) << printf("response: %d\n", res);
+    }
+  }
 }
 
 bool CollectorService::InitKernel() {
