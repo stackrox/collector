@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 
+#include "CollectorConfig.h"
 #include "GRPC.h"
 #include "Logging.h"
 #include "optionparser.h"
@@ -137,39 +138,19 @@ CollectorArgs::checkCollectionMethod(const option::Option& option, bool msg) {
 option::ArgStatus
 CollectorArgs::checkCollectorConfig(const option::Option& option, bool msg) {
   using namespace option;
-  using std::string;
-
-  if (option.arg == NULL) {
-    if (msg) {
-      this->message = "Missing collector config";
-    }
-    return ARG_IGNORE;
-  }
-
-  string arg(option.arg);
-  CLOG(DEBUG) << "Incoming: " << arg;
-
   Json::Value root;
-  Json::Reader reader;
-  bool parsingSuccessful = reader.parse(arg.c_str(), root);
-  if (!parsingSuccessful) {
-    if (msg) {
-      this->message = "A valid JSON configuration is required to start the collector: ";
-      this->message += reader.getFormattedErrorMessages();
-    }
-    return ARG_ILLEGAL;
+
+  const auto& [status, message] = CollectorConfig::CheckConfiguration(option.arg, &root);
+  if (msg) {
+    this->message = message;
   }
 
-  // for now check that the keys exist without checking their types
-  if (!root.isMember("syscalls")) {
-    if (msg) {
-      this->message = "No syscalls key. Will extract on the complete syscall set.";
-    }
+  if (status == ARG_OK) {
+    collectorConfig = root;
+    CLOG(DEBUG) << "Collector config: " << collectorConfig.toStyledString();
   }
 
-  collectorConfig = root;
-  CLOG(DEBUG) << "Collector config: " << collectorConfig.toStyledString();
-  return ARG_OK;
+  return status;
 }
 
 option::ArgStatus

@@ -65,6 +65,7 @@ OptionalStringEnvVar log_level("ROX_COLLECTOR_LOG_LEVEL");
 OptionalIntEnvVar scrape_interval("ROX_COLLECTOR_SCRAPE_INTERVAL");
 OptionalBoolEnvVar scrape_off("ROX_COLLECTOR_SCRAPE_DISABLED");
 OptionalStringEnvVar grpc_server("GRPC_SERVER");
+OptionalStringEnvVar collector_config("COLLECTOR_CONFIG");
 
 // TLS Configuration
 OptionalPathEnvVar tls_certs_path("ROX_COLLECTOR_TLS_CERTS");
@@ -89,18 +90,6 @@ CollectorConfig::CollectorConfig() {
   turn_off_scrape_ = kTurnOffScrape;
   collection_method_ = kCollectionMethod;
 }
-
-namespace {
-void setLogLevel(const std::string& level) {
-  logging::LogLevel lvl;
-  if (logging::ParseLogLevelName(level, &lvl)) {
-    logging::SetLogLevel(lvl);
-    CLOG(INFO) << "User configured logLevel=" << level;
-  } else {
-    CLOG(INFO) << "User configured logLevel is invalid " << level;
-  }
-}
-}  // namespace
 
 void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   enable_processes_listening_on_ports_ = set_processes_listening_on_ports.value();
@@ -130,6 +119,18 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   // Check user provided configuration
   if (args) {
     auto config = args->CollectorConfig();
+
+    if (config.empty() && collector_config.hasValue()) {
+      Json::Value root;
+      const auto& [status, msg] = CheckConfiguration(collector_config.value().c_str(), &root);
+      if (!msg.empty()) {
+        CLOG(INFO) << msg;
+      }
+
+      if (status == option::ARG_OK) {
+        config = root;
+      }
+    }
 
     // Log Level
     // process this first to ensure logging behaves correctly
@@ -514,6 +515,26 @@ void CollectorConfig::SetHostConfig(HostConfig* config) {
 
 void CollectorConfig::SetSinspCpuPerBuffer(unsigned int cpu_per_buffer) {
   sinsp_cpu_per_buffer_ = cpu_per_buffer;
+}
+
+std::pair<option::ArgStatus, std::string> CollectorConfig::CheckConfiguration(const char* config, Json::Value* root) {
+  using namespace option;
+  assert(root != nullptr);
+
+  if (config == nullptr) {
+    return std::make_pair(ARG_IGNORE, "Missing collector config");
+  }
+
+  CLOG(DEBUG) << "Incoming: " << config;
+
+  Json::Reader reader;
+  if (!reader.parse(config, *root)) {
+    std::string msg = "A valid JSON configuration is required to start the collector: ";
+    msg += reader.getFormattedErrorMessages();
+    return std::make_pair(ARG_ILLEGAL, msg);
+  }
+
+  return std::make_pair(ARG_OK, "");
 }
 
 }  // namespace collector

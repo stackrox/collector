@@ -12,6 +12,8 @@
 #include "HostConfig.h"
 #include "NetworkConnection.h"
 #include "TlsConfig.h"
+#include "json/value.h"
+#include "optionparser.h"
 
 namespace collector {
 
@@ -88,6 +90,8 @@ class CollectorConfig {
   unsigned int GetSinspBufferSize() const;
   unsigned int GetSinspTotalBufferSize() const { return sinsp_total_buffer_size_; }
   unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
+
+  static std::pair<option::ArgStatus, std::string> CheckConfiguration(const char* config, Json::Value* root);
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
