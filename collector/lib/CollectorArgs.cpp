@@ -41,8 +41,8 @@ static const option::Descriptor usage[] =
          "USAGE: collector [options]\n\n"
          "Options:"},
         {HELP, 0, "", "help", option::Arg::None, "  --help                \tPrint usage and exit."},
-        {COLLECTOR_CONFIG, 0, "", "collector-config", checkCollectorConfig, "  --collector-config    \tREQUIRED: Collector config as a JSON string. Please refer to documentation on the valid JSON format."},
-        {COLLECTION_METHOD, 0, "", "collection-method", checkCollectionMethod, "  --collection-method   \tCollection method (kernel_module, ebpf or core_bpf)."},
+        {COLLECTOR_CONFIG, 0, "", "collector-config", checkCollectorConfig, "  --collector-config    \tCollector config as a JSON string. Please refer to documentation on the valid JSON format."},
+        {COLLECTION_METHOD, 0, "", "collection-method", checkCollectionMethod, "  --collection-method   \tCollection method (ebpf or core_bpf)."},
         {GRPC_SERVER, 0, "", "grpc-server", checkGRPCServer, "  --grpc-server         \tGRPC server endpoint string in the form HOST1:PORT1."},
         {UNKNOWN, 0, "", "", option::Arg::None,
          "\nExamples:\n"
@@ -87,7 +87,7 @@ bool CollectorArgs::parse(int argc, char** argv, int& exitCode) {
     return false;
   }
 
-  if (options[HELP] || argc == 0) {
+  if (options[HELP]) {
     stringstream out;
     option::printUsage(out, usage);
     message = out.str();
@@ -143,7 +143,7 @@ CollectorArgs::checkCollectorConfig(const option::Option& option, bool msg) {
     if (msg) {
       this->message = "Missing collector config";
     }
-    return ARG_ILLEGAL;
+    return ARG_IGNORE;
   }
 
   string arg(option.arg);

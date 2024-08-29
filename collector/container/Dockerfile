@@ -38,7 +38,4 @@ HEALTHCHECK	\
 	# the command uses /ready API
 	CMD /usr/local/bin/status-check.sh
 
-ENTRYPOINT collector \
-    --collector-config=$COLLECTOR_CONFIG \
-    --collection-method=$COLLECTION_METHOD \
-    --grpc-server=$GRPC_SERVER
+ENTRYPOINT collector

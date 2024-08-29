@@ -153,10 +153,7 @@ RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
 
 EXPOSE 8080 9090
 
-ENTRYPOINT collector \
-    --collector-config=$COLLECTOR_CONFIG \
-    --collection-method=$COLLECTION_METHOD \
-    --grpc-server=$GRPC_SERVER
+ENTRYPOINT collector
 
 LABEL \
     com.redhat.component="rhacs-collector-container" \

@@ -64,7 +64,7 @@ BoolEnvVar enable_introspection("ROX_COLLECTOR_INTROSPECTION_ENABLE", false);
 OptionalStringEnvVar log_level("ROX_COLLECTOR_LOG_LEVEL");
 OptionalIntEnvVar scrape_interval("ROX_COLLECTOR_SCRAPE_INTERVAL");
 OptionalBoolEnvVar scrape_off("ROX_COLLECTOR_SCRAPE_DISABLED");
-OptionalStringEnvVar grpc_server("ROX_COLLECTOR_GRPC_SERVER");
+OptionalStringEnvVar grpc_server("GRPC_SERVER");
 
 // TLS Configuration
 OptionalPathEnvVar tls_certs_path("ROX_COLLECTOR_TLS_CERTS");
