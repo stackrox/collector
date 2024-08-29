@@ -1,15 +1,20 @@
 #include "CollectorConfig.h"
 
+#include <filesystem>
+#include <optional>
 #include <sstream>
 
 #include <libsinsp/sinsp.h>
 
 #include "CollectorArgs.h"
 #include "EnvVar.h"
+#include "GRPC.h"
 #include "HostHeuristics.h"
 #include "HostInfo.h"
 #include "Logging.h"
+#include "TlsConfig.h"
 #include "Utility.h"
+#include "optionparser.h"
 
 namespace collector {
 
@@ -55,6 +60,18 @@ BoolEnvVar use_podman_ce("ROX_COLLECTOR_CE_USE_PODMAN", false);
 
 BoolEnvVar enable_introspection("ROX_COLLECTOR_INTROSPECTION_ENABLE", false);
 
+// Collector arguments alternatives
+OptionalStringEnvVar log_level("ROX_COLLECTOR_LOG_LEVEL");
+OptionalIntEnvVar scrape_interval("ROX_COLLECTOR_SCRAPE_INTERVAL");
+OptionalBoolEnvVar scrape_off("ROX_COLLECTOR_SCRAPE_DISABLED");
+OptionalStringEnvVar grpc_server("ROX_COLLECTOR_GRPC_SERVER");
+
+// TLS Configuration
+OptionalPathEnvVar tls_certs_path("ROX_COLLECTOR_TLS_CERTS");
+OptionalPathEnvVar tls_ca_path("ROX_COLLECTOR_TLS_CA");
+OptionalPathEnvVar tls_client_cert_path("ROX_COLLECTOR_TLS_CLIENT_CERT");
+OptionalPathEnvVar tls_client_key_path("ROX_COLLECTOR_TLS_CLIENT_KEY");
+
 }  // namespace
 
 constexpr bool CollectorConfig::kTurnOffScrape;
@@ -72,6 +89,18 @@ CollectorConfig::CollectorConfig() {
   turn_off_scrape_ = kTurnOffScrape;
   collection_method_ = kCollectionMethod;
 }
+
+namespace {
+void setLogLevel(const std::string& level) {
+  logging::LogLevel lvl;
+  if (logging::ParseLogLevelName(level, &lvl)) {
+    logging::SetLogLevel(lvl);
+    CLOG(INFO) << "User configured logLevel=" << level;
+  } else {
+    CLOG(INFO) << "User configured logLevel is invalid " << level;
+  }
+}
+}  // namespace
 
 void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   enable_processes_listening_on_ports_ = set_processes_listening_on_ports.value();
@@ -104,59 +133,73 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
 
     // Log Level
     // process this first to ensure logging behaves correctly
-    if (!config["logLevel"].empty()) {
-      logging::LogLevel level;
-      if (logging::ParseLogLevelName(config["logLevel"].asString(), &level)) {
-        logging::SetLogLevel(level);
-        CLOG(INFO) << "User configured logLevel=" << config["logLevel"].asString();
+    auto setLogLevel = [](const std::string& level) {
+      logging::LogLevel lvl;
+      if (logging::ParseLogLevelName(level, &lvl)) {
+        logging::SetLogLevel(lvl);
+        CLOG(INFO) << "User configured logLevel=" << level;
       } else {
-        CLOG(INFO) << "User configured logLevel is invalid " << config["logLevel"].asString();
+        CLOG(INFO) << "User configured logLevel is invalid " << level;
       }
+    };
+    if (!config["logLevel"].empty()) {
+      setLogLevel(config["logLevel"].asString());
+    } else if (log_level.hasValue()) {
+      setLogLevel(log_level.value());
     }
 
     // Scrape Interval
-    if (!config["scrapeInterval"].empty()) {
-      scrape_interval_ = std::stoi(config["scrapeInterval"].asString());
+    auto setScrapeInterval = [&](int interval) {
+      scrape_interval_ = interval;
       CLOG(INFO) << "User configured scrapeInterval=" << scrape_interval_;
+    };
+    if (!config["scrapeInterval"].empty()) {
+      setScrapeInterval(config["scrapeInterval"].asInt());
+    } else if (scrape_interval.hasValue()) {
+      setScrapeInterval(scrape_interval.value());
     }
 
     // Scrape Enabled/Disabled
-    if (!config["turnOffScrape"].empty()) {
-      turn_off_scrape_ = config["turnOffScrape"].asBool();
+    auto setScrapeOff = [&](bool off) {
+      turn_off_scrape_ = off;
       CLOG(INFO) << "User configured turnOffScrape=" << turn_off_scrape_;
+    };
+
+    if (!config["turnOffScrape"].empty()) {
+      setScrapeOff(config["turnOffScrape"].asBool());
+    } else if (scrape_off.hasValue()) {
+      setScrapeOff(scrape_off.value());
     }
 
-    // Syscalls
-    if (!config["syscalls"].empty() && config["syscalls"].isArray()) {
-      auto syscall_list = config["syscalls"];
-      std::vector<std::string> syscalls;
-      for (const auto& syscall_json : syscall_list) {
-        syscalls.push_back(syscall_json.asString());
-      }
-      syscalls_ = syscalls;
-
-      std::stringstream ss;
-      for (auto& s : syscalls_) ss << s << ",";
-      CLOG(INFO) << "User configured syscalls=" << ss.str();
-    }
-
-    // Collection Method
-    if (args->GetCollectionMethod().length() > 0) {
-      const auto& cm = args->GetCollectionMethod();
-
-      CLOG(INFO) << "User configured collection-method=" << cm;
-      if (cm == "ebpf") {
-        collection_method_ = CollectionMethod::EBPF;
-      } else if (cm == "core_bpf") {
-        collection_method_ = CollectionMethod::CORE_BPF;
-      } else {
-        CLOG(WARNING) << "Invalid collection-method (" << cm << "), using CO-RE BPF";
-        collection_method_ = CollectionMethod::CORE_BPF;
-      }
-    }
-
+    // TLS configuration
+    std::filesystem::path ca_cert_path;
+    std::filesystem::path client_cert_path;
+    std::filesystem::path client_key_path;
     if (!config["tlsConfig"].empty()) {
-      tls_config_ = config["tlsConfig"];
+      ca_cert_path = config["tlsConfig"]["caCertPath"].asString();
+      client_cert_path = config["tlsConfig"]["clientCertPath"].asString();
+      client_key_path = config["tlsConfig"]["clientKeyPath"].asString();
+    } else if (tls_certs_path.hasValue()) {
+      const std::filesystem::path& tls_base_path = tls_certs_path.value();
+      ca_cert_path = tls_ca_path.valueOr(tls_base_path / "ca.pem");
+      client_cert_path = tls_client_cert_path.valueOr(tls_base_path / "cert.pem");
+      client_key_path = tls_client_key_path.valueOr(tls_base_path / "key.pem");
+    } else {
+      ca_cert_path = tls_ca_path.valueOr("");
+      client_cert_path = tls_client_cert_path.valueOr("");
+      client_key_path = tls_client_key_path.valueOr("");
+    }
+    tls_config_ = TlsConfig(ca_cert_path, client_cert_path, client_key_path);
+
+    if (!args->GRPCServer().empty()) {
+      grpc_server_ = args->GRPCServer();
+    } else if (grpc_server.hasValue()) {
+      const auto& [status, msg] = CheckGrpcServer(grpc_server.value());
+      if (status == option::ARG_OK) {
+        grpc_server_ = grpc_server.value();
+      } else if (!msg.empty()) {
+        CLOG(INFO) << msg;
+      }
     }
   }
 

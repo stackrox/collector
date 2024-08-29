@@ -11,6 +11,7 @@
 #include "CollectionMethod.h"
 #include "HostConfig.h"
 #include "NetworkConnection.h"
+#include "TlsConfig.h"
 
 namespace collector {
 
@@ -68,7 +69,7 @@ class CollectorConfig {
   const std::vector<IPNet>& NonAggregatedNetworks() const { return non_aggregated_networks_; }
   bool EnableAfterglow() const { return enable_afterglow_; }
   bool IsCoreDumpEnabled() const;
-  Json::Value TLSConfiguration() const { return tls_config_; }
+  const std::optional<TlsConfig>& TLSConfiguration() const { return tls_config_; }
   bool IsProcessesListeningOnPortsEnabled() const { return enable_processes_listening_on_ports_; }
   bool ImportUsers() const { return import_users_; }
   bool CollectConnectionStatus() const { return collect_connection_status_; }
@@ -82,6 +83,7 @@ class CollectorConfig {
   const std::vector<double>& GetConnectionStatsQuantiles() const { return connection_stats_quantiles_; }
   double GetConnectionStatsError() const { return connection_stats_error_; }
   unsigned int GetConnectionStatsWindow() const { return connection_stats_window_; }
+  const std::optional<std::string>& GetGrpcServer() const { return grpc_server_; }
   unsigned int GetSinspCpuPerBuffer() const { return sinsp_cpu_per_buffer_; }
   unsigned int GetSinspBufferSize() const;
   unsigned int GetSinspTotalBufferSize() const { return sinsp_total_buffer_size_; }
@@ -120,6 +122,9 @@ class CollectorConfig {
   double connection_stats_error_;
   unsigned int connection_stats_window_;
 
+  // URL to the GRPC server
+  std::optional<std::string> grpc_server_;
+
   // One ring buffer will be initialized for this many CPUs
   unsigned int sinsp_cpu_per_buffer_ = 0;
   // Size of one ring buffer, in bytes.
@@ -135,7 +140,7 @@ class CollectorConfig {
   // is 2^17 (131072) and twice as large.
   unsigned int sinsp_thread_cache_size_ = 32768;
 
-  Json::Value tls_config_;
+  std::optional<TlsConfig> tls_config_;
 
   void HandleAfterglowEnvVars();
   void HandleConnectionStatsEnvVars();

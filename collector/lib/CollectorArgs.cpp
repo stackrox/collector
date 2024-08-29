@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 
+#include "GRPC.h"
 #include "Logging.h"
 #include "optionparser.h"
 
@@ -174,49 +175,17 @@ CollectorArgs::checkCollectorConfig(const option::Option& option, bool msg) {
 option::ArgStatus
 CollectorArgs::checkGRPCServer(const option::Option& option, bool msg) {
   using namespace option;
-  using std::string;
+  const auto& [status, m] = CheckGrpcServer(option.arg);
 
-  if (option.arg == NULL || ::strlen(option.arg) == 0) {
-    if (msg) {
-      this->message = "Missing grpc list. Cannot configure GRPC client. Reverting to stdout.";
-    }
-    return ARG_OK;
+  if (status == ARG_OK) {
+    grpcServer = option.arg;
   }
 
-  if (::strlen(option.arg) > 255) {
-    if (msg) {
-      this->message = "GRPC Server addr too long (> 255)";
-    }
-    return ARG_ILLEGAL;
+  if (msg) {
+    this->message = m;
   }
 
-  string arg(option.arg);
-  string::size_type j = arg.find(':');
-  if (j == string::npos) {
-    if (msg) {
-      this->message = "Malformed grpc server addr";
-    }
-    return ARG_ILLEGAL;
-  }
-
-  string host = arg.substr(0, j);
-  if (host.empty()) {
-    if (msg) {
-      this->message = "Missing grpc host";
-    }
-    return ARG_ILLEGAL;
-  }
-
-  string port = arg.substr(j + 1, arg.length());
-  if (port.empty()) {
-    if (msg) {
-      this->message = "Missing grpc port";
-    }
-    return ARG_ILLEGAL;
-  }
-
-  grpcServer = arg;
-  return ARG_OK;
+  return status;
 }
 
 const Json::Value&
