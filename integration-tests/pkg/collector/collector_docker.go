@@ -49,6 +49,7 @@ func newDockerManager(e executor.Executor, name string) *DockerCollectorManager 
 		bootstrapOnly: false,
 		env:           env,
 		mounts:        mounts,
+		config:        map[string]any{},
 		testName:      name,
 	}
 }
