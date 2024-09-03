@@ -66,6 +66,7 @@ OptionalIntEnvVar scrape_interval("ROX_COLLECTOR_SCRAPE_INTERVAL");
 OptionalBoolEnvVar scrape_off("ROX_COLLECTOR_SCRAPE_DISABLED");
 OptionalStringEnvVar grpc_server("GRPC_SERVER");
 OptionalStringEnvVar collector_config("COLLECTOR_CONFIG");
+OptionalStringEnvVar collection_method("COLLECTION_METHOD");
 
 // TLS Configuration
 OptionalPathEnvVar tls_certs_path("ROX_COLLECTOR_TLS_CERTS");
@@ -170,6 +171,25 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
       setScrapeOff(config["turnOffScrape"].asBool());
     } else if (scrape_off.hasValue()) {
       setScrapeOff(scrape_off.value());
+    }
+
+    // Collection Method
+    auto setCollectionMethod = [&](const std::string& cm) {
+      CLOG(INFO) << "User configured collection-method=" << cm;
+      if (cm == "ebpf") {
+        collection_method_ = CollectionMethod::EBPF;
+      } else if (cm == "core_bpf") {
+        collection_method_ = CollectionMethod::CORE_BPF;
+      } else {
+        CLOG(WARNING) << "Invalid collection-method (" << cm << "), using CO-RE BPF";
+        collection_method_ = CollectionMethod::CORE_BPF;
+      }
+    };
+
+    if (args->GetCollectionMethod().length() > 0) {
+      setCollectionMethod(args->GetCollectionMethod());
+    } else if (collection_method.hasValue()) {
+      setCollectionMethod(collection_method.value());
     }
 
     // TLS configuration
