@@ -142,23 +142,18 @@ LABEL \
 ARG BUILD_DIR
 ARG CMAKE_BUILD_DIR
 
-ENV COLLECTOR_VERSION="${COLLECTOR_TAG}"
 ENV COLLECTOR_HOST_ROOT=/host
 
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
 COPY --from=builder ${BUILD_DIR}/collector/container/scripts /
 
-RUN mv /collector-wrapper.sh /usr/local/bin/ && \
-    chmod 700 bootstrap.sh && \
-    echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
+RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
     ldconfig
 
 EXPOSE 8080 9090
 
-ENTRYPOINT ["/bootstrap.sh"]
-
-CMD collector-wrapper.sh \
+ENTRYPOINT collector \
     --collector-config=$COLLECTOR_CONFIG \
     --collection-method=$COLLECTION_METHOD \
     --grpc-server=$GRPC_SERVER

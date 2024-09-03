@@ -40,6 +40,7 @@ extern "C" {
 #include "LogLevel.h"
 #include "Logging.h"
 #include "Utility.h"
+#include "Version.h"
 
 static const int MAX_GRPC_CONNECTION_POLLS = 30;
 
@@ -123,6 +124,12 @@ void initialChecks() {
 }
 
 int main(int argc, char** argv) {
+  // Print system information before doing actual work.
+  auto& host_info = HostInfo::Instance();
+  CLOG(INFO) << "Collector Version: " << GetCollectorVersion();
+  CLOG(INFO) << "OS: " << host_info.GetDistro();
+  CLOG(INFO) << "Kernel Version: " << host_info.GetKernelVersion().GetRelease();
+
   initialChecks();
 
   CollectorArgs* args = CollectorArgs::getInstance();
