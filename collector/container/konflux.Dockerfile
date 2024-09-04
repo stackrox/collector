@@ -149,7 +149,7 @@ COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
 
 EXPOSE 8080 9090
 
-ENTRYPOINT collector
+ENTRYPOINT ["collector"]
 
 LABEL \
     com.redhat.component="rhacs-collector-container" \

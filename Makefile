@@ -51,7 +51,8 @@ image: collector unittest
 
 image-dev: collector unittest container-dockerfile-dev
 	make -C collector txt-files
-	docker build --build-arg collector_version="$(COLLECTOR_TAG)" \
+	docker buildx build --load --platform ${PLATFORM} \
+		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
 		--build-arg BUILD_TYPE=devel \
 		-f collector/container/Dockerfile.dev \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
@@ -99,8 +100,9 @@ teardown-builder:
 
 .PHONY: clean
 clean:
-	rm -rf cmake-build/
+	rm -rf cmake-build*
 	make -C collector clean
+	make -C integration-tests docker-clean
 
 .PHONY: shfmt-check
 shfmt-check:

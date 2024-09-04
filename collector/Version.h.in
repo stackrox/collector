@@ -1,10 +1,10 @@
-#ifndef _VERSION_H_
-#define _VERSION_H_
+#ifndef _COLLECTOR_VERSION_H_
+#define _COLLECTOR_VERSION_H_
 
-#define COLLECTOR_VERSION "${COLLECTOR_VERSION}"
+#define COLLECTOR_VERSION "@COLLECTOR_VERSION@"
 
 inline const char* GetCollectorVersion() {
   return COLLECTOR_VERSION;
 }
 
-#endif  // _VERSION_H_
+#endif  // _COLLECTOR_VERSION_H_
