@@ -8,7 +8,9 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
+#include <filesystem>
 #include <mutex>
+#include <optional>
 #include <utility>
 
 #include "Logging.h"
@@ -23,14 +25,34 @@ class EnvVar {
   explicit EnvVar(const char* env_var_name, Args&&... def_val_ctor_args) noexcept
       : env_var_name_(env_var_name), val_(std::forward<Args>(def_val_ctor_args)...) {}
 
+  explicit EnvVar(const char* env_var_name) noexcept
+      : EnvVar(env_var_name, std::nullopt) {}
+
+  bool hasValue() const {
+    return tryValue().has_value();
+  }
+
+  // Will throw an exception if val_ is nullopt.
   const T& value() const {
+    return tryValue().value();
+  }
+
+  const T& valueOr(const T& alt) {
+    return hasValue() ? value() : alt;
+  }
+
+  const std::optional<T>& tryValue() const {
     std::call_once(init_once_, [this]() {
       const char* env_val = std::getenv(env_var_name_);
-      if (!env_val) {
+      if (env_val == nullptr) {
         return;
       }
-      if (!ParseT()(&val_, env_val)) {
+
+      T val;
+      if (!ParseT()(&val, env_val)) {
         CLOG(WARNING) << "Failed to parse value '" << env_val << "' for environment variable " << env_var_name_ << ". Using default value.";
+      } else {
+        val_ = std::make_optional(val);
       }
     });
     return val_;
@@ -42,7 +64,7 @@ class EnvVar {
 
  private:
   const char* env_var_name_;
-  mutable T val_;
+  mutable std::optional<T> val_;
   mutable std::once_flag init_once_;
 };
 
@@ -68,10 +90,33 @@ struct ParseStringList {
   }
 };
 
+struct ParseString {
+  bool operator()(std::string* out, std::string str_val) {
+    *out = std::move(str_val);
+    return true;
+  }
+};
+
+struct ParseInt {
+  bool operator()(int* out, const std::string& str_val) {
+    *out = std::stoi(str_val);
+    return true;
+  }
+};
+
+struct ParsePath {
+  bool operator()(std::filesystem::path* out, const std::string& str_val) {
+    *out = str_val;
+    return true;
+  }
+};
 }  // namespace internal
 
 using BoolEnvVar = EnvVar<bool, internal::ParseBool>;
 using StringListEnvVar = EnvVar<std::vector<std::string>, internal::ParseStringList>;
+using StringEnvVar = EnvVar<std::string, internal::ParseString>;
+using IntEnvVar = EnvVar<int, internal::ParseInt>;
+using PathEnvVar = EnvVar<std::filesystem::path, internal::ParsePath>;
 
 }  // namespace collector
 

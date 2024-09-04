@@ -28,19 +28,12 @@ type DockerCollectorManager struct {
 func newDockerManager(e executor.Executor, name string) *DockerCollectorManager {
 	collectorOptions := config.CollectorInfo()
 
-	collectionMethod := config.CollectionMethod()
-
-	collectorConfig := map[string]any{
-		"logLevel":       collectorOptions.LogLevel,
-		"turnOffScrape":  true,
-		"scrapeInterval": 2,
-	}
-
 	env := map[string]string{
-		"GRPC_SERVER":             "localhost:9999",
-		"COLLECTION_METHOD":       collectionMethod,
-		"COLLECTOR_PRE_ARGUMENTS": collectorOptions.PreArguments,
-		"ENABLE_CORE_DUMP":        "true",
+		"GRPC_SERVER":                   "localhost:9999",
+		"ENABLE_CORE_DUMP":              "true",
+		"ROX_COLLECTOR_LOG_LEVEL":       collectorOptions.LogLevel,
+		"ROX_COLLECTOR_SCRAPE_DISABLED": "true",
+		"ROX_COLLECTOR_SCRAPE_INTERVAL": "2",
 	}
 
 	mounts := map[string]string{
@@ -56,7 +49,7 @@ func newDockerManager(e executor.Executor, name string) *DockerCollectorManager 
 		bootstrapOnly: false,
 		env:           env,
 		mounts:        mounts,
-		config:        collectorConfig,
+		config:        map[string]any{},
 		testName:      name,
 	}
 }

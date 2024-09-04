@@ -6,6 +6,8 @@
 #include <sstream>
 #include <string>
 
+#include "CollectorConfig.h"
+#include "GRPC.h"
 #include "Logging.h"
 #include "optionparser.h"
 
@@ -40,8 +42,8 @@ static const option::Descriptor usage[] =
          "USAGE: collector [options]\n\n"
          "Options:"},
         {HELP, 0, "", "help", option::Arg::None, "  --help                \tPrint usage and exit."},
-        {COLLECTOR_CONFIG, 0, "", "collector-config", checkCollectorConfig, "  --collector-config    \tREQUIRED: Collector config as a JSON string. Please refer to documentation on the valid JSON format."},
-        {COLLECTION_METHOD, 0, "", "collection-method", checkCollectionMethod, "  --collection-method   \tCollection method (kernel_module, ebpf or core_bpf)."},
+        {COLLECTOR_CONFIG, 0, "", "collector-config", checkCollectorConfig, "  --collector-config    \tCollector config as a JSON string. Please refer to documentation on the valid JSON format."},
+        {COLLECTION_METHOD, 0, "", "collection-method", checkCollectionMethod, "  --collection-method   \tCollection method (ebpf or core_bpf)."},
         {GRPC_SERVER, 0, "", "grpc-server", checkGRPCServer, "  --grpc-server         \tGRPC server endpoint string in the form HOST1:PORT1."},
         {UNKNOWN, 0, "", "", option::Arg::None,
          "\nExamples:\n"
@@ -86,7 +88,7 @@ bool CollectorArgs::parse(int argc, char** argv, int& exitCode) {
     return false;
   }
 
-  if (options[HELP] || argc == 0) {
+  if (options[HELP]) {
     stringstream out;
     option::printUsage(out, usage);
     message = out.str();
@@ -136,87 +138,35 @@ CollectorArgs::checkCollectionMethod(const option::Option& option, bool msg) {
 option::ArgStatus
 CollectorArgs::checkCollectorConfig(const option::Option& option, bool msg) {
   using namespace option;
-  using std::string;
-
-  if (option.arg == NULL) {
-    if (msg) {
-      this->message = "Missing collector config";
-    }
-    return ARG_ILLEGAL;
-  }
-
-  string arg(option.arg);
-  CLOG(DEBUG) << "Incoming: " << arg;
-
   Json::Value root;
-  Json::Reader reader;
-  bool parsingSuccessful = reader.parse(arg.c_str(), root);
-  if (!parsingSuccessful) {
-    if (msg) {
-      this->message = "A valid JSON configuration is required to start the collector: ";
-      this->message += reader.getFormattedErrorMessages();
-    }
-    return ARG_ILLEGAL;
+
+  const auto& [status, message] = CollectorConfig::CheckConfiguration(option.arg, &root);
+  if (msg) {
+    this->message = message;
   }
 
-  // for now check that the keys exist without checking their types
-  if (!root.isMember("syscalls")) {
-    if (msg) {
-      this->message = "No syscalls key. Will extract on the complete syscall set.";
-    }
+  if (status == ARG_OK) {
+    collectorConfig = root;
+    CLOG(DEBUG) << "Collector config: " << collectorConfig.toStyledString();
   }
 
-  collectorConfig = root;
-  CLOG(DEBUG) << "Collector config: " << collectorConfig.toStyledString();
-  return ARG_OK;
+  return status;
 }
 
 option::ArgStatus
 CollectorArgs::checkGRPCServer(const option::Option& option, bool msg) {
   using namespace option;
-  using std::string;
+  const auto& [status, m] = CheckGrpcServer(option.arg);
 
-  if (option.arg == NULL || ::strlen(option.arg) == 0) {
-    if (msg) {
-      this->message = "Missing grpc list. Cannot configure GRPC client. Reverting to stdout.";
-    }
-    return ARG_OK;
+  if (status == ARG_OK) {
+    grpcServer = option.arg;
   }
 
-  if (::strlen(option.arg) > 255) {
-    if (msg) {
-      this->message = "GRPC Server addr too long (> 255)";
-    }
-    return ARG_ILLEGAL;
+  if (msg) {
+    this->message = m;
   }
 
-  string arg(option.arg);
-  string::size_type j = arg.find(':');
-  if (j == string::npos) {
-    if (msg) {
-      this->message = "Malformed grpc server addr";
-    }
-    return ARG_ILLEGAL;
-  }
-
-  string host = arg.substr(0, j);
-  if (host.empty()) {
-    if (msg) {
-      this->message = "Missing grpc host";
-    }
-    return ARG_ILLEGAL;
-  }
-
-  string port = arg.substr(j + 1, arg.length());
-  if (port.empty()) {
-    if (msg) {
-      this->message = "Missing grpc port";
-    }
-    return ARG_ILLEGAL;
-  }
-
-  grpcServer = arg;
-  return ARG_OK;
+  return status;
 }
 
 const Json::Value&

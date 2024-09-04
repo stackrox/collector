@@ -57,28 +57,23 @@ ShutdownHandler(int signum) {
 }
 
 // creates a GRPC channel, using the tls configuration provided from the args.
-std::shared_ptr<grpc::Channel> createChannel(CollectorArgs* args) {
-  CLOG(INFO) << "Sensor configured at address: " << args->GRPCServer();
-  Json::Value collectorConfig = args->CollectorConfig();
-
-  const auto& tls_config = collectorConfig["tlsConfig"];
+std::shared_ptr<grpc::Channel> createChannel(const CollectorConfig& config) {
+  const std::string& grpc_server = *config.GetGrpcServer();
+  CLOG(INFO) << "Sensor configured at address: " << grpc_server;
+  const auto& tls_config = config.TLSConfiguration();
 
   std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
-  if (!tls_config.isNull()) {
-    std::string ca_cert_path = tls_config["caCertPath"].asString();
-    std::string client_cert_path = tls_config["clientCertPath"].asString();
-    std::string client_key_path = tls_config["clientKeyPath"].asString();
-
-    if (!ca_cert_path.empty() && !client_cert_path.empty() && !client_key_path.empty()) {
-      creds = collector::TLSCredentialsFromFiles(ca_cert_path, client_cert_path, client_key_path);
+  if (tls_config.has_value()) {
+    if (tls_config->IsValid()) {
+      creds = collector::TLSCredentialsFromConfig(*tls_config);
     } else {
       CLOG(ERROR)
-          << "Partial TLS config: CACertPath=" << ca_cert_path << ", ClientCertPath=" << client_cert_path
-          << ", ClientKeyPath=" << client_key_path << "; will not use TLS";
+          << "Partial TLS config: CACertPath=" << tls_config->GetCa() << ", ClientCertPath=" << tls_config->GetClientCert()
+          << ", ClientKeyPath=" << tls_config->GetClientKey() << "; will not use TLS";
     }
   }
 
-  return {collector::CreateChannel(args->GRPCServer(), GetSNIHostname(), creds)};
+  return {collector::CreateChannel(grpc_server, GetSNIHostname(), creds)};
 }
 
 // attempts to connect to the GRPC server, up to a timeout
@@ -149,11 +144,11 @@ int main(int argc, char** argv) {
   auto& startup_diagnostics = StartupDiagnostics::GetInstance();
 
   // Extract configuration options
-  bool useGRPC = !args->GRPCServer().empty();
+  bool useGRPC = config.GetGrpcServer().has_value();
   std::shared_ptr<grpc::Channel> sensor_connection;
 
   if (useGRPC) {
-    sensor_connection = createChannel(args);
+    sensor_connection = createChannel(config);
     CLOG(INFO) << "Attempting to connect to Sensor";
     if (attemptGRPCConnection(sensor_connection)) {
       CLOG(INFO) << "Successfully connected to Sensor.";

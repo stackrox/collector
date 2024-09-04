@@ -14,9 +14,9 @@ TEST(CollectorArgs, NoArgs) {
 
   CollectorArgs* args = CollectorArgs::getInstance();
   int exitCode;
-  EXPECT_EQ(false, args->parse(argc, argv, exitCode));
+  EXPECT_EQ(true, args->parse(argc, argv, exitCode));
   EXPECT_EQ(0, exitCode);
-  EXPECT_THAT(args->Message(), StartsWith("USAGE: collector"));
+  EXPECT_TRUE(args->Message().empty());
 }
 
 TEST(CollectorArgs, ProgramNameOnly) {
@@ -30,9 +30,9 @@ TEST(CollectorArgs, ProgramNameOnly) {
 
   CollectorArgs* args = CollectorArgs::getInstance();
   int exitCode;
-  EXPECT_EQ(false, args->parse(argc, (char**)argv, exitCode));
+  EXPECT_EQ(true, args->parse(argc, (char**)argv, exitCode));
   EXPECT_EQ(0, exitCode);
-  EXPECT_THAT(args->Message(), StartsWith("USAGE: collector"));
+  EXPECT_TRUE(args->Message().empty());
 }
 
 TEST(CollectorArgs, HelpFlag) {
