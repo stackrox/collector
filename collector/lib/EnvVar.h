@@ -25,42 +25,14 @@ class EnvVar {
   explicit EnvVar(const char* env_var_name, Args&&... def_val_ctor_args) noexcept
       : env_var_name_(env_var_name), val_(std::forward<Args>(def_val_ctor_args)...) {}
 
-  const T& value() const {
-    std::call_once(init_once_, [this]() {
-      const char* env_val = std::getenv(env_var_name_);
-      if (!env_val) {
-        return;
-      }
-      if (!ParseT()(&val_, env_val)) {
-        CLOG(WARNING) << "Failed to parse value '" << env_val << "' for environment variable " << env_var_name_ << ". Using default value.";
-      }
-    });
-    return val_;
-  }
-
-  explicit operator T() const {
-    return value();
-  }
-
- private:
-  const char* env_var_name_;
-  mutable T val_;
-  mutable std::once_flag init_once_;
-};
-
-template <typename T, typename ParseT>
-class OptionalEnvVar {
- public:
-  template <typename... Args>
-  explicit OptionalEnvVar(const char* env_var_name) noexcept
-      : env_var_name_(env_var_name), val_(std::nullopt) {}
+  explicit EnvVar(const char* env_var_name) noexcept
+      : EnvVar(env_var_name, std::nullopt) {}
 
   bool hasValue() const {
     return tryValue().has_value();
   }
 
-  // Will throw an exception if val_ is nullopt, make sure to
-  // call hasValue and check that is not the case before hand.
+  // Will throw an exception if val_ is nullopt.
   const T& value() const {
     return tryValue().value();
   }
@@ -142,11 +114,9 @@ struct ParsePath {
 
 using BoolEnvVar = EnvVar<bool, internal::ParseBool>;
 using StringListEnvVar = EnvVar<std::vector<std::string>, internal::ParseStringList>;
-
-using OptionalBoolEnvVar = OptionalEnvVar<bool, internal::ParseBool>;
-using OptionalStringEnvVar = OptionalEnvVar<std::string, internal::ParseString>;
-using OptionalIntEnvVar = OptionalEnvVar<int, internal::ParseInt>;
-using OptionalPathEnvVar = OptionalEnvVar<std::filesystem::path, internal::ParsePath>;
+using StringEnvVar = EnvVar<std::string, internal::ParseString>;
+using IntEnvVar = EnvVar<int, internal::ParseInt>;
+using PathEnvVar = EnvVar<std::filesystem::path, internal::ParsePath>;
 
 }  // namespace collector
 

@@ -61,18 +61,18 @@ BoolEnvVar use_podman_ce("ROX_COLLECTOR_CE_USE_PODMAN", false);
 BoolEnvVar enable_introspection("ROX_COLLECTOR_INTROSPECTION_ENABLE", false);
 
 // Collector arguments alternatives
-OptionalStringEnvVar log_level("ROX_COLLECTOR_LOG_LEVEL");
-OptionalIntEnvVar scrape_interval("ROX_COLLECTOR_SCRAPE_INTERVAL");
-OptionalBoolEnvVar scrape_off("ROX_COLLECTOR_SCRAPE_DISABLED");
-OptionalStringEnvVar grpc_server("GRPC_SERVER");
-OptionalStringEnvVar collector_config("COLLECTOR_CONFIG");
-OptionalStringEnvVar collection_method("COLLECTION_METHOD");
+StringEnvVar log_level("ROX_COLLECTOR_LOG_LEVEL");
+IntEnvVar scrape_interval("ROX_COLLECTOR_SCRAPE_INTERVAL");
+BoolEnvVar scrape_off("ROX_COLLECTOR_SCRAPE_DISABLED");
+StringEnvVar grpc_server("GRPC_SERVER");
+StringEnvVar collector_config("COLLECTOR_CONFIG");
+StringEnvVar collection_method("COLLECTION_METHOD");
 
 // TLS Configuration
-OptionalPathEnvVar tls_certs_path("ROX_COLLECTOR_TLS_CERTS");
-OptionalPathEnvVar tls_ca_path("ROX_COLLECTOR_TLS_CA");
-OptionalPathEnvVar tls_client_cert_path("ROX_COLLECTOR_TLS_CLIENT_CERT");
-OptionalPathEnvVar tls_client_key_path("ROX_COLLECTOR_TLS_CLIENT_KEY");
+PathEnvVar tls_certs_path("ROX_COLLECTOR_TLS_CERTS");
+PathEnvVar tls_ca_path("ROX_COLLECTOR_TLS_CA");
+PathEnvVar tls_client_cert_path("ROX_COLLECTOR_TLS_CLIENT_CERT");
+PathEnvVar tls_client_key_path("ROX_COLLECTOR_TLS_CLIENT_KEY");
 
 }  // namespace
 
