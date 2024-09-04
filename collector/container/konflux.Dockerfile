@@ -1,6 +1,5 @@
 ARG BUILD_DIR=/build
 ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
-ARG COLLECTOR_TAG
 
 
 # Builder
@@ -49,6 +48,7 @@ ARG SOURCES_DIR=/staging
 
 COPY . ${SOURCES_DIR}
 
+ARG COLLECTOR_TAG
 ARG BUILD_DIR
 ARG SRC_ROOT_DIR=${BUILD_DIR}
 ARG CMAKE_BUILD_DIR
@@ -119,6 +119,8 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
 FROM scratch
 
 COPY --from=rpm-implanter-app /mnt /
+
+ARG COLLECTOR_TAG
 
 WORKDIR /
 
