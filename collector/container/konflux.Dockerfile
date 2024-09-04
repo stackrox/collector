@@ -1,5 +1,6 @@
 ARG BUILD_DIR=/build
 ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
+ARG COLLECTOR_TAG
 
 
 # Builder
@@ -83,6 +84,7 @@ RUN ./builder/install/install-dependencies.sh && \
            -DDISABLE_PROFILING=${DISABLE_PROFILING} \
            -DUSE_VALGRIND=${USE_VALGRIND} \
            -DADDRESS_SANITIZER=${ADDRESS_SANITIZER} \
+           -DCOLLECTOR_VERSION=${COLLECTOR_TAG} \
            -DTRACE_SINSP_EVENTS=${TRACE_SINSP_EVENTS} && \
     cmake --build ${CMAKE_BUILD_DIR} --target all -- -j "${NPROCS:-4}" && \
     ctest -V --test-dir ${CMAKE_BUILD_DIR} && \
@@ -117,8 +119,6 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
 FROM scratch
 
 COPY --from=rpm-implanter-app /mnt /
-
-ARG COLLECTOR_TAG
 
 WORKDIR /
 
