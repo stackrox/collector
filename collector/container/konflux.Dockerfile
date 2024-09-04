@@ -146,10 +146,6 @@ ENV COLLECTOR_HOST_ROOT=/host
 
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
-COPY --from=builder ${BUILD_DIR}/collector/container/scripts /
-
-RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
-    ldconfig
 
 EXPOSE 8080 9090
 
