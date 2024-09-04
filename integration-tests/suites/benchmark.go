@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/shlex"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -38,6 +39,7 @@ func (b *BenchmarkTestSuiteBase) StartPerfTools() {
 
 	if skipInit && (perf == "" && bpftrace == "" && bcc == "") {
 		fmt.Fprintf(os.Stderr, "COLLECTOR_SKIP_HEADERS_INIT set, but no performance tool requested - ignoring.")
+		log.Warn("COLLECTOR_SKIP_HEADERS_INIT set, but no performance tool requested - ignoring.")
 		return
 	}
 
@@ -114,12 +116,10 @@ func (b *BenchmarkTestSuiteBase) startContainer(name string, image string, args 
 }
 
 func (b *BenchmarkTestSuiteBase) FetchWorkloadLogs() {
-	fmt.Println("Berserker logs:")
 	for _, container := range b.loadContainers {
-		log, err := b.containerLogs(container)
+		containerLog, err := b.containerLogs(container)
 		require.NoError(b.T(), err)
-
-		fmt.Println(log)
+		log.Info("benchmark workload log: %s %s`", container, containerLog)
 	}
 
 	b.loadContainers = nil

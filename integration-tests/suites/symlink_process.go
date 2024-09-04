@@ -33,17 +33,14 @@ func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
 	processImage := getProcessListeningOnPortsImage()
 
 	actionFile := "/tmp/action_file_ln.txt"
-	_, err := s.executor.Exec("sh", "-c", "rm "+actionFile+" || true")
+	s.updatePlopActionFile("", actionFile, false)
 
 	containerID, err := s.launchContainer("process-ports", "-v", "/tmp:/tmp", "--entrypoint", "./plop", processImage, actionFile)
 	s.Require().NoError(err)
 
 	s.serverContainer = common.ContainerShortID(containerID)
 
-	_, err = s.executor.Exec("sh", "-c", "echo open 9092 > "+actionFile)
-	s.Require().NoError(err)
-	err = s.waitForFileToBeDeleted(actionFile)
-	s.Require().NoError(err)
+	s.updatePlopActionFile("open 9092", actionFile, true)
 
 	common.Sleep(6 * time.Second)
 }

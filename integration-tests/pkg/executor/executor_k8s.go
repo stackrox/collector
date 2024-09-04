@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/collector/integration-tests/pkg/common"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -23,18 +24,16 @@ type K8sExecutor struct {
 	clientset *kubernetes.Clientset
 }
 
-func newK8sExecutor() (*K8sExecutor, error) {
-	fmt.Println("Creating k8s configuration")
+func NewK8sExecutor() (*K8sExecutor, error) {
+	log.Info("Creating k8s configuration")
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		fmt.Printf("Error: Failed to get cluster config: %s\n", err)
-		return nil, err
+		return nil, log.ErrorWrap(err, "Failed to get cluster config")
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		fmt.Printf("Error: Failed to create client: %s", err)
-		return nil, err
+		return nil, log.ErrorWrap(err, "Failed to create client")
 	}
 
 	k8s := &K8sExecutor{
@@ -43,15 +42,7 @@ func newK8sExecutor() (*K8sExecutor, error) {
 	return k8s, nil
 }
 
-func (e *K8sExecutor) CopyFromHost(src string, dst string) (string, error) {
-	return "", fmt.Errorf("Unimplemented")
-}
-
-func (e *K8sExecutor) PullImage(image string) error {
-	return fmt.Errorf("Unimplemented")
-}
-
-func (e *K8sExecutor) IsContainerRunning(podName string) (bool, error) {
+func (e *K8sExecutor) IsPodRunning(podName string) (bool, error) {
 	pod, err := e.clientset.CoreV1().Pods(TESTS_NAMESPACE).Get(context.Background(), podName, metaV1.GetOptions{})
 	if err != nil {
 		return false, err
@@ -64,10 +55,10 @@ func (e *K8sExecutor) IsContainerRunning(podName string) (bool, error) {
 	return pod.Status.ContainerStatuses[0].Ready, nil
 }
 
-func (e *K8sExecutor) ContainerID(podFilter ContainerFilter) string {
+func (e *K8sExecutor) PodContainerID(podFilter ContainerFilter) string {
 	pod, err := e.ClientSet().CoreV1().Pods(podFilter.Namespace).Get(context.Background(), podFilter.Name, metaV1.GetOptions{})
 	if err != nil {
-		fmt.Printf("%s\n", err)
+		log.Error("namespace: %s pod: %s error: %s\n", podFilter.Namespace, podFilter.Name, err)
 		return ""
 	}
 
@@ -81,20 +72,21 @@ func (e *K8sExecutor) ContainerID(podFilter ContainerFilter) string {
 	 */
 	containerID := pod.Status.ContainerStatuses[0].ContainerID
 	if len(containerID) < 12 {
-		fmt.Printf("Invalid container ID: %q\n", containerID)
+		log.Error("Invalid container ID: %q", containerID)
+		return ""
 		return ""
 	}
 
 	i := strings.LastIndex(containerID, "/")
 	if i == -1 {
-		fmt.Printf("Invalid container ID: %q\n", containerID)
+		log.Error("Invalid container ID: %q", containerID)
 		return ""
 	}
 
 	return common.ContainerShortID(containerID[i+1:])
 }
 
-func (e *K8sExecutor) ContainerExists(podFilter ContainerFilter) (bool, error) {
+func (e *K8sExecutor) PodExists(podFilter ContainerFilter) (bool, error) {
 	pod, err := e.clientset.CoreV1().Pods(podFilter.Namespace).Get(context.Background(), podFilter.Name, metaV1.GetOptions{})
 	if err != nil {
 		return false, err
@@ -121,33 +113,9 @@ func (e *K8sExecutor) ExitCode(podFilter ContainerFilter) (int, error) {
 	return int(terminated.ExitCode), nil
 }
 
-func (e *K8sExecutor) Exec(args ...string) (string, error) {
-	return "", fmt.Errorf("Unimplemented")
-}
-
-func (e *K8sExecutor) ExecWithErrorCheck(errCheckFn func(string, error) error, args ...string) (string, error) {
-	return "", fmt.Errorf("Unimplemented")
-}
-
-func (e *K8sExecutor) ExecWithStdin(pipedContent string, args ...string) (string, error) {
-	return "", fmt.Errorf("Unimplemented")
-}
-
-func (e *K8sExecutor) ExecWithoutRetry(args ...string) (string, error) {
-	return "", fmt.Errorf("Unimplemented")
-}
-
-func (e *K8sExecutor) KillContainer(name string) (string, error) {
-	return "", fmt.Errorf("Unimplemented")
-}
-
-func (e *K8sExecutor) RemoveContainer(podFilter ContainerFilter) (string, error) {
+func (e *K8sExecutor) RemovePod(podFilter ContainerFilter) (string, error) {
 	err := e.clientset.CoreV1().Pods(podFilter.Namespace).Delete(context.Background(), podFilter.Name, metaV1.DeleteOptions{})
 	return "", err
-}
-
-func (e *K8sExecutor) StopContainer(name string) (string, error) {
-	return "", fmt.Errorf("Unimplemented")
 }
 
 func (e *K8sExecutor) CreateNamespace(ns string) (*coreV1.Namespace, error) {
@@ -218,14 +186,13 @@ func (e *K8sExecutor) CreateNamespaceEventWatcher(testName, ns string) (watch.In
 		for event := range watcher.ResultChan() {
 			eventJson, err := json.Marshal(event)
 			if err != nil {
-				fmt.Printf("Failed to marshal event: %+v\n", event)
-				fmt.Printf("%s\n", err)
+				log.Error("Failed to marshal event %+v: %s", event, err)
 				return
 			}
 
 			_, err = logFile.WriteString(string(eventJson) + "\n")
 			if err != nil {
-				fmt.Printf("Failed to write to event file: %s\n", err)
+				log.Error("Failed to write to event file: %s", err)
 				return
 			}
 		}

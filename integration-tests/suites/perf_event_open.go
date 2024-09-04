@@ -1,11 +1,12 @@
 package suites
 
 import (
-	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,6 +27,8 @@ func (s *PerfEventOpenTestSuite) TearDownSuite() {
 // Verify that Collector probe doesn't block tracepoints
 func (s *PerfEventOpenTestSuite) TestReadingTracepoints() {
 	image := config.Images().QaImageByKey("qa-perf-event-open")
+	err := s.executor.PullImage(image)
+	s.Require().NoError(err)
 	// attach to sched:sched_process_exit and count events
 	containerID, err := s.launchContainer("perf-event-open", "--privileged", image, "", "STDOUT")
 	s.Require().NoError(err)
@@ -33,13 +36,13 @@ func (s *PerfEventOpenTestSuite) TestReadingTracepoints() {
 	if finished, _ := s.waitForContainerToExit("perf-event-open", containerID, 5*time.Second, 0); finished {
 		logs, err := s.containerLogs("perf-event-open")
 		if err != nil {
-			fmt.Println(logs)
+			log.Info(logs)
 			assert.FailNow(s.T(), "Failed to initialize host for performance testing")
 		}
 
-		count, err := strconv.Atoi(logs)
+		count, err := strconv.Atoi(strings.TrimSpace(logs))
 		if err != nil {
-			fmt.Println(logs)
+			log.Info(logs)
 			assert.FailNow(s.T(), "Cannot convert result to the integer type")
 		}
 

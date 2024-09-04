@@ -17,9 +17,10 @@ const (
 	envVMInstanceType = "VM_INSTANCE_TYPE"
 	envVMConfig       = "VM_CONFIG"
 
-	envRuntimeCommand = "RUNTIME_COMMAND"
-	envRuntimeSocket  = "RUNTIME_SOCKET"
-	envRuntimeAsRoot  = "RUNTIME_AS_ROOT"
+	envRuntimeCommand     = "RUNTIME_COMMAND"
+	envRuntimeSocket      = "RUNTIME_SOCKET"
+	envRuntimeAsRoot      = "RUNTIME_AS_ROOT"
+	envRuntimeConfigPaths = "RUNTIME_CONFIG_PATHS"
 
 	envQATag = "COLLECTOR_QA_TAG"
 
