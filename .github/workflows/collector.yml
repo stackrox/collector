@@ -76,7 +76,7 @@ jobs:
           contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
         timeout-minutes: 480
         run: |
-          ansible-playbook \
+          ansible-playbook -vvvv \
             --connection local \
             -i localhost, \
             --limit localhost \
