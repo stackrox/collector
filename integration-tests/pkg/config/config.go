@@ -81,8 +81,6 @@ type Runtime struct {
 type CollectorOptions struct {
 	// The collector log level, e.g. DEBUG, TRACE
 	LogLevel string
-	// Any arguments to prepend to the collector command
-	PreArguments string
 }
 
 // Benchmarks contains options related to interacting with the benchmarks
