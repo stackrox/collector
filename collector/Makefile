@@ -9,11 +9,6 @@ SRC_MOUNT_DIR = /tmp/collector
 
 .SUFFIXES:
 
-.PHONY: collector
-collector: container/bin/collector txt-files
-	mkdir -p container/libs
-	docker cp $(COLLECTOR_BUILDER_NAME):/THIRD_PARTY_NOTICES/ container/
-
 .PHONY: build-connscrape-test
 build-connscrape-test:
 	docker build -f $(CURDIR)/connscrape-test/Dockerfile -t connscrape-test $(CURDIR)/connscrape-test
@@ -24,7 +19,7 @@ connscrape: build-connscrape-test
 		-v "$(BASE_PATH):$(SRC_MOUNT_DIR)" \
 		connscrape-test "$(SRC_MOUNT_DIR)/collector/connscrape-test/connscrape-test.sh"
 
-unittest: collector
+unittest:
 	docker exec $(COLLECTOR_BUILDER_NAME) \
 		ctest -V --test-dir $(CMAKE_DIR)
 

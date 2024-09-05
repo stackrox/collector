@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/collector-src/build \
         -DTRACE_SINSP_EVENTS=${TRACE_SINSP_EVENTS} && \
     cmake --build build/ -- -j$(nproc) && \
     ctest -V --test-dir build && \
-    strip -v --remove-unneeded build/collector/collector && \
+    strip -v --strip-unneeded build/collector/collector && \
     # podman does not bake cache mounts into the final image, so
     # we need to move the required binaries out of it.
     cp build/collector/collector /tmp/ && \
