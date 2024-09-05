@@ -3,20 +3,15 @@ package executor
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"time"
 
-	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/pkg/errors"
@@ -25,61 +20,9 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/log"
 )
 
-type registryConfig struct {
-	enabled           bool
-	encodedAuthConfig string
-	authConfig        registry.AuthConfig
-}
-
 type dockerAPIExecutor struct {
-	client          *client.Client
-	registryConfigs map[string]registryConfig
-}
-
-func readRegistryConfigs() (map[string]registryConfig, error) {
-	authConfigs := make(map[string]registryConfig)
-	for _, path := range config.RuntimeInfo().ConfigPaths {
-		expanded := os.ExpandEnv(path)
-
-		configBytes, err := os.ReadFile(expanded)
-		if err != nil {
-			log.Debug("unable to read config file: %s", err)
-			continue
-		}
-
-		var dockerConfig configfile.ConfigFile
-		if err := json.Unmarshal(configBytes, &dockerConfig); err != nil {
-			log.Info("failed to parse config file: %s", err)
-			continue
-		}
-		for server, dockerAuthConfig := range dockerConfig.AuthConfigs {
-			authConfig := registry.AuthConfig{
-				Username:      dockerAuthConfig.Username,
-				Password:      dockerAuthConfig.Password,
-				Auth:          dockerAuthConfig.Auth,
-				ServerAddress: dockerAuthConfig.ServerAddress,
-			}
-			if len(authConfig.Auth) > 0 {
-				authPlain, err := base64.StdEncoding.DecodeString(authConfig.Auth)
-				if err != nil {
-					return nil, err
-				}
-				split := strings.Split(string(authPlain), ":")
-				authConfig.Username = split[0]
-				authConfig.Password = split[1]
-			}
-			if authConfig.ServerAddress == "" {
-				authConfig.ServerAddress = server
-			}
-			encodedAuthConfig, err := registry.EncodeAuthConfig(authConfig)
-			if err != nil {
-				return nil, err
-			}
-			authConfigs[server] = registryConfig{enabled: false, authConfig: authConfig, encodedAuthConfig: encodedAuthConfig}
-			log.Trace("read credentials for %s from %s", server, expanded)
-		}
-	}
-	return authConfigs, nil
+	client     *client.Client
+	registries map[string]dockerRegistryConfig
 }
 
 func newDockerAPIExecutor() (*dockerAPIExecutor, error) {
@@ -88,14 +31,14 @@ func newDockerAPIExecutor() (*dockerAPIExecutor, error) {
 		return nil, err
 	}
 
-	authConfigs, err := readRegistryConfigs()
+	registryConfigs, err := readRegistryConfigs()
 	if err != nil {
-		log.Error("Error reading registry auth files: %s", err)
+		log.Error("Error reading registry config files: %s", err)
 	}
 
 	return &dockerAPIExecutor{
-		client:          cli,
-		registryConfigs: authConfigs,
+		client:     cli,
+		registries: registryConfigs,
 	}, nil
 }
 
@@ -369,50 +312,6 @@ func (d *dockerAPIExecutor) ContainerExists(cf ContainerFilter) (bool, error) {
 	return true, nil
 }
 
-func getFullImageRef(ref string) (registry, repository, tag string) {
-	registry = "docker.io"
-	if strings.Contains(ref, ":") {
-		parts := strings.Split(ref, ":")
-		ref = parts[0]
-		tag = parts[1]
-	} else {
-		tag = "latest"
-	}
-	if strings.Contains(ref, "/") {
-		parts := strings.Split(ref, "/")
-		if len(parts) == 3 || (len(parts) == 2 && strings.Contains(parts[0], ".")) {
-			registry = parts[0]
-			repository = strings.Join(parts[1:], "/")
-		} else if len(parts) == 2 {
-			repository = strings.Join(parts, "/")
-		} else {
-			repository = ref
-		}
-	} else {
-		repository = "library/" + ref
-	}
-	return registry, repository, tag
-}
-
-func (d *dockerAPIExecutor) registryLogin(server string) (bool, error) {
-	if registryState, ok := d.registryConfigs[server]; ok {
-		if registryState.enabled {
-			log.Info("registry %s enabled previously", server)
-			return true, nil
-		}
-		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-		_, err = cli.RegistryLogin(context.Background(), registryState.authConfig)
-		if err != nil {
-			return false, log.Error("Error logging into registry: %s %s", server, err)
-		}
-		log.Info("registry login success: %s", server)
-		registryState.enabled = true
-		return true, nil
-	}
-	log.Trace("no registry config for %s", server)
-	return false, nil
-}
-
 func (d *dockerAPIExecutor) PullImage(ref string) error {
 	imgFilter := filters.NewArgs(filters.KeyValuePair{
 		Key:   "reference",
@@ -433,12 +332,12 @@ func (d *dockerAPIExecutor) PullImage(ref string) error {
 	var reader io.ReadCloser
 	var pullOptions image.PullOptions
 	imageRegistry, _, _ := getFullImageRef(ref)
-	if rc, ok := d.registryConfigs[imageRegistry]; ok {
-		pullOptions = image.PullOptions{RegistryAuth: rc.encodedAuthConfig}
-	}
-	_, err = d.registryLogin(imageRegistry)
-	if err != nil {
-		return log.Error("Error logging into registry: %s", err)
+	if registry, ok := d.registries[imageRegistry]; ok {
+		pullOptions = image.PullOptions{RegistryAuth: registry.encodedAuthConfig}
+		err = registryLoginAndEnable(d.client, &registry)
+		if err != nil {
+			return log.Error("registry error: %s", err)
+		}
 	}
 	log.Info("pulling %s", ref)
 	reader, err = d.client.ImagePull(context.Background(), ref, pullOptions)
