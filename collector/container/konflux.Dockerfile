@@ -48,6 +48,7 @@ ARG SOURCES_DIR=/staging
 
 COPY . ${SOURCES_DIR}
 
+ARG COLLECTOR_TAG
 ARG BUILD_DIR
 ARG SRC_ROOT_DIR=${BUILD_DIR}
 ARG CMAKE_BUILD_DIR
@@ -83,6 +84,7 @@ RUN ./builder/install/install-dependencies.sh && \
            -DDISABLE_PROFILING=${DISABLE_PROFILING} \
            -DUSE_VALGRIND=${USE_VALGRIND} \
            -DADDRESS_SANITIZER=${ADDRESS_SANITIZER} \
+           -DCOLLECTOR_VERSION=${COLLECTOR_TAG} \
            -DTRACE_SINSP_EVENTS=${TRACE_SINSP_EVENTS} && \
     cmake --build ${CMAKE_BUILD_DIR} --target all -- -j "${NPROCS:-4}" && \
     ctest -V --test-dir ${CMAKE_BUILD_DIR} && \
