@@ -41,19 +41,31 @@ connscrape:
 unittest:
 	make -C collector unittest
 
-image: collector unittest
+image:
 	make -C collector txt-files
 	docker buildx build --load --platform ${PLATFORM} \
+		--build-arg CMAKE_BUILD_TYPE="$(CMAKE_BUILD_TYPE)" \
+		--build-arg USE_VALGRIND="$(USE_VALGRIND)" \
+		--build-arg ADDRESS_SANITIZER="$(ADDRESS_SANITIZER)" \
+		--build-arg TRACE_SINSP_EVENTS="$(TRACE_SINSP_EVENTS)" \
+		--build-arg BPF_DEBUG_MODE="$(BPF_DEBUG_MODE)" \
 		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
+		--build-arg BUILDER_TAG="$(COLLECTOR_BUILDER_TAG)" \
 		-f collector/container/Dockerfile \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
-image-dev: collector unittest container-dockerfile-dev
+image-dev: container-dockerfile-dev
 	make -C collector txt-files
 	docker buildx build --load --platform ${PLATFORM} \
-		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
 		--build-arg BUILD_TYPE=devel \
+		--build-arg CMAKE_BUILD_TYPE="$(CMAKE_BUILD_TYPE)" \
+		--build-arg USE_VALGRIND="$(USE_VALGRIND)" \
+		--build-arg ADDRESS_SANITIZER="$(ADDRESS_SANITIZER)" \
+		--build-arg TRACE_SINSP_EVENTS="$(TRACE_SINSP_EVENTS)" \
+		--build-arg BPF_DEBUG_MODE="$(BPF_DEBUG_MODE)" \
+		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
+		--build-arg BUILDER_TAG="$(COLLECTOR_BUILDER_TAG)" \
 		-f collector/container/Dockerfile.dev \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
