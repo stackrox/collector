@@ -269,16 +269,19 @@ func (d *dockerAPIExecutor) GetContainerIP(containerID string) (string, error) {
 }
 
 func (d *dockerAPIExecutor) GetContainerPort(containerID string) (string, error) {
+	containerPort := "-1"
 	containerJSON, err := d.inspectContainer(containerID)
 	if err != nil {
-		return "-1", err
+		return containerPort, err
 	}
-	containerPort := "-1"
 	for portStr := range containerJSON.NetworkSettings.Ports {
 		portSplit := strings.Split(string(portStr), "/")
 		if len(portSplit) > 0 {
 			containerPort = portSplit[0]
 		}
+	}
+	if containerPort == "-1" {
+		return containerPort, log.Error("port not found for container %s", containerID)
 	}
 	log.Info("port for %s is %s\n", containerID, containerPort)
 	return containerPort, nil
