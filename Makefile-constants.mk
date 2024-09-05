@@ -17,8 +17,8 @@ PLATFORM ?= "linux/$(HOST_ARCH)"
 
 USE_VALGRIND ?= false
 ADDRESS_SANITIZER ?= false
-CMAKE_BUILD_TYPE ?= release
-CMAKE_BASE_DIR = cmake-build-$(CMAKE_BUILD_TYPE)-$(HOST_ARCH)
+CMAKE_BUILD_TYPE ?= Release
+CMAKE_BASE_DIR = cmake-build-$(shell echo $(CMAKE_BUILD_TYPE) | tr A-Z a-z)-$(HOST_ARCH)
 TRACE_SINSP_EVENTS ?= false
 DISABLE_PROFILING ?= false
 BPF_DEBUG_MODE ?= false

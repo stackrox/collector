@@ -40,7 +40,7 @@ extern "C" {
 #include "LogLevel.h"
 #include "Logging.h"
 #include "Utility.h"
-#include "collector/Version.h"
+#include "CollectorVersion.h"
 
 static const int MAX_GRPC_CONNECTION_POLLS = 30;
 
