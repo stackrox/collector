@@ -30,12 +30,10 @@ func newDockerAPIExecutor() (*dockerAPIExecutor, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	registryConfigs, err := readRegistryConfigs()
 	if err != nil {
-		log.Error("Error reading registry config files: %s", err)
+		return nil, err
 	}
-
 	return &dockerAPIExecutor{
 		client:     cli,
 		registries: registryConfigs,
