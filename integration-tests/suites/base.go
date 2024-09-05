@@ -106,7 +106,7 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *col
 			// Self-check process is not going to be sent via GRPC, instead
 			// create at least one canary process to make sure everything is
 			// fine.
-			log.Log("Spawn a canary process")
+			log.Info("Spawn a canary process")
 			_, err = s.execContainer("collector", []string{"echo"})
 			s.Require().NoError(err)
 		})
@@ -202,7 +202,7 @@ func (s *IntegrationTestSuiteBase) GetContainerStats() []ContainerStat {
 			if stat.Name != "" {
 				s.stats = append(s.stats, stat)
 			} else {
-				log.Info("missing name for stat line %d of %d", i, len(logLines))
+				log.Warn("missing name for stat line %d of %d", i, len(logLines))
 			}
 		}
 
@@ -254,7 +254,7 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats() {
 		s.AddMetric(fmt.Sprintf("%s_cpu_mean", name), stat.Mean(cpu, nil))
 		s.AddMetric(fmt.Sprintf("%s_cpu_stddev", name), stat.StdDev(cpu, nil))
 
-		log.Info("CPU: Container %s, Mean %v, StdDev %v\n",
+		log.Trace("CPU: Container %s, Mean %v, StdDev %v",
 			name, stat.Mean(cpu, nil), stat.StdDev(cpu, nil))
 	}
 
@@ -262,7 +262,7 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats() {
 		s.AddMetric(fmt.Sprintf("%s_mem_mean", name), stat.Mean(mem, nil))
 		s.AddMetric(fmt.Sprintf("%s_mem_stddev", name), stat.StdDev(mem, nil))
 
-		log.Info("Mem: Container %s, Mean %v MiB, StdDev %v MiB\n",
+		log.Trace("Mem: Container %s, Mean %v MiB, StdDev %v MiB",
 			name, stat.Mean(mem, nil), stat.StdDev(mem, nil))
 	}
 }
@@ -311,69 +311,6 @@ func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) []string {
 	s.Require().NoError(err, containerName+" failure")
 	logLines := strings.Split(logs, "\n")
 	return logLines
-}
-
-func (s *IntegrationTestSuiteBase) launchContainer(name string, args ...string) (string, error) {
-	if len(args) == 0 {
-		return "", errors.New("no arguments")
-	}
-	c := config.ContainerStartConfig{}
-	c.Name = name
-	skip := false
-	for i, arg := range args {
-		if !skip && len(arg) > 0 && arg[0] != '-' {
-			c.Image = arg
-			if len(args) > i+1 {
-				c.Command = args[i+1:]
-			}
-			goto done
-		}
-		if skip {
-			skip = false
-			continue
-		}
-		switch arg {
-		case "--entrypoint":
-			s.Require().True(len(args) > i+1)
-			c.Entrypoint = []string{args[i+1]}
-			skip = true
-			break
-		case "-e":
-			s.Require().True(len(args) > i+1)
-			env := strings.Split(args[i+1], "=")
-			s.Require().True(len(env[0]) > 0)
-			if c.Env == nil {
-				c.Env = map[string]string{}
-			}
-			c.Env[env[0]] = ""
-			if len(env) > 1 {
-				c.Env[env[0]] = env[1]
-			}
-			skip = true
-			break
-		case "-v":
-			s.Require().True(len(args) > i+1)
-			vols := strings.Split(args[i+1], ":")
-			s.Require().True(len(vols) > 1)
-			if c.Mounts == nil {
-				c.Mounts = map[string]string{}
-			}
-			c.Mounts[vols[0]] = vols[1]
-			if len(vols) == 3 {
-				c.Mounts[vols[0]] += ":" + vols[2]
-			}
-			skip = true
-			break
-		case "--privileged":
-			c.Privileged = true
-			break
-		default:
-			s.Fail("Unknown argument %s", arg)
-			break
-		}
-	}
-done:
-	return s.Executor().StartContainer(c)
 }
 
 // Wait for a container to become a certain status.

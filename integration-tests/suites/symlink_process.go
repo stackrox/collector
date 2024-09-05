@@ -3,6 +3,7 @@ package suites
 import (
 	"time"
 
+	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
@@ -35,7 +36,14 @@ func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
 	actionFile := "/tmp/action_file_ln.txt"
 	s.updatePlopActionFile("", actionFile, false)
 
-	containerID, err := s.launchContainer("process-ports", "-v", "/tmp:/tmp", "--entrypoint", "./plop", processImage, actionFile)
+	containerID, err := s.Executor().StartContainer(
+		config.ContainerStartConfig{
+			Name:       "process-ports",
+			Image:      processImage,
+			Mounts:     map[string]string{"/tmp": "/tmp"},
+			Entrypoint: []string{"./plop"},
+			Command:    []string{actionFile},
+		})
 	s.Require().NoError(err)
 
 	s.serverContainer = common.ContainerShortID(containerID)

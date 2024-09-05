@@ -30,7 +30,13 @@ func (s *PerfEventOpenTestSuite) TestReadingTracepoints() {
 	err := s.executor.PullImage(image)
 	s.Require().NoError(err)
 	// attach to sched:sched_process_exit and count events
-	containerID, err := s.launchContainer("perf-event-open", "--privileged", image, "", "STDOUT")
+	containerID, err := s.Executor().StartContainer(
+		config.ContainerStartConfig{
+			Name:       "perf-event-open",
+			Image:      image,
+			Privileged: true,
+			Command:    []string{"", "STDOUT"},
+		})
 	s.Require().NoError(err)
 
 	if finished, _ := s.waitForContainerToExit("perf-event-open", containerID, 5*time.Second, 0); finished {

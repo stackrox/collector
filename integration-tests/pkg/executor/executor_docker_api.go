@@ -25,13 +25,19 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/log"
 )
 
-type dockerAPIExecutor struct {
-	client      *client.Client
-	authConfigs map[string]string
+type registryConfig struct {
+	enabled           bool
+	encodedAuthConfig string
+	authConfig        registry.AuthConfig
 }
 
-func readRegistryConfigs() (map[string]registry.AuthConfig, error) {
-	authConfigs := make(map[string]registry.AuthConfig)
+type dockerAPIExecutor struct {
+	client          *client.Client
+	registryConfigs map[string]registryConfig
+}
+
+func readRegistryConfigs() (map[string]registryConfig, error) {
+	authConfigs := make(map[string]registryConfig)
 	for _, path := range config.RuntimeInfo().ConfigPaths {
 		expanded := os.ExpandEnv(path)
 
@@ -46,27 +52,31 @@ func readRegistryConfigs() (map[string]registry.AuthConfig, error) {
 			log.Info("failed to parse config file: %s", err)
 			continue
 		}
-		for server, authConfig := range dockerConfig.AuthConfigs {
-			serverConfig := registry.AuthConfig{
-				Username:      authConfig.Username,
-				Password:      authConfig.Password,
-				Auth:          authConfig.Auth,
-				ServerAddress: authConfig.ServerAddress,
+		for server, dockerAuthConfig := range dockerConfig.AuthConfigs {
+			authConfig := registry.AuthConfig{
+				Username:      dockerAuthConfig.Username,
+				Password:      dockerAuthConfig.Password,
+				Auth:          dockerAuthConfig.Auth,
+				ServerAddress: dockerAuthConfig.ServerAddress,
 			}
-			if len(serverConfig.Auth) > 0 {
-				authPlain, err := base64.StdEncoding.DecodeString(serverConfig.Auth)
+			if len(authConfig.Auth) > 0 {
+				authPlain, err := base64.StdEncoding.DecodeString(authConfig.Auth)
 				if err != nil {
 					return nil, err
 				}
 				split := strings.Split(string(authPlain), ":")
-				serverConfig.Username = split[0]
-				serverConfig.Password = split[1]
+				authConfig.Username = split[0]
+				authConfig.Password = split[1]
 			}
-			if serverConfig.ServerAddress == "" {
-				serverConfig.ServerAddress = server
+			if authConfig.ServerAddress == "" {
+				authConfig.ServerAddress = server
 			}
-			authConfigs[server] = serverConfig
-			log.Info("read credentials for %s from %s", server, expanded)
+			encodedAuthConfig, err := registry.EncodeAuthConfig(authConfig)
+			if err != nil {
+				return nil, err
+			}
+			authConfigs[server] = registryConfig{enabled: false, authConfig: authConfig, encodedAuthConfig: encodedAuthConfig}
+			log.Trace("read credentials for %s from %s", server, expanded)
 		}
 	}
 	return authConfigs, nil
@@ -78,27 +88,14 @@ func newDockerAPIExecutor() (*dockerAPIExecutor, error) {
 		return nil, err
 	}
 
-	authConfigs := map[string]string{}
-	auths, err := readRegistryConfigs()
+	authConfigs, err := readRegistryConfigs()
 	if err != nil {
 		log.Error("Error reading registry auth files: %s", err)
-	} else {
-		for server, auth := range auths {
-			authConfigs[server], err = registry.EncodeAuthConfig(auth)
-			if err != nil {
-				return nil, err
-			}
-			_, err = cli.RegistryLogin(context.Background(), auth)
-			if err != nil {
-				log.Error("Error logging into registry: %s %s", server, err)
-			}
-			log.Info("registry login success: %s", server)
-		}
 	}
 
 	return &dockerAPIExecutor{
-		client:      cli,
-		authConfigs: authConfigs,
+		client:          cli,
+		registryConfigs: authConfigs,
 	}, nil
 }
 
@@ -111,9 +108,6 @@ func convertMapToSlice(env map[string]string) []string {
 }
 
 func (d *dockerAPIExecutor) IsContainerFoundFiltered(containerID, filter string) (bool, error) {
-	ctx := context.Background()
-	defer d.client.Close()
-
 	parts := strings.SplitN(filter, "=", 2)
 	if len(parts) != 2 {
 		return false, fmt.Errorf("filter format is invalid")
@@ -125,7 +119,7 @@ func (d *dockerAPIExecutor) IsContainerFoundFiltered(containerID, filter string)
 		filterArgs.Add("id", containerID)
 	}
 
-	containers, err := d.client.ContainerList(ctx, container.ListOptions{
+	containers, err := d.client.ContainerList(context.Background(), container.ListOptions{
 		Filters: filterArgs,
 		All:     true,
 	})
@@ -152,14 +146,12 @@ func (d *dockerAPIExecutor) GetContainerHealthCheck(containerID string) (string,
 		return "", fmt.Errorf("container %s does not have a health check", containerID)
 	}
 
-	log.Info("%s has healthcheck: %s\n", containerID, strings.Join(inspectResp.Config.Healthcheck.Test, " "))
+	log.Trace("%s has healthcheck: %s\n", containerID, strings.Join(inspectResp.Config.Healthcheck.Test, " "))
 	return strings.Join(inspectResp.Config.Healthcheck.Test, " "), nil
 }
 
 func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConfig) (string, error) {
 	ctx := context.Background()
-	defer d.client.Close()
-
 	var binds []string
 	volumes := map[string]struct{}{}
 
@@ -204,7 +196,6 @@ func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConf
 
 func (d *dockerAPIExecutor) ExecContainer(containerName string, command []string) (string, error) {
 	ctx := context.Background()
-	defer d.client.Close()
 	execConfig := types.ExecConfig{
 		AttachStdout: true,
 		AttachStderr: true,
@@ -239,9 +230,7 @@ func (d *dockerAPIExecutor) ExecContainer(containerName string, command []string
 }
 
 func (d *dockerAPIExecutor) GetContainerLogs(containerID string) (string, error) {
-	ctx := context.Background()
-	defer d.client.Close()
-	timeoutContext, cancel := context.WithTimeout(ctx, 30*time.Second)
+	timeoutContext, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	logsReader, err := d.client.ContainerLogs(timeoutContext, containerID,
 		container.LogsOptions{ShowStdout: true, ShowStderr: true})
@@ -267,10 +256,7 @@ func (d *dockerAPIExecutor) GetContainerLogs(containerID string) (string, error)
 }
 
 func (d *dockerAPIExecutor) KillContainer(containerID string) (string, error) {
-	ctx := context.Background()
-	defer d.client.Close()
-
-	timeoutContext, cancel := context.WithTimeout(ctx, 5*time.Second)
+	timeoutContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	err := d.client.ContainerKill(timeoutContext, containerID, "KILL")
 	if err != nil {
@@ -281,13 +267,11 @@ func (d *dockerAPIExecutor) KillContainer(containerID string) (string, error) {
 }
 
 func (d *dockerAPIExecutor) StopContainer(name string) (string, error) {
-	ctx := context.Background()
-	defer d.client.Close()
 	stopOptions := container.StopOptions{
 		Signal:  "SIGTERM",
 		Timeout: nil, // 10 secs
 	}
-	timeoutContext, cancel := context.WithTimeout(ctx, 10*time.Second)
+	timeoutContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	err := d.client.ContainerStop(timeoutContext, name, stopOptions)
 	if err != nil {
@@ -298,9 +282,8 @@ func (d *dockerAPIExecutor) StopContainer(name string) (string, error) {
 }
 
 func (d *dockerAPIExecutor) RemoveContainer(cf ContainerFilter) (string, error) {
-	ctx := context.Background()
 	defer d.client.Close()
-	timeoutContext, cancel := context.WithTimeout(ctx, 10*time.Second)
+	timeoutContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	removeOptions := container.RemoveOptions{
 		RemoveVolumes: true,
@@ -315,9 +298,7 @@ func (d *dockerAPIExecutor) RemoveContainer(cf ContainerFilter) (string, error) 
 }
 
 func (d *dockerAPIExecutor) inspectContainer(containerID string) (types.ContainerJSON, error) {
-	ctx := context.Background()
-	defer d.client.Close()
-	containerJSON, err := d.client.ContainerInspect(ctx, containerID)
+	containerJSON, err := d.client.ContainerInspect(context.Background(), containerID)
 	if err != nil {
 		return types.ContainerJSON{}, fmt.Errorf("error inspecting container: %w", err)
 	}
@@ -350,12 +331,10 @@ func (d *dockerAPIExecutor) GetContainerPort(containerID string) (string, error)
 		return "-1", err
 	}
 	containerPort := "-1"
-	if len(containerJSON.NetworkSettings.Ports) > 0 {
-		for portStr := range containerJSON.NetworkSettings.Ports {
-			portSplit := strings.Split(string(portStr), "/")
-			if len(portSplit) > 0 {
-				containerPort = portSplit[0]
-			}
+	for portStr := range containerJSON.NetworkSettings.Ports {
+		portSplit := strings.Split(string(portStr), "/")
+		if len(portSplit) > 0 {
+			containerPort = portSplit[0]
 		}
 	}
 	log.Info("port for %s is %s\n", containerID, containerPort)
@@ -367,7 +346,7 @@ func (d *dockerAPIExecutor) CheckContainerHealthy(containerID string) (bool, err
 	if err != nil {
 		return false, err
 	}
-	log.Info("%s is %v\n", containerID, containerJSON.State.Health.Status)
+	log.Trace("%s is %v\n", containerID, containerJSON.State.Health.Status)
 	return containerJSON.State.Health.Status == "healthy", nil
 }
 
@@ -376,17 +355,17 @@ func (d *dockerAPIExecutor) IsContainerRunning(containerID string) (bool, error)
 	if err != nil {
 		return false, err
 	}
-	log.Info("%s running: %v\n", containerID, containerJSON.State.Running)
+	log.Trace("%s running: %v\n", containerID, containerJSON.State.Running)
 	return containerJSON.State.Running, nil
 }
 
 func (d *dockerAPIExecutor) ContainerExists(cf ContainerFilter) (bool, error) {
 	_, err := d.inspectContainer(cf.Name)
 	if err != nil {
-		log.Info("%s does not exist\n", cf.Name)
+		log.Trace("%s does not exist\n", cf.Name)
 		return false, err
 	}
-	log.Info("%s exists\n", cf.Name)
+	log.Trace("%s exists\n", cf.Name)
 	return true, nil
 }
 
@@ -415,6 +394,25 @@ func getFullImageRef(ref string) (registry, repository, tag string) {
 	return registry, repository, tag
 }
 
+func (d *dockerAPIExecutor) registryLogin(server string) (bool, error) {
+	if registryState, ok := d.registryConfigs[server]; ok {
+		if registryState.enabled {
+			log.Info("registry %s enabled previously", server)
+			return true, nil
+		}
+		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+		_, err = cli.RegistryLogin(context.Background(), registryState.authConfig)
+		if err != nil {
+			return false, log.Error("Error logging into registry: %s %s", server, err)
+		}
+		log.Info("registry login success: %s", server)
+		registryState.enabled = true
+		return true, nil
+	}
+	log.Trace("no registry config for %s", server)
+	return false, nil
+}
+
 func (d *dockerAPIExecutor) PullImage(ref string) error {
 	imgFilter := filters.NewArgs(filters.KeyValuePair{
 		Key:   "reference",
@@ -428,17 +426,21 @@ func (d *dockerAPIExecutor) PullImage(ref string) error {
 	}
 
 	if len(images) != 0 {
-		log.Info("%s already exists", ref)
+		log.Trace("%s already exists", ref)
 		return nil
 	}
 
 	var reader io.ReadCloser
 	var pullOptions image.PullOptions
 	imageRegistry, _, _ := getFullImageRef(ref)
-	if auth, ok := d.authConfigs[imageRegistry]; ok {
-		pullOptions = image.PullOptions{RegistryAuth: auth}
+	if rc, ok := d.registryConfigs[imageRegistry]; ok {
+		pullOptions = image.PullOptions{RegistryAuth: rc.encodedAuthConfig}
 	}
-	log.Info("pulling %s %s \n", imageRegistry, ref)
+	_, err = d.registryLogin(imageRegistry)
+	if err != nil {
+		return log.Error("Error logging into registry: %s", err)
+	}
+	log.Info("pulling %s", ref)
 	reader, err = d.client.ImagePull(context.Background(), ref, pullOptions)
 	if err != nil {
 		return errors.Wrapf(err, "%s", ref)
@@ -446,6 +448,5 @@ func (d *dockerAPIExecutor) PullImage(ref string) error {
 
 	defer reader.Close()
 	io.Copy(io.Discard, reader)
-	log.Info("pulled %s", ref)
 	return nil
 }

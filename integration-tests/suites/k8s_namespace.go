@@ -140,14 +140,14 @@ func (k *K8sNamespaceTestSuite) TestK8sNamespace() {
 
 	for _, tt := range k.tests {
 		uri := baseUri + tt.containerID
-		log.Info("Querying: %s\n", uri)
+		log.Info("Querying: %s", uri)
 		resp, err := http.Get(uri)
 		k.Require().NoError(err)
 		k.Require().True(resp.StatusCode == 200)
 
 		defer resp.Body.Close()
 		raw, err := io.ReadAll(resp.Body)
-		log.Info("Response: %s\n", raw)
+		log.Info("Response: %s", raw)
 
 		var body map[string]interface{}
 		err = json.Unmarshal(raw, &body)

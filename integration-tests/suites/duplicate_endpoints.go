@@ -73,8 +73,16 @@ func (s *DuplicateEndpointsTestSuite) TearDownSuite() {
 // The test expects only two reported endpoints.
 func (s *DuplicateEndpointsTestSuite) TestDuplicateEndpoints() {
 	image := config.Images().QaImageByKey("qa-socat")
+	err := s.Executor().PullImage(image)
+	s.Require().NoError(err)
+
 	// (1) start a process that opens port 80
-	containerID, err := s.launchContainer("socat", image, "TCP-LISTEN:80,fork", "STDOUT")
+	containerID, err := s.Executor().StartContainer(
+		config.ContainerStartConfig{
+			Name:    "socat",
+			Image:   image,
+			Command: []string{"TCP-LISTEN:80,fork", "STDOUT"},
+		})
 	s.Require().NoError(err)
 
 	containerID = common.ContainerShortID(containerID)

@@ -74,7 +74,6 @@ func (e *K8sExecutor) PodContainerID(podFilter ContainerFilter) string {
 	if len(containerID) < 12 {
 		log.Error("Invalid container ID: %q", containerID)
 		return ""
-		return ""
 	}
 
 	i := strings.LastIndex(containerID, "/")
