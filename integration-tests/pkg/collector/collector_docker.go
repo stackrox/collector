@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 )
 
 type DockerCollectorManager struct {
@@ -83,20 +84,26 @@ func (c *DockerCollectorManager) Launch() error {
 func (c *DockerCollectorManager) TearDown() error {
 	isRunning, err := c.IsRunning()
 	if err != nil {
-		return fmt.Errorf("Unable to check if container is running: %s", err)
+		return log.Error("Unable to check if container is running: %s", err)
 	}
 
 	if !isRunning {
-		c.captureLogs("collector")
+		logs, logsErr := c.captureLogs("collector")
+		logsEnd := logs
+		if logsErr == nil {
+			logsSplit := strings.Split(logs, "\n")
+			logsEnd = strings.Join(logsSplit[max(0, len(logsSplit)-24):], "\n")
+			logsEnd = fmt.Sprintf("\ncollector logs:\n%s\n", logsEnd)
+		}
 		// Check if collector container segfaulted or exited with error
 		exitCode, err := c.executor.ExitCode(executor.ContainerFilter{
 			Name: "collector",
 		})
 		if err != nil {
-			return fmt.Errorf("Failed to get container exit code: %s", err)
+			return fmt.Errorf("Failed to get container exit code%s: %w", logsEnd, err)
 		}
 		if exitCode != 0 {
-			return fmt.Errorf("Collector container has non-zero exit code (%d)", exitCode)
+			return fmt.Errorf("Collector container has non-zero exit code (%d)%s", exitCode, logsEnd)
 		}
 	} else {
 		c.stopContainer("collector")
@@ -172,8 +179,7 @@ func (c *DockerCollectorManager) launchCollector() error {
 func (c *DockerCollectorManager) captureLogs(containerName string) (string, error) {
 	logs, err := c.executor.Exec(executor.RuntimeCommand, "logs", containerName)
 	if err != nil {
-		fmt.Printf(executor.RuntimeCommand+" logs error (%v) for container %s\n", err, containerName)
-		return "", err
+		return "", log.Error(executor.RuntimeCommand+" logs error (%v) for container %s\n", err, containerName)
 	}
 
 	logFile, err := common.PrepareLog(c.testName, "collector.log")
