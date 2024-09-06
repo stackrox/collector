@@ -3,7 +3,6 @@ include ../Makefile-constants.mk
 
 NPROCS ?= $(shell nproc)
 
-CMAKE_BASE_DIR = cmake-build
 CMAKE_DIR= $(BASE_PATH)/$(CMAKE_BASE_DIR)
 COLLECTOR_BIN_DIR = $(CMAKE_DIR)/collector
 LIBSINSP_BIN_DIR = $(CMAKE_DIR)/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp
@@ -67,17 +66,9 @@ txt-files:
 clean:
 	docker rm -fv build_collector || true
 	docker rm -fv container-stats benchmark collector grpc-server || true
-	rm -rf falcosecurity-libs/cmake-build
-	rm -rf falcosecurity-libs/falcosecurity-libs-build
+	rm -rf container/LICENSE-kernel-modules.txt
 	rm -rf container/bin
-	rm -rf container/driver
-	rm -rf container/libs
-	rm -rf container/rhel/scripts
-	rm -rf container/rhel/bundle.tar.gz
-	rm -rf container/devel/scripts
-	rm -rf container/devel/bundle.tar.gz
 	rm -rf container/THIRD_PARTY_NOTICES
-	rm -f container/Dockerfile.dev
 
 .PHONY: check
 check:
