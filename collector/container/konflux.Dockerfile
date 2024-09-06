@@ -149,6 +149,8 @@ ENV COLLECTOR_HOST_ROOT=/host
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
 
+COPY LICENSE /licenses/LICENSE
+
 EXPOSE 8080 9090
 
 ENTRYPOINT collector
