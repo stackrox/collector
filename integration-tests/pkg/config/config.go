@@ -81,8 +81,6 @@ type Runtime struct {
 type CollectorOptions struct {
 	// The collector log level, e.g. DEBUG, TRACE
 	LogLevel string
-	// Any arguments to prepend to the collector command
-	PreArguments string
 }
 
 // Benchmarks contains options related to interacting with the benchmarks
@@ -148,8 +146,7 @@ func RuntimeInfo() *Runtime {
 func CollectorInfo() *CollectorOptions {
 	if collector_options == nil {
 		collector_options = &CollectorOptions{
-			LogLevel:     ReadEnvVarWithDefault(envCollectorLogLevel, "debug"),
-			PreArguments: ReadEnvVar(envCollectorPreArguments),
+			LogLevel: ReadEnvVarWithDefault(envCollectorLogLevel, "debug"),
 		}
 	}
 	return collector_options

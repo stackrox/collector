@@ -45,7 +45,6 @@ func newK8sManager(e executor.K8sExecutor, name string) *K8sCollectorManager {
 	env := []coreV1.EnvVar{
 		{Name: "GRPC_SERVER", Value: "tester-svc:9999"},
 		{Name: "COLLECTION_METHOD", Value: collectionMethod},
-		{Name: "COLLECTOR_PRE_ARGUMENTS", Value: collectorOptions.PreArguments},
 		{Name: "ENABLE_CORE_DUMP", Value: "false"},
 	}
 

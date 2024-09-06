@@ -38,4 +38,4 @@ HEALTHCHECK	\
 	# the command uses /ready API
 	CMD /usr/local/bin/status-check.sh
 
-ENTRYPOINT collector
+ENTRYPOINT ["collector"]
