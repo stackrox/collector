@@ -194,14 +194,19 @@ func (s *IntegrationTestSuiteBase) GetContainerStats() []ContainerStat {
 
 		logLines := strings.Split(logs, "\n")
 		for i, line := range logLines {
+			if len(line) == 0 {
+				continue
+			}
 			var stat ContainerStat
-
-			_ = json.Unmarshal([]byte(line), &stat)
+			err = json.Unmarshal([]byte(line), &stat)
+			if err != nil {
+				log.Error("json unmarshal error: %w", err)
+			}
 
 			if stat.Name != "" {
 				s.stats = append(s.stats, stat)
 			} else {
-				log.Warn("missing name for stat line %d of %d", i, len(logLines))
+				log.Warn("missing name for stat line %d of %d line: [%s]", i, len(logLines), line)
 			}
 		}
 
