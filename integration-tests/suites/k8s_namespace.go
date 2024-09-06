@@ -134,8 +134,6 @@ func (k *K8sNamespaceTestSuite) TearDownSuite() {
 }
 
 func (k *K8sNamespaceTestSuite) TestK8sNamespace() {
-	// Sleep to ensure asynchronous container engine lookups have completed
-	time.Sleep(10 * time.Second)
 	baseUri := "http://" + k.collectorIP + ":8080/state/containers/"
 
 	for _, tt := range k.tests {
