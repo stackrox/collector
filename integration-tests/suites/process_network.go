@@ -40,7 +40,12 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	}
 
 	// invokes default nginx
-	containerID, err := s.launchContainer("nginx", image_store.ImageByKey("nginx"))
+	containerID, err := s.Executor().StartContainer(
+		config.ContainerStartConfig{
+			Name:  "nginx",
+			Image: image_store.ImageByKey("nginx"),
+		})
+
 	s.Require().NoError(err)
 	s.serverContainer = common.ContainerShortID(containerID)
 
@@ -51,7 +56,12 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	// invokes another container
-	containerID, err = s.launchContainer("nginx-curl", image_store.QaImageByKey("qa-alpine-curl"), "sleep", "300")
+	containerID, err = s.Executor().StartContainer(
+		config.ContainerStartConfig{
+			Name:    "nginx-curl",
+			Image:   image_store.QaImageByKey("qa-alpine-curl"),
+			Command: []string{"sleep", "300"},
+		})
 	s.Require().NoError(err)
 	s.clientContainer = common.ContainerShortID(containerID)
 

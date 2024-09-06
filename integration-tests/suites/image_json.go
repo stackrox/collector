@@ -20,7 +20,7 @@ func (s *ImageLabelJSONTestSuite) TestRunImageWithJSONLabel() {
 	err := s.Executor().PullImage(image)
 	s.Require().NoError(err)
 
-	containerID, err := s.launchContainer(name, image)
+	containerID, err := s.Executor().StartContainer(config.ContainerStartConfig{Name: name, Image: image})
 	s.Require().NoError(err)
 
 	_, err = s.waitForContainerToExit(name, containerID, defaultWaitTickSeconds, 0)

@@ -32,7 +32,7 @@ type K8sCollectorManager struct {
 	eventWatcher watch.Interface
 }
 
-func newK8sManager(e executor.K8sExecutor, name string) *K8sCollectorManager {
+func NewK8sManager(e executor.K8sExecutor, name string) *K8sCollectorManager {
 	collectorOptions := config.CollectorInfo()
 	collectionMethod := config.CollectionMethod()
 
@@ -184,7 +184,7 @@ func (k *K8sCollectorManager) ContainerID() string {
 		Namespace: TEST_NAMESPACE,
 	}
 
-	return k.executor.ContainerID(cf)
+	return k.executor.PodContainerID(cf)
 }
 
 func (k *K8sCollectorManager) TestName() string {

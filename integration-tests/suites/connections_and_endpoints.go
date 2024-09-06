@@ -1,7 +1,6 @@
 package suites
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -9,6 +8,7 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -45,15 +45,27 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	s.StartCollector(false, &collectorOptions)
 
 	socatImage := config.Images().QaImageByKey("qa-socat")
+	err := s.executor.PullImage(socatImage)
+	s.Require().NoError(err)
 
 	serverName := s.Server.Name
 	clientName := s.Client.Name
 
-	longContainerID, err := s.launchContainer(serverName, "--entrypoint", "/bin/sh", socatImage, "-c", "/bin/sleep 300")
-	s.Server.ContainerID = common.ContainerShortID(longContainerID)
+	longContainerID, err := s.Executor().StartContainer(
+		config.ContainerStartConfig{Name: serverName,
+			Entrypoint: []string{"/bin/sh"},
+			Image:      socatImage,
+			Command:    []string{"-c", "/bin/sleep 300"},
+		})
 	s.Require().NoError(err)
+	s.Server.ContainerID = common.ContainerShortID(longContainerID)
 
-	longContainerID, err = s.launchContainer(clientName, "--entrypoint", "/bin/sh", socatImage, "-c", "/bin/sleep 300")
+	longContainerID, err = s.Executor().StartContainer(
+		config.ContainerStartConfig{Name: clientName,
+			Entrypoint: []string{"/bin/sh"},
+			Image:      socatImage,
+			Command:    []string{"-c", "/bin/sleep 300"},
+		})
 	s.Require().NoError(err)
 	s.Client.ContainerID = common.ContainerShortID(longContainerID)
 
@@ -90,7 +102,7 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 		// TODO Get this assert to pass reliably for these tests. Don't just do the asserts for the last connection. https://issues.redhat.com/browse/ROX-17964
 		// assert.Equal(s.T(), nClientNetwork, nExpectedClientNetwork)
 		if nExpectedNetwork != nNetwork {
-			fmt.Println("WARNING: Expected " + strconv.Itoa(nExpectedNetwork) + " client network connections but found " + strconv.Itoa(nNetwork))
+			log.Warn("Expected " + strconv.Itoa(nExpectedNetwork) + " client network connections but found " + strconv.Itoa(nNetwork))
 		}
 		lastNetwork := clientNetworks[nNetwork-1]
 		lastExpectedNetwork := s.Client.ExpectedNetwork[nExpectedNetwork-1]
@@ -103,7 +115,7 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 	}
 
 	if s.Client.ExpectedEndpoints != nil {
-		fmt.Println("Expected client endpoint should be nil")
+		log.Warn("Expected client endpoint should be nil")
 	}
 
 	endpoints := s.Sensor().Endpoints(s.Client.ContainerID)
@@ -117,7 +129,7 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 		// TODO Get this assert to pass reliably for these tests. Don't just do the asserts for the last connection. https://issues.redhat.com/browse/ROX-18803
 		// assert.Equal(s.T(), nServerNetwork, nExpectedServerNetwork)
 		if nExpectedNetwork != nNetwork {
-			fmt.Println("WARNING: Expected " + strconv.Itoa(nExpectedNetwork) + " server network connections but found " + strconv.Itoa(nNetwork))
+			log.Warn("Expected " + strconv.Itoa(nExpectedNetwork) + " server network connections but found " + strconv.Itoa(nNetwork))
 		}
 		lastNetwork := serverNetworks[nNetwork-1]
 		lastExpectedNetwork := s.Server.ExpectedNetwork[nExpectedNetwork-1]

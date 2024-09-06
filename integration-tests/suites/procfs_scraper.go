@@ -52,7 +52,8 @@ func (s *ProcfsScraperTestSuite) launchNginx() {
 	s.Require().NoError(err)
 
 	// invokes default nginx
-	containerID, err := s.launchContainer("nginx", image)
+	containerID, err := s.Executor().StartContainer(config.ContainerStartConfig{Name: "nginx", Image: image})
+
 	s.Require().NoError(err)
 	s.ServerContainer = common.ContainerShortID(containerID)
 }

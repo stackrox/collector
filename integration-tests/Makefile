@@ -25,11 +25,12 @@ SHELL=/bin/bash
 
 # Environment variable COLLECTOR_IMAGE is used by integration-tests
 export COLLECTOR_IMAGE
+export COLLECTOR_QA_TAG
 
 ALL_TESTS = $(shell go test -tags bench -list .)
 
 #
-# Macro to define a test-specific target, based on the list
+# Macros to define a test-specific target, based on the list
 # of tests provided by the go test utility
 #
 define make-test-target
@@ -40,8 +41,21 @@ $1: docker-clean
 		-run $1 2>&1 | tee -a integration-test.log
 endef
 
+define make-test-target-dockerized
+$1-dockerized: docker-clean build-image
+	docker run -it --rm --network=host \
+		-v $(realpath $(BASE_PATH))integration-tests/container-logs:/tests/container-logs \
+		-v ~/.docker:/root/.docker -v /tmp/:/tmp \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-e COLLECTOR_IMAGE -e COLLECTOR_QA_TAG -e COLLECTOR_LOG_LEVEL=debug \
+		$(COLLECTOR_TESTS_IMAGE) \
+		-test.run $1 -test.count=1 -test.v -test.timeout 60m 2>&1 | tee -a integration-test.log
+endef
+
 # Generates all the specific test targets
 $(foreach element,$(ALL_TESTS),$(eval $(call make-test-target,$(element))))
+
+$(foreach element,$(ALL_TESTS),$(eval $(call make-test-target-dockerized,$(element))))
 
 .PHONY: build
 build:
@@ -60,6 +74,18 @@ ci-integration-tests: docker-clean
 	go version
 	set -o pipefail; \
 		go test -timeout 120m -v 2>&1 | tee -a integration-test.log
+
+.PHONY: ci-integration-tests-dockerized
+ci-integration-tests-dockerized: docker-clean build-image
+	docker run -it --rm --network=host \
+		-v $(realpath $(BASE_PATH))integration-tests/container-logs:/tests/container-logs \
+		-v ~/.docker:/root/.docker \
+		-v /tmp/:/tmp \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-e COLLECTOR_IMAGE \
+		-e COLLECTOR_QA_TAG \
+		-e COLLECTOR_LOG_LEVEL=debug \
+		$(COLLECTOR_TESTS_IMAGE) -test.short -test.v | tee -a integration-test.log
 
 .PHONY: ci-benchmarks
 ci-benchmarks: baseline

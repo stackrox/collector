@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 )
 
 type HttpEndpointAvailabilityTestSuite struct {
@@ -24,7 +25,7 @@ func (s *HttpEndpointAvailabilityTestSuite) TestAvailability() {
 	for _, endpoint := range s.Endpoints {
 		url := fmt.Sprintf("http://localhost:%d%s", s.Port, endpoint)
 
-		fmt.Println(url)
+		log.Info("url: %s", url)
 
 		resp, err := http.Get(url)
 		s.Require().NoError(err)

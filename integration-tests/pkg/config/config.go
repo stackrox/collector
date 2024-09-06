@@ -3,14 +3,16 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
 	CollectionMethodEBPF    = "ebpf"
 	CollectionMethodCoreBPF = "core-bpf"
 
-	runtimeDefaultCommand = "docker"
-	runtimeDefaultSocket  = "/var/run/docker.sock"
+	runtimeDefaultCommand     = "docker"
+	runtimeDefaultSocket      = "/var/run/docker.sock"
+	runtimeDefaultConfigPaths = "$HOME/.config/containers/auth.json,$HOME/.docker/config.json"
 
 	imageStoreLocation = "images.yml"
 
@@ -75,6 +77,8 @@ type Runtime struct {
 	// Whether or not interactions with this runtime should be run
 	// as root
 	RunAsRoot bool
+	// Which local paths to search for container registry credentials
+	ConfigPaths []string
 }
 
 // CollectorOptions contains options related to running collector itself
@@ -135,9 +139,10 @@ func VMInfo() *VM {
 func RuntimeInfo() *Runtime {
 	if runtime_options == nil {
 		runtime_options = &Runtime{
-			Command:   ReadEnvVarWithDefault(envRuntimeCommand, runtimeDefaultCommand),
-			Socket:    ReadEnvVarWithDefault(envRuntimeSocket, runtimeDefaultSocket),
-			RunAsRoot: ReadBoolEnvVar(envRuntimeAsRoot),
+			Command:     ReadEnvVarWithDefault(envRuntimeCommand, runtimeDefaultCommand),
+			Socket:      ReadEnvVarWithDefault(envRuntimeSocket, runtimeDefaultSocket),
+			RunAsRoot:   ReadBoolEnvVar(envRuntimeAsRoot),
+			ConfigPaths: strings.Split(ReadEnvVarWithDefault(envRuntimeConfigPaths, runtimeDefaultConfigPaths), ","),
 		}
 	}
 	return runtime_options

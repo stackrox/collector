@@ -48,7 +48,12 @@ func (s *SocatTestSuite) SetupSuite() {
 
 	// the socat container only needs to exist long enough for use to run both
 	// socat commands. 300 seconds should be more than long enough.
-	containerID, err := s.launchContainer("socat", processImage, "TCP-LISTEN:80,fork", "STDOUT")
+	containerID, err := s.Executor().StartContainer(
+		config.ContainerStartConfig{
+			Name:    "socat",
+			Image:   processImage,
+			Command: []string{"TCP-LISTEN:80,fork", "STDOUT"},
+		})
 	s.Require().NoError(err)
 
 	_, err = s.execContainer("socat", []string{"/bin/sh", "-c", "socat TCP-LISTEN:8080,fork STDOUT &"})
