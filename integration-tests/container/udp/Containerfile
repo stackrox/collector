@@ -1,0 +1,17 @@
+FROM fedora:40 AS builder
+
+WORKDIR /tmp
+COPY udp-server.c .
+COPY udp-client.c .
+
+RUN dnf install -y gcc && \
+    gcc udp-server.c -Wall -Wpedantic -Werror -o udp-server && \
+    gcc udp-client.c -Wall -Wpedantic -Werror -o udp-client
+
+FROM fedora:40
+
+COPY --from=builder /tmp/udp-server /usr/local/bin
+COPY --from=builder /tmp/udp-client /usr/local/bin
+EXPOSE 9090
+
+ENTRYPOINT ["udp-server"]

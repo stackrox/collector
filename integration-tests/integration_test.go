@@ -534,3 +534,7 @@ func TestGperftools(t *testing.T) {
 func TestRingBuffer(t *testing.T) {
 	suite.Run(t, new(suites.RingBufferTestSuite))
 }
+
+func TestUdpNetworkFlow(t *testing.T) {
+	suite.Run(t, new(suites.UdpNetworkFlow))
+}
