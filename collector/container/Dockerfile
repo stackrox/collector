@@ -57,7 +57,7 @@ RUN ./install.sh && rm -f install.sh
 # RUN echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
 
 COPY --from=builder /THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
-COPY kernel-modules /kernel-modules
+COPY collector/kernel-modules /kernel-modules
 COPY --from=builder /tmp/collector /usr/local/bin/
 COPY --from=builder /tmp/self-checks /usr/local/bin/self-checks
 COPY collector/container/status-check.sh /usr/local/bin/status-check.sh
