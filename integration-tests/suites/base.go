@@ -31,28 +31,19 @@ const (
 	parentUIDStr             = "ParentUid"
 	parentExecFilePathStr    = "ParentExecFilePath"
 
-	containerStatsName = "container-stats"
-
 	defaultWaitTickSeconds = 1 * time.Second
 )
 
 type IntegrationTestSuiteBase struct {
 	suite.Suite
-	executor  executor.Executor
-	collector collector.Manager
-	sensor    *mock_sensor.MockSensor
-	metrics   map[string]float64
-	stats     []ContainerStat
-	start     time.Time
-	stop      time.Time
-}
-
-type ContainerStat struct {
-	Timestamp string
-	Id        string
-	Name      string
-	Mem       string
-	Cpu       float64
+	executor     executor.Executor
+	collector    collector.Manager
+	sensor       *mock_sensor.MockSensor
+	metrics      map[string]float64
+	stats        []executor.ContainerStat
+	statsManager *executor.ContainerRuntimeStatsPoller
+	start        time.Time
+	stop         time.Time
 }
 
 type PerformanceResult struct {
@@ -61,7 +52,7 @@ type PerformanceResult struct {
 	VmConfig         string
 	CollectionMethod string
 	Metrics          map[string]float64
-	ContainerStats   []ContainerStat
+	ContainerStats   []executor.ContainerStat
 	LoadStartTs      string
 	LoadStopTs       string
 }
@@ -170,7 +161,6 @@ func (s *IntegrationTestSuiteBase) RegisterCleanup(containers ...string) {
 		// If the test is successful, this clean up function is still run
 		// but everything should be clean already, so this should not fail
 		// if resources are already gone.
-		containers = append(containers, containerStatsName)
 		s.cleanupContainers(containers...)
 
 		// StopCollector is safe when collector isn't running, but the container must exist.
@@ -182,37 +172,11 @@ func (s *IntegrationTestSuiteBase) RegisterCleanup(containers ...string) {
 	})
 }
 
-func (s *IntegrationTestSuiteBase) GetContainerStats() []ContainerStat {
+func (s *IntegrationTestSuiteBase) GetContainerStats() []executor.ContainerStat {
 	if s.stats == nil {
-		s.stats = make([]ContainerStat, 0)
-
-		logs, err := s.containerLogs(containerStatsName)
-		if err != nil {
-			assert.FailNow(s.T(), "container-stats failure")
-			return nil
-		}
-
-		logLines := strings.Split(logs, "\n")
-		for i, line := range logLines {
-			if len(line) == 0 {
-				continue
-			}
-			var stat ContainerStat
-			err = json.Unmarshal([]byte(line), &stat)
-			if err != nil {
-				log.Error("json unmarshal error: %w", err)
-			}
-
-			if stat.Name != "" {
-				s.stats = append(s.stats, stat)
-			} else {
-				log.Warn("missing name for stat line %d of %d line: [%s]", i, len(logLines), line)
-			}
-		}
-
-		s.cleanupContainers(containerStatsName)
+		s.statsManager.Stop()
+		s.stats = append(s.stats, s.statsManager.GetStats()...)
 	}
-
 	return s.stats
 }
 
@@ -258,7 +222,7 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats() {
 		s.AddMetric(fmt.Sprintf("%s_cpu_mean", name), stat.Mean(cpu, nil))
 		s.AddMetric(fmt.Sprintf("%s_cpu_stddev", name), stat.StdDev(cpu, nil))
 
-		log.Trace("CPU: Container %s, Mean %v, StdDev %v",
+		log.Info("CPU: Container %s, Mean %v, StdDev %v",
 			name, stat.Mean(cpu, nil), stat.StdDev(cpu, nil))
 	}
 
@@ -266,7 +230,7 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats() {
 		s.AddMetric(fmt.Sprintf("%s_mem_mean", name), stat.Mean(mem, nil))
 		s.AddMetric(fmt.Sprintf("%s_mem_stddev", name), stat.StdDev(mem, nil))
 
-		log.Trace("Mem: Container %s, Mean %v MiB, StdDev %v MiB",
+		log.Info("Mem: Container %s, Mean %v MiB, StdDev %v MiB",
 			name, stat.Mean(mem, nil), stat.StdDev(mem, nil))
 	}
 }
@@ -445,15 +409,10 @@ func (s *IntegrationTestSuiteBase) getPort(containerName string) (string, error)
 }
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
-	image := config.Images().QaImageByKey("performance-stats")
-	err := s.Executor().PullImage(image)
+	statsManager, err := executor.NewStatsCollector([]string{"collector", "benchmark"})
 	s.Require().NoError(err)
-
-	_, err = s.executor.StartContainer(config.ContainerStartConfig{
-		Name:   containerStatsName,
-		Image:  image,
-		Mounts: map[string]string{"/var/run/docker.sock": config.RuntimeInfo().Socket}})
-	s.Require().NoError(err)
+	s.statsManager = statsManager
+	s.statsManager.Start()
 }
 
 func (s *IntegrationTestSuiteBase) execShellCommand(command string) error {
