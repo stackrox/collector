@@ -409,7 +409,7 @@ func (s *IntegrationTestSuiteBase) getPort(containerName string) (string, error)
 }
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
-	statsManager, err := executor.NewStatsCollector([]string{"collector", "benchmark"})
+	statsManager, err := executor.NewContainerRuntimeStatsPoller(s.Executor(), []string{"collector"})
 	s.Require().NoError(err)
 	s.statsManager = statsManager
 	s.statsManager.Start()

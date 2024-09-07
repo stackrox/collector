@@ -1,14 +1,11 @@
 package executor
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
 	"github.com/stackrox/collector/integration-tests/pkg/log"
 )
 
@@ -23,7 +20,7 @@ type ContainerStat struct {
 
 // StatsCollector handles the collection of container stats.
 type ContainerRuntimeStatsPoller struct {
-	client     *client.Client
+	executor   Executor
 	containers []string
 	stats      []ContainerStat
 	mu         sync.Mutex
@@ -32,15 +29,10 @@ type ContainerRuntimeStatsPoller struct {
 	wg         sync.WaitGroup
 }
 
-// NewStatsCollector initializes a new StatsCollector.
-func NewStatsCollector(containerIds []string) (*ContainerRuntimeStatsPoller, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return nil, err
-	}
-
+// NewContainerRuntimeStatsPoller initializes a new StatsCollector.
+func NewContainerRuntimeStatsPoller(executor Executor, containerIds []string) (*ContainerRuntimeStatsPoller, error) {
 	return &ContainerRuntimeStatsPoller{
-		client:     cli,
+		executor:   executor,
 		containers: containerIds,
 		stopChan:   make(chan struct{}),
 	}, nil
@@ -49,7 +41,6 @@ func NewStatsCollector(containerIds []string) (*ContainerRuntimeStatsPoller, err
 // Start begins collecting stats for the specified containers.
 func (s *ContainerRuntimeStatsPoller) Start() {
 	if s.running {
-		log.Trace("stats collector is already running")
 		return
 	}
 
@@ -59,7 +50,7 @@ func (s *ContainerRuntimeStatsPoller) Start() {
 		s.wg.Add(1)
 		go s.collectStats(containerID)
 	}
-	log.Info("started stats collector for containers %v", s.containers)
+	log.Info("gathering cpu/mem stats for containers: %v", s.containers)
 }
 
 // Stop stops the stats collection and waits for all collection goroutines to finish.
@@ -72,7 +63,7 @@ func (s *ContainerRuntimeStatsPoller) Stop() {
 	close(s.stopChan)
 	s.wg.Wait()
 	s.running = false
-	log.Info("stopped stats collector for containers %v", s.containers)
+	log.Info("stopped gathering cpu/mem stats for containers %v", s.containers)
 }
 
 // GetStats retrieves the collected stats after the collection has stopped.
@@ -80,23 +71,6 @@ func (s *ContainerRuntimeStatsPoller) GetStats() []ContainerStat {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.stats
-}
-
-// TODO no error if container doesn't exist, use executor as caller
-func getContainerStatJSON(cli *client.Client, containerID string) (types.StatsJSON, error) {
-	ctx := context.Background()
-	stats, err := cli.ContainerStats(ctx, containerID, false)
-	if err != nil {
-		return types.StatsJSON{}, err
-	}
-	defer stats.Body.Close()
-	decoder := json.NewDecoder(stats.Body)
-
-	var statsJSON types.StatsJSON
-	if err := decoder.Decode(&statsJSON); err != nil {
-		return types.StatsJSON{}, err
-	}
-	return statsJSON, nil
 }
 
 func (s *ContainerRuntimeStatsPoller) collectStats(containerID string) {
@@ -108,23 +82,25 @@ func (s *ContainerRuntimeStatsPoller) collectStats(containerID string) {
 		case <-s.stopChan:
 			return
 		default:
-			statsJSON, err := getContainerStatJSON(s.client, containerID)
+			containerStat, err := s.executor.GetContainerStat(containerID)
 			if err != nil {
 				continue
 			}
-			containerStat := ContainerStat{
-				Timestamp: time.Now().Format(time.RFC3339),
-				Id:        statsJSON.ID,
-				Name:      containerID,
-				Mem:       fmt.Sprintf("%.2fMiB", float64(statsJSON.MemoryStats.Usage)/(1024*1024)),
-				Cpu:       calculateCPUPercent(&statsJSON),
-			}
-
 			s.mu.Lock()
 			s.stats = append(s.stats, containerStat)
 			s.mu.Unlock()
 
 		}
+	}
+}
+
+func ToContainerStat(statsJSON *types.StatsJSON) ContainerStat {
+	return ContainerStat{
+		Timestamp: time.Now().Format(time.RFC3339),
+		Id:        statsJSON.ID[:12],
+		Name:      statsJSON.Name,
+		Mem:       fmt.Sprintf("%.2fMiB", float64(statsJSON.MemoryStats.Usage)/(1024*1024)),
+		Cpu:       calculateCPUPercent(statsJSON),
 	}
 }
 
@@ -137,6 +113,5 @@ func calculateCPUPercent(stats *types.StatsJSON) float64 {
 	if systemDelta > 0.0 && cpuDelta > 0.0 {
 		return (cpuDelta / systemDelta) * float64(stats.CPUStats.OnlineCPUs) * 100.0
 	}
-
 	return 0.0
 }
