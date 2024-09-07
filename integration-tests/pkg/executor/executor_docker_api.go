@@ -360,7 +360,6 @@ func (d *dockerAPIExecutor) GetContainerStat(containerID string) (ContainerStat,
 	}
 	defer stats.Body.Close()
 	decoder := json.NewDecoder(stats.Body)
-
 	var statsJSON types.StatsJSON
 	if err := decoder.Decode(&statsJSON); err != nil {
 		return stat, err
