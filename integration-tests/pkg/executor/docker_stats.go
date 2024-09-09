@@ -12,11 +12,11 @@ import (
 
 // ContainerStat represents the CPU and memory statistics of a container at a specific time.
 type ContainerStat struct {
-	Timestamp string  `json:"timestamp"`
-	Id        string  `json:"id"`
-	Name      string  `json:"name"`
-	Mem       string  `json:"mem"`
-	Cpu       float64 `json:"cpu"`
+	Timestamp string  `json:"Timestamp"`
+	Id        string  `json:"Id"`
+	Name      string  `json:"Name"`
+	Mem       string  `json:"Mem"`
+	Cpu       float64 `json:"Cpu"`
 }
 
 // StatsCollector handles the collection of container stats.
