@@ -6,13 +6,7 @@ ifeq ($(COLLECTOR_TAG),)
 COLLECTOR_TAG=$(shell git describe --tags --abbrev=10 --dirty)
 endif
 
-DOCKER_CLI := $(shell command -v docker 2>/dev/null)
-
-ifeq ($(DOCKER_CLI),)
-$(error "docker is required for building")
-endif
-
-HOST_ARCH := $(shell docker system info --format '{{.Architecture}}')
+HOST_ARCH := $(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
 PLATFORM ?= "linux/$(HOST_ARCH)"
 
 USE_VALGRIND ?= false
