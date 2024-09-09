@@ -89,6 +89,7 @@ jobs:
           path: |
             ${{ env.FAILURES_DIR }}
           retention-days: 7
+          include-hidden-files: true
 
       - name: Authenticate with GCP
         uses: 'google-github-actions/auth@v2'
