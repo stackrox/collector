@@ -43,6 +43,7 @@ void Service::Run() {
   CLOG(INFO) << "[runtime-control::Service] Start";
 
   while (should_run_) {
+    std::this_thread::sleep_for(std::chrono::seconds(90));
     if (WaitForChannelReady(control_channel_, [this]() -> bool { return !should_run_; })) {
       CLOG(INFO) << "[runtime-control::Service] Channel is ready";
       writer_ = DuplexClient::CreateWithReadCallback(
