@@ -40,7 +40,6 @@ type IntegrationTestSuiteBase struct {
 	collector    collector.Manager
 	sensor       *mock_sensor.MockSensor
 	metrics      map[string]float64
-	stats        []executor.ContainerStat
 	statsManager *executor.ContainerRuntimeStatsPoller
 	start        time.Time
 	stop         time.Time
@@ -172,14 +171,6 @@ func (s *IntegrationTestSuiteBase) RegisterCleanup(containers ...string) {
 	})
 }
 
-func (s *IntegrationTestSuiteBase) GetContainerStats() []executor.ContainerStat {
-	if s.stats == nil {
-		s.statsManager.Stop()
-		s.stats = append(s.stats, s.statsManager.GetStats()...)
-	}
-	return s.stats
-}
-
 // Convert memory string from docker stats into numeric value in MiB
 func Mem2Numeric(value string) (float64, error) {
 	size := len(value)
@@ -209,13 +200,13 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats() {
 	cpuStats := map[string][]float64{}
 	memStats := map[string][]float64{}
 
-	for _, stat := range s.GetContainerStats() {
-		cpuStats[stat.Name] = append(cpuStats[stat.Name], stat.Cpu)
+	for _, containerStat := range s.statsManager.GetStats() {
+		cpuStats[containerStat.Name] = append(cpuStats[containerStat.Name], containerStat.Cpu)
 
-		memValue, err := Mem2Numeric(stat.Mem)
+		memValue, err := Mem2Numeric(containerStat.Mem)
 		s.Require().NoError(err)
 
-		memStats[stat.Name] = append(memStats[stat.Name], memValue)
+		memStats[containerStat.Name] = append(memStats[containerStat.Name], memValue)
 	}
 
 	for name, cpu := range cpuStats {
@@ -236,6 +227,7 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats() {
 }
 
 func (s *IntegrationTestSuiteBase) WritePerfResults() {
+	s.statsManager.Stop()
 	s.PrintContainerStats()
 
 	perf := PerformanceResult{
@@ -244,7 +236,7 @@ func (s *IntegrationTestSuiteBase) WritePerfResults() {
 		VmConfig:         config.VMInfo().Config,
 		CollectionMethod: config.CollectionMethod(),
 		Metrics:          s.metrics,
-		ContainerStats:   s.GetContainerStats(),
+		ContainerStats:   s.statsManager.GetStats(),
 		LoadStartTs:      s.start.Format("2006-01-02 15:04:05"),
 		LoadStopTs:       s.stop.Format("2006-01-02 15:04:05"),
 	}

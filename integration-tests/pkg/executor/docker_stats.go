@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/collector/integration-tests/pkg/log"
 )
 
@@ -88,21 +89,24 @@ func (s *ContainerRuntimeStatsPoller) collectStats(containerID string) {
 				continue
 			}
 			s.mu.Lock()
-			s.stats = append(s.stats, containerStat)
+			s.stats = append(s.stats, *containerStat)
 			s.mu.Unlock()
 
 		}
 	}
 }
 
-func ToContainerStat(statsJSON *types.StatsJSON) ContainerStat {
-	return ContainerStat{
+func ToContainerStat(statsJSON *types.StatsJSON) (*ContainerStat, error) {
+	if statsJSON == nil || statsJSON.Name == "" {
+		return nil, errors.New("empty input")
+	}
+	return &ContainerStat{
 		Timestamp: time.Now().Format("2006-01-02 15:04:05"),
 		Id:        statsJSON.ID[:min(12, len(statsJSON.ID))],
 		Name:      strings.TrimPrefix(statsJSON.Name, "/"),
 		Mem:       fmt.Sprintf("%.2fMiB", float64(statsJSON.MemoryStats.Usage)/(1024*1024)),
 		Cpu:       calculateCPUPercent(statsJSON),
-	}
+	}, nil
 }
 
 // cpuPercent = (cpuDelta / systemDelta) * onlineCPUs * 100.0

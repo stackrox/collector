@@ -352,21 +352,16 @@ func (d *dockerAPIExecutor) PullImage(ref string) error {
 	return nil
 }
 
-func (d *dockerAPIExecutor) GetContainerStat(containerID string) (ContainerStat, error) {
-	stat := ContainerStat{}
+func (d *dockerAPIExecutor) GetContainerStat(containerID string) (*ContainerStat, error) {
 	stats, err := d.client.ContainerStats(context.Background(), containerID, false)
 	if err != nil {
-		return stat, err
+		return nil, err
 	}
 	defer stats.Body.Close()
 	decoder := json.NewDecoder(stats.Body)
 	var statsJSON types.StatsJSON
 	if err := decoder.Decode(&statsJSON); err != nil {
-		return stat, err
+		return nil, err
 	}
-	stat = ToContainerStat(&statsJSON)
-	if stat.Name == "" {
-		return stat, errors.New("stat has empty name")
-	}
-	return stat, nil
+	return ToContainerStat(&statsJSON)
 }
