@@ -26,10 +26,12 @@ RUN --mount=type=cache,target=/collector-src/build \
         -DTRACE_SINSP_EVENTS=${TRACE_SINSP_EVENTS} && \
     cmake --build build/ -- -j$(nproc) && \
     ctest -V --test-dir build && \
-    strip -v --strip-unneeded build/collector/collector && \
     # podman does not bake cache mounts into the final image, so
     # we need to move the required binaries out of it.
-    cp build/collector/collector /tmp/ && \
+    if [[ "${CMAKE_BUILD_TYPE}" == "Release" ]]; \
+        then strip -v --strip-unneeded -o /tmp/collector build/collector/collector; \
+        else cp build/collector/collector /tmp/; \
+    fi ; \
     cp build/collector/self-checks /tmp/
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.3
