@@ -85,6 +85,7 @@ jobs:
         if: ${{ ! inputs.run-benchmarks }}
         run: |
           ansible --version
+          ansible-playbook --version
           python -m pip list
           make -C "${{ github.workspace }}/ansible" create-ci-vms
 
