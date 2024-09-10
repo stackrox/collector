@@ -97,7 +97,7 @@ func (s *ContainerRuntimeStatsPoller) collectStats(containerID string) {
 
 func ToContainerStat(statsJSON *types.StatsJSON) ContainerStat {
 	return ContainerStat{
-		Timestamp: time.Now().Format(time.RFC3339),
+		Timestamp: time.Now().Format("2006-01-02 15:04:05"),
 		Id:        statsJSON.ID[:min(12, len(statsJSON.ID))],
 		Name:      strings.TrimPrefix(statsJSON.Name, "/"),
 		Mem:       fmt.Sprintf("%.2fMiB", float64(statsJSON.MemoryStats.Usage)/(1024*1024)),
