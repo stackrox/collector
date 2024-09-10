@@ -84,6 +84,8 @@ jobs:
       - name: Create Test VMs
         if: ${{ ! inputs.run-benchmarks }}
         run: |
+          ansible --version
+          python -m pip list
           make -C "${{ github.workspace }}/ansible" create-ci-vms
 
       - name: Run Tests
