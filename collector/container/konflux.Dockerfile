@@ -20,7 +20,7 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
         unzip \
         clang \
         bpftool \
-        cmake-3.18.2-9.el8 \
+        cmake \
         gcc-c++ \
         openssl-devel \
         ncurses-devel \
