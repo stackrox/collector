@@ -62,6 +62,7 @@ RUN mkdir kernel-modules \
     && ln -s builder/third_party third_party \
     && cp -a ${SOURCES_DIR}/collector collector \
     && cp -a ${SOURCES_DIR}/falcosecurity-libs falcosecurity-libs \
+    && cp -a ${SOURCES_DIR}/CMakePresets.json CMakePresets.json \
     && cp -a ${SOURCES_DIR}/CMakeLists.txt CMakeLists.txt
 
 # WITH_RHEL_RPMS controls for dependency installation, ie if they were already installed as RPMs.
