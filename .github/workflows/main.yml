@@ -82,7 +82,7 @@ jobs:
 
       - name: Build collector
         run: |
-          cmake ${{ matrix.config-args }}
+          cmake ${{ matrix.config-args }} -DCOLLECTOR_VERSION="0.0.0"
           cmake --build cmake-build "-j$(nproc)"
 
       - name: Run unit tests
