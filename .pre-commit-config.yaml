@@ -27,3 +27,12 @@ repos:
     rev: "v1.0.0-rc.1"
     hooks:
       - id: go-fmt
+
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: "0.29.2"
+    hooks:
+      - id: check-jsonschema
+        files: "^CMakePresets.json$"
+        args:
+        - "--schemafile"
+        - "https://cmake.org/cmake/help/v3.26/_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json"

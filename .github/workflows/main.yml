@@ -73,8 +73,8 @@ jobs:
       fail-fast: false
       matrix:
         config-args:
-        - -DADDRESS_SANITIZER=ON
-        - -DUSE_VALGRIND=ON
+        - --preset=sanitizers
+        - --preset=valgrind
     steps:
       - uses: actions/checkout@v4
         with:
@@ -82,10 +82,8 @@ jobs:
 
       - name: Build collector
         run: |
-          cmake -S . -B cmake-build \
-            ${{ matrix.config-args }} \
-            -DCMAKE_BUILD_TYPE=Debug
-          make -C cmake-build "-j$(nproc)"
+          cmake ${{ matrix.config-args }}
+          cmake --build cmake-build "-j$(nproc)"
 
       - name: Run unit tests
         run: |

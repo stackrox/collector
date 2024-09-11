@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 15,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Default configuration",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/cmake-build"
+    },
+    {
+      "name": "release",
+      "displayName": "Compile in Release mode",
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Compile in Debug mode",
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "sanitizers",
+      "displayName": "Compile with sanitizers",
+      "inherits": "default",
+      "cacheVariables": {
+        "ADDRESS_SANITIZER": "ON",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "valgrind",
+      "displayName": "Have the tests targets run under valgrind",
+      "inherits": "default",
+      "cacheVariables": {
+        "USE_VALGRIND": "ON",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    }
+  ]
+}

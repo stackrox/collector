@@ -19,7 +19,7 @@ COLLECTOR_BUILD_DEPS := $(HDRS) $(SRCS) $(shell find $(BASE_PATH)/falcosecurity-
 
 cmake-configure/collector:
 	docker exec $(COLLECTOR_BUILDER_NAME) \
-		cmake -S $(BASE_PATH) -B $(CMAKE_DIR) \
+		cmake --preset=default \
 			-DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
 			-DDISABLE_PROFILING=$(DISABLE_PROFILING) \
 			-DUSE_VALGRIND=$(USE_VALGRIND) \

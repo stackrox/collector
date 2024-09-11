@@ -27,7 +27,6 @@ cmake-build-*/
 .vscode/
 .devcontainer/
 .devcontainer.json
-cmake-build/
 out/
 
 # IBM Cloud dynamic inventory files
@@ -36,3 +35,6 @@ ansible/ci/inventory_ibmcloud.yml
 
 # Snyk
 .dccache
+
+# CMake presets
+CMakeUserPresets.json
