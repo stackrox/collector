@@ -19,3 +19,4 @@ BPF_DEBUG_MODE ?= false
 
 COLLECTOR_BUILD_CONTEXT = collector/
 COLLECTOR_BUILDER_NAME ?= collector_builder_$(HOST_ARCH)
+USE_CCACHE ?= true

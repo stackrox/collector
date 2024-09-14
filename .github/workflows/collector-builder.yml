@@ -74,6 +74,27 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Set up builder ccache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/builder/.ccache
+          key: builder-ccache-${{ matrix.arch }}-${{ github.head_ref || github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            builder-ccache-${{ matrix.arch }}-${{ github.head_ref || github.ref_name }}-
+            builder-ccache-${{ matrix.arch }}-master-
+
+      - name: Setup builder ccache in docker cache
+        if: |
+          (github.event_name != 'pull_request' && matrix.arch != 's390x') ||
+          matrix.arch == 'amd64' ||
+          (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch != 's390x')
+        uses: reproducible-containers/buildkit-cache-dance@v3.1.2
+        with:
+          cache-map: |
+            {
+              "${{ github.workspace }}/builder/.ccache": "/root/.ccache"
+            }
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
@@ -152,17 +173,29 @@ jobs:
           (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch == 's390x')
         timeout-minutes: 480
         run: |
+          [ ! -d "${{ github.workspace }}/builder/.ccache" ] && rm -f "${{ github.workspace }}/builder/.ccache"
+          ls -al "${{ github.workspace }}/builder/.ccache" || true
           ansible-playbook \
             -i ansible/ci \
             -e build_hosts='job_id_${{ env.JOB_ID }}' \
             -e arch='${{ matrix.arch }}' \
+            -e github_workspace='${{ github.workspace }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-builder.yml
+          ls -al "${{ github.workspace }}/builder/.ccache" || true
 
       - name: Destroy VMs
         if: always() && matrix.arch == 's390x'
         run: |
           make -C ansible destroy-vms
+
+      - name: Store artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: builder-${{ matrix.arch }}-logs
+          path: |
+            ${{ github.workspace }}/build_builder_image.log
 
   create-multiarch-manifest:
     needs:

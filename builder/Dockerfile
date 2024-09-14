@@ -1,8 +1,12 @@
 FROM quay.io/centos/centos:stream9
 
 ARG BUILD_DIR=/install-tmp
+ARG USE_CCACHE=true
+ENV USE_CCACHE=${USE_CCACHE}
 
 USER root
+
+RUN echo $USE_CCACHE
 
 RUN dnf -y update \
     && dnf -y install --nobest \
@@ -53,7 +57,7 @@ WORKDIR ${BUILD_DIR}
 COPY install builder/install
 COPY third_party third_party
 
-RUN "builder/install/install-dependencies.sh" && \
+RUN --mount=type=cache,target=/root/.ccache/ "builder/install/install-dependencies.sh" && \
     rm -rf ${BUILD_DIR} && \
     echo -e '/usr/local/lib\n/usr/local/lib64' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 

@@ -45,6 +45,14 @@ jobs:
         with:
           submodules: true
 
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ccache-${{ matrix.arch }}-${{ github.head_ref || github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ matrix.arch }}-${{ github.head_ref || github.ref_name }}-
+            ccache-${{ matrix.arch }}-master-
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -83,6 +91,10 @@ jobs:
             -e arch='${{ matrix.arch }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-collector.yml
+
+      - name: Stats for ccache after build
+        run: |
+          ccache -s "${{ github.workspace }}/.ccache"
 
   build-collector-image-remote-vm:
     name: Build Collector on a remote VM
@@ -123,6 +135,15 @@ jobs:
           vm-type: rhel-${{ matrix.arch }}
           job-tag: builder
 
+      - name: Set up ccache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.ccache
+          key: ccache-${{ matrix.arch }}-${{ github.head_ref || github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ matrix.arch }}-${{ github.head_ref || github.ref_name }}-
+            ccache-${{ matrix.arch }}-master-
+
       - name: Create Build VMs
         run: |
           make -C "${{ github.workspace }}/ansible" create-build-vms
@@ -152,6 +173,7 @@ jobs:
             -i ansible/ci \
             -e arch='${{ matrix.arch }}' \
             -e build_hosts='job_id_${{ env.JOB_ID }}' \
+            -e github_workspace='${{ github.workspace }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-collector.yml
 

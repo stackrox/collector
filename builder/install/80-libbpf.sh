@@ -2,6 +2,11 @@
 
 set -e
 
+if [ "${USE_CCACHE}" = "true" ]; then
+    export CC="ccache gcc"
+    export CXX="ccache g++"
+fi
+
 cd third_party/libbpf
 
 cp LICENSE "${LICENSE_DIR}/libbpf-${LIBBPF_VERSION}"

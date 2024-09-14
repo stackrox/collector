@@ -35,6 +35,11 @@ if (NOT COLLECTOR_VERSION)
 	set(COLLECTOR_VERSION "0.0.0")
 endif()
 
+if(USE_CCACHE)
+    set(CMAKE_C_COMPILER_LAUNCHER ccache)
+    set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
+endif()
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/lib/CollectorVersion.h.in ${CMAKE_CURRENT_BINARY_DIR}/CollectorVersion.h)
 
 set(FALCO_DIR ${PROJECT_SOURCE_DIR}/../falcosecurity-libs)
@@ -85,6 +90,9 @@ add_executable(self-checks self-checks.cpp)
 add_subdirectory(test)
 
 # Falco Wrapper Library
+if(USE_CCACHE)
+  set(MODERN_CLANG_EXE "/usr/local/bin/ccache-clang" CACHE STRING "USE CCACHE" FORCE)
+endif()
 set(BUILD_DRIVER OFF CACHE BOOL "Build the driver on Linux" FORCE)
 set(USE_BUNDLED_DEPS OFF CACHE BOOL "Enable bundled dependencies instead of using the system ones" FORCE)
 set(USE_BUNDLED_CARES OFF CACHE BOOL "Enable bundled dependencies instead of using the system ones" FORCE)
