@@ -26,23 +26,30 @@
         version: "{{ local_branch }}"
         refspec: "+{{ collector_git_ref | replace('refs/', '') }}:{{ local_branch }}"
         depth: 1
-        recursive: true
+        recursive: false
       when: arch == "s390x"
 
-    - name: Check if ccache archive exists
+    - name: Clone submodules
+      ansible.builtin.shell: |
+        git submodule update --init --depth 1
+      args:
+        chdir: "{{ collector_root }}"
+      when: arch == "s390x"
+
+    - name: Check if ccache exists
       delegate_to: localhost
       ansible.builtin.stat:
         path: "{{ github_workspace }}/{{ ccache_path }}"
       register: ccache_check
       when: arch == "s390x"
 
-    - name: Copy ccache to build
+    - name: Copy ccache
       ansible.builtin.copy:
         src: "{{ github_workspace }}/{{ ccache_path }}"
         dest: "{{ collector_root }}/{{ ccache_dir }}/"
       when: arch == "s390x" and ccache_check.stat.exists
 
-    - name: Inject docker cache
+    - name: Inject docker cache with ccache
       ansible.builtin.shell:
         cmd: ansible/scripts/inject_docker_cache.sh "{{ collector_root }}/{{ ccache_dir }}" "{{ container_ccache_dir }}"
         chdir: "{{ collector_root }}"
@@ -55,7 +62,7 @@
         params:
           USE_CCACHE: "true"
 
-    - name: Extract docker cache
+    - name: Extract ccache from docker cache
       ansible.builtin.shell:
         cmd: ansible/scripts/extract_docker_cache.sh "{{ collector_root }}/{{ ccache_dir }}" "{{ container_ccache_dir }}"
         chdir: "{{ collector_root }}"
