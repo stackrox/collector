@@ -78,15 +78,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/builder/.ccache
-          key: builder-ccache-${{ matrix.arch }}-${{ format('YYYY-MM-DDTHH:mm:ssZ', github.event.head_commit.timestamp) }}
+          key: builder-ccache-${{ matrix.arch }}-${{ github.event.head_commit.timestamp }}
           restore-keys: |
             builder-ccache-${{ matrix.arch }}-
 
-      - name: Setup builder ccache in docker cache
-        if: |
-          (github.event_name != 'pull_request' && matrix.arch != 's390x') ||
-          matrix.arch == 'amd64' ||
-          (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch != 's390x')
+      - name: Set up builder ccache in docker cache
+        if: matrix.arch != 's390x'
         uses: reproducible-containers/buildkit-cache-dance@v3.1.2
         with:
           cache-map: |
