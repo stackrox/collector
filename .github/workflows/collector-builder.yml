@@ -78,10 +78,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/builder/.ccache
-          key: builder-ccache-${{ matrix.arch }}-${{ github.head_ref || github.ref_name }}-${{ github.sha }}
+          key: builder-ccache-${{ matrix.arch }}-${{ format('YYYY-MM-DDTHH:mm:ssZ', github.event.head_commit.timestamp) }}
           restore-keys: |
-            builder-ccache-${{ matrix.arch }}-${{ github.head_ref || github.ref_name }}-
-            builder-ccache-${{ matrix.arch }}-master-
+            builder-ccache-${{ matrix.arch }}-
 
       - name: Setup builder ccache in docker cache
         if: |
@@ -173,8 +172,6 @@ jobs:
           (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch == 's390x')
         timeout-minutes: 480
         run: |
-          [ ! -d "${{ github.workspace }}/builder/.ccache" ] && rm -f "${{ github.workspace }}/builder/.ccache"
-          ls -al "${{ github.workspace }}/builder/.ccache" || true
           ansible-playbook \
             -i ansible/ci \
             -e build_hosts='job_id_${{ env.JOB_ID }}' \
@@ -182,7 +179,6 @@ jobs:
             -e github_workspace='${{ github.workspace }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-builder.yml
-          ls -al "${{ github.workspace }}/builder/.ccache" || true
 
       - name: Destroy VMs
         if: always() && matrix.arch == 's390x'
