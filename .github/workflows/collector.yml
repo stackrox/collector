@@ -74,7 +74,7 @@ jobs:
           collector_tag: ${{ inputs.collector-tag }}
           debug_mode: ${{ github.event_name == 'pull_request' }}
           driver_version: ${DRIVER_VERSION}
-          use_ccache: ${( env.USE_CCACHE }}
+          use_ccache: ${{ env.USE_CCACHE }}
           EOF
 
       - name: Build images
@@ -85,7 +85,7 @@ jobs:
         timeout-minutes: 480
         run: |
           ansible-playbook \
-            -vvv \ # DEBUG
+            -vvv \
             --connection local \
             -i localhost, \
             --limit localhost \
@@ -161,14 +161,14 @@ jobs:
           collector_image: ${{ inputs.collector-image }}
           collector_tag: ${{ inputs.collector-tag }}
           debug_mode: ${{ github.event_name == 'pull_request' }}
-          use_ccache: ${( env.USE_CCACHE }}
+          use_ccache: ${{ env.USE_CCACHE }}
           EOF
 
       - name: Build ${{ matrix.arch }} image
         timeout-minutes: 480
         run: |
           ansible-playbook \
-            -vvv \ # DEBUG
+            -vvv \
             -i ansible/ci \
             -e arch='${{ matrix.arch }}' \
             -e build_hosts='job_id_${{ env.JOB_ID }}' \

@@ -159,7 +159,7 @@ jobs:
         run: |
           ansible-galaxy install -r ansible/requirements.yml
           ansible-playbook \
-            -vvv \ # DEBUG
+            -vvv \
             --connection local \
             -i localhost, \
             --limit localhost \
@@ -174,7 +174,7 @@ jobs:
         timeout-minutes: 480
         run: |
           ansible-playbook \
-            -vvv \ # DEBUG
+            -vvv \
             -i ansible/ci \
             -e build_hosts='job_id_${{ env.JOB_ID }}' \
             -e arch='${{ matrix.arch }}' \
