@@ -8,7 +8,7 @@
     COLLECTOR_TAG: "{{ collector_tag }}"
     DISABLE_PROFILING: "{{ disable_profiling }}"
     CMAKE_BUILD_TYPE: "{{ 'Debug' if debug_mode else 'Release' }}"
-    USE_CCACHE: "{{ use_ccache }}"
+    USE_CCACHE: "{{ use_ccache|bool|lower }}"
     CCACHE_DIR: "{{ ansible_env.GITHUB_WORKSPACE | default(collector_root) }}/.ccache"
 
   vars:

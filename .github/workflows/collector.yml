@@ -85,7 +85,6 @@ jobs:
         timeout-minutes: 480
         run: |
           ansible-playbook \
-            -vvv \
             --connection local \
             -i localhost, \
             --limit localhost \
@@ -168,7 +167,6 @@ jobs:
         timeout-minutes: 480
         run: |
           ansible-playbook \
-            -vvv \
             -i ansible/ci \
             -e arch='${{ matrix.arch }}' \
             -e build_hosts='job_id_${{ env.JOB_ID }}' \

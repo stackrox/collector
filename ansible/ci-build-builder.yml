@@ -6,7 +6,7 @@
     BUILD_BUILDER_IMAGE: "true"
     COLLECTOR_BUILDER_TAG: "{{ collector_builder_tag }}"
     PLATFORM: "linux/{{ arch }}"
-    USE_CCACHE: "{{ use_ccache }}"
+    USE_CCACHE: "{{ use_ccache|bool|lower }}"
 
   vars:
     collector_root: "{{ ansible_env.HOME }}/collector"
