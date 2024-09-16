@@ -1,12 +1,10 @@
 FROM quay.io/centos/centos:stream9
 
 ARG BUILD_DIR=/install-tmp
-ARG USE_CCACHE=true
+ARG USE_CCACHE=false
 ENV USE_CCACHE=${USE_CCACHE}
 
 USER root
-
-RUN echo $USE_CCACHE
 
 RUN dnf -y update \
     && dnf -y install --nobest \

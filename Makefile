@@ -30,8 +30,7 @@ ifneq ($(BUILD_BUILDER_IMAGE), false)
 		--build-arg USE_CCACHE="${USE_CCACHE}" \
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
-		"$(CURDIR)/builder" \
-		2>&1 | tee build_builder_image.log
+		"$(CURDIR)/builder"
 endif
 
 collector: check-builder

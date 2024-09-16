@@ -17,6 +17,7 @@ env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
   DEFAULT_BUILDER_TAG: master
   ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
+  USE_CCACHE: ${{ !contains(github.event.pull_request.labels.*.name, 'no-ccache') }}
 
 jobs:
   builder-needs-rebuilding:
@@ -145,6 +146,7 @@ jobs:
             echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
             echo "collector_git_ref: ${{ github.ref }}"
             echo "collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}"
+            echo "use_ccache: ${USE_CCACHE}"
           } > ${{ github.workspace }}/ansible/secrets.yml
 
       - name: Build images
@@ -181,14 +183,6 @@ jobs:
         if: always() && matrix.arch == 's390x'
         run: |
           make -C ansible destroy-vms
-
-      - name: Store artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: builder-${{ matrix.arch }}-logs
-          path: |
-            ${{ github.workspace }}/build_builder_image.log
 
   create-multiarch-manifest:
     needs:

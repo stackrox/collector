@@ -10,14 +10,12 @@ if [ "$USE_CCACHE" = "true" ]; then
 
     cd third_party/ccache
     git fetch --tags
-    git checkout "$(git describe --tags "$(git rev-list --tags --max-count=1)")"
+    git checkout "${CCACHE_VERSION}"
 
     mkdir cmake-build && cd cmake-build
     cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTING=OFF -DENABLE_DOCUMENTATION=OFF -DREDIS_STORAGE_BACKEND=OFF ..
 
     make -j "${NPROCS}"
     make install
-
     ccache --version
-    ccache -s
 fi

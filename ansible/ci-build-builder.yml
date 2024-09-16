@@ -6,6 +6,7 @@
     BUILD_BUILDER_IMAGE: "true"
     COLLECTOR_BUILDER_TAG: "{{ collector_builder_tag }}"
     PLATFORM: "linux/{{ arch }}"
+    USE_CCACHE: "{{ use_ccache }}"
 
   vars:
     collector_root: "{{ ansible_env.HOME }}/collector"
@@ -41,46 +42,37 @@
       ansible.builtin.stat:
         path: "{{ github_workspace }}/{{ ccache_path }}"
       register: ccache_check
-      when: arch == "s390x"
+      when: use_ccache and arch == "s390x"
 
     - name: Copy ccache
       ansible.builtin.copy:
         src: "{{ github_workspace }}/{{ ccache_path }}"
         dest: "{{ collector_root }}/{{ ccache_dir }}/"
-      when: arch == "s390x" and ccache_check.stat.exists
+      when: use_ccache and arch == "s390x" and ccache_check.stat.exists
 
     - name: Inject docker cache with ccache
       ansible.builtin.shell:
         cmd: ansible/scripts/inject_docker_cache.sh "{{ collector_root }}/{{ ccache_dir }}" "{{ container_ccache_dir }}"
         chdir: "{{ collector_root }}"
-      when: arch == "s390x" and ccache_check.stat.exists
+      when: use_ccache and arch == "s390x" and ccache_check.stat.exists
 
     - name: Build the collector builder image
       community.general.make:
         chdir: "{{ ansible_env.GITHUB_WORKSPACE | default(collector_root) }}"
         target: builder
-        params:
-          USE_CCACHE: "true"
 
     - name: Extract ccache from docker cache
       ansible.builtin.shell:
         cmd: ansible/scripts/extract_docker_cache.sh "{{ collector_root }}/{{ ccache_dir }}" "{{ container_ccache_dir }}"
         chdir: "{{ collector_root }}"
-      when: arch == "s390x"
+      when: use_ccache and arch == "s390x"
 
     - name: Fetch ccache
       ansible.builtin.fetch:
         src: "{{ collector_root }}/{{ ccache_path }}"
         dest: "{{ github_workspace }}/{{ ccache_dir }}/"
         flat: yes
-      when: arch == "s390x"
-
-    - name: Fetch build log
-      ansible.builtin.fetch:
-        src: "{{ collector_root }}/build_builder_image.log"
-        dest: "{{ github_workspace }}/"
-        flat: yes
-      when: arch == "s390x"
+      when: use_ccache and arch == "s390x"
 
     - name: Retag collector builder image to arch specific
       community.docker.docker_image:
