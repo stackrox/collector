@@ -27,7 +27,7 @@ container-dockerfile-dev:
 builder:
 ifneq ($(BUILD_BUILDER_IMAGE), false)
 	docker buildx build --load --platform ${PLATFORM} \
-		--build-arg USE_CCACHE="${USE_CCACHE}" \
+		--build-arg USE_CCACHE="$(USE_CCACHE)" \
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
 		"$(CURDIR)/builder"
