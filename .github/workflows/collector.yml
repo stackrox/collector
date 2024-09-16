@@ -47,6 +47,7 @@ jobs:
           submodules: true
 
       - name: Set up ccache
+        if: env.USE_CCACHE
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ matrix.arch }}
@@ -73,7 +74,7 @@ jobs:
           collector_tag: ${{ inputs.collector-tag }}
           debug_mode: ${{ github.event_name == 'pull_request' }}
           driver_version: ${DRIVER_VERSION}
-          use_ccache: ${USE_CCACHE}
+          use_ccache: ${( env.USE_CCACHE }}
           EOF
 
       - name: Build images
@@ -131,6 +132,7 @@ jobs:
           job-tag: builder
 
       - name: Set up ccache
+        if: env.USE_CCACHE
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.ccache
@@ -158,7 +160,7 @@ jobs:
           collector_image: ${{ inputs.collector-image }}
           collector_tag: ${{ inputs.collector-tag }}
           debug_mode: ${{ github.event_name == 'pull_request' }}
-          use_ccache: ${USE_CCACHE}
+          use_ccache: ${( env.USE_CCACHE }}
           EOF
 
       - name: Build ${{ matrix.arch }} image

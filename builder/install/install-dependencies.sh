@@ -9,6 +9,9 @@ mkdir -p "${LICENSE_DIR}"
 NPROCS="$(nproc)"
 export NPROCS
 
+# shellcheck source=SCRIPTDIR/versions.sh
+source builder/install/versions.sh
+
 if [ "${USE_CCACHE}" = "true" ]; then
     # build and install ccache
     ./builder/install/ccache.sh
@@ -26,8 +29,6 @@ if [ "${USE_CCACHE}" = "true" ]; then
     ccache -z -d /root/.ccache
 fi
 
-# shellcheck source=SCRIPTDIR/versions.sh
-source builder/install/versions.sh
 for f in builder/install/[0-9][0-9]-*.sh; do
     echo "=== $f ==="
     ./"$f"
