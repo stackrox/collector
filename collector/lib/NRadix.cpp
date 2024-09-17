@@ -61,14 +61,18 @@ bool NRadixTree::Insert(const IPNet& network) const {
       next = node->left_;
     }
 
-    if (!next) break;
+    if (!next) {
+      break;
+    }
 
     bit >>= 1;
     node = next;
 
     if (bit == 0) {
       // We have walked 128 bits, stop.
-      if (++i >= Address::kU64MaxLen) break;
+      if (++i >= Address::kU64MaxLen) {
+        break;
+      }
 
       // Reset and move to lower part.
       bit = 0x8000000000000000ULL;
@@ -105,7 +109,9 @@ bool NRadixTree::Insert(const IPNet& network) const {
 
     if (bit == 0) {
       // We have walked all 128 bits, stop.
-      if (++i >= Address::kU64MaxLen) break;
+      if (++i >= Address::kU64MaxLen) {
+        break;
+      }
 
       bit = 0x8000000000000000ULL;
       if (network.bits() >= 64) {
@@ -120,7 +126,9 @@ bool NRadixTree::Insert(const IPNet& network) const {
 }
 
 IPNet NRadixTree::Find(const IPNet& network) const {
-  if (network.IsNull()) return {};
+  if (network.IsNull()) {
+    return {};
+  }
 
   if (network.bits() == 0) {
     CLOG(ERROR) << "Cannot handle CIDR " << network << " with /0, in network tree";
@@ -148,7 +156,9 @@ IPNet NRadixTree::Find(const IPNet& network) const {
 
     // All network bits are traversed. If a supernet was found along the way, `ret` holds it,
     // else there does not exist any supernet containing the search network/address.
-    if (!(*net_mask_p & bit)) break;
+    if (!(*net_mask_p & bit)) {
+      break;
+    }
 
     bit >>= 1;
 
@@ -177,7 +187,9 @@ IPNet NRadixTree::Find(const Address& addr) const {
 }
 
 void getAll(nRadixNode* node, std::vector<IPNet>& ret) {
-  if (!node) return;
+  if (!node) {
+    return;
+  }
 
   if (node->value_) {
     ret.push_back(*node->value_);
@@ -199,14 +211,20 @@ bool isAnyIPNetSubsetUtil(Address::Family family, const nRadixNode* n1, const nR
   // If we have found networks from both trees belonging to same family, we have the answer.
   if (containing_net && contained_net) {
     if (family == Address::Family::UNKNOWN) {
-      if (containing_net->family() == contained_net->family()) return true;
+      if (containing_net->family() == contained_net->family()) {
+        return true;
+      }
     } else {
-      if (containing_net->family() == family && contained_net->family() == family) return true;
+      if (containing_net->family() == family && contained_net->family() == family) {
+        return true;
+      }
     }
   }
 
   // There are no more networks down the path in second tree, so stop.
-  if (!n2) return false;
+  if (!n2) {
+    return false;
+  }
 
   if (n1 && n1->value_) {
     containing_net = n1->value_;

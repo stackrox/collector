@@ -1223,16 +1223,18 @@ TEST(ConnTrackerTest, TestUpdateOldStateActiveExpiredConnectionRemovedFromOldSta
 void GetNextAddress(int address_parts[4], int& port) {
   for (int i = 0; i < 4; i++) {
     address_parts[i]++;
-    if (address_parts[i] < 256)
+    if (address_parts[i] < 256) {
       break;
-    else {
+    } else {
       address_parts[i] = 0;
     }
   }
 
   if (address_parts[3] == 256) {
     port++;
-    for (int i = 0; i < 4; i++) address_parts[i] = 0;
+    for (int i = 0; i < 4; i++) {
+      address_parts[i] = 0;
+    }
   }
 }
 
@@ -1258,9 +1260,13 @@ void CreateFakeState(ConnMap& afterglow_state, int num_endpoints, int num_connec
       afterglow_state.insert({tempConn1, ConnStatus(time_micros, false)});
       afterglow_state.insert({tempConn2, ConnStatus(time_micros, false)});
       connection_idx += 2;
-      if (connection_idx > num_connections) break;
+      if (connection_idx > num_connections) {
+        break;
+      }
     }
-    if (connection_idx > num_connections) break;
+    if (connection_idx > num_connections) {
+      break;
+    }
   }
 }
 

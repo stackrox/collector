@@ -96,31 +96,37 @@ std::string Base64Decode(std::string const& encoded_string) {
     char_array_4[i++] = encoded_string[in_];
     in_++;
     if (i == 4) {
-      for (i = 0; i < 4; i++)
+      for (i = 0; i < 4; i++) {
         char_array_4[i] = base64_chars.find(char_array_4[i]);
+      }
 
       char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
       char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
       char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
-      for (i = 0; (i < 3); i++)
+      for (i = 0; (i < 3); i++) {
         ret += char_array_3[i];
+      }
       i = 0;
     }
   }
 
   if (i) {
-    for (j = i; j < 4; j++)
+    for (j = i; j < 4; j++) {
       char_array_4[j] = 0;
+    }
 
-    for (j = 0; j < 4; j++)
+    for (j = 0; j < 4; j++) {
       char_array_4[j] = base64_chars.find(char_array_4[j]);
+    }
 
     char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
     char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
     char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
-    for (j = 0; (j < i - 1); j++) ret += char_array_3[j];
+    for (j = 0; (j < i - 1); j++) {
+      ret += char_array_3[j];
+    }
   }
 
   return ret;
@@ -128,7 +134,9 @@ std::string Base64Decode(std::string const& encoded_string) {
 
 std::string GetHostPath(const std::string& file) {
   const char* host_root = std::getenv("COLLECTOR_HOST_ROOT");
-  if (!host_root) host_root = "";
+  if (!host_root) {
+    host_root = "";
+  }
   std::string host_file(host_root);
   // Check if we are joining paths without a seperator,
   if (host_file.length() && file.length() &&
@@ -141,7 +149,9 @@ std::string GetHostPath(const std::string& file) {
 
 const char* GetSNIHostname() {
   const char* hostname = std::getenv("SNI_HOSTNAME");
-  if (hostname && *hostname) return hostname;
+  if (hostname && *hostname) {
+    return hostname;
+  }
 
   // if the environment variable is not defined, then default
   // to sensor.stackrox

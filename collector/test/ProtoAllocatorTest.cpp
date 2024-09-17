@@ -11,8 +11,9 @@ namespace {
 TEST(ProtoAllocator, OverflowDefaultPool) {
   ProtoAllocator<sensor::NetworkConnectionInfoMessage> allocator;
 
-  for (unsigned int i = 0; i <= ProtoAllocator<sensor::NetworkConnectionInfoMessage>::kDefaultPoolSize / sizeof(sensor::NetworkConnectionInfoMessage); i++)
+  for (unsigned int i = 0; i <= ProtoAllocator<sensor::NetworkConnectionInfoMessage>::kDefaultPoolSize / sizeof(sensor::NetworkConnectionInfoMessage); i++) {
     allocator.AllocateRoot();
+  }
 
   allocator.Reset();
 }

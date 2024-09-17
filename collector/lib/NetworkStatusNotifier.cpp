@@ -317,7 +317,9 @@ void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::Netwo
 }
 
 sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(const ConnMap& conn_delta, const AdvertisedEndpointMap& endpoint_delta) {
-  if (conn_delta.empty() && endpoint_delta.empty()) return nullptr;
+  if (conn_delta.empty() && endpoint_delta.empty()) {
+    return nullptr;
+  }
 
   Reset();
   auto* msg = AllocateRoot();

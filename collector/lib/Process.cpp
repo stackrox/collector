@@ -82,7 +82,9 @@ std::string Process::args() const {
   std::ostringstream args;
   for (auto it = system_inspector_threadinfo_->m_args.begin(); it != system_inspector_threadinfo_->m_args.end();) {
     args << *it++;
-    if (it != system_inspector_threadinfo_->m_args.end()) args << " ";
+    if (it != system_inspector_threadinfo_->m_args.end()) {
+      args << " ";
+    }
   }
   return args.str();
 }

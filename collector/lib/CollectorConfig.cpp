@@ -237,8 +237,9 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   }
 
   for (const std::string& str : ignored_networks.value()) {
-    if (str.empty())
+    if (str.empty()) {
       continue;
+    }
 
     std::optional<IPNet> net = IPNet::parse(str);
 
@@ -251,8 +252,9 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   }
 
   for (const std::string& str : non_aggregated_networks.value()) {
-    if (str.empty())
+    if (str.empty()) {
       continue;
+    }
 
     std::optional<IPNet> net = IPNet::parse(str);
 
