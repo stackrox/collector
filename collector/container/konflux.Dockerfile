@@ -49,6 +49,7 @@ ARG SOURCES_DIR=/staging
 COPY . ${SOURCES_DIR}
 
 ARG COLLECTOR_TAG
+RUN if [[ "$COLLECTOR_TAG" == "" ]]; then >&2 echo "error: required COLLECTOR_TAG arg is unset"; exit 6; fi
 ARG BUILD_DIR
 ARG SRC_ROOT_DIR=${BUILD_DIR}
 ARG CMAKE_BUILD_DIR
