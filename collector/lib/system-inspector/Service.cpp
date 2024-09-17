@@ -259,12 +259,17 @@ void Service::Run(const std::atomic<ControlValue>& control) {
     ServePendingProcessRequests();
 
     sinsp_evt* evt = GetNext();
-    if (!evt) continue;
+    if (!evt) {
+      continue;
+    }
 
     auto process_start = NowMicros();
     for (auto it = signal_handlers_.begin(); it != signal_handlers_.end(); it++) {
       auto& signal_handler = *it;
-      if (!signal_handler.ShouldHandle(evt)) continue;
+      if (!signal_handler.ShouldHandle(evt)) {
+        continue;
+      }
+
       LogUnreasonableEventTime(process_start, evt);
       auto result = signal_handler.handler->HandleSignal(evt);
       if (result == SignalHandler::NEEDS_REFRESH) {
