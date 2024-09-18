@@ -248,6 +248,7 @@ void CollectorStatsExporter::run() {
         if (counters.parse_micros_total) {
           counters.parse_micros_total->Set(parse_micros_total);
         }
+
         if (counters.process_micros_total) {
           counters.process_micros_total->Set(process_micros_total);
         }
