@@ -93,14 +93,18 @@ class DirHandle : public ResourceWrapper<DIR*, DirHandle> {
   DirHandle(FDHandle&& fd) : ResourceWrapper(fdopendir(fd.release())) {}
 
   FDHandle openat(const char* path, int mode) const {
-    if (!valid()) return -1;
+    if (!valid()) {
+      return -1;
+    }
     return ::openat(dirfd(get()), path, mode);
   }
 
   int fd() const { return ::dirfd(get()); }
 
   struct dirent* read() {
-    if (!valid()) return nullptr;
+    if (!valid()) {
+      return nullptr;
+    }
     return readdir(get());
   }
 

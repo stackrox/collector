@@ -55,7 +55,9 @@ NetworkSignalHandler::NetworkSignalHandler(sinsp* inspector, std::shared_ptr<Con
 std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   auto* fd_info = evt->get_fd_info();
 
-  if (!fd_info) return std::nullopt;
+  if (!fd_info) {
+    return std::nullopt;
+  }
 
   // With collect_connection_status_ set, we can prevent reporting of asynchronous
   // connections which fail.
@@ -117,13 +119,17 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   const Endpoint* remote = is_server ? &client : &server;
 
   const std::string* container_id = event_extractor_->get_container_id(evt);
-  if (!container_id) return std::nullopt;
+  if (!container_id) {
+    return std::nullopt;
+  }
   return {Connection(*container_id, *local, *remote, l4proto, is_server)};
 }
 
 SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
   auto modifier = modifiers[evt->get_type()];
-  if (modifier == Modifier::INVALID) return SignalHandler::IGNORED;
+  if (modifier == Modifier::INVALID) {
+    return SignalHandler::IGNORED;
+  }
 
   auto result = GetConnection(evt);
   if (!result.has_value() || !IsRelevantConnection(*result)) {

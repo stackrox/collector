@@ -18,7 +18,9 @@ class StoppableThread {
  public:
   template <typename... Args>
   bool Start(Args&&... args) {
-    if (!prepareStart()) return false;
+    if (!prepareStart()) {
+      return false;
+    }
     return doStart(new std::thread(std::forward<Args>(args)...));
   }
   void Stop();

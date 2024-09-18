@@ -42,8 +42,9 @@ class Semaphore {
   void acquire() {
     std::unique_lock<std::mutex> lock(mutex_);
 
-    while (value_ <= 0)
+    while (value_ <= 0) {
       cond_.wait(lock);
+    }
     value_--;
   }
 
@@ -52,9 +53,11 @@ class Semaphore {
     auto deadline = std::chrono::steady_clock::now() + rel_time;
     std::unique_lock<std::mutex> lock(mutex_);
 
-    while (value_ <= 0)
-      if (cond_.wait_until(lock, deadline) == std::cv_status::timeout)
+    while (value_ <= 0) {
+      if (cond_.wait_until(lock, deadline) == std::cv_status::timeout) {
         return false;
+      }
+    }
     value_--;
     return true;
   }

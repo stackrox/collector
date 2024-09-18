@@ -37,11 +37,15 @@ static EventMap<ProcessSignalType> process_signals = {
 };
 
 std::string extract_proc_args(sinsp_threadinfo* tinfo) {
-  if (tinfo->m_args.empty()) return "";
+  if (tinfo->m_args.empty()) {
+    return "";
+  }
   std::ostringstream args;
   for (auto it = tinfo->m_args.begin(); it != tinfo->m_args.end();) {
     args << *it++;
-    if (it != tinfo->m_args.end()) args << " ";
+    if (it != tinfo->m_args.end()) {
+      args << " ";
+    }
   }
   return args.str();
 }
@@ -67,7 +71,9 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
   }
 
   ProcessSignal* process_signal = CreateProcessSignal(event);
-  if (!process_signal) return nullptr;
+  if (!process_signal) {
+    return nullptr;
+  }
 
   Signal* signal = Allocate<Signal>();
   signal->set_allocated_process_signal(process_signal);
@@ -86,7 +92,9 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadin
   }
 
   ProcessSignal* process_signal = CreateProcessSignal(tinfo);
-  if (!process_signal) return nullptr;
+  if (!process_signal) {
+    return nullptr;
+  }
 
   Signal* signal = Allocate<Signal>();
   signal->set_allocated_process_signal(process_signal);
@@ -121,14 +129,22 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   }
 
   // set process arguments
-  if (const char* args = event_extractor_->get_proc_args(event)) signal->set_args(args);
+  if (const char* args = event_extractor_->get_proc_args(event)) {
+    signal->set_args(args);
+  }
 
   // set pid
-  if (const int64_t* pid = event_extractor_->get_pid(event)) signal->set_pid(*pid);
+  if (const int64_t* pid = event_extractor_->get_pid(event)) {
+    signal->set_pid(*pid);
+  }
 
   // set user and group id credentials
-  if (const uint32_t* uid = event_extractor_->get_uid(event)) signal->set_uid(*uid);
-  if (const uint32_t* gid = event_extractor_->get_gid(event)) signal->set_gid(*gid);
+  if (const uint32_t* uid = event_extractor_->get_uid(event)) {
+    signal->set_uid(*uid);
+  }
+  if (const uint32_t* gid = event_extractor_->get_gid(event)) {
+    signal->set_gid(*gid);
+  }
 
   // set time
   auto timestamp = Allocate<Timestamp>();
@@ -256,7 +272,9 @@ bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
 
 int ProcessSignalFormatter::GetTotalStringLength(const std::vector<LineageInfo>& lineage) {
   int totalStringLength = 0;
-  for (LineageInfo l : lineage) totalStringLength += l.parent_exec_file_path().size();
+  for (LineageInfo l : lineage) {
+    totalStringLength += l.parent_exec_file_path().size();
+  }
 
   return totalStringLength;
 }
@@ -271,17 +289,25 @@ void ProcessSignalFormatter::CountLineage(const std::vector<LineageInfo>& lineag
 
 void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
                                                std::vector<LineageInfo>& lineage) {
-  if (tinfo == NULL) return;
+  if (tinfo == NULL) {
+    return;
+  }
   sinsp_threadinfo* mt = NULL;
   if (tinfo->is_main_thread()) {
     mt = tinfo;
   } else {
     mt = tinfo->get_main_thread();
-    if (mt == NULL) return;
+    if (mt == NULL) {
+      return;
+    }
   }
   sinsp_threadinfo::visitor_func_t visitor = [this, &lineage](sinsp_threadinfo* pt) {
-    if (pt == NULL) return false;
-    if (pt->m_pid == 0) return false;
+    if (pt == NULL) {
+      return false;
+    }
+    if (pt->m_pid == 0) {
+      return false;
+    }
 
     //
     // Collection of process lineage information should stop at the container
@@ -302,7 +328,9 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
       return false;
     }
 
-    if (pt->m_vpid == -1) return false;
+    if (pt->m_vpid == -1) {
+      return false;
+    }
 
     // Collapse parent child processes that have the same path
     if (lineage.empty() || (lineage.back().parent_exec_file_path() != pt->m_exepath)) {
@@ -313,7 +341,9 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     }
 
     // Limit max number of ancestors
-    if (lineage.size() >= 10) return false;
+    if (lineage.size() >= 10) {
+      return false;
+    }
 
     return true;
   };
