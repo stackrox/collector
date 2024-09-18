@@ -61,7 +61,7 @@ on:
 
 jobs:
   common-variables:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       collector-tag: ${{ steps.collector-env.outputs.collector-tag }}
       collector-qa-tag: ${{ steps.collector-env.outputs.collector-qa-tag }}

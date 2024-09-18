@@ -143,7 +143,7 @@ jobs:
     secrets: inherit
 
   notify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name != 'pull_request'
     needs:
       - amd64-integration-tests

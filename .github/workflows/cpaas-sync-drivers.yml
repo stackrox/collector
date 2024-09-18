@@ -40,7 +40,7 @@ on:
 
 jobs:
   sync-drivers:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -147,7 +147,7 @@ jobs:
           process_gcloudignore: false
 
   merge-drivers-failures:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: sync-drivers
     steps:
       - name: Merge drivers failures
@@ -157,7 +157,7 @@ jobs:
           pattern: drivers-build-failures-*
 
   update-index:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: sync-drivers
     steps:
       - uses: actions/checkout@v4
@@ -200,7 +200,7 @@ jobs:
           process_gcloudignore: false
 
   copy-to-merged-bucket:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
     - sync-drivers
     steps:

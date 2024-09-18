@@ -6,7 +6,7 @@ on:
 
 jobs:
   run-bumper:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
           draft: false
 
   notify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name == 'schedule'
     needs:
     - run-bumper
