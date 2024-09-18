@@ -27,4 +27,66 @@ void Config::Update(const storage::CollectorConfig& msg) {
   condition_.notify_all();
 }
 
+bool Config::IsFeatureEnabled(uint64_t bitMask, int feature) {
+  return (bitMask & kFeatureFlags_[feature]) != 0;
+}
+
+void Config::SetBitMask(const std::string& ns) {
+  if (config_message_.has_value()) {
+    uint64_t bitMask = 0;
+    const auto& cluster_scope_config = config_message_.value().cluster_scope_config();
+    // const auto& namespace_scope_config = config_message_.value().namespace_scope_config();
+
+    for (const auto& config : cluster_scope_config) {
+      auto& default_instance = config.default_instance();
+      if (default_instance.feature_case() == storage::CollectorFeature::FeatureCase::kNetworkConnections) {
+        auto network_config = reinterpret_cast<const storage::NetworkConnectionConfig*>(&default_instance);
+        bool enabled = network_config->enabled();
+        bitMask = enabled ? (bitMask | 1) : (bitMask & ~1);
+      }
+    }
+
+    // for (const auto& config : namespace_scope_config) {
+    namespaceFeatureBitMask_[ns] = bitMask;
+  }
+}
+
+void Config::SetBitMasksForNamespaces() {
+  for (auto it = namespaceFeatureBitMask_.begin(); it != namespaceFeatureBitMask_.end();) {
+    auto& pair = *it;
+    std::string ns = pair.first;
+    SetBitMask(ns);
+  }
+}
+
+void Config::SetBitMask(std::string container_id, std::string ns) {
+  SetBitMask(ns);
+  containerFeatureBitMask_[container_id] = &namespaceFeatureBitMask_[ns];
+  CLOG(INFO) << "namespaceFeatureBitMask_[ns]= " << namespaceFeatureBitMask_[ns];
+  CLOG(INFO) << "*containerFeatureBitMask_[container_id]= " << *containerFeatureBitMask_[container_id];
+}
+
+// Should probably just take in the container_id, check the containerFeatureBitMask_ map, and only figure out the namespace if the container is not in the map.
+// For now this is easier for testing purposes.
+bool Config::IsFeatureEnabled(std::string ns, std::string container_id, int feature) {
+  auto bitMaskPair = containerFeatureBitMask_.find(container_id);
+  if (bitMaskPair != containerFeatureBitMask_.end()) {
+    CLOG(INFO) << "Found in container map";
+    uint64_t* bitMask = bitMaskPair->second;
+    return IsFeatureEnabled(*bitMask, feature);
+  } else {
+    auto bitMaskPairNs = namespaceFeatureBitMask_.find(ns);
+    if (bitMaskPairNs != namespaceFeatureBitMask_.end()) {
+      CLOG(INFO) << "Found in namespace map";
+      uint64_t bitMask = bitMaskPairNs->second;
+      containerFeatureBitMask_[container_id] = &namespaceFeatureBitMask_[ns];
+      return IsFeatureEnabled(bitMask, feature);
+    } else {
+      SetBitMask(container_id, ns);
+      uint64_t bitMask = *containerFeatureBitMask_[container_id];
+      return IsFeatureEnabled(bitMask, feature);
+    }
+  }
+}
+
 }  // namespace collector::runtime_control
