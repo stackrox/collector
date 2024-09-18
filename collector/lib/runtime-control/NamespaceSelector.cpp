@@ -29,7 +29,7 @@ bool NamespaceSelector::IsNamespaceRuleFollowed(const storage::CollectorNamespac
   }
 }
 
-bool NamespaceSelector::IsNamespaceInSelection(const std::vector<storage::CollectorNamespaceConfig_NamespaceRule>& nsSelection, const std::string& ns) {
+bool NamespaceSelector::IsNamespaceInSelection(const google::protobuf::RepeatedPtrField<storage::CollectorNamespaceConfig_NamespaceRule>& nsSelection, const std::string& ns) {
   if (nsSelection.size() == 0) {
     return true;
   }

@@ -1,4 +1,5 @@
 #include <runtime-control/Config.h>
+#include <runtime-control/NamespaceSelector.h>
 
 #include "Logging.h"
 
@@ -35,18 +36,33 @@ void Config::SetBitMask(const std::string& ns) {
   if (config_message_.has_value()) {
     uint64_t bitMask = 0;
     const auto& cluster_scope_config = config_message_.value().cluster_scope_config();
-    // const auto& namespace_scope_config = config_message_.value().namespace_scope_config();
+    const auto& namespace_scope_config = config_message_.value().namespace_scope_config();
 
     for (const auto& config : cluster_scope_config) {
       auto& default_instance = config.default_instance();
       if (default_instance.feature_case() == storage::CollectorFeature::FeatureCase::kNetworkConnections) {
         auto network_config = reinterpret_cast<const storage::NetworkConnectionConfig*>(&default_instance);
-        bool enabled = network_config->enabled();
+        bool enabled = network_config->aggregate_external();
         bitMask = enabled ? (bitMask | 1) : (bitMask & ~1);
       }
     }
 
-    // for (const auto& config : namespace_scope_config) {
+    for (const auto& config : namespace_scope_config) {
+      auto& feature = config.feature();
+      auto& default_instance = feature.default_instance();
+      if (default_instance.feature_case() == storage::CollectorFeature::FeatureCase::kNetworkConnections) {
+        auto network_config = reinterpret_cast<const storage::NetworkConnectionConfig*>(&default_instance);
+        bool enabled = network_config->aggregate_external();
+        auto nsSelection = config.namespace_selection();
+
+        bool inNs = NamespaceSelector::IsNamespaceInSelection(nsSelection, ns);
+        if (inNs) {
+          bitMask = enabled ? (bitMask | 1) : (bitMask & ~1);
+        }
+        CLOG(INFO) << "NeworkConnections";
+      }
+    }
+
     namespaceFeatureBitMask_[ns] = bitMask;
   }
 }
