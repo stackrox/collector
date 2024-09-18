@@ -62,7 +62,7 @@ spec:
         limits:
           memory: 3Gi
         requests:
-          cpu: 3Gi
+          memory: 3Gi
   # Only adjusting computeResources for amd64 build because
   # multi-arch builds happen off cluster
   - pipelineTaskName: build-container-amd64
