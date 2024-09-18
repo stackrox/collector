@@ -66,8 +66,8 @@ class StdoutSignalServiceClient : public ISignalServiceClient {
 
   explicit StdoutSignalServiceClient() {}
 
-  void Start(){};
-  void Stop(){};
+  void Start() {};
+  void Stop() {};
 
   SignalHandler::Result PushSignals(const SignalStreamMessage& msg);
 };
