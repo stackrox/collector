@@ -121,9 +121,6 @@ shellcheck-all-dockerized:
 	docker build -t shellcheck-all $(CURDIR)/utilities/shellcheck-all
 	docker run --rm -v "$(CURDIR):/scripts" shellcheck-all:latest
 
-.PHONY: init-githook
-init-githook:
-	git config core.hooksPath ./githooks/
 
 # This defines a macro that can be used to add pre-commit targets
 # to check staged files (check-<linter name>) or all files (check-<linter name>-all)

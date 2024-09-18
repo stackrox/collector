@@ -165,7 +165,7 @@ Even though development containers is a supported feature of `Docker for Desktop
 ### Setting up git hooks
 
 Git hooks are configured in the `.pre-commit-config.yaml` file using [pre-commit](https://pre-commit.com)
-In order to use them install pre-commit, and run `make init-githook` from the collector root directory.
+In order to use them install pre-commit, and run `git config core.hooksPath ./githooks/` from the collector root directory.
 
 ## Run in Minikube
 ### Build the collector image
