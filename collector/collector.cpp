@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
       CLOG(INFO) << "Successfully connected to Sensor.";
     } else {
       startup_diagnostics.Log();
-      CLOG(FATAL) << "Unable to connect to Sensor at '" << args->GRPCServer() << "'.";
+      CLOG(FATAL) << "Unable to connect to Sensor at '" << config.GetGrpcServer().value() << "'.";
     }
     startup_diagnostics.ConnectedToSensor();
   } else {
@@ -171,7 +171,7 @@ int main(int argc, char** argv) {
 
   CollectorService collector(config, &g_control, &g_signum);
 
-  if (!SetupKernelDriver(collector, args->GRPCServer(), config)) {
+  if (!SetupKernelDriver(collector, config)) {
     startup_diagnostics.Log();
     CLOG(FATAL) << "Failed to initialize collector kernel components.";
   }
