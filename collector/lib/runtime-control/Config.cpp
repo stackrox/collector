@@ -51,15 +51,14 @@ void Config::SetBitMask(const std::string& ns) {
       auto& feature = config.feature();
       auto& default_instance = feature.default_instance();
       if (default_instance.feature_case() == storage::CollectorFeature::FeatureCase::kNetworkConnections) {
-        auto network_config = reinterpret_cast<const storage::NetworkConnectionConfig*>(&default_instance);
-        bool enabled = network_config->aggregate_external();
         auto nsSelection = config.namespace_selection();
 
         bool inNs = NamespaceSelector::IsNamespaceInSelection(nsSelection, ns);
         if (inNs) {
+          auto network_config = reinterpret_cast<const storage::NetworkConnectionConfig*>(&default_instance);
+          bool enabled = network_config->aggregate_external();
           bitMask = enabled ? (bitMask | 1) : (bitMask & ~1);
         }
-        CLOG(INFO) << "NeworkConnections";
       }
     }
 
