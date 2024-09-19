@@ -150,7 +150,7 @@ bool CollectorService::WaitForGRPCServer() {
   return WaitForChannelReady(config_.grpc_channel, interrupt);
 }
 
-bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServer, const CollectorConfig& config) {
+bool SetupKernelDriver(CollectorService& collector, const CollectorConfig& config) {
   auto& startup_diagnostics = StartupDiagnostics::GetInstance();
   std::string cm_name(CollectionMethodName(config.GetCollectionMethod()));
 
