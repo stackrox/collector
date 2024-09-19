@@ -29,7 +29,7 @@ provision-vms:
 
 .PHONY: destroy-vms
 destroy-vms:
-	ansible-playbook -i $(CONTEXT) \
+	ansible-playbook -i $(CONTEXT) -vvvv \
 		--tags teardown \
 		-e job_id="$(JOB_ID)" \
 		vm-lifecycle.yml
