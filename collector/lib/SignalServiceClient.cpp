@@ -43,8 +43,7 @@ bool SignalServiceClient::EstablishGRPCStreamSingle() {
 }
 
 void SignalServiceClient::EstablishGRPCStream() {
-  while (EstablishGRPCStreamSingle())
-    ;
+  while (EstablishGRPCStreamSingle());
   CLOG(INFO) << "Signal service client terminating.";
 }
 

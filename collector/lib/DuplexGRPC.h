@@ -550,8 +550,7 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     // Shutdown the client and drain the queue.
     this->Shutdown();  // ignore errors
     auto now = ToDeadline(time_point::min());
-    while (ProcessSingle(nullptr, now, nullptr))
-      ;
+    while (ProcessSingle(nullptr, now, nullptr));
   }
 
   template <typename TS = time_point>

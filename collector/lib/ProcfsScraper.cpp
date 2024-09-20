@@ -44,8 +44,7 @@ const char* nextfield(const char* p, const char* endp) {
   while (p < endp && *p && !std::isspace(*p)) {
     p++;
   }
-  while (p < endp && *p && std::isspace(*++p))
-    ;
+  while (p < endp && *p && std::isspace(*++p));
   return (p < endp && *p) ? p : nullptr;
 }
 

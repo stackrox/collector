@@ -51,7 +51,7 @@ class MockHostInfoHeuristics : public HostInfo {
 class MockCollectorConfig : public CollectorConfig {
  public:
   MockCollectorConfig()
-      : CollectorConfig(){};
+      : CollectorConfig() {};
 
   void SetCollectionMethod(CollectionMethod cm) {
     if (host_config_.HasCollectionMethod()) {
