@@ -58,7 +58,6 @@ type ContainerStat struct {
 type PerformanceResult struct {
 	TestName         string
 	Timestamp        string
-	InstanceType     string
 	VmConfig         string
 	CollectionMethod string
 	Metrics          map[string]float64
@@ -273,7 +272,6 @@ func (s *IntegrationTestSuiteBase) WritePerfResults() {
 	perf := PerformanceResult{
 		TestName:         s.T().Name(),
 		Timestamp:        time.Now().Format("2006-01-02 15:04:05"),
-		InstanceType:     config.VMInfo().InstanceType,
 		VmConfig:         config.VMInfo().Config,
 		CollectionMethod: config.CollectionMethod(),
 		Metrics:          s.metrics,

@@ -64,8 +64,7 @@ func (h *Host) IsK8s() bool {
 // VM contains metadata about the machine upon which the tests are
 // running.
 type VM struct {
-	InstanceType string
-	Config       string
+	Config string
 }
 
 // Runtime contains information related to the container runtime.
@@ -129,8 +128,7 @@ func HostInfo() *Host {
 func VMInfo() *VM {
 	if vm_options == nil {
 		vm_options = &VM{
-			InstanceType: ReadEnvVarWithDefault(envVMInstanceType, "default"),
-			Config:       ReadEnvVar(envVMConfig),
+			Config: ReadEnvVar(envVMConfig),
 		}
 	}
 	return vm_options
