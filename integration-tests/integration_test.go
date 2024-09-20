@@ -1,6 +1,7 @@
 package integrationtests
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -536,5 +537,8 @@ func TestRingBuffer(t *testing.T) {
 }
 
 func TestUdpNetworkFlow(t *testing.T) {
+	if strings.Contains(config.VMInfo().Config, "rhel-8-4-sap") {
+		t.Skip("Skipping test on RHEL 8.4 SAP due to a verifier issue")
+	}
 	suite.Run(t, new(suites.UdpNetworkFlow))
 }
