@@ -5,13 +5,33 @@ on: [pull_request]
 jobs:
   lint:
     runs-on: ubuntu-24.04
+    container:
+      image: fedora:40
     steps:
+      - name: dnf install dependencies
+        run: |
+          dnf install -y \
+            git \
+            golang \
+            shellcheck \
+            clang-tools-extra
+
+          echo "PATH=${HOME}/bin:${PATH}" >> "${GITHUB_ENV}"
+
       - uses: actions/checkout@v4
         with:
           # fetch all to allow linting of differences between branches
           fetch-depth: 0
+
+      - name: Mark repo as safe
+        run: |
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+
       - uses: actions/setup-python@v5
-      - uses: mfinelli/setup-shfmt@v2
+
+      - name: Install shfmt
+        run: |
+          GOBIN="${HOME}/bin/" go install mvdan.cc/sh/v3/cmd/shfmt@latest
 
       - name: Install actionlint
         run: |
