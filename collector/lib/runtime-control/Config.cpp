@@ -22,9 +22,8 @@ void Config::Update(const storage::CollectorConfig& msg) {
   config_message_.emplace(msg);
   const auto& cluster_scope_config = msg.cluster_scope_config();
   for (const auto& config : cluster_scope_config) {
-    auto& default_instance = config.default_instance();
-    if (default_instance.feature_case() == storage::CollectorFeature::FeatureCase::kProcesses) {
-      auto process_config = reinterpret_cast<const storage::ProcessConfig*>(&default_instance);
+    if (config.feature_case() == storage::CollectorFeature::FeatureCase::kProcesses) {
+      auto process_config = reinterpret_cast<const storage::ProcessConfig*>(&config);
       bool process_enabled = process_config->enabled();
       CLOG(INFO) << "process_enabled= " << process_enabled;
     }
