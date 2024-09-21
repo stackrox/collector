@@ -39,24 +39,22 @@ void Config::SetBitMask(const std::string& ns) {
     const auto& namespace_scope_config = config_message_.value().namespace_scope_config();
 
     for (const auto& config : cluster_scope_config) {
-      auto& default_instance = config.default_instance();
-      if (default_instance.feature_case() == storage::CollectorFeature::FeatureCase::kNetworkConnections) {
-        auto network_config = reinterpret_cast<const storage::NetworkConnectionConfig*>(&default_instance);
-        bool enabled = network_config->aggregate_external();
+      if (config.feature_case() == storage::CollectorFeature::FeatureCase::kNetworkConnections) {
+        auto network_config = config.network_connections();
+        bool enabled = network_config.aggregate_external();
         bitMask = enabled ? (bitMask | 1) : (bitMask & ~1);
       }
     }
 
     for (const auto& config : namespace_scope_config) {
       auto& feature = config.feature();
-      auto& default_instance = feature.default_instance();
-      if (default_instance.feature_case() == storage::CollectorFeature::FeatureCase::kNetworkConnections) {
+      if (feature.feature_case() == storage::CollectorFeature::FeatureCase::kNetworkConnections) {
         auto nsSelection = config.namespace_selection();
 
         bool inNs = NamespaceSelector::IsNamespaceInSelection(nsSelection, ns);
         if (inNs) {
-          auto network_config = reinterpret_cast<const storage::NetworkConnectionConfig*>(&default_instance);
-          bool enabled = network_config->aggregate_external();
+          auto network_config = feature.network_connections();
+          bool enabled = network_config.aggregate_external();
           bitMask = enabled ? (bitMask | 1) : (bitMask & ~1);
         }
       }

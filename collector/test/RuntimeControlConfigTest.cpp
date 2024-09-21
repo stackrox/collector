@@ -66,9 +66,11 @@ TEST_F(ConfigTest, IsFeatureEnabledTest) {
   auto msg = ConfigTest::CreateCollectorConfigFromJson(jsonStr);
   collector::runtime_control::Config::GetOrCreate().Update(msg);
 
-  EXPECT_TRUE(collector::runtime_control::Config::GetOrCreate().IsFeatureEnabled("namespace1", "asdf1", 1));
-  // EXPECT_TRUE(NamespaceSelector::IsNamespaceRuleFollowed(namespaceRule, "namespace1"));
-  // EXPECT_FALSE(NamespaceSelector::IsNamespaceRuleFollowed(namespaceRule, "namespace2"));
+  EXPECT_FALSE(collector::runtime_control::Config::GetOrCreate().IsFeatureEnabled("namespace1", "container1", 0));
+  EXPECT_TRUE(collector::runtime_control::Config::GetOrCreate().IsFeatureEnabled("namespace2", "container2", 0));
+  EXPECT_FALSE(collector::runtime_control::Config::GetOrCreate().IsFeatureEnabled("marketing-department", "container3", 0));
+  // According to namespace it should be false but according to container it is true
+  EXPECT_TRUE(collector::runtime_control::Config::GetOrCreate().IsFeatureEnabled("namespace1", "container2", 0));
 }
 
 }  // namespace collector
