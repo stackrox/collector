@@ -35,25 +35,28 @@ bool Config::IsFeatureEnabled(uint64_t bitMask, int feature) {
 void Config::SetBitMask(const std::string& ns) {
   if (config_message_.has_value()) {
     uint64_t bitMask = 0;
-    const auto& cluster_scope_config = config_message_.value().cluster_scope_config();
+    auto network_connection_config = config_message_.value().network_connection_config();
+    bool enabled = network_connection_config.aggregate_external();
+    bitMask = enabled ? (bitMask | 1) : (bitMask & ~1);
+
     const auto& namespace_scope_config = config_message_.value().namespace_scope_config();
 
-    for (const auto& config : cluster_scope_config) {
-      if (config.feature_case() == storage::CollectorFeature::FeatureCase::kNetworkConnections) {
-        auto network_config = config.network_connections();
-        bool enabled = network_config.aggregate_external();
-        bitMask = enabled ? (bitMask | 1) : (bitMask & ~1);
-      }
-    }
+    // for (const auto& config : cluster_scope_config) {
+    //   if (config.feature_case() == storage::CollectorFeature::FeatureCase::kNetworkConnections) {
+    //     auto network_config = config.network_connections();
+    //     bool enabled = network_config.aggregate_external();
+    //     bitMask = enabled ? (bitMask | 1) : (bitMask & ~1);
+    //   }
+    // }
 
     for (const auto& config : namespace_scope_config) {
       auto& feature = config.feature();
-      if (feature.feature_case() == storage::CollectorFeature::FeatureCase::kNetworkConnections) {
+      if (feature.feature_case() == storage::CollectorNamespaceFeature::FeatureCase::kNetworkConnection) {
         auto nsSelection = config.namespace_selection();
 
         bool inNs = NamespaceSelector::IsNamespaceInSelection(nsSelection, ns);
         if (inNs) {
-          auto network_config = feature.network_connections();
+          auto network_config = feature.network_connection();
           bool enabled = network_config.aggregate_external();
           bitMask = enabled ? (bitMask | 1) : (bitMask & ~1);
         }
