@@ -22,45 +22,37 @@ class ConfigTest : public ::testing::Test {
 
 TEST_F(ConfigTest, IsFeatureEnabledTest) {
   std::string jsonStr = R"({
-  	  "clusterScopeConfig": [
-  	    {
-  	      "processes": {
-  	        "enabled": true
-  	      }
-  	    },
-  	    {
-  	      "networkEndpoints": {
-  	        "enabled": true,
-  	        "include_listening_endpoint_processes": true
-  	      }
-  	    },
-            {
-  	      "networkConnections": {
-  	        "enabled": true,
-  	        "aggregateExternal": true
-  	      }
-            }
-  	  ],
-  	  "namespaceScopeConfig": [
-  	    {
-  	      "feature": {
-  	        "networkConnections": {
-  	          "enabled": true,
-  	          "aggregateExternal": false
-  	        }
+	"processConfig": {
+	  "enabled": true
+	},
+	"networkEndpointConfig": {
+	  "enabled": true,
+	  "include_listening_endpoint_processes": true
+	},
+	"networkConnectionConfig": {
+	  "enabled": true,
+	  "aggregateExternal": true
+	},
+	"namespaceScopeConfig": [
+	  {
+	    "feature": {
+	        "networkConnection": {
+	          "enabled": true,
+	          "aggregateExternal": false
+	        }
+ 	    },
+  	    "namespaceSelection": [
+  	      {
+  	        "namespace": "marketing.*",
+  	        "matchType": "REGEX"
   	      },
-  	      "namespaceSelection": [
-  	        {
-  	          "namespace": "marketing.*",
-  	          "matchType": "REGEX"
-  	        },
-  	        {
-  	          "namespace": "namespace1",
-  	          "matchType": "EXACT"
-  	        }
-  	      ]
-  	    }
-  	  ]
+  	      {
+  	        "namespace": "namespace1",
+  	        "matchType": "EXACT"
+  	      }
+  	    ]
+  	  }
+  	]
   })";
 
   auto msg = ConfigTest::CreateCollectorConfigFromJson(jsonStr);
