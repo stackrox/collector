@@ -20,14 +20,10 @@ void Config::Update(const storage::CollectorConfig& msg) {
   std::unique_lock<std::mutex> lock(mutex_);
 
   config_message_.emplace(msg);
-  const auto& cluster_scope_config = msg.cluster_scope_config();
-  for (const auto& config : cluster_scope_config) {
-    if (config.feature_case() == storage::CollectorFeature::FeatureCase::kProcesses) {
-      auto process_config = reinterpret_cast<const storage::ProcessConfig*>(&config);
-      bool process_enabled = process_config->enabled();
-      CLOG(INFO) << "process_enabled= " << process_enabled;
-    }
-  }
+  auto process_config = msg.process_config();
+  bool process_enabled = process_config.enabled();
+  CLOG(INFO) << "process_enabled= " << process_enabled;
+
   condition_.notify_all();
 }
 
