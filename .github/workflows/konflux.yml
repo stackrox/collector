@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   init:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       collector-tag: ${{ steps.generate-tag.outputs.collector-tag }}
       collector-qa-tag: ${{ steps.generate-tag.outputs.collector-qa-tag }}
@@ -53,7 +53,7 @@ jobs:
           echo "collector-qa-tag=${COLLECTOR_QA_TAG}" >> "$GITHUB_OUTPUT"
 
   wait-for-images:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
     - init
     steps:

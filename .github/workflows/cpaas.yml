@@ -19,7 +19,7 @@ jobs:
   should-run:
     outputs:
       should-run: ${{ steps.should-run.outputs.should-run }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - id: should-run
         run: |
@@ -56,7 +56,7 @@ jobs:
         drivers-build-failures
 
   build-collector:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: init
     strategy:
       matrix:
@@ -86,7 +86,7 @@ jobs:
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
   multiarch-manifest:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       COLLECTOR_TAG: ${{ needs.init.outputs.collector-tag }}-cpaas
       ARCHS: amd64 ppc64le s390x
@@ -148,7 +148,7 @@ jobs:
     secrets: inherit
 
   notify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name == 'schedule'
     needs:
     - init

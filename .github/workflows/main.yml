@@ -64,7 +64,7 @@ jobs:
     secrets: inherit
 
   memory-checked-unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/collector-builder:${{ needs.build-builder-image.outputs.collector-builder-tag }}
     needs:

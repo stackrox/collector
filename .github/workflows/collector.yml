@@ -30,7 +30,7 @@ env:
 jobs:
   build-collector-image:
     name: Build Collector
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -86,7 +86,7 @@ jobs:
 
   build-collector-image-remote-vm:
     name: Build Collector on a remote VM
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     strategy:
       fail-fast: false
@@ -165,7 +165,7 @@ jobs:
     - build-collector-image
     - build-collector-image-remote-vm
     name: Create Multiarch manifest
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: |
       github.event_name != 'pull_request' ||
       contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
@@ -247,7 +247,7 @@ jobs:
     needs:
     - build-collector-image
     name: Retag x86 slim image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: |
       github.event_name == 'pull_request' &&
       !contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
