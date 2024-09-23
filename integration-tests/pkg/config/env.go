@@ -13,8 +13,7 @@ const (
 
 	envHostType = "REMOTE_HOST_TYPE"
 
-	envVMInstanceType = "VM_INSTANCE_TYPE"
-	envVMConfig       = "VM_CONFIG"
+	envVMConfig = "VM_CONFIG"
 
 	envRuntimeCommand     = "RUNTIME_COMMAND"
 	envRuntimeSocket      = "RUNTIME_SOCKET"
