@@ -53,7 +53,7 @@ BoolEnvVar enable_connection_stats("ROX_COLLECTOR_ENABLE_CONNECTION_STATS", true
 
 BoolEnvVar enable_detailed_metrics("ROX_COLLECTOR_ENABLE_DETAILED_METRICS", true);
 
-BoolEnvVar enable_runtime_config("ROX_COLLECTOR_RUNTIME_CONFIG_ENABLED", false);
+BoolEnvVar enable_runtime_config("ROX_COLLECTOR_RUNTIME_CONFIG_ENABLED", true);
 
 BoolEnvVar use_docker_ce("ROX_COLLECTOR_CE_USE_DOCKER", false);
 BoolEnvVar use_podman_ce("ROX_COLLECTOR_CE_USE_PODMAN", false);

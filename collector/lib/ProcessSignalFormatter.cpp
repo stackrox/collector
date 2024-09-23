@@ -1,5 +1,7 @@
 #include "ProcessSignalFormatter.h"
 
+#include <stdexcept>
+
 #include <uuid/uuid.h>
 
 #include <google/protobuf/util/time_util.h>
@@ -165,10 +167,16 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
     signal_lineage->set_parent_uid(p.parent_uid());
   }
 
+  std::string ns = container_metadata_.GetNamespace(event);
+
   CLOG(DEBUG) << "Process (" << signal->container_id() << ": " << signal->pid() << "): "
-              << signal->name() << "[" << container_metadata_.GetNamespace(event) << "] "
+              << signal->name() << "[" << ns << "] "
               << " (" << signal->exec_file_path() << ")"
               << " " << signal->args();
+
+  if (ns.empty()) {
+    throw std::runtime_error("Got event with empty namespace");
+  }
 
   return signal;
 }
@@ -227,10 +235,16 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
     signal_lineage->set_parent_uid(p.parent_uid());
   }
 
+  std::string ns = container_metadata_.GetNamespace(signal->container_id());
+
   CLOG(DEBUG) << "Process (" << signal->container_id() << ": " << signal->pid() << "): "
-              << signal->name()
+              << signal->name() << "[" << ns << "] "
               << " (" << signal->exec_file_path() << ")"
               << " " << signal->args();
+
+  if (ns.empty()) {
+    throw std::runtime_error("Got threadinfo with empty namespace");
+  }
 
   return signal;
 }
