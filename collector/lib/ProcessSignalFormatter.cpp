@@ -139,7 +139,8 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   // set process arguments
   if (const char* args = event_extractor_->get_proc_args(event)) {
     std::string args_str(args);
-    signal->set_args(*SanitizeUTF8(args_str));
+    auto sanitized_args = SanitizeUTF8(args_str);
+    signal->set_args(*sanitized_args);
   }
 
   // set pid
