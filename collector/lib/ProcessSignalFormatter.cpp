@@ -42,7 +42,11 @@ std::string extract_proc_args(sinsp_threadinfo* tinfo) {
   }
   std::ostringstream args;
   for (auto it = tinfo->m_args.begin(); it != tinfo->m_args.end();) {
-    args << *it++;
+    auto arg = *it++;
+    auto arg_sanitized = SanitizedUTF8(arg);
+
+    args << ((arg_sanitized ? *arg_sanitized : arg));
+
     if (it != tinfo->m_args.end()) {
       args << " ";
     }
@@ -114,23 +118,36 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   const std::string* name = event_extractor_->get_comm(event);
   const std::string* exepath = event_extractor_->get_exepath(event);
 
+  std::optional<std::string> name_sanitized;
+  std::optional<std::string> exepath_sanitized;
+
+  if (name) {
+    name_sanitized = SanitizedUTF8(*name);
+  }
+
+  if (exepath) {
+    exepath_sanitized = SanitizedUTF8(*exepath);
+  }
+
   // set name (if name is missing or empty, try to use exec_file_path)
   if (name && !name->empty() && *name != "<NA>") {
-    signal->set_name(*name);
+    signal->set_name(name_sanitized ? *name_sanitized : *name);
   } else if (exepath && !exepath->empty() && *exepath != "<NA>") {
-    signal->set_name(*exepath);
+    signal->set_name(exepath_sanitized ? *exepath_sanitized : *exepath);
   }
 
   // set exec_file_path (if exec_file_path is missing or empty, try to use name)
   if (exepath && !exepath->empty() && *exepath != "<NA>") {
-    signal->set_exec_file_path(*exepath);
+    signal->set_exec_file_path(exepath_sanitized ? *exepath_sanitized : *exepath);
   } else if (name && !name->empty() && *name != "<NA>") {
-    signal->set_exec_file_path(*name);
+    signal->set_exec_file_path(name_sanitized ? *name_sanitized : *name);
   }
 
   // set process arguments
   if (const char* args = event_extractor_->get_proc_args(event)) {
-    signal->set_args(args);
+    std::string args_str = args;
+    auto args_sanitized = SanitizedUTF8(args_str);
+    signal->set_args(args_sanitized ? *args_sanitized : args_str);
   }
 
   // set pid
@@ -180,20 +197,22 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   signal->set_id(UUIDStr());
 
   const auto& name = tinfo->m_comm;
+  auto name_sanitized = SanitizedUTF8(name);
   const auto& exepath = tinfo->m_exepath;
+  auto exepath_sanitized = SanitizedUTF8(exepath);
 
   // set name (if name is missing or empty, try to use exec_file_path)
   if (!name.empty() && name != "<NA>") {
-    signal->set_name(name);
+    signal->set_name(name_sanitized ? *name_sanitized : name);
   } else if (!exepath.empty() && exepath != "<NA>") {
-    signal->set_name(exepath);
+    signal->set_name(exepath_sanitized ? *exepath_sanitized : exepath);
   }
 
   // set exec_file_path (if exec_file_path is missing or empty, try to use name)
   if (!exepath.empty() && exepath != "<NA>") {
-    signal->set_exec_file_path(exepath);
+    signal->set_exec_file_path(exepath_sanitized ? *exepath_sanitized : exepath);
   } else if (!name.empty() && name != "<NA>") {
-    signal->set_exec_file_path(name);
+    signal->set_exec_file_path(name_sanitized ? *name_sanitized : name);
   }
 
   // set the process as coming from a scrape as opposed to an exec
