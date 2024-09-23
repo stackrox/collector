@@ -20,6 +20,8 @@ extern "C" {
 
 #include <libsinsp/sinsp.h>
 
+#include <google/protobuf/stubs/common.h>
+
 #include "HostInfo.h"
 #include "Logging.h"
 #include "Utility.h"
@@ -230,4 +232,18 @@ std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cg
   }
   return std::make_optional(container_id_part.substr(0, SHORT_CONTAINER_ID_LENGTH));
 }
+
+Holder<const std::string> SanitizeUTF8(const std::string& str) {
+  std::unique_ptr<char[]> work_buffer(new char[str.size()]);
+  char* sanitized;
+
+  sanitized = google::protobuf::internal::UTF8CoerceToStructurallyValid(str, work_buffer.get(), '?');
+
+  // we do this to avoid copying if unnecessary
+  if (sanitized == work_buffer.get()) {
+    return Holder<const std::string>::copy(sanitized);
+  }
+  return Holder<const std::string>(&str);
+}
+
 }  // namespace collector

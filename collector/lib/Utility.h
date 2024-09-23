@@ -108,6 +108,36 @@ ScopedLock<Mutex> Lock(Mutex& mutex) {
 #define ssizeof(x) static_cast<ssize_t>(sizeof(x))
 
 std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cgroup);
+
+// A Holder refers to an object that it can own, or not.
+template <class T>
+class Holder {
+ public:
+  // Make a copy of the provided object.
+  // The copy will be destroyed when this Holder is destroyed.
+  static Holder<T> copy(T& v) {
+    Holder h = Holder();
+    h.m_owned.emplace(v);
+    return h;
+  }
+
+  // Make an external reference to the provided object.
+  // This Holder does not own this object.
+  Holder(T* external) : m_external(external) {}
+
+  T& operator*() {
+    return m_owned ? *m_owned : *m_external;
+  }
+
+  Holder() : m_external(0), m_owned(T()) {}
+
+ private:
+  T* m_external;
+  std::optional<std::remove_const_t<T>> m_owned;
+};
+
+Holder<const std::string> SanitizeUTF8(const std::string& str);
+
 }  // namespace collector
 
 #endif  // _UTILITY_H_
