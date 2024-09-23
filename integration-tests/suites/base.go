@@ -481,17 +481,3 @@ func (s *IntegrationTestSuiteBase) waitForFileToBeDeleted(file string) error {
 		}
 	}
 }
-
-func (s *IntegrationTestSuiteBase) updatePlopActionFile(action string, file string, waitForDeletion bool) {
-	cmd := ""
-	if len(action) > 0 {
-		cmd = fmt.Sprintf("echo %s > %s", action, file)
-	} else {
-		cmd = fmt.Sprintf("rm " + file + " || true")
-	}
-	err := s.execShellCommand(cmd)
-	if err == nil && waitForDeletion {
-		err = s.waitForFileToBeDeleted(file)
-	}
-	s.Require().NoError(err)
-}

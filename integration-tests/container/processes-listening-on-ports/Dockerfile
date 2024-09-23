@@ -1,10 +1,14 @@
-FROM ubuntu:jammy
+FROM python:3.12
 
-COPY process-listening-on-ports.c /process-listening-on-ports.c
+RUN mkdir /app
+WORKDIR /app
 
-RUN apt update -y && apt install gcc lsof -y
-RUN gcc process-listening-on-ports.c -o process-listening-on-ports
+COPY plop.py .
+COPY requirements.txt .
 
-RUN ln -s /process-listening-on-ports plop
+RUN python3 -m pip install --no-cache-dir -r requirements.txt && \
+    ln -s /usr/local/bin/flask plop
 
-ENTRYPOINT /process-listening-on-ports
+EXPOSE 5000
+
+ENTRYPOINT ["flask", "--app", "plop.py", "run", "-h", "0.0.0.0"]
