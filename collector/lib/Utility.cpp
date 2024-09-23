@@ -242,7 +242,7 @@ std::optional<std::string> SanitizedUTF8(const std::string& str) {
   if (sanitized != work_buffer.get()) {
     return std::nullopt;
   }
-  return sanitized;
+  return std::string(sanitized, str.size());
 }
 
 }  // namespace collector
