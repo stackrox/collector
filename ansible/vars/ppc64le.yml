@@ -6,14 +6,14 @@ sys_type: s922
 proc_type: shared
 processors: "0.25"
 memory: "6"
-storage_type: tier3
-pi_cloud_instance_id: "fa3c2f26-a020-4ca5-9b65-9caef2303bb1"
+storage_type: tier1
+pi_cloud_instance_id: "2f734538-93cc-45fc-9065-5da9506d14c8"
 ssh_public_key: "{{ lookup('env', 'IBM_CLOUD_POWER_SSH_PUBLIC_KEY') }}"
 api_key: "{{ lookup('env', 'IBM_CLOUD_POWER_API_KEY') }}"
-region: mon
+region: syd
 
 ppc64le:
   env:
     IC_API_KEY: "{{ lookup('env', 'IBM_CLOUD_POWER_API_KEY') }}"
-    IC_REGION: mon
-    IC_ZONE:  mon01
+    IC_REGION: syd
+    IC_ZONE:  syd05
