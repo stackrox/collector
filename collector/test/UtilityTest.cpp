@@ -129,7 +129,6 @@ TEST(SanitizeUTF8Test, TestSanitizeUTF8_Invalid) {
 
 TEST(SanitizeUTF8Test, TestSanitizeUTF8_Valid) {
   std::string input("abcd");
-  std::string expected_output("abcd");
 
   auto output = SanitizedUTF8(input);
 
