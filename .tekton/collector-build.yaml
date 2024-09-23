@@ -55,6 +55,14 @@ spec:
       secretName: '{{ git_auth_secret }}'
 
   taskRunSpecs:
+  - pipelineTaskName: clone-repository
+    stepSpecs:
+    - name: create-trusted-artifact
+      computeResources:
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
   # Only adjusting computeResources for amd64 build because
   # multi-arch builds happen off cluster
   - pipelineTaskName: build-container-amd64
