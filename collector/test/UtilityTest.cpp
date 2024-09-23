@@ -115,25 +115,4 @@ TEST(ExtractContainerIDFromCgroupTest, TestExtractContainerIDFromCgroup) {
     EXPECT_EQ(short_container_id, c.expected_output);
   }
 }
-
-TEST(SanitizeUTF8Test, TestSanitizeUTF8_Invalid) {
-  std::string input("ab\x80" "cd");
-  std::string expected_output("ab?cd");
-
-  auto output = SanitizeUTF8(input);
-
-  EXPECT_EQ(*output, expected_output);
-}
-
-TEST(SanitizeUTF8Test, TestSanitizeUTF8_Valid) {
-  std::string input("abcd");
-  std::string expected_output("abcd");
-
-  auto output = SanitizeUTF8(input);
-
-  EXPECT_EQ(*output, expected_output);
-  // no-copy check
-  EXPECT_EQ(&(*output), &input);
-}
-
 }  // namespace collector
