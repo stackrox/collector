@@ -124,6 +124,7 @@ TEST(SanitizeUTF8Test, TestSanitizeUTF8_Invalid) {
 
   auto output = SanitizedUTF8(input);
 
+  EXPECT_TRUE(output.has_value());
   EXPECT_EQ(*output, expected_output);
 }
 
