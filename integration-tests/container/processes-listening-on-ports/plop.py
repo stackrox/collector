@@ -13,7 +13,12 @@ opened_sockets = {}
 @app.route('/open/<int:port>')
 def open_port(port: int):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((socket.gethostname(), port))
+
+    try:
+        s.bind((socket.gethostname(), port))
+    except Exception as e:
+        return str(e), 500
+
     s.listen()
     opened_sockets[port] = s
     return 'ok'
@@ -23,6 +28,7 @@ def open_port(port: int):
 def close_port(port: int):
     s = opened_sockets.get(port)
     if s is None:
-        return 'not opened'
+        return 'not opened', 404
     s.close()
+    del opened_sockets[port]
     return 'ok'
