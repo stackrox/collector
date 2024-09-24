@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 	"golang.org/x/sys/unix"
 	"k8s.io/utils/strings/slices"
 )
@@ -63,4 +66,10 @@ func PrepareLog(testName string, logName string) (*os.File, error) {
 
 	logPath := filepath.Join(logDirectory, strings.ReplaceAll(testName, "/", "_")+"-"+logName)
 	return os.Create(logPath)
+}
+
+func Sleep(duration time.Duration) {
+	_, filename, line, _ := runtime.Caller(1)
+	log.Info("[%s:%d] sleep %f s", filepath.Base(filename), line, duration.Seconds())
+	time.Sleep(duration)
 }

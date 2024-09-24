@@ -40,7 +40,7 @@ on:
 
 jobs:
   sync-drivers:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -79,7 +79,8 @@ jobs:
 
           # This empty file is needed for the failure artifact to be
           # created when there are no failures
-          touch "${TMP_DIR}/FAILURES/.dummy"
+          # Must not be a hidden file or upload-artifact/merge will ignore it
+          touch "${TMP_DIR}/FAILURES/dummy"
 
       - name: Upload failure logs
         uses: actions/upload-artifact@v4
@@ -134,6 +135,7 @@ jobs:
           path: ${{ env.SUPPORT_PACKAGE_TMP_DIR }}
           parent: false
           destination: ${{ inputs.support-packages-bucket }}/${{ matrix.platform }}
+          process_gcloudignore: false
 
       - name: Push support-packages to public bucket
         uses: 'google-github-actions/upload-cloud-storage@v2'
@@ -142,9 +144,10 @@ jobs:
           path: ${{ env.SUPPORT_PACKAGE_TMP_DIR }}
           parent: false
           destination: ${{ inputs.public-support-packages-bucket }}/${{ matrix.platform }}
+          process_gcloudignore: false
 
   merge-drivers-failures:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: sync-drivers
     steps:
       - name: Merge drivers failures
@@ -154,7 +157,7 @@ jobs:
           pattern: drivers-build-failures-*
 
   update-index:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: sync-drivers
     steps:
       - uses: actions/checkout@v4
@@ -185,6 +188,7 @@ jobs:
           path: /tmp/support-packages/output/index.html
           parent: false
           destination: ${{ inputs.support-packages-index-bucket }}
+          process_gcloudignore: false
 
       - name: Push index.html to public bucket
         uses: 'google-github-actions/upload-cloud-storage@v2'
@@ -193,9 +197,10 @@ jobs:
           path: /tmp/support-packages/output/index.html
           parent: false
           destination: ${{ inputs.public-support-packages-bucket }}
+          process_gcloudignore: false
 
   copy-to-merged-bucket:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
     - sync-drivers
     steps:

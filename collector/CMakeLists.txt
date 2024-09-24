@@ -31,6 +31,12 @@ if(NOT BPF_DEBUG_MODE)
 	set(BPF_DEBUG_MODE OFF)
 endif()
 
+if (NOT COLLECTOR_VERSION)
+	set(COLLECTOR_VERSION "0.0.0")
+endif()
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/lib/CollectorVersion.h.in ${CMAKE_CURRENT_BINARY_DIR}/CollectorVersion.h)
+
 set(FALCO_DIR ${PROJECT_SOURCE_DIR}/../falcosecurity-libs)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/proto)
@@ -43,6 +49,7 @@ include_directories(${FALCO_DIR}/userspace/libsinsp)
 include_directories(${FALCO_DIR}/userspace/chisel)
 include_directories(${FALCO_DIR}/userspace/common)
 include_directories(${PROJECT_BINARY_DIR}/EXCLUDE_FROM_DEFAULT_BUILD/common)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(/usr/local/include)
 include_directories(/usr/local/include/tbb)
 include_directories(/usr/local/include/jsoncpp)

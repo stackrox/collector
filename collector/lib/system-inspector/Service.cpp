@@ -68,7 +68,10 @@ void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTrac
 
 bool Service::InitKernel(const CollectorConfig& config) {
   if (!inspector_) {
-    inspector_.reset(new sinsp());
+    // TODO: https://github.com/falcosecurity/libs/pull/2016
+    // Once that change is pulled, fix compilation here by removing the first
+    // 4 arguments.
+    inspector_.reset(new sinsp(false, "", "", "", true));
 
     // peeking into arguments has a big overhead, so we prevent it from happening
     inspector_->set_snaplen(0);
@@ -82,9 +85,6 @@ bool Service::InitKernel(const CollectorConfig& config) {
     inspector_->set_thread_timeout_s(30);
     inspector_->set_auto_threads_purging_interval_s(60);
     inspector_->m_thread_manager->set_max_thread_table_size(config.GetSinspThreadCacheSize());
-
-    // enable stats v2
-    inspector_->set_sinsp_stats_v2_enabled();
 
     // Connection status tracking is used in NetworkSignalHandler,
     // but only when trying to handle asynchronous connections
@@ -141,7 +141,9 @@ sinsp_evt* Service::GetNext() {
 
   auto parse_start = NowMicros();
   auto res = inspector_->next(&event);
-  if (res != SCAP_SUCCESS || event == nullptr) return nullptr;
+  if (res != SCAP_SUCCESS || event == nullptr) {
+    return nullptr;
+  }
 
 #ifdef TRACE_SINSP_EVENTS
   // Do not allow to change sinsp events tracing at runtime, as the output
@@ -157,7 +159,9 @@ sinsp_evt* Service::GetNext() {
   }
 #endif
 
-  if (event->get_category() & EC_INTERNAL) return nullptr;
+  if (event->get_category() & EC_INTERNAL) {
+    return nullptr;
+  }
 
   HostInfo& host_info = HostInfo::Instance();
 
@@ -259,12 +263,16 @@ void Service::Run(const std::atomic<ControlValue>& control) {
     ServePendingProcessRequests();
 
     sinsp_evt* evt = GetNext();
-    if (!evt) continue;
+    if (!evt) {
+      continue;
+    }
 
     auto process_start = NowMicros();
     for (auto it = signal_handlers_.begin(); it != signal_handlers_.end(); it++) {
       auto& signal_handler = *it;
-      if (!signal_handler.ShouldHandle(evt)) continue;
+      if (!signal_handler.ShouldHandle(evt)) {
+        continue;
+      }
       LogUnreasonableEventTime(process_start, evt);
       auto result = signal_handler.handler->HandleSignal(evt);
       if (result == SignalHandler::NEEDS_REFRESH) {
@@ -335,7 +343,9 @@ void Service::CleanUp() {
     auto& request = pending_process_requests_.front();
     auto callback = request.second.lock();
 
-    if (callback) (*callback)(0);
+    if (callback) {
+      (*callback)(0);
+    }
 
     pending_process_requests_.pop_front();
   }
@@ -344,7 +354,9 @@ void Service::CleanUp() {
 bool Service::GetStats(system_inspector::Stats* stats) const {
   std::lock_guard<std::mutex> libsinsp_lock(libsinsp_mutex_);
   std::lock_guard<std::mutex> running_lock(running_mutex_);
-  if (!running_ || !inspector_) return false;
+  if (!running_ || !inspector_) {
+    return false;
+  }
 
   scap_stats kernel_stats;
   std::shared_ptr<const sinsp_stats_v2> userspace_stats;
@@ -359,8 +371,9 @@ bool Service::GetStats(system_inspector::Stats* stats) const {
   stats->nPreemptions = kernel_stats.n_preemptions;
   stats->nThreadCacheSize = inspector_->m_thread_manager->get_thread_count();
 
-  if (userspace_stats != nullptr)
+  if (userspace_stats != nullptr) {
     stats->nDropsThreadCache = userspace_stats->m_n_drops_full_threadtable;
+  }
 
   return true;
 }

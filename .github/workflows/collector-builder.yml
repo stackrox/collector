@@ -21,7 +21,7 @@ env:
 jobs:
   builder-needs-rebuilding:
     name: Determine if builder image needs to be built
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       build-image: ${{ steps.changed.outputs.builder-changed }}
 
@@ -40,7 +40,7 @@ jobs:
 
   build-builder-image:
     name: Build the builder image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # Multiarch builds sometimes take for eeeeeeeeeever
     timeout-minutes: 480
     needs:
@@ -168,7 +168,7 @@ jobs:
     needs:
     - build-builder-image
     name: Create Multiarch manifest
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: |
       github.event_name != 'pull_request' ||
       (needs.build-builder-image.outputs.collector-builder-tag != 'cache' &&
@@ -210,7 +210,7 @@ jobs:
     needs:
     - build-builder-image
     name: Retag x86 builder image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: |
       github.event_name == 'pull_request' &&
       needs.build-builder-image.outputs.collector-builder-tag != 'cache' &&

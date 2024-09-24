@@ -18,7 +18,7 @@ import (
 func (s *MockSensor) ExpectConnections(t *testing.T, containerID string, timeout time.Duration, expected ...types.NetworkInfo) bool {
 
 	to_find := funk.Filter(expected, func(x types.NetworkInfo) bool {
-		return s.HasConnection(containerID, x)
+		return !s.HasConnection(containerID, x)
 	}).([]types.NetworkInfo)
 
 	if len(to_find) == 0 {
@@ -40,7 +40,7 @@ loop:
 			}
 
 			to_find = funk.Filter(expected, func(x types.NetworkInfo) bool {
-				return s.HasConnection(containerID, x)
+				return !s.HasConnection(containerID, x)
 			}).([]types.NetworkInfo)
 
 			if len(to_find) == 0 {
@@ -87,7 +87,7 @@ loop:
 func (s *MockSensor) ExpectEndpoints(t *testing.T, containerID string, timeout time.Duration, expected ...types.EndpointInfo) bool {
 
 	to_find := funk.Filter(expected, func(x types.EndpointInfo) bool {
-		return s.HasEndpoint(containerID, x)
+		return !s.HasEndpoint(containerID, x)
 	}).([]types.EndpointInfo)
 
 	if len(to_find) == 0 {
@@ -109,7 +109,7 @@ loop:
 			}
 
 			to_find = funk.Filter(expected, func(x types.EndpointInfo) bool {
-				return s.HasEndpoint(containerID, x)
+				return !s.HasEndpoint(containerID, x)
 			}).([]types.EndpointInfo)
 
 			if len(to_find) == 0 {
@@ -127,22 +127,26 @@ loop:
 // It does not consider the content of the events, just that a certain number
 // have been received
 func (s *MockSensor) ExpectEndpointsN(t *testing.T, containerID string, timeout time.Duration, n int) []types.EndpointInfo {
-	return s.waitEndpointsN(func() {
+	return s.waitEndpointsN(t, func() {
 		assert.FailNowf(t, "timed out", "found %d endpoints (expected %d)", len(s.Endpoints(containerID)), n)
 	}, containerID, timeout, n)
 }
 
 // WaitEndpointsN is a non-fatal version of ExpectEndpointsN. It waits for a given timeout
 // until n Endpoints have been receieved. On timeout it returns false.
-func (s *MockSensor) WaitEndpointsN(containerID string, timeout time.Duration, n int) bool {
-	return len(s.waitEndpointsN(func() {}, containerID, timeout, n)) == n
+func (s *MockSensor) WaitEndpointsN(t *testing.T, containerID string, timeout time.Duration, n int) bool {
+	return len(s.waitEndpointsN(t, func() {}, containerID, timeout, n)) == n
 }
 
 // waitEndpointsN is a helper function for waiting for a set number of endpoints.
 // the timeoutFn function can be used to control error behaviour on timeout.
-func (s *MockSensor) waitEndpointsN(timeoutFn func(), containerID string, timeout time.Duration, n int) []types.EndpointInfo {
-	if len(s.Endpoints(containerID)) == n {
+func (s *MockSensor) waitEndpointsN(t *testing.T, timeoutFn func(), containerID string, timeout time.Duration, n int) []types.EndpointInfo {
+	seen := len(s.Endpoints(containerID))
+
+	if seen == n {
 		return s.Endpoints(containerID)
+	} else if seen > n {
+		assert.FailNow(t, "too many endpoints", "found %d endpoints (expected %d)", seen, n)
 	}
 
 	timer := time.After(timeout)

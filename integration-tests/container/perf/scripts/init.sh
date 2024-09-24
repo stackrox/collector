@@ -123,6 +123,11 @@ check_headers() {
     return 0
 }
 
+if [[ "$(sysctl -n kernel.kptr_restrict)" != "0" ]]; then
+    # If this is not zero, it can interfere with most of the tools
+    sysctl -w kernel.kptr_restrict=0
+fi
+
 if [[ ! -e "/lib/modules/.installed" ]]; then
     if check_headers "${HOST_MODULES_DIR}"; then
         HEADERS_TARGET="${HOST_MODULES_DIR}/source"
@@ -138,9 +143,4 @@ if [[ ! -e "/lib/modules/.installed" ]]; then
 else
     echo "Headers already installed"
     exit 0
-fi
-
-if [[ "$(sysctl -n kernel.kptr_restrict)" != "0" ]]; then
-    # If this is not zero, it can interfere with most of the tools
-    sysctl -w kernel.kptr_restrict=0
 fi

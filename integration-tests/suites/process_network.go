@@ -40,7 +40,12 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	}
 
 	// invokes default nginx
-	containerID, err := s.launchContainer("nginx", image_store.ImageByKey("nginx"))
+	containerID, err := s.Executor().StartContainer(
+		config.ContainerStartConfig{
+			Name:  "nginx",
+			Image: image_store.ImageByKey("nginx"),
+		})
+
 	s.Require().NoError(err)
 	s.serverContainer = common.ContainerShortID(containerID)
 
@@ -51,7 +56,12 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	// invokes another container
-	containerID, err = s.launchContainer("nginx-curl", image_store.QaImageByKey("qa-alpine-curl"), "sleep", "300")
+	containerID, err = s.Executor().StartContainer(
+		config.ContainerStartConfig{
+			Name:    "nginx-curl",
+			Image:   image_store.QaImageByKey("qa-alpine-curl"),
+			Command: []string{"sleep", "300"},
+		})
 	s.Require().NoError(err)
 	s.clientContainer = common.ContainerShortID(containerID)
 
@@ -137,15 +147,21 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 	s.Sensor().ExpectConnections(s.T(), s.serverContainer, 10*time.Second,
 		types.NetworkInfo{
-			LocalAddress:  fmt.Sprintf("%s:%d", s.clientIP, 0),
-			RemoteAddress: fmt.Sprintf(":%s", s.serverPort),
+			LocalAddress:   fmt.Sprintf(":%s", s.serverPort),
+			RemoteAddress:  s.clientIP,
+			Role:           "ROLE_SERVER",
+			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			CloseTimestamp: types.NilTimestamp,
 		},
 	)
 
 	s.Sensor().ExpectConnections(s.T(), s.clientContainer, 10*time.Second,
 		types.NetworkInfo{
-			LocalAddress:  "",
-			RemoteAddress: fmt.Sprintf("%s:%s", s.serverIP, s.serverPort),
+			LocalAddress:   "",
+			RemoteAddress:  fmt.Sprintf("%s:%s", s.serverIP, s.serverPort),
+			Role:           "ROLE_CLIENT",
+			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			CloseTimestamp: types.NilTimestamp,
 		},
 	)
 }

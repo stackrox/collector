@@ -3,14 +3,16 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
 	CollectionMethodEBPF    = "ebpf"
 	CollectionMethodCoreBPF = "core-bpf"
 
-	runtimeDefaultCommand = "docker"
-	runtimeDefaultSocket  = "/var/run/docker.sock"
+	runtimeDefaultCommand     = "docker"
+	runtimeDefaultSocket      = "/var/run/docker.sock"
+	runtimeDefaultConfigPaths = "$HOME/.config/containers/auth.json,$HOME/.docker/config.json"
 
 	imageStoreLocation = "images.yml"
 
@@ -62,8 +64,7 @@ func (h *Host) IsK8s() bool {
 // VM contains metadata about the machine upon which the tests are
 // running.
 type VM struct {
-	InstanceType string
-	Config       string
+	Config string
 }
 
 // Runtime contains information related to the container runtime.
@@ -75,14 +76,14 @@ type Runtime struct {
 	// Whether or not interactions with this runtime should be run
 	// as root
 	RunAsRoot bool
+	// Which local paths to search for container registry credentials
+	ConfigPaths []string
 }
 
 // CollectorOptions contains options related to running collector itself
 type CollectorOptions struct {
 	// The collector log level, e.g. DEBUG, TRACE
 	LogLevel string
-	// Any arguments to prepend to the collector command
-	PreArguments string
 }
 
 // Benchmarks contains options related to interacting with the benchmarks
@@ -127,8 +128,7 @@ func HostInfo() *Host {
 func VMInfo() *VM {
 	if vm_options == nil {
 		vm_options = &VM{
-			InstanceType: ReadEnvVarWithDefault(envVMInstanceType, "default"),
-			Config:       ReadEnvVar(envVMConfig),
+			Config: ReadEnvVar(envVMConfig),
 		}
 	}
 	return vm_options
@@ -137,9 +137,10 @@ func VMInfo() *VM {
 func RuntimeInfo() *Runtime {
 	if runtime_options == nil {
 		runtime_options = &Runtime{
-			Command:   ReadEnvVarWithDefault(envRuntimeCommand, runtimeDefaultCommand),
-			Socket:    ReadEnvVarWithDefault(envRuntimeSocket, runtimeDefaultSocket),
-			RunAsRoot: ReadBoolEnvVar(envRuntimeAsRoot),
+			Command:     ReadEnvVarWithDefault(envRuntimeCommand, runtimeDefaultCommand),
+			Socket:      ReadEnvVarWithDefault(envRuntimeSocket, runtimeDefaultSocket),
+			RunAsRoot:   ReadBoolEnvVar(envRuntimeAsRoot),
+			ConfigPaths: strings.Split(ReadEnvVarWithDefault(envRuntimeConfigPaths, runtimeDefaultConfigPaths), ","),
 		}
 	}
 	return runtime_options
@@ -148,8 +149,7 @@ func RuntimeInfo() *Runtime {
 func CollectorInfo() *CollectorOptions {
 	if collector_options == nil {
 		collector_options = &CollectorOptions{
-			LogLevel:     ReadEnvVarWithDefault(envCollectorLogLevel, "debug"),
-			PreArguments: ReadEnvVar(envCollectorPreArguments),
+			LogLevel: ReadEnvVarWithDefault(envCollectorLogLevel, "debug"),
 		}
 	}
 	return collector_options

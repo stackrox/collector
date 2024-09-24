@@ -90,7 +90,7 @@ class CollectorStats {
 
   std::array<std::atomic<int64_t>, counter_type_max> counter_ = {{}};
 
-  CollectorStats(){};
+  CollectorStats() {};
 };
 
 template <typename T>

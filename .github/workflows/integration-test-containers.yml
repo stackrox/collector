@@ -24,7 +24,7 @@ on:
 jobs:
   should-build-test-image:
     name: Determine if tests image needs to be built
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       build-image: ${{ steps.changed.outputs.tests-changed }}
 
@@ -47,7 +47,7 @@ jobs:
 
   build-test-image:
     name: Build the integration test image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       - should-build-test-image
     if: |
@@ -109,7 +109,7 @@ jobs:
             ansible/ci-build-tests.yml
 
   common-variables:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       build-dirs: ${{ steps.variables.outputs.build-dirs }}
 
@@ -133,7 +133,7 @@ jobs:
       - common-variables
 
     if: inputs.rebuild-qa-containers
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:

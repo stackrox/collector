@@ -54,7 +54,9 @@ struct nRadixNode {
   }
 
   nRadixNode& operator=(const nRadixNode& other) {
-    if (this == &other) return *this;
+    if (this == &other) {
+      return *this;
+    }
     auto* new_node = new nRadixNode(other);
     std::swap(*new_node, *this);
     delete new_node;
@@ -92,7 +94,9 @@ class NRadixTree {
   }
 
   NRadixTree& operator=(const NRadixTree& other) {
-    if (this == &other) return *this;
+    if (this == &other) {
+      return *this;
+    }
     delete root_;
     // This calls the node copy constructor which in turn copies all the nodes.
     root_ = new nRadixNode(*other.root_);

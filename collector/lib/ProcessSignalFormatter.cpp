@@ -37,11 +37,19 @@ static EventMap<ProcessSignalType> process_signals = {
 };
 
 std::string extract_proc_args(sinsp_threadinfo* tinfo) {
-  if (tinfo->m_args.empty()) return "";
+  if (tinfo->m_args.empty()) {
+    return "";
+  }
   std::ostringstream args;
   for (auto it = tinfo->m_args.begin(); it != tinfo->m_args.end();) {
-    args << *it++;
-    if (it != tinfo->m_args.end()) args << " ";
+    auto arg = *it++;
+    auto arg_sanitized = SanitizedUTF8(arg);
+
+    args << ((arg_sanitized ? *arg_sanitized : arg));
+
+    if (it != tinfo->m_args.end()) {
+      args << " ";
+    }
   }
   return args.str();
 }
@@ -67,7 +75,9 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
   }
 
   ProcessSignal* process_signal = CreateProcessSignal(event);
-  if (!process_signal) return nullptr;
+  if (!process_signal) {
+    return nullptr;
+  }
 
   Signal* signal = Allocate<Signal>();
   signal->set_allocated_process_signal(process_signal);
@@ -86,7 +96,9 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadin
   }
 
   ProcessSignal* process_signal = CreateProcessSignal(tinfo);
-  if (!process_signal) return nullptr;
+  if (!process_signal) {
+    return nullptr;
+  }
 
   Signal* signal = Allocate<Signal>();
   signal->set_allocated_process_signal(process_signal);
@@ -106,29 +118,50 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   const std::string* name = event_extractor_->get_comm(event);
   const std::string* exepath = event_extractor_->get_exepath(event);
 
+  std::optional<std::string> name_sanitized;
+  std::optional<std::string> exepath_sanitized;
+
+  if (name) {
+    name_sanitized = SanitizedUTF8(*name);
+  }
+
+  if (exepath) {
+    exepath_sanitized = SanitizedUTF8(*exepath);
+  }
+
   // set name (if name is missing or empty, try to use exec_file_path)
   if (name && !name->empty() && *name != "<NA>") {
-    signal->set_name(*name);
+    signal->set_name(name_sanitized ? *name_sanitized : *name);
   } else if (exepath && !exepath->empty() && *exepath != "<NA>") {
-    signal->set_name(*exepath);
+    signal->set_name(exepath_sanitized ? *exepath_sanitized : *exepath);
   }
 
   // set exec_file_path (if exec_file_path is missing or empty, try to use name)
   if (exepath && !exepath->empty() && *exepath != "<NA>") {
-    signal->set_exec_file_path(*exepath);
+    signal->set_exec_file_path(exepath_sanitized ? *exepath_sanitized : *exepath);
   } else if (name && !name->empty() && *name != "<NA>") {
-    signal->set_exec_file_path(*name);
+    signal->set_exec_file_path(name_sanitized ? *name_sanitized : *name);
   }
 
   // set process arguments
-  if (const char* args = event_extractor_->get_proc_args(event)) signal->set_args(args);
+  if (const char* args = event_extractor_->get_proc_args(event)) {
+    std::string args_str = args;
+    auto args_sanitized = SanitizedUTF8(args_str);
+    signal->set_args(args_sanitized ? *args_sanitized : args_str);
+  }
 
   // set pid
-  if (const int64_t* pid = event_extractor_->get_pid(event)) signal->set_pid(*pid);
+  if (const int64_t* pid = event_extractor_->get_pid(event)) {
+    signal->set_pid(*pid);
+  }
 
   // set user and group id credentials
-  if (const uint32_t* uid = event_extractor_->get_uid(event)) signal->set_uid(*uid);
-  if (const uint32_t* gid = event_extractor_->get_gid(event)) signal->set_gid(*gid);
+  if (const uint32_t* uid = event_extractor_->get_uid(event)) {
+    signal->set_uid(*uid);
+  }
+  if (const uint32_t* gid = event_extractor_->get_gid(event)) {
+    signal->set_gid(*gid);
+  }
 
   // set time
   auto timestamp = Allocate<Timestamp>();
@@ -164,20 +197,22 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   signal->set_id(UUIDStr());
 
   const auto& name = tinfo->m_comm;
+  auto name_sanitized = SanitizedUTF8(name);
   const auto& exepath = tinfo->m_exepath;
+  auto exepath_sanitized = SanitizedUTF8(exepath);
 
   // set name (if name is missing or empty, try to use exec_file_path)
   if (!name.empty() && name != "<NA>") {
-    signal->set_name(name);
+    signal->set_name(name_sanitized ? *name_sanitized : name);
   } else if (!exepath.empty() && exepath != "<NA>") {
-    signal->set_name(exepath);
+    signal->set_name(exepath_sanitized ? *exepath_sanitized : exepath);
   }
 
   // set exec_file_path (if exec_file_path is missing or empty, try to use name)
   if (!exepath.empty() && exepath != "<NA>") {
-    signal->set_exec_file_path(exepath);
+    signal->set_exec_file_path(exepath_sanitized ? *exepath_sanitized : exepath);
   } else if (!name.empty() && name != "<NA>") {
-    signal->set_exec_file_path(name);
+    signal->set_exec_file_path(name_sanitized ? *name_sanitized : name);
   }
 
   // set the process as coming from a scrape as opposed to an exec
@@ -256,7 +291,9 @@ bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
 
 int ProcessSignalFormatter::GetTotalStringLength(const std::vector<LineageInfo>& lineage) {
   int totalStringLength = 0;
-  for (LineageInfo l : lineage) totalStringLength += l.parent_exec_file_path().size();
+  for (LineageInfo l : lineage) {
+    totalStringLength += l.parent_exec_file_path().size();
+  }
 
   return totalStringLength;
 }
@@ -271,17 +308,25 @@ void ProcessSignalFormatter::CountLineage(const std::vector<LineageInfo>& lineag
 
 void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
                                                std::vector<LineageInfo>& lineage) {
-  if (tinfo == NULL) return;
+  if (tinfo == NULL) {
+    return;
+  }
   sinsp_threadinfo* mt = NULL;
   if (tinfo->is_main_thread()) {
     mt = tinfo;
   } else {
     mt = tinfo->get_main_thread();
-    if (mt == NULL) return;
+    if (mt == NULL) {
+      return;
+    }
   }
   sinsp_threadinfo::visitor_func_t visitor = [this, &lineage](sinsp_threadinfo* pt) {
-    if (pt == NULL) return false;
-    if (pt->m_pid == 0) return false;
+    if (pt == NULL) {
+      return false;
+    }
+    if (pt->m_pid == 0) {
+      return false;
+    }
 
     //
     // Collection of process lineage information should stop at the container
@@ -302,7 +347,9 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
       return false;
     }
 
-    if (pt->m_vpid == -1) return false;
+    if (pt->m_vpid == -1) {
+      return false;
+    }
 
     // Collapse parent child processes that have the same path
     if (lineage.empty() || (lineage.back().parent_exec_file_path() != pt->m_exepath)) {
@@ -313,7 +360,9 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     }
 
     // Limit max number of ancestors
-    if (lineage.size() >= 10) return false;
+    if (lineage.size() >= 10) {
+      return false;
+    }
 
     return true;
   };

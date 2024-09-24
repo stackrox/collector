@@ -4,7 +4,7 @@ plugin: gcp_compute
 projects:
   - acs-team-sandbox
 filters:
-  - name = dev-*
+  - name eq "^.*-dev-.*$"
 keyed_groups:
   # This will group the VMs by their labels, which means that on
   # creation, we can use a unique identifier to group VMs

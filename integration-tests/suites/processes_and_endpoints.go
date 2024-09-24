@@ -36,10 +36,13 @@ func (s *ProcessesAndEndpointsTestSuite) SetupSuite() {
 	s.StartCollector(false, &collectorOptions)
 
 	image := config.Images().QaImageByKey("qa-plop")
-	cmd := []string{"--entrypoint", s.Executable, image}
-	cmd = append(cmd, s.Args...)
-	containerID, err := s.launchContainer(s.ContainerName, cmd...)
-
+	containerID, err := s.Executor().StartContainer(
+		config.ContainerStartConfig{
+			Name:       s.ContainerName,
+			Image:      image,
+			Command:    s.Args,
+			Entrypoint: []string{s.Executable},
+		})
 	s.Require().NoError(err)
 	s.container = common.ContainerShortID(containerID)
 }

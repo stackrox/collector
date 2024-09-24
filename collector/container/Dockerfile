@@ -5,7 +5,6 @@ ARG ROOT_DIR=.
 ARG COLLECTOR_VERSION
 
 ENV ROOT_DIR=$ROOT_DIR
-ENV COLLECTOR_VERSION="${COLLECTOR_VERSION}"
 ENV COLLECTOR_HOST_ROOT=/host
 
 LABEL name="collector" \
@@ -20,15 +19,14 @@ WORKDIR /
 COPY container/${BUILD_TYPE}/install.sh /
 RUN ./install.sh && rm -f install.sh
 
-COPY container/scripts/collector-wrapper.sh /usr/local/bin
-COPY container/scripts/bootstrap.sh /
+# Uncomment this line to enable generation of core for collector
+# RUN echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
+
 COPY container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY kernel-modules /kernel-modules
 COPY container/bin/collector /usr/local/bin/
 COPY container/bin/self-checks /usr/local/bin/self-checks
 COPY container/status-check.sh /usr/local/bin/status-check.sh
-
-RUN chmod 700 bootstrap.sh
 
 EXPOSE 8080 9090
 
@@ -40,9 +38,4 @@ HEALTHCHECK	\
 	# the command uses /ready API
 	CMD /usr/local/bin/status-check.sh
 
-ENTRYPOINT ["/bootstrap.sh"]
-
-CMD collector-wrapper.sh \
-    --collector-config=$COLLECTOR_CONFIG \
-    --collection-method=$COLLECTION_METHOD \
-    --grpc-server=$GRPC_SERVER
+ENTRYPOINT ["collector"]

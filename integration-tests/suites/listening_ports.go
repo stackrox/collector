@@ -1,12 +1,15 @@
 package suites
 
 import (
+	"fmt"
+	"net/http"
 	"sort"
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,6 +17,7 @@ import (
 type ProcessListeningOnPortTestSuite struct {
 	IntegrationTestSuiteBase
 	serverContainer string
+	serverURL       string
 }
 
 func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
@@ -34,31 +38,37 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 
 	processImage := getProcessListeningOnPortsImage()
 
-	containerID, err := s.launchContainer("process-ports", "-v", "/tmp:/tmp", processImage)
+	err := s.executor.PullImage(processImage)
+	s.Require().NoError(err)
+	containerID, err := s.Executor().StartContainer(
+		config.ContainerStartConfig{
+			Name:  "process-ports",
+			Image: processImage,
+		})
 	s.Require().NoError(err)
 
 	s.serverContainer = common.ContainerShortID(containerID)
 
-	actionFile := "/tmp/action_file.txt"
-
-	_, err = s.executor.Exec("sh", "-c", "rm "+actionFile+" || true")
-
-	_, err = s.executor.Exec("sh", "-c", "echo open 8081 > "+actionFile)
-	err = s.waitForFileToBeDeleted(actionFile)
+	ip, err := s.getIPAddress(s.serverContainer)
 	s.Require().NoError(err)
 
-	_, err = s.executor.Exec("sh", "-c", "echo open 9091 > "+actionFile)
-	err = s.waitForFileToBeDeleted(actionFile)
+	port, err := s.getPort(s.serverContainer)
 	s.Require().NoError(err)
 
-	time.Sleep(6 * time.Second)
+	s.serverURL = fmt.Sprintf("http://%s:%s", ip, port)
 
-	_, err = s.executor.Exec("sh", "-c", "echo close 8081 > "+actionFile)
-	err = s.waitForFileToBeDeleted(actionFile)
-	s.Require().NoError(err)
-	_, err = s.executor.Exec("sh", "-c", "echo close 9091 > "+actionFile)
-	err = s.waitForFileToBeDeleted(actionFile)
-	s.Require().NoError(err)
+	// Wait 5 seconds for the plop service to start
+	common.Sleep(5 * time.Second)
+
+	log.Info("Opening ports...")
+	s.openPort(8081)
+	s.openPort(9091)
+
+	common.Sleep(6 * time.Second)
+
+	log.Info("Closing ports...")
+	s.closePort(8081)
+	s.closePort(9091)
 }
 
 func (s *ProcessListeningOnPortTestSuite) TearDownSuite() {
@@ -68,8 +78,8 @@ func (s *ProcessListeningOnPortTestSuite) TearDownSuite() {
 }
 
 func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
-	processes := s.Sensor().ExpectProcessesN(s.T(), s.serverContainer, 30*time.Second, 2)
-	endpoints := s.Sensor().ExpectEndpointsN(s.T(), s.serverContainer, 30*time.Second, 4)
+	processes := s.Sensor().ExpectProcessesN(s.T(), s.serverContainer, 5*time.Second, 1)
+	endpoints := s.Sensor().ExpectEndpointsN(s.T(), s.serverContainer, 5*time.Second, 5)
 
 	// sort by name to ensure processes[0] is the plop process (the other
 	// is the shell)
@@ -80,7 +90,7 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 
 	process := processes[0]
 
-	possiblePorts := []int{8081, 9091}
+	possiblePorts := []int{8081, 9091, 5000}
 
 	// First verify that all endpoints have the expected metadata, that
 	// they are the correct protocol and come from the expected Originator
@@ -106,7 +116,7 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 	for _, endpoint := range endpoints {
 		if endpoint.Address.Port == 8081 {
 			endpoints8081 = append(endpoints8081, endpoint)
-		} else {
+		} else if endpoint.Address.Port == 9091 {
 			endpoints9091 = append(endpoints9091, endpoint)
 		}
 		// other ports cannot exist at this point due to previous assertions
@@ -132,4 +142,16 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 
 func getProcessListeningOnPortsImage() string {
 	return config.Images().QaImageByKey("qa-plop")
+}
+
+func (s *ProcessListeningOnPortTestSuite) openPort(port uint16) {
+	res, err := http.Get(fmt.Sprintf("%s/open/%d", s.serverURL, port))
+	s.Require().NoError(err)
+	s.Require().True(res.StatusCode == 200)
+}
+
+func (s *ProcessListeningOnPortTestSuite) closePort(port uint16) {
+	res, err := http.Get(fmt.Sprintf("%s/close/%d", s.serverURL, port))
+	s.Require().NoError(err)
+	s.Require().True(res.StatusCode == 200)
 }

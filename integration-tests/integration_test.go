@@ -88,6 +88,35 @@ func TestProcfsScraper(t *testing.T) {
 	connScraperTestSuite := &suites.ProcfsScraperTestSuite{
 		TurnOffScrape:               false,
 		RoxProcessesListeningOnPort: true,
+		Expected: []types.EndpointInfo{
+			{
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Address: types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        80,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				Originator: types.ProcessOriginator{
+					ProcessName:         "nginx",
+					ProcessExecFilePath: "/usr/sbin/nginx",
+					ProcessArgs:         "",
+				},
+			}, {
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Address: types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        80,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				Originator: types.ProcessOriginator{
+					ProcessName:         "nginx",
+					ProcessExecFilePath: "/usr/sbin/nginx",
+					ProcessArgs:         "",
+				},
+			},
+		},
 	}
 	suite.Run(t, connScraperTestSuite)
 }
@@ -96,6 +125,7 @@ func TestProcfsScraperNoScrape(t *testing.T) {
 	connScraperTestSuite := &suites.ProcfsScraperTestSuite{
 		TurnOffScrape:               true,
 		RoxProcessesListeningOnPort: true,
+		Expected:                    []types.EndpointInfo{},
 	}
 	suite.Run(t, connScraperTestSuite)
 }
@@ -104,6 +134,23 @@ func TestProcfsScraperDisableFeatureFlag(t *testing.T) {
 	connScraperTestSuite := &suites.ProcfsScraperTestSuite{
 		TurnOffScrape:               false,
 		RoxProcessesListeningOnPort: false,
+		Expected: []types.EndpointInfo{
+			{
+				Protocol:       "L4_PROTOCOL_TCP",
+				CloseTimestamp: types.NilTimestamp,
+				Address: types.ListenAddress{
+					AddressData: "\x00\x00\x00\x00",
+					Port:        80,
+					IpNetwork:   "\x00\x00\x00\x00 ",
+				},
+				// expect endpoint but no originator
+				Originator: types.ProcessOriginator{
+					ProcessName:         "",
+					ProcessExecFilePath: "",
+					ProcessArgs:         "",
+				},
+			},
+		},
 	}
 	suite.Run(t, connScraperTestSuite)
 }
@@ -142,7 +189,7 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 			ExpectedEndpoints: []types.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
-					Address: &types.ListenAddress{
+					Address: types.ListenAddress{
 						AddressData: "\x00\x00\x00\x00",
 						Port:        40,
 						IpNetwork:   "\x00\x00\x00\x00 ",
@@ -187,7 +234,7 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 			ExpectedEndpoints: []types.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
-					Address: &types.ListenAddress{
+					Address: types.ListenAddress{
 						AddressData: "\x00\x00\x00\x00",
 						Port:        40000,
 						IpNetwork:   "\x00\x00\x00\x00 ",
@@ -232,7 +279,7 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 			ExpectedEndpoints: []types.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
-					Address: &types.ListenAddress{
+					Address: types.ListenAddress{
 						AddressData: "\x00\x00\x00\x00",
 						Port:        60999,
 						IpNetwork:   "\x00\x00\x00\x00 ",
@@ -277,7 +324,7 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 			ExpectedEndpoints: []types.EndpointInfo{
 				{
 					Protocol: "L4_PROTOCOL_TCP",
-					Address: &types.ListenAddress{
+					Address: types.ListenAddress{
 						AddressData: "\x00\x00\x00\x00",
 						Port:        10000,
 						IpNetwork:   "\x00\x00\x00\x00 ",
@@ -482,4 +529,8 @@ func TestPerfEvent(t *testing.T) {
 
 func TestGperftools(t *testing.T) {
 	suite.Run(t, new(suites.GperftoolsTestSuite))
+}
+
+func TestRingBuffer(t *testing.T) {
+	suite.Run(t, new(suites.RingBufferTestSuite))
 }

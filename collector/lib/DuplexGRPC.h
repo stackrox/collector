@@ -506,7 +506,9 @@ class DuplexClient : public virtual IDuplexClient {
     while (result && op_res.op != op_desc.op) {
       result = ProcessSingle(nullptr, deadline, &op_res);
     }
-    if (!result) return result;
+    if (!result) {
+      return result;
+    }
     return Result(op_res.ok);
   }
 
@@ -548,8 +550,7 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     // Shutdown the client and drain the queue.
     this->Shutdown();  // ignore errors
     auto now = ToDeadline(time_point::min());
-    while (ProcessSingle(nullptr, now, nullptr))
-      ;
+    while (ProcessSingle(nullptr, now, nullptr));
   }
 
   template <typename TS = time_point>
@@ -561,14 +562,18 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     auto deadline = ToDeadline(time_spec);
 
     auto result = PollAll(DuplexClient::CAN_READ, deadline);
-    if (!result) return result;
+    if (!result) {
+      return result;
+    }
 
     // We can read, but the read buffer is not valid -> there has been an error. This is the last read.
     if (!read_buf_valid_) {
       return Result(Status::ERROR);
     }
 
-    if (obj) *obj = std::move(read_buf_);
+    if (obj) {
+      *obj = std::move(read_buf_);
+    }
     ReadNext();
 
     return Result(Status::OK);
@@ -666,7 +671,9 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
       this->SetFlags(Done(Op::SHUTDOWN));
     }
 
-    if (flags_out) *flags_out = this->flags_;
+    if (flags_out) {
+      *flags_out = this->flags_;
+    }
     return Result(next_status);
   }
 

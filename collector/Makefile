@@ -9,11 +9,11 @@ COLLECTOR_BIN_DIR = $(CMAKE_DIR)/collector
 LIBSINSP_BIN_DIR = $(CMAKE_DIR)/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp
 SRC_MOUNT_DIR = /tmp/collector
 
-HDRS := $(wildcard lib/*.h) $(shell find falcosecurity-libs/userspace -name '*.h')
+HDRS := $(wildcard lib/*.h) $(shell find $(BASE_PATH)/falcosecurity-libs/userspace -name '*.h')
 
 SRCS := $(wildcard lib/*.cpp) collector.cpp
 
-COLLECTOR_BUILD_DEPS := $(HDRS) $(SRCS) $(shell find falcosecurity-libs -name '*.h' -o -name '*.cpp' -o -name '*.c')
+COLLECTOR_BUILD_DEPS := $(HDRS) $(SRCS) $(shell find $(BASE_PATH)/falcosecurity-libs -name '*.h' -o -name '*.cpp' -o -name '*.c')
 
 .SUFFIXES:
 
@@ -25,7 +25,8 @@ cmake-configure/collector:
 			-DUSE_VALGRIND=$(USE_VALGRIND) \
 			-DADDRESS_SANITIZER=$(ADDRESS_SANITIZER) \
 			-DTRACE_SINSP_EVENTS=$(TRACE_SINSP_EVENTS) \
-			-DBPF_DEBUG_MODE=$(BPF_DEBUG_MODE)
+			-DBPF_DEBUG_MODE=$(BPF_DEBUG_MODE) \
+			-DCOLLECTOR_VERSION=$(COLLECTOR_VERSION)
 
 cmake-build/collector: cmake-configure/collector $(COLLECTOR_BUILD_DEPS)
 	docker exec $(COLLECTOR_BUILDER_NAME) \
@@ -64,17 +65,8 @@ txt-files:
 
 .PHONY: clean
 clean:
-	docker rm -fv build_collector || true
-	docker rm -fv container-stats benchmark collector grpc-server || true
-	rm -rf falcosecurity-libs/cmake-build
-	rm -rf falcosecurity-libs/falcosecurity-libs-build
+	rm -rf container/LICENSE-kernel-modules.txt
 	rm -rf container/bin
-	rm -rf container/driver
-	rm -rf container/libs
-	rm -rf container/rhel/scripts
-	rm -rf container/rhel/bundle.tar.gz
-	rm -rf container/devel/scripts
-	rm -rf container/devel/bundle.tar.gz
 	rm -rf container/THIRD_PARTY_NOTICES
 	rm -f container/Dockerfile.dev
 

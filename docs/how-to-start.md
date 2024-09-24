@@ -165,7 +165,7 @@ Even though development containers is a supported feature of `Docker for Desktop
 ### Setting up git hooks
 
 Git hooks are configured in the `.pre-commit-config.yaml` file using [pre-commit](https://pre-commit.com)
-In order to use them install pre-commit, and run `git config core.hooksPath ./githooks/` from the collector root directory.
+In order to use them install pre-commit, and run `make init-githook` from the collector root directory.
 
 ## Run in Minikube
 ### Build the collector image
@@ -209,15 +209,18 @@ spec:
         - name: COLLECTOR_CONFIG
           value: |
             '{"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"}}'
-        # This will direct collector to run under GDB
-        - name: COLLECTOR_PRE_ARGUMENTS
-          value: gdbserver 0.0.0.0:1337
-        image: quay.io/stackrox-io/collector:<your-built-tag-here>
-        # Expose the port GDB will be listening on
-        ports:
-        - containerPort: 1337
-          name: gdb
-          protocol: TCP
+      # Use command and args to override the entrypoint to run under GDB
+      command:
+      - gdbserver
+      - 0.0.0.0:1337
+      args:
+      - collector
+      image: quay.io/stackrox-io/collector:<your-built-tag-here>
+      # Expose the port GDB will be listening on
+      ports:
+      - containerPort: 1337
+        name: gdb
+        protocol: TCP
 ```
 
 Once the configuration is applied, the collector pod will restart and wait for a GDB client to connect to it.

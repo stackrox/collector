@@ -8,10 +8,8 @@ metadata:
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
-    # TODO(ROX-21073): re-enable for all PR branches
     pipelinesascode.tekton.dev/on-cel-expression: |
-      (event == "push" && target_branch.matches("^(master|release-.*)$")) ||
-      (event == "pull_request" && (source_branch.matches("(konflux|appstudio|rhtap)") || body.pull_request.labels.exists(l, l.name == "konflux-build")))
+      (event == "push" && target_branch.matches("^(master|release-.*)$")) || event == "pull_request"
   labels:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: collector
@@ -57,6 +55,14 @@ spec:
       secretName: '{{ git_auth_secret }}'
 
   taskRunSpecs:
+  - pipelineTaskName: clone-repository
+    stepSpecs:
+    - name: create-trusted-artifact
+      computeResources:
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
   # Only adjusting computeResources for amd64 build because
   # multi-arch builds happen off cluster
   - pipelineTaskName: build-container-amd64
@@ -78,9 +84,12 @@ spec:
         requests:
           cpu: 1
 
-  # The pipeline regularly takes >1h to finish.
   timeouts:
-    pipeline: 2h00m0s
+    # The pipeline regularly takes >1h to finish.
+    # When changing the value here, make sure to adjust wait-for-images time limit in .github/workflows/konflux-tests.yml
+    tasks: 2h
+    finally: 10m
+    pipeline: 2h10m
 
   pipelineRef:
     name: collector-component-pipeline

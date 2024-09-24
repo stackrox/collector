@@ -43,7 +43,7 @@ on:
 jobs:
   tests:
     name: Testing ${{ inputs.vm_type }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       COLLECTOR_IMAGE: ${{ inputs.collector-repo }}:${{ inputs.collector-tag }}
       COLLECTOR_QA_TAG: ${{ inputs.collector-qa-tag }}

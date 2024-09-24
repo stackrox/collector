@@ -7,6 +7,8 @@ PointerAlignment: Left
 
 IndentPPDirectives: AfterHash
 
+InsertBraces: true
+
 IncludeBlocks: Regroup
 IncludeCategories:
 - Regex: '^((\"|<)(api|internalapi|storage)/)'

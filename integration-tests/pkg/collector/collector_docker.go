@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 )
 
 type DockerCollectorManager struct {
@@ -25,22 +26,15 @@ type DockerCollectorManager struct {
 	containerID     string
 }
 
-func newDockerManager(e executor.Executor, name string) *DockerCollectorManager {
+func NewDockerCollectorManager(e executor.Executor, name string) *DockerCollectorManager {
 	collectorOptions := config.CollectorInfo()
 
-	collectionMethod := config.CollectionMethod()
-
-	collectorConfig := map[string]any{
-		"logLevel":       collectorOptions.LogLevel,
-		"turnOffScrape":  true,
-		"scrapeInterval": 2,
-	}
-
 	env := map[string]string{
-		"GRPC_SERVER":             "localhost:9999",
-		"COLLECTION_METHOD":       collectionMethod,
-		"COLLECTOR_PRE_ARGUMENTS": collectorOptions.PreArguments,
-		"ENABLE_CORE_DUMP":        "true",
+		"GRPC_SERVER":                   "localhost:9999",
+		"ENABLE_CORE_DUMP":              "true",
+		"ROX_COLLECTOR_LOG_LEVEL":       collectorOptions.LogLevel,
+		"ROX_COLLECTOR_SCRAPE_DISABLED": "true",
+		"ROX_COLLECTOR_SCRAPE_INTERVAL": "2",
 	}
 
 	mounts := map[string]string{
@@ -48,7 +42,6 @@ func newDockerManager(e executor.Executor, name string) *DockerCollectorManager 
 		"/host/etc:ro":              "/etc",
 		"/host/usr/lib:ro":          "/usr/lib",
 		"/host/sys/kernel/debug:ro": "/sys/kernel/debug",
-		"/tmp":                      "/tmp",
 	}
 
 	return &DockerCollectorManager{
@@ -56,7 +49,7 @@ func newDockerManager(e executor.Executor, name string) *DockerCollectorManager 
 		bootstrapOnly: false,
 		env:           env,
 		mounts:        mounts,
-		config:        collectorConfig,
+		config:        map[string]any{},
 		testName:      name,
 	}
 }
@@ -94,16 +87,23 @@ func (c *DockerCollectorManager) TearDown() error {
 	}
 
 	if !isRunning {
-		c.captureLogs("collector")
+		logs, logsErr := c.captureLogs("collector")
+
 		// Check if collector container segfaulted or exited with error
 		exitCode, err := c.executor.ExitCode(executor.ContainerFilter{
 			Name: "collector",
 		})
-		if err != nil {
-			return fmt.Errorf("Failed to get container exit code: %s", err)
-		}
-		if exitCode != 0 {
-			return fmt.Errorf("Collector container has non-zero exit code (%d)", exitCode)
+		if err != nil || exitCode != 0 {
+			logsEnd := ""
+			if logsErr == nil {
+				logsSplit := strings.Split(logs, "\n")
+				logsEnd = fmt.Sprintf("\ncollector logs:\n%s\n",
+					strings.Join(logsSplit[max(0, len(logsSplit)-24):], "\n"))
+			}
+			if err != nil {
+				return fmt.Errorf("Failed to get container exit code%s: %w", logsEnd, err)
+			}
+			return fmt.Errorf("Collector container has non-zero exit code (%d)%s", exitCode, logsEnd)
 		}
 	} else {
 		c.stopContainer("collector")
@@ -118,69 +118,47 @@ func (c *DockerCollectorManager) IsRunning() (bool, error) {
 	return c.executor.IsContainerRunning("collector")
 }
 
-// These two methods might be useful in the future. I used them for debugging
-func (c *DockerCollectorManager) getContainers() (string, error) {
-	cmd := []string{executor.RuntimeCommand, "container", "ps"}
-	containers, err := c.executor.Exec(cmd...)
-
-	return containers, err
-}
-
-func (c *DockerCollectorManager) getAllContainers() (string, error) {
-	cmd := []string{executor.RuntimeCommand, "container", "ps", "-a"}
-	containers, err := c.executor.Exec(cmd...)
-
-	return containers, err
-}
-
-func (c *DockerCollectorManager) launchCollector() error {
-	cmd := []string{executor.RuntimeCommand, "run",
-		"--name", "collector",
-		"--privileged",
-		"--network=host"}
-
-	if !c.bootstrapOnly {
-		cmd = append(cmd, "-d")
-	}
-
-	for dst, src := range c.mounts {
-		mount := src + ":" + dst
-		if src == "" {
-			// allows specification of anonymous volumes
-			mount = dst
-		}
-		cmd = append(cmd, "-v", mount)
-	}
-
-	for k, v := range c.env {
-		cmd = append(cmd, "--env", k+"="+v)
+func (c *DockerCollectorManager) createCollectorStartConfig() (config.ContainerStartConfig, error) {
+	startConfig := config.ContainerStartConfig{
+		Name:        "collector",
+		Image:       config.Images().CollectorImage(),
+		Privileged:  true,
+		NetworkMode: "host",
+		Mounts:      c.mounts,
+		Env:         c.env,
 	}
 
 	configJson, err := json.Marshal(c.config)
 	if err != nil {
-		return err
+		return config.ContainerStartConfig{}, err
 	}
-
-	cmd = append(cmd, "--env", "COLLECTOR_CONFIG="+string(configJson))
-	cmd = append(cmd, config.Images().CollectorImage())
+	startConfig.Env["COLLECTOR_CONFIG"] = string(configJson)
 
 	if c.bootstrapOnly {
-		cmd = append(cmd, "exit", "0")
+		startConfig.Command = []string{"exit", "0"}
 	}
+	return startConfig, nil
+}
 
-	output, err := c.executor.Exec(cmd...)
+func (c *DockerCollectorManager) launchCollector() error {
+	startConfig, err := c.createCollectorStartConfig()
+	if err != nil {
+		return err
+	}
+	output, err := c.executor.StartContainer(startConfig)
 	c.CollectorOutput = output
-
+	if err != nil {
+		return err
+	}
 	outLines := strings.Split(output, "\n")
 	c.containerID = common.ContainerShortID(string(outLines[len(outLines)-1]))
 	return err
 }
 
 func (c *DockerCollectorManager) captureLogs(containerName string) (string, error) {
-	logs, err := c.executor.Exec(executor.RuntimeCommand, "logs", containerName)
+	logs, err := c.executor.GetContainerLogs(containerName)
 	if err != nil {
-		fmt.Printf(executor.RuntimeCommand+" logs error (%v) for container %s\n", err, containerName)
-		return "", err
+		return "", log.Error("logs error (%v) for container %s\n", err, containerName)
 	}
 
 	logFile, err := common.PrepareLog(c.testName, "collector.log")

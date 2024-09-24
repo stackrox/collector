@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
+	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
@@ -66,12 +67,12 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	}
 
 	// invokes default nginx
-	containerID, err := s.launchContainer("nginx", image_store.ImageByKey("nginx"))
+	containerID, err := s.Executor().StartContainer(config.ContainerStartConfig{Name: "nginx", Image: image_store.ImageByKey("nginx")})
 	s.Require().NoError(err)
 	s.ServerContainer = containerID[0:12]
 
 	// invokes another container
-	containerID, err = s.launchContainer("nginx-curl", scheduled_curls_image, "sleep", "300")
+	containerID, err = s.Executor().StartContainer(config.ContainerStartConfig{Name: "nginx-curl", Image: scheduled_curls_image, Command: []string{"sleep", "300"}})
 	s.Require().NoError(err)
 	s.ClientContainer = containerID[0:12]
 
@@ -93,7 +94,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	totalTime := (s.SleepBetweenCurlTime*s.NumIter+s.SleepBetweenIterations)*s.NumMetaIter + s.AfterglowPeriod + 10
-	time.Sleep(time.Duration(totalTime) * time.Second)
+	common.Sleep(time.Duration(totalTime) * time.Second)
 }
 
 func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {

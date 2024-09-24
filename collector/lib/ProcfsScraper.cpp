@@ -24,12 +24,16 @@ namespace {
 
 // rep_find applies find n times, always advancing past the found character in each subsequent application.
 std::string_view::size_type rep_find(int n, std::string_view str, char c) {
-  if (n <= 0) return std::string_view::npos;
+  if (n <= 0) {
+    return std::string_view::npos;
+  }
 
   std::string_view::size_type pos = 0;
   while (--n > 0) {
     pos = str.find(c, pos);
-    if (pos == std::string_view::npos) return std::string_view::npos;
+    if (pos == std::string_view::npos) {
+      return std::string_view::npos;
+    }
     pos++;
   }
   return str.find(c, pos);
@@ -37,9 +41,10 @@ std::string_view::size_type rep_find(int n, std::string_view str, char c) {
 
 // nextfield advances to the next field in a space-delimited string.
 const char* nextfield(const char* p, const char* endp) {
-  while (p < endp && *p && !std::isspace(*p)) p++;
-  while (p < endp && *p && std::isspace(*++p))
-    ;
+  while (p < endp && *p && !std::isspace(*p)) {
+    p++;
+  }
+  while (p < endp && *p && std::isspace(*++p));
   return (p < endp && *p) ? p : nullptr;
 }
 
@@ -58,18 +63,28 @@ const char* rep_nextfield(int n, const char* p, const char* endp) {
 bool ReadINode(int dirfd, const char* path, const char* prefix, ino_t* inode) {
   char linkbuf[64];
   ssize_t nread = readlinkat(dirfd, path, linkbuf, sizeof(linkbuf));
-  if (nread <= 0 || nread >= ssizeof(linkbuf) - 1) return false;
+  if (nread <= 0 || nread >= ssizeof(linkbuf) - 1) {
+    return false;
+  }
   linkbuf[nread] = '\0';
-  if (linkbuf[nread - 1] != ']') return false;
+  if (linkbuf[nread - 1] != ']') {
+    return false;
+  }
 
   size_t prefix_len = std::strlen(prefix);
-  if (std::strncmp(linkbuf, prefix, prefix_len) != 0) return false;
-  if (std::strncmp(linkbuf + prefix_len, ":[", 2) != 0) return false;
+  if (std::strncmp(linkbuf, prefix, prefix_len) != 0) {
+    return false;
+  }
+  if (std::strncmp(linkbuf + prefix_len, ":[", 2) != 0) {
+    return false;
+  }
 
   // Parse inode value as decimal
   char* endp;
   uintmax_t parsed = std::strtoumax(linkbuf + prefix_len + 2, &endp, 10);
-  if (*endp != ']') return false;
+  if (*endp != ']') {
+    return false;
+  }
   *inode = static_cast<ino_t>(parsed);
   return true;
 }
@@ -113,10 +128,14 @@ bool GetSocketINodes(int dirfd, uint64_t pid, UnorderedSet<SocketInfo>* sock_ino
   }
 
   while (auto curr = fd_dir.read()) {
-    if (!std::isdigit(curr->d_name[0])) continue;  // only look at fd entries, ignore '.' and '..'.
+    if (!std::isdigit(curr->d_name[0])) {
+      continue;  // only look at fd entries, ignore '.' and '..'.
+    }
 
     ino_t inode;
-    if (!ReadINode(fd_dir.fd(), curr->d_name, "socket", &inode)) continue;  // ignore non-socket fds
+    if (!ReadINode(fd_dir.fd(), curr->d_name, "socket", &inode)) {
+      continue;  // ignore non-socket fds
+    }
 
     sock_inodes->emplace(inode, pid);
   }
@@ -128,15 +147,21 @@ bool GetSocketINodes(int dirfd, uint64_t pid, UnorderedSet<SocketInfo>* sock_ino
 // the cgroup.
 std::optional<std::string> GetContainerID(int dirfd) {
   FileHandle cgroups_file(FDHandle(openat(dirfd, "cgroup", O_RDONLY)), "r");
-  if (!cgroups_file.valid()) return {};
+  if (!cgroups_file.valid()) {
+    return {};
+  }
 
   thread_local char* linebuf;
   thread_local size_t linebuf_cap;
 
   ssize_t line_len;
   while ((line_len = getline(&linebuf, &linebuf_cap, cgroups_file.get())) != -1) {
-    if (!line_len) continue;
-    if (linebuf[line_len - 1] == '\n') line_len--;
+    if (!line_len) {
+      continue;
+    }
+    if (linebuf[line_len - 1] == '\n') {
+      line_len--;
+    }
 
     std::string_view line(linebuf, line_len);
     auto short_container_id = ExtractContainerID(line);
@@ -154,13 +179,17 @@ std::optional<std::string> GetContainerID(int dirfd) {
 
 // IsHexChar checks if the given character is an (uppercase) hexadecimal character.
 bool IsHexChar(char c) {
-  if (std::isdigit(c)) return true;
+  if (std::isdigit(c)) {
+    return true;
+  }
   return c >= 'A' && c <= 'F';
 }
 
 // HexCharToVal returns the numeric value of a single (uppercase) hexadecimal digit.
 unsigned char HexCharToVal(char c) {
-  if (std::isdigit(c)) return c - '0';
+  if (std::isdigit(c)) {
+    return c - '0';
+  }
   return 10 + (c - 'A');
 }
 
@@ -176,7 +205,9 @@ int ReadHexBytes(const char* p, const char* endp, void* buf, int chunk_size, int
   for (; i < num_bytes && p < endp - 2; i++) {
     char high = *p++;
     char low = *p++;
-    if (!IsHexChar(high) || !IsHexChar(low)) break;
+    if (!IsHexChar(high) || !IsHexChar(low)) {
+      break;
+    }
     *bbuf++ = HexCharToVal(high) << 4 | HexCharToVal(low);
 
     if (reverse && i % chunk_size == chunk_size - 1) {
@@ -217,13 +248,19 @@ const char* ParseEndpoint(const char* p, const char* endp, Address::Family famil
 
   int addr_len = Address::Length(family);
   int nread = ReadHexBytes(p, endp, addr_data.data(), 4, addr_len / 4, needs_byteorder_swap);
-  if (nread != addr_len) return nullptr;
+  if (nread != addr_len) {
+    return nullptr;
+  }
   p += nread * 2;
-  if (*p++ != ':') return nullptr;
+  if (*p++ != ':') {
+    return nullptr;
+  }
 
   uint16_t port;
   nread = ReadHexBytes(p, endp, &port, sizeof(port), 1, needs_byteorder_swap);
-  if (nread != sizeof(port)) return nullptr;
+  if (nread != sizeof(port)) {
+    return nullptr;
+  }
   p += nread * 2;
 
   *endpoint = Endpoint(Address(family, addr_data), port);
@@ -233,35 +270,53 @@ const char* ParseEndpoint(const char* p, const char* endp, Address::Family famil
 // ParseConnLine parses an entire line in the `net/tcp[6]` file.
 bool ParseConnLine(const char* p, const char* endp, Address::Family family, ConnLineData* data) {
   // Strip leading spaces.
-  while (std::isspace(*p)) p++;
+  while (std::isspace(*p)) {
+    p++;
+  }
 
   // 0: sl
 
   p = nextfield(p, endp);
-  if (!p) return false;
+  if (!p) {
+    return false;
+  }
   // 1: local_address
   p = ParseEndpoint(p, endp, family, &data->local);
-  if (!p) return false;
+  if (!p) {
+    return false;
+  }
 
   p = nextfield(p, endp);
-  if (!p) return false;
+  if (!p) {
+    return false;
+  }
   // 2: rem_address
   p = ParseEndpoint(p, endp, family, &data->remote);
-  if (!p) return false;
+  if (!p) {
+    return false;
+  }
 
   p = nextfield(p, endp);
-  if (!p) return false;
+  if (!p) {
+    return false;
+  }
   // 3: st
   int nread = ReadHexBytes(p, endp, &data->state, 1, 1, false);
-  if (nread != 1) return false;
+  if (nread != 1) {
+    return false;
+  }
   p += nread * 2;
 
   p = rep_nextfield(6, p, endp);
-  if (!p) return false;
+  if (!p) {
+    return false;
+  }
   // 9: inode
   char* parse_endp;
   uintmax_t inode = strtoumax(p, &parse_endp, 10);
-  if (*parse_endp && !std::isspace(*parse_endp)) return false;
+  if (*parse_endp && !std::isspace(*parse_endp)) {
+    return false;
+  }
   data->inode = static_cast<ino_t>(inode);
 
   return true;
@@ -270,11 +325,15 @@ bool ParseConnLine(const char* p, const char* endp, Address::Family family, Conn
 // LocalIsServer returns true if the connection between local and remote looks like the local end is the server (taking
 // the set of listening endpoints into account), and false otherwise.
 bool LocalIsServer(const Endpoint& local, const Endpoint& remote, const UnorderedSet<Endpoint>& listen_endpoints) {
-  if (Contains(listen_endpoints, local)) return true;
+  if (Contains(listen_endpoints, local)) {
+    return true;
+  }
 
   // Check if we are listening on the given port on any interface.
   Endpoint local_any(Address::Any(local.address().family()), local.port());
-  if (Contains(listen_endpoints, local_any)) return true;
+  if (Contains(listen_endpoints, local_any)) {
+    return true;
+  }
 
   // We didn't find an entry for listening on this address, but closing a listen socket does not terminate established
   // connections. We hence have to resort to inspecting the port number to see which one seems more likely to be
@@ -287,13 +346,17 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
                              UnorderedMap<ino_t, ConnInfo>* connections, UnorderedMap<ino_t, EndpointInfo>* listen_endpoints) {
   char line[512];
 
-  if (!std::fgets(line, sizeof(line), f)) return false;  // ignore the first *header) line.
+  if (!std::fgets(line, sizeof(line), f)) {
+    return false;  // ignore the first *header) line.
+  }
 
   UnorderedSet<Endpoint> all_listen_endpoints;
 
   while (std::fgets(line, sizeof(line), f)) {
     ConnLineData data;
-    if (!ParseConnLine(line, line + sizeof(line), family, &data)) continue;
+    if (!ParseConnLine(line, line + sizeof(line), family, &data)) {
+      continue;
+    }
     if (data.state == TCP_LISTEN) {  // listen socket
       all_listen_endpoints.insert(data.local);
       if (data.inode && listen_endpoints) {
@@ -307,7 +370,9 @@ bool ReadConnectionsFromFile(Address::Family family, L4Proto l4proto, std::FILE*
       continue;
     }
 
-    if (!data.inode) continue;  // socket was closed or otherwise unavailable
+    if (!data.inode) {
+      continue;  // socket was closed or otherwise unavailable
+    }
     auto& conn_info = (*connections)[data.inode];
     conn_info.local = data.local;
     conn_info.remote = data.remote;
@@ -367,15 +432,21 @@ void ResolveSocketInodes(const SocketsByContainer& sockets_by_container, const C
     const auto& container_id = container_sockets.first;
     for (const auto& netns_sockets : container_sockets.second) {
       const auto* ns_network_data = Lookup(conns_by_ns, netns_sockets.first);
-      if (!ns_network_data) continue;
+      if (!ns_network_data) {
+        continue;
+      }
       for (const auto& socket : netns_sockets.second) {
         if (const auto* conn = Lookup(ns_network_data->connections, socket.inode())) {
           Connection connection(container_id, conn->local, conn->remote, conn->l4proto, conn->is_server);
-          if (!IsRelevantConnection(connection)) continue;
+          if (!IsRelevantConnection(connection)) {
+            continue;
+          }
           connections->push_back(std::move(connection));
         } else if (listen_endpoints) {
           if (const auto* ep = Lookup(ns_network_data->listen_endpoints, socket.inode())) {
-            if (!IsRelevantEndpoint(ep->endpoint)) continue;
+            if (!IsRelevantEndpoint(ep->endpoint)) {
+              continue;
+            }
 
             std::shared_ptr<IProcess> process;
 
@@ -408,7 +479,9 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
 
   // Read all the information from proc.
   while (auto curr = procdir.read()) {
-    if (!std::isdigit(curr->d_name[0])) continue;  // only look for <pid> entries
+    if (!std::isdigit(curr->d_name[0])) {
+      continue;  // only look for <pid> entries
+    }
     long long pid = strtoll(curr->d_name, 0, 10);
 
     FDHandle dirfd = procdir.openat(curr->d_name, O_RDONLY);
@@ -482,8 +555,9 @@ bool ReadProcessExe(const char* process_id, int dirfd, std::string& comm, std::s
 
   comm = exe_path = buffer;
 
-  if (buffer[0] == '/')
+  if (buffer[0] == '/') {
     comm = strrchr(buffer, '/') + 1;
+  }
 
   return true;
 }

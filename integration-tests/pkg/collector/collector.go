@@ -21,9 +21,5 @@ type Manager interface {
 }
 
 func New(e executor.Executor, name string) Manager {
-	k8sExec, ok := e.(*executor.K8sExecutor)
-	if ok {
-		return newK8sManager(*k8sExec, name)
-	}
-	return newDockerManager(e, name)
+	return NewDockerCollectorManager(e, name)
 }

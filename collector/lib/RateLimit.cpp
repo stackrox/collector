@@ -22,15 +22,21 @@ int64_t Limiter::Tokens(TokenBucket* b) {
 }
 
 bool Limiter::AllowN(TokenBucket* b, int64_t n) {
-  if (!b->last_time) fill_bucket(b);
+  if (!b->last_time) {
+    fill_bucket(b);
+  }
 
   int64_t refill = refill_count(b);
   b->tokens += refill * burst_size_;
   b->last_time += refill * refill_time_;
 
-  if (b->tokens >= burst_size_) fill_bucket(b);
+  if (b->tokens >= burst_size_) {
+    fill_bucket(b);
+  }
 
-  if (n > b->tokens) return false;
+  if (n > b->tokens) {
+    return false;
+  }
 
   b->tokens -= n;
 

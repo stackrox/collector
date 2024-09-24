@@ -73,8 +73,16 @@ func (s *DuplicateEndpointsTestSuite) TearDownSuite() {
 // The test expects only two reported endpoints.
 func (s *DuplicateEndpointsTestSuite) TestDuplicateEndpoints() {
 	image := config.Images().QaImageByKey("qa-socat")
+	err := s.Executor().PullImage(image)
+	s.Require().NoError(err)
+
 	// (1) start a process that opens port 80
-	containerID, err := s.launchContainer("socat", image, "TCP-LISTEN:80,fork", "STDOUT")
+	containerID, err := s.Executor().StartContainer(
+		config.ContainerStartConfig{
+			Name:    "socat",
+			Image:   image,
+			Command: []string{"TCP-LISTEN:80,fork", "STDOUT"},
+		})
 	s.Require().NoError(err)
 
 	containerID = common.ContainerShortID(containerID)
@@ -95,7 +103,7 @@ func (s *DuplicateEndpointsTestSuite) TestDuplicateEndpoints() {
 	s.Sensor().ExpectEndpointsN(s.T(), containerID, gScrapeInterval*time.Second, 2)
 
 	// (5) kill the process after a delay
-	time.Sleep(2 * time.Second)
+	common.Sleep(2 * time.Second)
 	s.killSocatProcess(81)
 
 	// (6) start an idential process
@@ -104,7 +112,7 @@ func (s *DuplicateEndpointsTestSuite) TestDuplicateEndpoints() {
 
 	// (7) wait for another scrape interval, and verify we have still only
 	// seen 2 endpoints
-	time.Sleep(gScrapeInterval * time.Second)
+	common.Sleep(gScrapeInterval * time.Second)
 	s.Assert().Len(s.Sensor().Endpoints(containerID), 2, "Got more endpoints than expected")
 
 	// additional final check to ensure there are no additional reports

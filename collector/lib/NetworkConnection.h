@@ -227,7 +227,9 @@ class IPNet {
   }
 
   size_t Hash() const {
-    if (is_addr_) return HashAll(address_.array(), mask_, bits_);
+    if (is_addr_) {
+      return HashAll(address_.array(), mask_, bits_);
+    }
     return HashAll(mask_, bits_);
   }
 
@@ -411,11 +413,19 @@ inline bool IsRelevantEndpoint(const Endpoint& ep) {
 // operating systems adhere to the IANA-recommended range. Therefore, the return value is not a bool, but instead an
 // int which indicates the confidence that the port is in fact ephemeral.
 inline int IsEphemeralPort(uint16_t port) {
-  if (port >= 49152) return 4;                 // IANA range
-  if (port >= 32768) return 3;                 // Modern Linux kernel range
-  if (port >= 1025 && port <= 5000) return 2;  // FreeBSD (partial) + Windows <=XP range
-  if (port == 1024) return 1;                  // FreeBSD
-  return 0;                                    // not ephemeral according to any range
+  if (port >= 49152) {
+    return 4;  // IANA range
+  }
+  if (port >= 32768) {
+    return 3;  // Modern Linux kernel range
+  }
+  if (port >= 1025 && port <= 5000) {
+    return 2;  // FreeBSD (partial) + Windows <=XP range
+  }
+  if (port == 1024) {
+    return 1;  // FreeBSD
+  }
+  return 0;  // not ephemeral according to any range
 }
 
 // PrivateIPv4Networks return private IPv4 networks.

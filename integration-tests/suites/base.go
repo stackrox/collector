@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -15,9 +16,9 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
-	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 	"github.com/stackrox/collector/integration-tests/pkg/mock_sensor"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 )
@@ -32,7 +33,7 @@ const (
 
 	containerStatsName = "container-stats"
 
-	defaultWaitTickSeconds = 5 * time.Second
+	defaultWaitTickSeconds = 1 * time.Second
 )
 
 type IntegrationTestSuiteBase struct {
@@ -57,7 +58,6 @@ type ContainerStat struct {
 type PerformanceResult struct {
 	TestName         string
 	Timestamp        string
-	InstanceType     string
 	VmConfig         string
 	CollectionMethod string
 	Metrics          map[string]float64
@@ -90,10 +90,10 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *col
 		_, err := s.waitForContainerToBecomeHealthy(
 			"collector",
 			s.Collector().ContainerID(),
-			defaultWaitTickSeconds, 5*time.Minute)
+			defaultWaitTickSeconds, 1*time.Minute)
 		s.Require().NoError(err)
 	} else {
-		fmt.Println("No HealthCheck found, do not wait for collector to become healthy")
+		log.Error("No HealthCheck found, do not wait for collector to become healthy")
 
 		// No way to figure out when all the services up and running, skip this
 		// phase.
@@ -105,7 +105,7 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *col
 			// Self-check process is not going to be sent via GRPC, instead
 			// create at least one canary process to make sure everything is
 			// fine.
-			fmt.Println("Spawn a canary process")
+			log.Info("Spawn a canary process")
 			_, err = s.execContainer("collector", []string{"echo"})
 			s.Require().NoError(err)
 		})
@@ -193,12 +193,16 @@ func (s *IntegrationTestSuiteBase) GetContainerStats() []ContainerStat {
 		}
 
 		logLines := strings.Split(logs, "\n")
-		for _, line := range logLines {
+		for i, line := range logLines {
 			var stat ContainerStat
 
 			_ = json.Unmarshal([]byte(line), &stat)
 
-			s.stats = append(s.stats, stat)
+			if stat.Name != "" {
+				s.stats = append(s.stats, stat)
+			} else {
+				log.Warn("missing name for stat line %d of %d", i, len(logLines))
+			}
 		}
 
 		s.cleanupContainers(containerStatsName)
@@ -249,7 +253,7 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats() {
 		s.AddMetric(fmt.Sprintf("%s_cpu_mean", name), stat.Mean(cpu, nil))
 		s.AddMetric(fmt.Sprintf("%s_cpu_stddev", name), stat.StdDev(cpu, nil))
 
-		fmt.Printf("CPU: Container %s, Mean %v, StdDev %v\n",
+		log.Trace("CPU: Container %s, Mean %v, StdDev %v",
 			name, stat.Mean(cpu, nil), stat.StdDev(cpu, nil))
 	}
 
@@ -257,7 +261,7 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats() {
 		s.AddMetric(fmt.Sprintf("%s_mem_mean", name), stat.Mean(mem, nil))
 		s.AddMetric(fmt.Sprintf("%s_mem_stddev", name), stat.StdDev(mem, nil))
 
-		fmt.Printf("Mem: Container %s, Mean %v MiB, StdDev %v MiB\n",
+		log.Trace("Mem: Container %s, Mean %v MiB, StdDev %v MiB",
 			name, stat.Mean(mem, nil), stat.StdDev(mem, nil))
 	}
 }
@@ -268,7 +272,6 @@ func (s *IntegrationTestSuiteBase) WritePerfResults() {
 	perf := PerformanceResult{
 		TestName:         s.T().Name(),
 		Timestamp:        time.Now().Format("2006-01-02 15:04:05"),
-		InstanceType:     config.VMInfo().InstanceType,
 		VmConfig:         config.VMInfo().Config,
 		CollectionMethod: config.CollectionMethod(),
 		Metrics:          s.metrics,
@@ -280,7 +283,7 @@ func (s *IntegrationTestSuiteBase) WritePerfResults() {
 	perfJson, _ := json.Marshal(perf)
 	perfFilename := filepath.Join(config.LogPath(), "perf.json")
 
-	fmt.Printf("Writing %s\n", perfFilename)
+	log.Info("Writing %s\n", perfFilename)
 	f, err := os.OpenFile(perfFilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	s.Require().NoError(err)
 	defer f.Close()
@@ -308,16 +311,6 @@ func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) []string {
 	return logLines
 }
 
-func (s *IntegrationTestSuiteBase) launchContainer(name string, args ...string) (string, error) {
-	cmd := []string{executor.RuntimeCommand, "run", "-d", "--name", name}
-	cmd = append(cmd, args...)
-
-	output, err := s.Executor().Exec(cmd...)
-
-	outLines := strings.Split(output, "\n")
-	return outLines[len(outLines)-1], err
-}
-
 // Wait for a container to become a certain status.
 //   - tickSeconds -- how often to check for the status
 //   - timeoutThreshold -- the overall time limit for waiting,
@@ -329,12 +322,6 @@ func (s *IntegrationTestSuiteBase) waitForContainerStatus(
 	tickSeconds time.Duration,
 	timeoutThreshold time.Duration,
 	filter string) (bool, error) {
-
-	cmd := []string{
-		executor.RuntimeCommand, "ps", "-qa",
-		"--filter", "id=" + containerID,
-		"--filter", filter,
-	}
 
 	start := time.Now()
 	tick := time.Tick(tickSeconds)
@@ -348,23 +335,21 @@ func (s *IntegrationTestSuiteBase) waitForContainerStatus(
 	for {
 		select {
 		case <-tick:
-			output, err := s.Executor().Exec(cmd...)
-			outLines := strings.Split(output, "\n")
-			lastLine := outLines[len(outLines)-1]
-			if lastLine == common.ContainerShortID(containerID) {
-				return true, nil
-			}
+			found, err := s.Executor().IsContainerFoundFiltered(containerID, filter)
 			if err != nil {
-				fmt.Printf("Retrying waitForContainerStatus(%s, %s): Error: %v\n",
+				log.Error("Retrying waitForContainerStatus(%s, %s): Error: %v\n",
 					containerName, containerID, err)
 			}
+			if found {
+				return true, nil
+			}
 		case <-timeout:
-			fmt.Printf("Timed out waiting for container %s to become %s, elapsed Time: %s\n",
+			log.Error("Timed out waiting for container %s to become %s, elapsed Time: %s\n",
 				containerName, filter, time.Since(start))
 			return false, fmt.Errorf("Timeout waiting for container %s to become %s after %v",
 				containerName, filter, timeoutThreshold)
 		case <-tickElapsed:
-			fmt.Printf("Waiting for container %s to become %s, elapsed time: %s\n",
+			log.Error("Waiting for container %s to become %s, elapsed time: %s\n",
 				containerName, filter, time.Since(start))
 		}
 	}
@@ -378,27 +363,14 @@ func (s *IntegrationTestSuiteBase) findContainerHealthCheck(
 	containerName string,
 	containerID string) (bool, error) {
 
-	cmd := []string{
-		executor.RuntimeCommand, "inspect", "-f",
-		"'{{ .Config.Healthcheck }}'", containerID,
-	}
-
-	output, err := s.Executor().Exec(cmd...)
+	healthcheck, err := s.Executor().GetContainerHealthCheck(containerName)
 	if err != nil {
 		return false, err
 	}
 
-	outLines := strings.Split(output, "\n")
-	lastLine := outLines[len(outLines)-1]
-
-	// Clearly no HealthCheck section
-	if lastLine == "<nil>" {
-		return false, nil
-	}
-
 	// If doesn't contain an expected command, do not consider it to be a valid
 	// health check
-	if strings.Contains(lastLine, "CMD-SHELL /usr/local/bin/status-check.sh") {
+	if strings.Contains(healthcheck, "CMD-SHELL /usr/local/bin/status-check.sh") {
 		return true, nil
 	} else {
 		return false, nil
@@ -426,17 +398,14 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(
 }
 
 func (s *IntegrationTestSuiteBase) execContainer(containerName string, command []string) (string, error) {
-	cmd := []string{executor.RuntimeCommand, "exec", containerName}
-	cmd = append(cmd, command...)
-
-	return s.Executor().Exec(cmd...)
+	return s.Executor().ExecContainer(containerName, command)
 }
 
 func (s *IntegrationTestSuiteBase) execContainerShellScript(containerName string, shell string, script string, args ...string) (string, error) {
-	cmd := []string{executor.RuntimeCommand, "exec", "-i", containerName, shell, "-s"}
+	cmd := []string{shell, "-s"}
 	cmd = append(cmd, args...)
 
-	return s.Executor().ExecWithStdin(script, cmd...)
+	return s.Executor().ExecContainer(containerName, cmd)
 }
 
 func (s *IntegrationTestSuiteBase) cleanupContainers(containers ...string) {
@@ -459,56 +428,37 @@ func (s *IntegrationTestSuiteBase) removeContainers(containers ...string) {
 }
 
 func (s *IntegrationTestSuiteBase) containerLogs(containerName string) (string, error) {
-	return s.Executor().Exec(executor.RuntimeCommand, "logs", containerName)
+	return s.Executor().GetContainerLogs(containerName)
 }
 
 func (s *IntegrationTestSuiteBase) getIPAddress(containerName string) (string, error) {
-	args := []string{
-		executor.RuntimeCommand,
-		"inspect",
-		"--format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'",
-		containerName,
-	}
-
-	stdoutStderr, err := s.Executor().Exec(args...)
-	return strings.Replace(string(stdoutStderr), "'", "", -1), err
+	return s.Executor().GetContainerIP(containerName)
 }
 
 func (s *IntegrationTestSuiteBase) getPort(containerName string) (string, error) {
-	args := []string{
-		executor.RuntimeCommand,
-		"inspect",
-		"--format='{{json .NetworkSettings.Ports}}'",
-		containerName,
-	}
-
-	stdoutStderr, err := s.Executor().Exec(args...)
-	if err != nil {
-		return "", err
-	}
-	rawString := strings.Trim(string(stdoutStderr), "'\n")
-	var portMap map[string]interface{}
-	err = json.Unmarshal([]byte(rawString), &portMap)
-	if err != nil {
-		return "", err
-	}
-
-	for k := range portMap {
-		return strings.Split(k, "/")[0], nil
-	}
-
-	return "", fmt.Errorf("no port mapping found: %v %v", rawString, portMap)
+	return s.Executor().GetContainerPort(containerName)
 }
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
 	image := config.Images().QaImageByKey("performance-stats")
-	args := []string{"-v", executor.RuntimeSocket + ":/var/run/docker.sock", image}
-
 	err := s.Executor().PullImage(image)
 	s.Require().NoError(err)
 
-	_, err = s.launchContainer(containerStatsName, args...)
+	_, err = s.executor.StartContainer(config.ContainerStartConfig{
+		Name:   containerStatsName,
+		Image:  image,
+		Mounts: map[string]string{"/var/run/docker.sock": config.RuntimeInfo().Socket}})
 	s.Require().NoError(err)
+}
+
+func (s *IntegrationTestSuiteBase) execShellCommand(command string) error {
+	log.Info("[exec] %s", command)
+	cmd := exec.Command("sh", "-c", command)
+	_, err := cmd.Output()
+	if err != nil {
+		log.Info("[exec]: %v", err)
+	}
+	return err
 }
 
 func (s *IntegrationTestSuiteBase) waitForFileToBeDeleted(file string) error {
@@ -526,10 +476,7 @@ func (s *IntegrationTestSuiteBase) waitForFileToBeDeleted(file string) error {
 					return nil
 				}
 			} else {
-				output, _ := s.Executor().Exec("stat", file)
-				if strings.Contains(output, "No such file or directory") {
-					return nil
-				}
+				return errors.New("waitForFileToBeDeleted only supported local hosts")
 			}
 		}
 	}

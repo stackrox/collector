@@ -90,8 +90,7 @@ virtual_machines:
     families:
       - cos-stable
       - cos-beta
-      # ROX-24938: disabled until the verifier issue is fixed.
-      # - cos-dev
+      - cos-dev
 
   sles:
     project: suse-cloud
@@ -136,6 +135,13 @@ virtual_machines:
 
   fedora-coreos:
     project: fedora-coreos-cloud
+    username: core
+    families:
+      - fedora-coreos-stable
+
+  fedora-coreos-large-node:
+    project: fedora-coreos-cloud
+    machine_type: n2-standard-128
     username: core
     families:
       - fedora-coreos-stable

@@ -38,13 +38,16 @@ bool NetworkConnectionInfoServiceComm::WaitForConnectionReady(const std::functio
 
 void NetworkConnectionInfoServiceComm::TryCancel() {
   WITH_LOCK(context_mutex_) {
-    if (context_) context_->TryCancel();
+    if (context_) {
+      context_->TryCancel();
+    }
   }
 }
 
 std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> NetworkConnectionInfoServiceComm::PushNetworkConnectionInfoOpenStream(std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) {
-  if (!context_)
+  if (!context_) {
     ResetClientContext();
+  }
 
   if (channel_) {
     return DuplexClient::CreateWithReadCallback(

@@ -22,7 +22,9 @@ using MappedType = WithConst<typename M::mapped_type, M>;
 template <typename C>
 ValueType<C>* Find(C& container, const typename C::key_type& key) {
   auto it = container.find(key);
-  if (it == container.end()) return nullptr;
+  if (it == container.end()) {
+    return nullptr;
+  }
   return &*it;
 }
 
@@ -37,7 +39,9 @@ bool Contains(const C& container, const typename C::key_type& key) {
 template <typename M>
 MappedType<M>* Lookup(M& map, const typename M::key_type& key) {
   auto* val = Find(map, key);
-  if (!val) return nullptr;
+  if (!val) {
+    return nullptr;
+  }
   return &val->second;
 }
 

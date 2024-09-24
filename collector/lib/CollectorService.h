@@ -26,7 +26,7 @@ class CollectorService {
   system_inspector::Service system_inspector_;
 };
 
-bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServer, const CollectorConfig& config);
+bool SetupKernelDriver(CollectorService& collector, const CollectorConfig& config);
 
 }  // namespace collector
 

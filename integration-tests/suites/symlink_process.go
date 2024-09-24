@@ -3,6 +3,7 @@ package suites
 import (
 	"time"
 
+	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
@@ -32,20 +33,17 @@ func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
 
 	processImage := getProcessListeningOnPortsImage()
 
-	actionFile := "/tmp/action_file_ln.txt"
-	_, err := s.executor.Exec("sh", "-c", "rm "+actionFile+" || true")
-
-	containerID, err := s.launchContainer("process-ports", "-v", "/tmp:/tmp", "--entrypoint", "./plop", processImage, actionFile)
+	containerID, err := s.Executor().StartContainer(
+		config.ContainerStartConfig{
+			Name:  "process-ports",
+			Image: processImage,
+			Entrypoint: []string{
+				"./plop", "--app", "plop.py", "run", "-h", "0.0.0.0",
+			},
+		})
 	s.Require().NoError(err)
 
 	s.serverContainer = common.ContainerShortID(containerID)
-
-	_, err = s.executor.Exec("sh", "-c", "echo open 9092 > "+actionFile)
-	s.Require().NoError(err)
-	err = s.waitForFileToBeDeleted(actionFile)
-	s.Require().NoError(err)
-
-	time.Sleep(6 * time.Second)
 }
 
 func (s *SymbolicLinkProcessTestSuite) TearDownSuite() {
@@ -70,5 +68,6 @@ func (s *SymbolicLinkProcessTestSuite) TestSymbolicLinkProcess() {
 	assert.Equal(s.T(), endpoints[0].Originator.ProcessName, lnProcess.Name)
 	assert.Equal(s.T(), endpoints[0].Originator.ProcessExecFilePath, lnProcess.ExePath)
 	assert.Equal(s.T(), endpoints[0].Originator.ProcessArgs, lnProcess.Args)
-	assert.Equal(s.T(), 9092, endpoints[0].Address.Port)
+	// 5000 is the port the flask app listens on for connections.
+	assert.Equal(s.T(), 5000, endpoints[0].Address.Port)
 }

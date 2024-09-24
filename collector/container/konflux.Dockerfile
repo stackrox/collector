@@ -48,6 +48,8 @@ ARG SOURCES_DIR=/staging
 
 COPY . ${SOURCES_DIR}
 
+ARG COLLECTOR_TAG
+RUN if [[ "$COLLECTOR_TAG" == "" ]]; then >&2 echo "error: required COLLECTOR_TAG arg is unset"; exit 6; fi
 ARG BUILD_DIR
 ARG SRC_ROOT_DIR=${BUILD_DIR}
 ARG CMAKE_BUILD_DIR
@@ -83,6 +85,7 @@ RUN ./builder/install/install-dependencies.sh && \
            -DDISABLE_PROFILING=${DISABLE_PROFILING} \
            -DUSE_VALGRIND=${USE_VALGRIND} \
            -DADDRESS_SANITIZER=${ADDRESS_SANITIZER} \
+           -DCOLLECTOR_VERSION=${COLLECTOR_TAG} \
            -DTRACE_SINSP_EVENTS=${TRACE_SINSP_EVENTS} && \
     cmake --build ${CMAKE_BUILD_DIR} --target all -- -j "${NPROCS:-4}" && \
     ctest -V --test-dir ${CMAKE_BUILD_DIR} && \
@@ -142,26 +145,16 @@ LABEL \
 ARG BUILD_DIR
 ARG CMAKE_BUILD_DIR
 
-ENV COLLECTOR_VERSION="${COLLECTOR_TAG}"
 ENV COLLECTOR_HOST_ROOT=/host
 
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
-COPY --from=builder ${BUILD_DIR}/collector/container/scripts /
 
-RUN mv /collector-wrapper.sh /usr/local/bin/ && \
-    chmod 700 bootstrap.sh && \
-    echo '/usr/local/lib' > /etc/ld.so.conf.d/usrlocallib.conf && \
-    ldconfig
+COPY LICENSE /licenses/LICENSE
 
 EXPOSE 8080 9090
 
-ENTRYPOINT ["/bootstrap.sh"]
-
-CMD collector-wrapper.sh \
-    --collector-config=$COLLECTOR_CONFIG \
-    --collection-method=$COLLECTION_METHOD \
-    --grpc-server=$GRPC_SERVER
+ENTRYPOINT ["collector"]
 
 LABEL \
     com.redhat.component="rhacs-collector-container" \

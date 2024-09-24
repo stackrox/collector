@@ -130,7 +130,9 @@ void CollectorService::RunForever() {
 
   CLOG(INFO) << "Shutting down collector.";
 
-  if (net_status_notifier) net_status_notifier->Stop();
+  if (net_status_notifier) {
+    net_status_notifier->Stop();
+  }
   // Shut down these first since they access the system inspector object.
   exporter.stop();
   server.close();
@@ -148,7 +150,7 @@ bool CollectorService::WaitForGRPCServer() {
   return WaitForChannelReady(config_.grpc_channel, interrupt);
 }
 
-bool SetupKernelDriver(CollectorService& collector, const std::string& GRPCServer, const CollectorConfig& config) {
+bool SetupKernelDriver(CollectorService& collector, const CollectorConfig& config) {
   auto& startup_diagnostics = StartupDiagnostics::GetInstance();
   std::string cm_name(CollectionMethodName(config.GetCollectionMethod()));
 
