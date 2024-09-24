@@ -68,5 +68,6 @@ func (s *SymbolicLinkProcessTestSuite) TestSymbolicLinkProcess() {
 	assert.Equal(s.T(), endpoints[0].Originator.ProcessName, lnProcess.Name)
 	assert.Equal(s.T(), endpoints[0].Originator.ProcessExecFilePath, lnProcess.ExePath)
 	assert.Equal(s.T(), endpoints[0].Originator.ProcessArgs, lnProcess.Args)
+	// 5000 is the port the flask app listens on for connections.
 	assert.Equal(s.T(), 5000, endpoints[0].Address.Port)
 }

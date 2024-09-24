@@ -17,8 +17,7 @@ import (
 type ProcessListeningOnPortTestSuite struct {
 	IntegrationTestSuiteBase
 	serverContainer string
-	serverIp        string
-	serverPort      string
+	serverURL       string
 }
 
 func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
@@ -50,11 +49,13 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 
 	s.serverContainer = common.ContainerShortID(containerID)
 
-	s.serverIp, err = s.getIPAddress(s.serverContainer)
+	ip, err := s.getIPAddress(s.serverContainer)
 	s.Require().NoError(err)
 
-	s.serverPort, err = s.getPort(s.serverContainer)
+	port, err := s.getPort(s.serverContainer)
 	s.Require().NoError(err)
+
+	s.serverURL = fmt.Sprintf("http://%s:%s", ip, port)
 
 	// Wait 5 seconds for the plop service to start
 	common.Sleep(5 * time.Second)
@@ -144,13 +145,13 @@ func getProcessListeningOnPortsImage() string {
 }
 
 func (s *ProcessListeningOnPortTestSuite) openPort(port uint16) {
-	res, err := http.Get(fmt.Sprintf("http://%s:%s/open/%d", s.serverIp, s.serverPort, port))
+	res, err := http.Get(fmt.Sprintf("%s/open/%d", s.serverURL, port))
 	s.Require().NoError(err)
 	s.Require().True(res.StatusCode == 200)
 }
 
 func (s *ProcessListeningOnPortTestSuite) closePort(port uint16) {
-	res, err := http.Get(fmt.Sprintf("http://%s:%s/close/%d", s.serverIp, s.serverPort, port))
+	res, err := http.Get(fmt.Sprintf("%s/close/%d", s.serverURL, port))
 	s.Require().NoError(err)
 	s.Require().True(res.StatusCode == 200)
 }
