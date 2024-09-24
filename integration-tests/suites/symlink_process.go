@@ -33,24 +33,17 @@ func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
 
 	processImage := getProcessListeningOnPortsImage()
 
-	actionFile := "/tmp/action_file_ln.txt"
-	s.updatePlopActionFile("", actionFile, false)
-
 	containerID, err := s.Executor().StartContainer(
 		config.ContainerStartConfig{
-			Name:       "process-ports",
-			Image:      processImage,
-			Mounts:     map[string]string{"/tmp": "/tmp"},
-			Entrypoint: []string{"./plop"},
-			Command:    []string{actionFile},
+			Name:  "process-ports",
+			Image: processImage,
+			Entrypoint: []string{
+				"./plop", "--app", "plop.py", "run", "-h", "0.0.0.0",
+			},
 		})
 	s.Require().NoError(err)
 
 	s.serverContainer = common.ContainerShortID(containerID)
-
-	s.updatePlopActionFile("open 9092", actionFile, true)
-
-	common.Sleep(6 * time.Second)
 }
 
 func (s *SymbolicLinkProcessTestSuite) TearDownSuite() {
@@ -75,5 +68,6 @@ func (s *SymbolicLinkProcessTestSuite) TestSymbolicLinkProcess() {
 	assert.Equal(s.T(), endpoints[0].Originator.ProcessName, lnProcess.Name)
 	assert.Equal(s.T(), endpoints[0].Originator.ProcessExecFilePath, lnProcess.ExePath)
 	assert.Equal(s.T(), endpoints[0].Originator.ProcessArgs, lnProcess.Args)
-	assert.Equal(s.T(), 9092, endpoints[0].Address.Port)
+	// 5000 is the port the flask app listens on for connections.
+	assert.Equal(s.T(), 5000, endpoints[0].Address.Port)
 }
