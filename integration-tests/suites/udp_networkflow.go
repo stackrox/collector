@@ -12,11 +12,6 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 )
 
-type UdpNetworkFlow struct {
-	IntegrationTestSuiteBase
-	DNSEnabled bool
-}
-
 const (
 	UDP_CLIENT = "udp-client"
 	UDP_SERVER = "udp-server"
@@ -25,6 +20,11 @@ const (
 	// multi destination/source tests
 	CONTAINER_COUNT = 3
 )
+
+type UdpNetworkFlow struct {
+	IntegrationTestSuiteBase
+	DNSEnabled bool
+}
 
 type containerData struct {
 	id   string
@@ -60,23 +60,19 @@ func (s *UdpNetworkFlow) SetupSuite() {
 }
 
 func (s *UdpNetworkFlow) AfterTest(suiteName, testName string) {
-	if testName == "TestMultipleDestinations" {
-		containers := []string{
-			UDP_CLIENT,
-		}
-		for i := 0; i < CONTAINER_COUNT; i++ {
-			containers = append(containers, fmt.Sprintf("%s-%d", UDP_SERVER, i))
-		}
-		s.cleanupContainers(containers...)
-	} else if testName == "TestMultipleSources" {
-		containers := []string{
-			UDP_SERVER,
-		}
-		for i := 0; i < CONTAINER_COUNT; i++ {
-			containers = append(containers, fmt.Sprintf("%s-%d", UDP_CLIENT, i))
-		}
-		s.cleanupContainers(containers...)
+	containers := []string{
+		UDP_CLIENT,
+		UDP_SERVER,
 	}
+
+	for i := 0; i < CONTAINER_COUNT; i++ {
+		containers = append(containers, fmt.Sprintf("%s-%d", UDP_SERVER, i))
+	}
+
+	for i := 0; i < CONTAINER_COUNT; i++ {
+		containers = append(containers, fmt.Sprintf("%s-%d", UDP_CLIENT, i))
+	}
+	s.cleanupContainers(containers...)
 }
 
 func (s *UdpNetworkFlow) TearDownSubTest() {
@@ -245,17 +241,7 @@ func newServerCmd(recv string, port uint16) []string {
 }
 
 func (s *UdpNetworkFlow) runServer(cfg config.ContainerStartConfig, port uint16) containerData {
-	id, err := s.Executor().StartContainer(cfg)
-	s.Require().NoError(err)
-
-	ip, err := s.getIPAddress(cfg.Name)
-	s.Require().NoError(err)
-
-	return containerData{
-		id:   common.ContainerShortID(id),
-		ip:   ip,
-		port: port,
-	}
+	return s.runContainer(cfg, port)
 }
 
 func newClientCmd(send, period, msgs string, servers ...containerData) []string {
@@ -280,6 +266,10 @@ func newClientCmd(send, period, msgs string, servers ...containerData) []string 
 }
 
 func (s *UdpNetworkFlow) runClient(cfg config.ContainerStartConfig) containerData {
+	return s.runContainer(cfg, 0)
+}
+
+func (s *UdpNetworkFlow) runContainer(cfg config.ContainerStartConfig, port uint16) containerData {
 	id, err := s.Executor().StartContainer(cfg)
 	s.Require().NoError(err)
 
@@ -287,7 +277,8 @@ func (s *UdpNetworkFlow) runClient(cfg config.ContainerStartConfig) containerDat
 	s.Require().NoError(err)
 
 	return containerData{
-		id: common.ContainerShortID(id),
-		ip: ip,
+		id:   common.ContainerShortID(id),
+		ip:   ip,
+		port: port,
 	}
 }
