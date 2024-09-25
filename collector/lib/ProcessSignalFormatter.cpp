@@ -52,7 +52,7 @@ std::string extract_proc_args(sinsp_threadinfo* tinfo) {
 
 }  // namespace
 
-ProcessSignalFormatter::ProcessSignalFormatter(sinsp* inspector) : event_names_(EventNames::GetInstance()), event_extractor_(std::make_unique<system_inspector::EventExtractor>()), container_metadata_(inspector) {
+ProcessSignalFormatter::ProcessSignalFormatter(sinsp* inspector, const CollectorConfig& config) : event_names_(EventNames::GetInstance()), event_extractor_(std::make_unique<system_inspector::EventExtractor>()), container_metadata_(inspector), config_(config) {
   event_extractor_->Init(inspector);
 }
 

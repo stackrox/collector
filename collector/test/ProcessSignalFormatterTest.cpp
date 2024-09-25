@@ -18,8 +18,9 @@ namespace {
 TEST(ProcessSignalFormatterTest, NoProcessTest) {
   sinsp* inspector = NULL;
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+  CollectorConfig config;
 
-  ProcessSignalFormatter processSignalFormatter(inspector);
+  ProcessSignalFormatter processSignalFormatter(inspector, config);
 
   sinsp_threadinfo* tinfo = NULL;
   std::vector<LineageInfo> lineage;
@@ -42,8 +43,9 @@ TEST(ProcessSignalFormatterTest, NoProcessTest) {
 TEST(ProcessSignalFormatterTest, ProcessWithoutParentTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+  CollectorConfig config;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get());
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
   auto tinfo = inspector->build_threadinfo();
   tinfo->m_pid = 0;
@@ -76,8 +78,9 @@ TEST(ProcessSignalFormatterTest, ProcessWithoutParentTest) {
 TEST(ProcessSignalFormatterTest, ProcessWithParentTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+  CollectorConfig config;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get());
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
   auto tinfo = inspector->build_threadinfo();
   tinfo->m_pid = 3;
@@ -120,8 +123,9 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentTest) {
 TEST(ProcessSignalFormatterTest, ProcessWithParentWithPid0Test) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+  CollectorConfig config;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get());
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
   auto tinfo = inspector->build_threadinfo();
   tinfo->m_pid = 0;
@@ -159,8 +163,9 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithPid0Test) {
 TEST(ProcessSignalFormatterTest, ProcessWithParentWithSameNameTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+  CollectorConfig config;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get());
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
   auto tinfo = inspector->build_threadinfo();
   tinfo->m_pid = 3;
@@ -203,8 +208,9 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithSameNameTest) {
 TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+  CollectorConfig config;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get());
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
   auto tinfo = inspector->build_threadinfo();
   tinfo->m_pid = 3;
@@ -261,8 +267,9 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
 TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+  CollectorConfig config;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get());
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
   auto tinfo = inspector->build_threadinfo();
   tinfo->m_pid = 3;
@@ -316,8 +323,9 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
 TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+  CollectorConfig config;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get());
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
   auto tinfo = inspector->build_threadinfo();
   tinfo->m_pid = 3;
@@ -380,8 +388,9 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
 TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+  CollectorConfig config;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get());
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
   auto tinfo = inspector->build_threadinfo();
   tinfo->m_pid = 3;
@@ -447,8 +456,9 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
 TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+  CollectorConfig config;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get());
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
   auto tinfo = inspector->build_threadinfo();
   tinfo->m_pid = 3;
@@ -514,8 +524,9 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
 TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+  CollectorConfig config;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get());
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
   auto tinfo = inspector->build_threadinfo();
   tinfo->m_pid = 1;
@@ -561,8 +572,9 @@ TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
 TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
+  CollectorConfig config;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get());
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
   auto tinfo = inspector->build_threadinfo();
   tinfo->m_pid = 3;

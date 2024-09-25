@@ -5,6 +5,7 @@
 
 #include <grpcpp/channel.h>
 
+#include "CollectorConfig.h"
 #include "ProcessSignalFormatter.h"
 #include "RateLimit.h"
 #include "SignalHandler.h"
@@ -19,8 +20,9 @@ namespace collector {
 
 class ProcessSignalHandler : public SignalHandler {
  public:
-  ProcessSignalHandler(sinsp* inspector, ISignalServiceClient* client, system_inspector::Stats* stats)
-      : client_(client), formatter_(inspector), stats_(stats) {}
+  ProcessSignalHandler(sinsp* inspector, ISignalServiceClient* client, system_inspector::Stats* stats,
+                       const CollectorConfig& config)
+      : client_(client), formatter_(inspector, config), stats_(stats), config_(config) {}
 
   bool Start() override;
   bool Stop() override;
@@ -34,6 +36,8 @@ class ProcessSignalHandler : public SignalHandler {
   ProcessSignalFormatter formatter_;
   system_inspector::Stats* stats_;
   RateLimitCache rate_limiter_;
+
+  CollectorConfig config_;
 };
 
 }  // namespace collector
