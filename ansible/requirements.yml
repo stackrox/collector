@@ -1,5 +1,6 @@
 ---
 collections:
+- google.cloud
 - community.general
 - community.docker
 - containers.podman

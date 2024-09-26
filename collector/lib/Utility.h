@@ -115,6 +115,12 @@ ScopedLock<Mutex> Lock(Mutex& mutex) {
 extern const std::string kKernelModulesDir;
 
 std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cgroup);
-}  // namespace collector
 
+// Replace any occurrence of an invalid UTF-8 sequence with the '?' character
+// Returns :
+//  - a new string with invalid characters replaced.
+//  - nullopt if there is no invalid character (the input string is valid).
+std::optional<std::string> SanitizedUTF8(const std::string& str);
+
+}  // namespace collector
 #endif  // _UTILITY_H_
