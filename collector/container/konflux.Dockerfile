@@ -106,14 +106,13 @@ COPY ./.konflux /tmp/.konflux
 RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
     dnf -y --installroot=/mnt upgrade --nobest && \
     dnf -y --installroot=/mnt install --nobest \
-      kmod \
       tbb \
       jq \
       c-ares && \
     /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
     # We can do usual cleanup while we're here: remove packages that would trigger violations. \
     dnf -y --installroot=/mnt clean all && \
-    rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*') && \
     rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
 
 
