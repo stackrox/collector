@@ -47,7 +47,7 @@ BoolEnvVar set_import_users("ROX_COLLECTOR_SET_IMPORT_USERS", false);
 
 BoolEnvVar collect_connection_status("ROX_COLLECT_CONNECTION_STATUS", true);
 
-BoolEnvVar enable_external_ips("ROX_ENABLE_EXTERNAL_IPS", false);
+BoolEnvVar enable_external_ips("ROX_EXTERNAL_IPS", false);
 
 BoolEnvVar enable_connection_stats("ROX_COLLECTOR_ENABLE_CONNECTION_STATS", true);
 
