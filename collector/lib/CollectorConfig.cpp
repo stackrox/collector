@@ -285,7 +285,7 @@ void CollectorConfig::HandleAfterglowEnvVars() {
   afterglow_period_micros_ = static_cast<uint64_t>(afterglow_period.value() * SECOND);
 
   if (afterglow_period_micros_ < 0) {
-    CLOG(ERROR) << "Invalid afterglow period " << afterglow_period_micros_ / 1000000 << ". ROX_AFTERGLOW_PERIOD must be positive.";
+    CLOG(ERROR) << "Invalid afterglow period " << afterglow_period_micros_ / SECOND << ". ROX_AFTERGLOW_PERIOD must be positive.";
   } else if (afterglow_period_micros_ == 0) {
     CLOG(ERROR) << "Afterglow period set to 0.";
   } else {
@@ -299,11 +299,7 @@ void CollectorConfig::HandleAfterglowEnvVars() {
     enable_afterglow_ = enable_afterglow.value();
   }
 
-  if (enable_afterglow_) {
-    CLOG(INFO) << "Afterglow is enabled";
-  } else {
-    CLOG(INFO) << "Afterglow is disabled";
-  }
+  CLOG(INFO) << "Afterglow is " << (enable_afterglow_ ? "enabled" : "disabled");
 }
 
 void CollectorConfig::HandleConnectionStatsEnvVars() {
