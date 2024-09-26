@@ -3,6 +3,13 @@ project(collector-bin)
 find_package(Threads)
 find_package(CURL REQUIRED)
 
+option(ADDRESS_SANITIZER "Compile collector with asan and ubsan" OFF)
+option(USE_VALGRIND "Compile unit tests to run under valgrind" OFF)
+option(DISABLE_PROFILING "Compile with standard malloc implementation" OFF)
+option(TRACE_SINSP_EVENTS "Log all processed events" OFF)
+option(BPF_DEBUG_MODE "Enable bpf_printk for the BPF probe" OFF)
+option(COLLECTOR_VERSION "The collector version being built" "")
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall --std=c++17 -pthread -Wno-deprecated-declarations -fno-omit-frame-pointer -rdynamic")
 
@@ -31,10 +38,19 @@ if(NOT BPF_DEBUG_MODE)
 	set(BPF_DEBUG_MODE OFF)
 endif()
 
-if (NOT COLLECTOR_VERSION)
-	set(COLLECTOR_VERSION "0.0.0")
+if(NOT COLLECTOR_VERSION)
+	if(IS_DIRECTORY ${PROJECT_SOURCE_DIR}/../.git)
+		# This is the same command used for make tag, we could run that one
+		# instead, but we should make our best effort to not have build
+		# systems depend on each other, since it ends up getting quite messy.
+		execute_process(COMMAND git describe --tags --abbrev=10 --dirty OUTPUT_VARIABLE COLLECTOR_VERSION)
+		string(STRIP ${COLLECTOR_VERSION} COLLECTOR_VERSION)
+	else()
+		set(COLLECTOR_VERSION "0.0.0")
+	endif()
 endif()
 
+message(STATUS "Collector version: ${COLLECTOR_VERSION}")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/lib/CollectorVersion.h.in ${CMAKE_CURRENT_BINARY_DIR}/CollectorVersion.h)
 
 set(FALCO_DIR ${PROJECT_SOURCE_DIR}/../falcosecurity-libs)

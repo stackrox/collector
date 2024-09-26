@@ -20,7 +20,7 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
         unzip \
         clang \
         bpftool \
-        cmake-3.18.2-9.el8 \
+        cmake \
         gcc-c++ \
         openssl-devel \
         ncurses-devel \
@@ -55,11 +55,6 @@ ARG SRC_ROOT_DIR=${BUILD_DIR}
 ARG CMAKE_BUILD_DIR
 # TODO(ROX-20240): CMAKE_BUILD_TYPE should probably not be Release for PR, normal branch builds
 ARG CMAKE_BUILD_TYPE=Release
-# Appends an argument to the driver download URL that is used for filtering alerts on missing kernels.
-# TODO(ROX-20240): This needs to be true on PRs only.
-ARG USE_VALGRIND=false
-ARG ADDRESS_SANITIZER=false
-ARG TRACE_SINSP_EVENTS=false
 
 WORKDIR ${BUILD_DIR}
 
@@ -68,6 +63,7 @@ RUN mkdir kernel-modules \
     && ln -s builder/third_party third_party \
     && cp -a ${SOURCES_DIR}/collector collector \
     && cp -a ${SOURCES_DIR}/falcosecurity-libs falcosecurity-libs \
+    && cp -a ${SOURCES_DIR}/CMakePresets.json CMakePresets.json \
     && cp -a ${SOURCES_DIR}/CMakeLists.txt CMakeLists.txt
 
 # WITH_RHEL_RPMS controls for dependency installation, ie if they were already installed as RPMs.
@@ -80,13 +76,9 @@ RUN ./builder/install/install-dependencies.sh && \
         then DISABLE_PROFILING="OFF";   \
         else DISABLE_PROFILING="ON";    \
     fi ; \
-    cmake -S ${SRC_ROOT_DIR} -B ${CMAKE_BUILD_DIR} \
-           -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
-           -DDISABLE_PROFILING=${DISABLE_PROFILING} \
-           -DUSE_VALGRIND=${USE_VALGRIND} \
-           -DADDRESS_SANITIZER=${ADDRESS_SANITIZER} \
-           -DCOLLECTOR_VERSION=${COLLECTOR_TAG} \
-           -DTRACE_SINSP_EVENTS=${TRACE_SINSP_EVENTS} && \
+    cmake --preset=release \
+        -DDISABLE_PROFILING=${DISABLE_PROFILING} \
+        -DCOLLECTOR_VERSION=${COLLECTOR_TAG} && \
     cmake --build ${CMAKE_BUILD_DIR} --target all -- -j "${NPROCS:-4}" && \
     ctest -V --test-dir ${CMAKE_BUILD_DIR} && \
     strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
