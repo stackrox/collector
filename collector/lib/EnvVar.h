@@ -110,6 +110,13 @@ struct ParsePath {
     return true;
   }
 };
+
+struct ParseFloat {
+  bool operator()(float* out, const std::string& str_val) {
+    *out = std::stof(str_val);
+    return true;
+  }
+};
 }  // namespace internal
 
 using BoolEnvVar = EnvVar<bool, internal::ParseBool>;
@@ -117,6 +124,7 @@ using StringListEnvVar = EnvVar<std::vector<std::string>, internal::ParseStringL
 using StringEnvVar = EnvVar<std::string, internal::ParseString>;
 using IntEnvVar = EnvVar<int, internal::ParseInt>;
 using PathEnvVar = EnvVar<std::filesystem::path, internal::ParsePath>;
+using FloatEnvVar = EnvVar<float, internal::ParseFloat>;
 
 }  // namespace collector
 

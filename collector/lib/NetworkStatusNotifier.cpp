@@ -120,11 +120,7 @@ void NetworkStatusNotifier::Run() {
 
     auto client_writer = comm_->PushNetworkConnectionInfoOpenStream([this](const sensor::NetworkFlowsControlMessage* msg) { OnRecvControlMessage(msg); });
 
-    if (enable_afterglow_) {
-      RunSingleAfterglow(client_writer.get());
-    } else {
-      RunSingle(client_writer.get());
-    }
+    RunSingle(client_writer.get());
     if (thread_.should_stop()) {
       return;
     }
@@ -225,58 +221,14 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
   ConnMap old_conn_state;
   AdvertisedEndpointMap old_cep_state;
   auto next_scrape = std::chrono::system_clock::now();
-
-  while (writer->Sleep(next_scrape)) {
-    next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
-
-    if (!UpdateAllConnsAndEndpoints()) {
-      continue;
-    }
-
-    ReportConnectionStats();
-
-    const sensor::NetworkConnectionInfoMessage* msg;
-    ConnMap new_conn_state;
-    AdvertisedEndpointMap new_cep_state;
-    WITH_TIMER(CollectorStats::net_fetch_state) {
-      new_conn_state = conn_tracker_->FetchConnState(true, true);
-      ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
-
-      new_cep_state = conn_tracker_->FetchEndpointState(true, true);
-      ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
-    }
-
-    WITH_TIMER(CollectorStats::net_create_message) {
-      msg = CreateInfoMessage(old_conn_state, old_cep_state);
-      old_conn_state = std::move(new_conn_state);
-      old_cep_state = std::move(new_cep_state);
-    }
-
-    if (!msg) {
-      continue;
-    }
-
-    WITH_TIMER(CollectorStats::net_write_message) {
-      if (!writer->Write(*msg, next_scrape)) {
-        CLOG(ERROR) << "Failed to write network connection info";
-        return;
-      }
-    }
-  }
-}
-
-void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
-  WaitUntilWriterStarted(writer, 10);
-
-  ConnMap old_conn_state;
-  AdvertisedEndpointMap old_cep_state;
-  auto next_scrape = std::chrono::system_clock::now();
   int64_t time_at_last_scrape = NowMicros();
 
   while (writer->Sleep(next_scrape)) {
+    CLOG(DEBUG) << "Starting network status notification";
     next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
 
     if (!UpdateAllConnsAndEndpoints()) {
+      CLOG(DEBUG) << "No connection or endpoint to report";
       continue;
     }
 
@@ -284,26 +236,34 @@ void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::Netwo
 
     int64_t time_micros = NowMicros();
     const sensor::NetworkConnectionInfoMessage* msg;
-    AdvertisedEndpointMap new_cep_state;
     ConnMap new_conn_state, delta_conn;
+    AdvertisedEndpointMap new_cep_state;
     WITH_TIMER(CollectorStats::net_fetch_state) {
       new_conn_state = conn_tracker_->FetchConnState(true, true);
-      ConnectionTracker::ComputeDeltaAfterglow(new_conn_state, old_conn_state, delta_conn, time_micros, time_at_last_scrape, afterglow_period_micros_);
+      if (enable_afterglow_) {
+        ConnectionTracker::ComputeDeltaAfterglow(new_conn_state, old_conn_state, delta_conn, time_micros, time_at_last_scrape, afterglow_period_micros_);
+      } else {
+        ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
+      }
 
       new_cep_state = conn_tracker_->FetchEndpointState(true, true);
       ConnectionTracker::ComputeDelta(new_cep_state, &old_cep_state);
     }
 
     WITH_TIMER(CollectorStats::net_create_message) {
-      // Report the deltas
-      msg = CreateInfoMessage(delta_conn, old_cep_state);
-      // Add new connections to the old_state and remove inactive connections that are older than the afterglow period.
-      ConnectionTracker::UpdateOldState(&old_conn_state, new_conn_state, time_micros, afterglow_period_micros_);
+      if (enable_afterglow_) {
+        msg = CreateInfoMessage(delta_conn, old_cep_state);
+        ConnectionTracker::UpdateOldState(&old_conn_state, new_conn_state, time_micros, afterglow_period_micros_);
+      } else {
+        msg = CreateInfoMessage(old_conn_state, old_cep_state);
+        old_conn_state = std::move(new_conn_state);
+      }
       old_cep_state = std::move(new_cep_state);
       time_at_last_scrape = time_micros;
     }
 
     if (!msg) {
+      CLOG(DEBUG) << "No update to report";
       continue;
     }
 
@@ -313,6 +273,8 @@ void NetworkStatusNotifier::RunSingleAfterglow(IDuplexClientWriter<sensor::Netwo
         return;
       }
     }
+
+    CLOG(DEBUG) << "Network status notification done";
   }
 }
 

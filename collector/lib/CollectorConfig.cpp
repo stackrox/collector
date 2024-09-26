@@ -36,7 +36,8 @@ StringListEnvVar ignored_networks("ROX_IGNORE_NETWORKS", std::vector<std::string
 // Connection endpoints matching a network prefix listed here will never be aggregated.
 StringListEnvVar non_aggregated_networks("ROX_NON_AGGREGATED_NETWORKS", std::vector<std::string>());
 
-BoolEnvVar set_enable_afterglow("ROX_ENABLE_AFTERGLOW", true);
+BoolEnvVar enable_afterglow("ROX_ENABLE_AFTERGLOW", true);
+FloatEnvVar afterglow_period("ROX_AFTERGLOW_PERIOD", 300.0);
 
 BoolEnvVar set_enable_core_dump("ENABLE_CORE_DUMP", false);
 
@@ -278,41 +279,31 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
 }
 
 void CollectorConfig::HandleAfterglowEnvVars() {
-  if (!set_enable_afterglow) {
-    enable_afterglow_ = false;
-  }
+  constexpr int64_t SECOND = 1'000'000;
+  constexpr int64_t max_afterglow_period_micros = 300 * SECOND;  // 5 minutes
 
-  if (const char* afterglow_period = std::getenv("ROX_AFTERGLOW_PERIOD")) {
-    afterglow_period_micros_ = static_cast<int64_t>(atof(afterglow_period) * 1000000);
-  }
-
-  const int64_t max_afterglow_period_micros = 300000000;  // 5 minutes
-
-  if (afterglow_period_micros_ > max_afterglow_period_micros) {
-    CLOG(ERROR) << "User set afterglow period of " << afterglow_period_micros_ / 1000000
-                << "s is greater than the maximum allowed afterglow period of " << max_afterglow_period_micros / 1000000 << "s";
-    CLOG(ERROR) << "Setting the afterglow period to " << max_afterglow_period_micros / 1000000 << "s";
-    afterglow_period_micros_ = max_afterglow_period_micros;
-  }
-
-  if (enable_afterglow_ && afterglow_period_micros_ > 0) {
-    CLOG(INFO) << "Afterglow is enabled";
-    return;
-  }
-
-  if (!enable_afterglow_) {
-    CLOG(INFO) << "Afterglow is disabled";
-    return;
-  }
+  afterglow_period_micros_ = static_cast<uint64_t>(afterglow_period.value() * SECOND);
 
   if (afterglow_period_micros_ < 0) {
     CLOG(ERROR) << "Invalid afterglow period " << afterglow_period_micros_ / 1000000 << ". ROX_AFTERGLOW_PERIOD must be positive.";
+  } else if (afterglow_period_micros_ == 0) {
+    CLOG(ERROR) << "Afterglow period set to 0.";
   } else {
-    CLOG(ERROR) << "Afterglow period set to 0";
+    if (afterglow_period_micros_ > max_afterglow_period_micros) {
+      CLOG(WARNING) << "User set afterglow period of " << afterglow_period_micros_ / SECOND
+                    << "s is greater than the maximum allowed afterglow period of " << max_afterglow_period_micros / SECOND << "s";
+      CLOG(WARNING) << "Setting the afterglow period to " << max_afterglow_period_micros / SECOND << "s";
+      afterglow_period_micros_ = max_afterglow_period_micros;
+    }
+
+    enable_afterglow_ = enable_afterglow.value();
   }
 
-  enable_afterglow_ = false;
-  CLOG(INFO) << "Disabling afterglow";
+  if (enable_afterglow_) {
+    CLOG(INFO) << "Afterglow is enabled";
+  } else {
+    CLOG(INFO) << "Afterglow is disabled";
+  }
 }
 
 void CollectorConfig::HandleConnectionStatsEnvVars() {
