@@ -1,3 +1,5 @@
+#include <optional>
+
 #include "CollectorArgs.h"
 #include "CollectorConfig.h"
 #include "gmock/gmock.h"
@@ -25,6 +27,10 @@ class MockCollectorConfig : public CollectorConfig {
 
   void MockSetSinspCpuPerBuffer(unsigned int value) {
     SetSinspCpuPerBuffer(value);
+  }
+
+  void MockSetEnableExternalIPs(bool value) {
+    SetEnableExternalIPs(value);
   }
 };
 
@@ -85,6 +91,58 @@ TEST(CollectorConfigTest, TestSinspCpuPerBufferAdjusted) {
   hconfig.SetNumPossibleCPUs(1024);
   config.MockSetHostConfig(&hconfig);
   EXPECT_EQ(16384, config.GetSinspBufferSize());
+}
+
+TEST(CollectorConfigTest, TestSetRuntimeConfig) {
+  MockCollectorConfig config;
+
+  EXPECT_EQ(std::nullopt, config.GetRuntimeConfig());
+
+  sensor::CollectorConfig runtime_config;
+
+  config.SetRuntimeConfig(runtime_config);
+
+  EXPECT_NE(std::nullopt, config.GetRuntimeConfig());
+}
+
+TEST(CollectorConfigTest, TestEnableExternalIpsFeatureFlag) {
+  MockCollectorConfig config;
+
+  // without the presence of the runtime configuration
+  // the enable_external_ips_ flag should be used
+
+  config.MockSetEnableExternalIPs(false);
+
+  EXPECT_FALSE(config.EnableExternalIPs());
+
+  config.MockSetEnableExternalIPs(true);
+
+  EXPECT_TRUE(config.EnableExternalIPs());
+}
+
+TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
+  MockCollectorConfig config;
+
+  // With the presence of runtime config, the feature
+  // flag should be ignored
+
+  config.MockSetEnableExternalIPs(true);
+
+  sensor::CollectorConfig runtime_config;
+  sensor::NetworkConnectionConfig* network_config = runtime_config.mutable_network_connection_config();
+
+  network_config->set_enable_external_ips(false);
+
+  config.SetRuntimeConfig(runtime_config);
+
+  EXPECT_FALSE(config.EnableExternalIPs());
+
+  config.MockSetEnableExternalIPs(false);
+
+  network_config->set_enable_external_ips(true);
+  config.SetRuntimeConfig(runtime_config);
+
+  EXPECT_TRUE(config.EnableExternalIPs());
 }
 
 }  // namespace collector
