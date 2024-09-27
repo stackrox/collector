@@ -628,6 +628,137 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   CollectorStats::Reset();
 }
 
+TEST(ProcessSignalFormatterTest, EmptyArgument) {
+  std::unique_ptr<sinsp> inspector(new sinsp());
+  CollectorConfig config;
+
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+
+  auto tinfo = inspector->build_threadinfo();
+  tinfo->m_pid = 3;
+  tinfo->m_tid = 3;
+  tinfo->m_ptid = -1;
+  tinfo->m_vpid = 0;
+  tinfo->m_user.set_uid(42);
+  tinfo->m_container_id = "";
+  tinfo->m_exepath = "qwerty";
+
+  sinsp_evt* evt = new sinsp_evt();
+  scap_evt* s_evt = new scap_evt();
+  s_evt->type = PPME_SYSCALL_EXECVE_19_X;
+
+  // An empty argument
+  tinfo->set_args("", 0);
+  evt->set_tinfo(tinfo.get());
+  evt->set_scap_evt(s_evt);
+
+  EXPECT_NO_FATAL_FAILURE(processSignalFormatter.ToProtoMessage(evt)) << "Empty argument failed";
+}
+
+TEST(ProcessSignalFormatterTest, LargeArgumentWithoutNull) {
+  std::unique_ptr<sinsp> inspector(new sinsp());
+  CollectorConfig config;
+  char* test;
+
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+
+  auto tinfo = inspector->build_threadinfo();
+  tinfo->m_pid = 3;
+  tinfo->m_tid = 3;
+  tinfo->m_ptid = -1;
+  tinfo->m_vpid = 0;
+  tinfo->m_user.set_uid(42);
+  tinfo->m_container_id = "";
+  tinfo->m_exepath = "qwerty";
+
+  sinsp_evt* evt = new sinsp_evt();
+  scap_evt* s_evt = new scap_evt();
+  s_evt->type = PPME_SYSCALL_EXECVE_19_X;
+
+  // A large argument without a null terminator
+  test = (char*)malloc(8192);
+  memset(test, 0xff, 8192);
+
+  tinfo->set_args(test, 8192);
+  evt->set_tinfo(tinfo.get());
+  evt->set_scap_evt(s_evt);
+
+  EXPECT_NO_FATAL_FAILURE(processSignalFormatter.ToProtoMessage(evt)) << "Large argument without a null terminator failed";
+}
+
+TEST(ProcessSignalFormatterTest, SmallArgumentWithoutNull) {
+  std::unique_ptr<sinsp> inspector(new sinsp());
+  CollectorConfig config;
+  char* test;
+
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+
+  auto tinfo = inspector->build_threadinfo();
+  tinfo->m_pid = 3;
+  tinfo->m_tid = 3;
+  tinfo->m_ptid = -1;
+  tinfo->m_vpid = 0;
+  tinfo->m_user.set_uid(42);
+  tinfo->m_container_id = "";
+  tinfo->m_exepath = "qwerty";
+
+  sinsp_evt* evt = new sinsp_evt();
+  scap_evt* s_evt = new scap_evt();
+  s_evt->type = PPME_SYSCALL_EXECVE_19_X;
+
+  // A small argument without a null terminator
+  test = (char*)malloc(200);
+  memset(test, 0xff, 200);
+
+  tinfo->set_args(test, 200);
+  evt->set_tinfo(tinfo.get());
+  evt->set_scap_evt(s_evt);
+
+  EXPECT_NO_FATAL_FAILURE(processSignalFormatter.ToProtoMessage(evt)) << "Small argument without a null terminator failed";
+}
+
+TEST(ProcessSignalFormatterTest, InvalidUTF8) {
+  std::unique_ptr<sinsp> inspector(new sinsp());
+  CollectorConfig config;
+  char* test;
+
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+
+  auto tinfo = inspector->build_threadinfo();
+  tinfo->m_pid = 3;
+  tinfo->m_tid = 3;
+  tinfo->m_ptid = -1;
+  tinfo->m_vpid = 0;
+  tinfo->m_user.set_uid(42);
+  tinfo->m_container_id = "";
+  tinfo->m_exepath = "qwerty";
+
+  sinsp_evt* evt = new sinsp_evt();
+  scap_evt* s_evt = new scap_evt();
+  s_evt->type = PPME_SYSCALL_EXECVE_19_X;
+
+  // An argument with invalid UTF-8 sequence
+  test = (char*)malloc(200);
+  memset(test, 0xff, 200);
+  test[0] = 0xe2;
+  test[1] = 0xcf;
+  test[2] = 0xcf;
+  test[3] = 0xff;
+  test[4] = 0xff;
+  test[5] = 0xff;
+  test[6] = 0xff;
+  test[7] = 0xff;
+  test[8] = 0xff;
+  test[9] = 0xff;
+  test[10] = 0xff;
+
+  tinfo->set_args(test, 200);
+  evt->set_tinfo(tinfo.get());
+  evt->set_scap_evt(s_evt);
+
+  EXPECT_NO_FATAL_FAILURE(processSignalFormatter.ToProtoMessage(evt)) << "Invalid UTF-8 argument failed";
+}
+
 }  // namespace
 
 }  // namespace collector

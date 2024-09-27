@@ -29,6 +29,7 @@ COPY container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY kernel-modules /kernel-modules
 COPY container/bin/collector /usr/local/bin/
 COPY container/bin/self-checks /usr/local/bin/self-checks
+COPY container/bin/ProcessSignalFormatterTest /usr/local/bin/ProcessSignalFormatterTest
 COPY container/status-check.sh /usr/local/bin/status-check.sh
 
 RUN echo "${MODULE_VERSION}" > /kernel-modules/MODULE_VERSION.txt && \
