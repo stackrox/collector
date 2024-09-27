@@ -108,6 +108,10 @@ class CollectorConfig {
 
   static std::pair<option::ArgStatus, std::string> CheckConfiguration(const char* config, Json::Value* root);
 
+  void SetRuntimeConfig(sensor::CollectorConfig&& runtime_config) {
+    runtime_config_ = runtime_config;
+  }
+
   void SetRuntimeConfig(sensor::CollectorConfig runtime_config) {
     runtime_config_ = std::move(runtime_config);
   }
