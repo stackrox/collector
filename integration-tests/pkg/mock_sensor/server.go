@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -17,7 +16,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
-	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 )
 
@@ -223,10 +222,7 @@ func (m *MockSensor) HasEndpoint(containerID string, endpoint types.EndpointInfo
 func (m *MockSensor) Start() {
 	var err error
 
-	m.logFile, err = os.OpenFile(
-		filepath.Join(config.LogPath(), strings.ReplaceAll(m.testName, "/", "_")+"-events.log"),
-		os.O_CREATE|os.O_WRONLY, 0644,
-	)
+	m.logFile, err = common.PrepareLog(m.testName, "events.log")
 
 	if err != nil {
 		log.Fatalf("failed to open log file: %v", err)

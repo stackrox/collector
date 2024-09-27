@@ -58,13 +58,20 @@ func ArchSupported(supported ...string) (bool, string) {
 
 // Creates a new file to dump logs into
 func PrepareLog(testName string, logName string) (*os.File, error) {
-	logDirectory := filepath.Join(".", "container-logs", config.VMInfo().Config, config.CollectionMethod())
+	pathSections := []string{
+		".", "container-logs",
+		config.VMInfo().Config,
+		config.CollectionMethod(),
+		strings.ReplaceAll(testName, "/", "_"),
+	}
+
+	logDirectory := filepath.Join(pathSections...)
 	err := os.MkdirAll(logDirectory, os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
 
-	logPath := filepath.Join(logDirectory, strings.ReplaceAll(testName, "/", "_")+"-"+logName)
+	logPath := filepath.Join(logDirectory, logName)
 	return os.Create(logPath)
 }
 
