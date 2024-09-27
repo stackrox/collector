@@ -125,6 +125,7 @@
     - name: Get log files
       find:
         paths: "{{ remote_log_mount }}/{{ vm_config }}/{{ collection_method }}/"
+        recurse: true
       register: remote_log_files
 
     - name: Fetch log files
