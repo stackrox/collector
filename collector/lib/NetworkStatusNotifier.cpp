@@ -55,7 +55,7 @@ std::vector<IPNet> readNetworks(const std::string& networks, Address::Family fam
   return ip_nets;
 }
 
-void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg) {
+void NetworkStatusNotifier::OnRecvMessage(const sensor::MsgToCollector* msg) {
   if (!msg) {
     return;
   }
@@ -118,7 +118,7 @@ void NetworkStatusNotifier::Run() {
       break;
     }
 
-    auto client_writer = comm_->PushNetworkConnectionInfoOpenStream([this](const sensor::NetworkFlowsControlMessage* msg) { OnRecvControlMessage(msg); });
+    auto client_writer = comm_->PushNetworkConnectionInfoOpenStream([this](const sensor::MsgToCollector* msg) { OnRecvMessage(msg); });
 
     if (enable_afterglow_) {
       RunSingleAfterglow(client_writer.get());

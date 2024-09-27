@@ -104,7 +104,7 @@ class MockNetworkConnectionInfoServiceComm : public INetworkConnectionInfoServic
   MOCK_METHOD(bool, WaitForConnectionReady, (const std::function<bool()>& check_interrupted), (override));
   MOCK_METHOD(void, TryCancel, (), (override));
   MOCK_METHOD(sensor::NetworkConnectionInfoService::StubInterface*, GetStub, (), (override));
-  MOCK_METHOD(std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>>, PushNetworkConnectionInfoOpenStream, (std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func), (override));
+  MOCK_METHOD(std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>>, PushNetworkConnectionInfoOpenStream, (std::function<void(const sensor::MsgToCollector*)> receive_func), (override));
 };
 
 /* gRPC payload objects are not strictly the ones of our internal model.
@@ -201,7 +201,7 @@ TEST(NetworkStatusNotifier, SimpleStartStop) {
      We return an object that will get called when connections and endpoints are reported */
   EXPECT_CALL(*comm, PushNetworkConnectionInfoOpenStream)
       .Times(1)
-      .WillOnce([&sem, &running](std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) -> std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> {
+      .WillOnce([&sem, &running](std::function<void(const sensor::MsgToCollector*)> receive_func) -> std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> {
         auto duplex_writer = MakeUnique<MockDuplexClientWriter>();
 
         // the service is sending Sensor a message
@@ -250,7 +250,7 @@ TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
   std::shared_ptr<MockConnScraper> conn_scraper = std::make_shared<MockConnScraper>();
   auto conn_tracker = std::make_shared<ConnectionTracker>();
   auto comm = std::make_shared<MockNetworkConnectionInfoServiceComm>();
-  std::function<void(const sensor::NetworkFlowsControlMessage*)> network_flows_callback;
+  std::function<void(const sensor::MsgToCollector*)> network_flows_callback;
   Semaphore sem(0);  // to wait for the service to accomplish its job.
 
   // the connection as scrapped (public)
@@ -274,7 +274,7 @@ TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
                  &running,
                  &conn2,
                  &conn3,
-                 &network_flows_callback](std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) -> std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> {
+                 &network_flows_callback](std::function<void(const sensor::MsgToCollector*)> receive_func) -> std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> {
         auto duplex_writer = MakeUnique<MockDuplexClientWriter>();
         network_flows_callback = receive_func;
 
@@ -301,7 +301,7 @@ TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
             .WillOnce(ReturnPointee(&running))  // first time, we let the scrapper do its job
             .WillOnce([&running, &network_flows_callback](const gpr_timespec& deadline) {
               // The connection is known now, let's declare a "known network"
-              sensor::NetworkFlowsControlMessage msg;
+              sensor::MsgToCollector msg;
               unsigned char content[] = {139, 45, 0, 0, 16};  // address in network order, plus prefix length
               std::string network((char*)content, sizeof(content));
 

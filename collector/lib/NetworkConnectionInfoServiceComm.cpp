@@ -44,14 +44,14 @@ void NetworkConnectionInfoServiceComm::TryCancel() {
   }
 }
 
-std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> NetworkConnectionInfoServiceComm::PushNetworkConnectionInfoOpenStream(std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) {
+std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> NetworkConnectionInfoServiceComm::PushNetworkConnectionInfoOpenStream(std::function<void(const sensor::MsgToCollector*)> receive_func) {
   if (!context_) {
     ResetClientContext();
   }
 
   if (channel_) {
     return DuplexClient::CreateWithReadCallback(
-        &sensor::NetworkConnectionInfoService::Stub::AsyncPushNetworkConnectionInfo,
+        &sensor::NetworkConnectionInfoService::Stub::AsyncCommunicate,
         channel_, context_.get(), std::move(receive_func));
   } else {
     return MakeUnique<collector::grpc_duplex_impl::StdoutDuplexClientWriter<sensor::NetworkConnectionInfoMessage>>();
