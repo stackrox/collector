@@ -170,30 +170,78 @@ func (d *dockerAPIExecutor) ExecContainer(containerName string, command []string
 	return stdoutBuf.String(), nil
 }
 
-func (d *dockerAPIExecutor) GetContainerLogs(containerID string) (string, error) {
+func (d *dockerAPIExecutor) GetContainerLogs(containerID string) (ContainerLogs, error) {
 	timeoutContext, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	logsReader, err := d.client.ContainerLogs(timeoutContext, containerID,
 		container.LogsOptions{ShowStdout: true, ShowStderr: true})
 	if err != nil {
-		return "", fmt.Errorf("error getting container logs: %w", err)
+		return ContainerLogs{}, fmt.Errorf("error getting container logs: %w", err)
 	}
 	defer logsReader.Close()
 
 	var sbStdOut, sbStdErr strings.Builder
 	// if container doesn't have TTY (c.Config.Tty), output is multiplexed
 	if _, err := stdcopy.StdCopy(&sbStdOut, &sbStdErr, logsReader); err != nil {
-		return "", fmt.Errorf("error copying logs: %w", err)
+		return ContainerLogs{}, fmt.Errorf("error copying logs: %w", err)
 	}
 	log.Info("logs %s (%d bytes stdout, %d bytes stderr)", containerID, sbStdOut.Len(), sbStdErr.Len())
-	if sbStdErr.Len() > 0 {
-		if sbStdOut.Len() > 0 {
-			// not implemented
-			return "", errors.New("unhandled container output to stdout and stderr")
-		}
-		return sbStdErr.String(), nil
+	return ContainerLogs{
+		Stdout: sbStdOut.String(),
+		Stderr: sbStdErr.String(),
+	}, nil
+}
+
+func (c *dockerAPIExecutor) CaptureLogs(testName, containerName string) (string, error) {
+	log.Info("%s: Gathering logs for %q", testName, containerName)
+	logs, err := c.GetContainerLogs(containerName)
+	if err != nil {
+		return "", log.Error("logs error (%v) for container %s\n", err, containerName)
 	}
-	return sbStdOut.String(), nil
+
+	if logs == (ContainerLogs{}) {
+		// Nothing to log
+		return "", nil
+	}
+
+	if logs.Stderr == "" || logs.Stdout == "" {
+		// We only have stdout OR stderr to log
+		logName := fmt.Sprintf("%s.log", containerName)
+		logFile, err := common.PrepareLog(testName, logName)
+		if err != nil {
+			return "", err
+		}
+		defer logFile.Close()
+
+		l := logs.GetSingleLog()
+		_, err = logFile.WriteString(l)
+		return l, nil
+	}
+
+	// We need to log both stdout and stderr, do so on separate files
+	for _, log := range []struct {
+		name    string
+		content string
+	}{
+		{
+			name:    fmt.Sprintf("%s-stdout.log", containerName),
+			content: logs.Stdout,
+		},
+		{
+			name:    fmt.Sprintf("%s-stderr.log", containerName),
+			content: logs.Stderr,
+		},
+	} {
+		logFile, err := common.PrepareLog(testName, log.name)
+		if err != nil {
+			return "", err
+		}
+		defer logFile.Close()
+
+		_, err = logFile.WriteString(log.content)
+	}
+
+	return logs.Stderr, nil
 }
 
 func (d *dockerAPIExecutor) KillContainer(containerID string) (string, error) {

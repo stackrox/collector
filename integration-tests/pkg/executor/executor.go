@@ -11,6 +11,21 @@ type ContainerFilter struct {
 	Namespace string
 }
 
+type ContainerLogs struct {
+	Stdout string
+	Stderr string
+}
+
+// Will return Stderr if it is not empty, otherwise it returns Stdout.
+// Useful for accessing the logs for collector and container-stats
+// that use a single stream.
+func (l *ContainerLogs) GetSingleLog() string {
+	if l.Stderr != "" {
+		return l.Stderr
+	}
+	return l.Stdout
+}
+
 type Executor interface {
 	PullImage(image string) error
 	IsContainerRunning(container string) (bool, error)
@@ -23,7 +38,8 @@ type Executor interface {
 	StartContainer(config config.ContainerStartConfig) (string, error)
 	GetContainerHealthCheck(containerID string) (string, error)
 	GetContainerIP(containerID string) (string, error)
-	GetContainerLogs(containerID string) (string, error)
+	GetContainerLogs(containerID string) (ContainerLogs, error)
+	CaptureLogs(testName, containerName string) (string, error)
 	GetContainerPort(containerID string) (string, error)
 	IsContainerFoundFiltered(containerID, filter string) (bool, error)
 }

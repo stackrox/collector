@@ -192,7 +192,7 @@ func (s *IntegrationTestSuiteBase) GetContainerStats() []ContainerStat {
 			return nil
 		}
 
-		logLines := strings.Split(logs, "\n")
+		logLines := strings.Split(logs.Stderr, "\n")
 		for i, line := range logLines {
 			var stat ContainerStat
 
@@ -304,13 +304,6 @@ func (s *IntegrationTestSuiteBase) AssertProcessInfoEqual(expected, actual types
 	assert.Equal(expected.Args, actual.Args)
 }
 
-func (s *IntegrationTestSuiteBase) GetLogLines(containerName string) []string {
-	logs, err := s.containerLogs(containerName)
-	s.Require().NoError(err, containerName+" failure")
-	logLines := strings.Split(logs, "\n")
-	return logLines
-}
-
 // Wait for a container to become a certain status.
 //   - tickSeconds -- how often to check for the status
 //   - timeoutThreshold -- the overall time limit for waiting,
@@ -410,8 +403,12 @@ func (s *IntegrationTestSuiteBase) execContainerShellScript(containerName string
 
 func (s *IntegrationTestSuiteBase) cleanupContainers(containers ...string) {
 	for _, container := range containers {
-		s.Executor().KillContainer(container)
-		s.Executor().RemoveContainer(executor.ContainerFilter{Name: container})
+		exists, _ := s.Executor().ContainerExists(executor.ContainerFilter{Name: container})
+		if exists {
+			s.Executor().KillContainer(container)
+			s.Executor().CaptureLogs(s.collector.TestName(), container)
+			s.Executor().RemoveContainer(executor.ContainerFilter{Name: container})
+		}
 	}
 }
 
@@ -427,7 +424,7 @@ func (s *IntegrationTestSuiteBase) removeContainers(containers ...string) {
 	}
 }
 
-func (s *IntegrationTestSuiteBase) containerLogs(containerName string) (string, error) {
+func (s *IntegrationTestSuiteBase) containerLogs(containerName string) (executor.ContainerLogs, error) {
 	return s.Executor().GetContainerLogs(containerName)
 }
 

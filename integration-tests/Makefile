@@ -95,6 +95,10 @@ ci-benchmarks: benchmark
 docker-clean:
 	docker rm -fv container-stats benchmark collector grpc-server 2>/dev/null || true
 
+.PHONY: clean
+clean: docker-clean
+	rm -rf container-logs/
+
 .PHONY:
 benchmark: TestBenchmarkCollector
 
