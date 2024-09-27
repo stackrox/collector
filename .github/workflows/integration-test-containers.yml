@@ -45,6 +45,7 @@ jobs:
               - integration-tests/Dockerfile
               - .github/workflows/integration-test-containers.yml
 
+  # Trigger rebuild
   build-test-image:
     name: Build the integration test image
     runs-on: ubuntu-24.04
