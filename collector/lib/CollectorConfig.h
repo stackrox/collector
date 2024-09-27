@@ -84,8 +84,8 @@ class CollectorConfig {
   // otherwise, we rely on the feature flag (env var)
   bool EnableExternalIPs() const {
     if (runtime_config_.has_value()) {
-      auto cfg = runtime_config_.value();
-      auto network_cfg = cfg.network_connection_config();
+      const auto& cfg = runtime_config_.value();
+      const auto& network_cfg = cfg.network_connection_config();
       return network_cfg.enable_external_ips();
     }
     return enable_external_ips_;
@@ -112,7 +112,7 @@ class CollectorConfig {
     runtime_config_ = std::move(runtime_config);
   }
 
-  std::optional<sensor::CollectorConfig> GetRuntimeConfig() const {
+  const std::optional<sensor::CollectorConfig>& GetRuntimeConfig() const {
     return runtime_config_;
   }
 
