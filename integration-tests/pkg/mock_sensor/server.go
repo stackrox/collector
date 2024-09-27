@@ -1,6 +1,7 @@
 package mock_sensor
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -331,9 +332,13 @@ func (m *MockSensor) PushSignals(stream sensorAPI.SignalService_PushSignalsServe
 	}
 }
 
+func (m *MockSensor) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
+	return errors.ErrUnsupported
+}
+
 // PushNetworkConnectionInfo conforms to the Sensor API. It is here that networking
 // events (connections and endpoints) are handled and stored/sent to the relevant channel
-func (m *MockSensor) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
+func (m *MockSensor) Communicate(stream sensorAPI.NetworkConnectionInfoService_CommunicateServer) error {
 	for {
 		signal, err := stream.Recv()
 		if err != nil {
