@@ -529,11 +529,11 @@ class DuplexClientWriter : public DuplexClient, public IDuplexClientWriter<W> {
 
   // Write methods.
 
-  Result Write(const W& obj, const gpr_timespec& deadline) {
+  Result Write(const W& obj, const gpr_timespec& deadline) override {
     return DoSync<const W&>(&DuplexClientWriter::WriteAsyncInternal, obj, deadline);
   }
 
-  Result WriteAsync(const W& obj) {
+  Result WriteAsync(const W& obj) override {
     return Result(WriteAsyncInternal(obj));
   }
 
@@ -732,14 +732,14 @@ class StdoutDuplexClientWriter : public IDuplexClientWriter<W> {
 
   // Write methods.
 
-  Result Write(const W& obj, const gpr_timespec& deadline) {
+  Result Write(const W& obj, const gpr_timespec& deadline) override {
     std::string output;
     google::protobuf::util::MessageToJsonString(obj, &output, google::protobuf::util::JsonPrintOptions{});
     CLOG(DEBUG) << "GRPC: " << output;
     return Result(Status::OK);
   }
 
-  Result WriteAsync(const W& obj) {
+  Result WriteAsync(const W& obj) override {
     std::string output;
     google::protobuf::util::MessageToJsonString(obj, &output, google::protobuf::util::JsonPrintOptions{});
     CLOG(DEBUG) << "GRPC: " << output;
@@ -751,41 +751,41 @@ class StdoutDuplexClientWriter : public IDuplexClientWriter<W> {
     return Result(Status::OK);
   }
 
-  bool Sleep(const gpr_timespec& deadline) {
+  bool Sleep(const gpr_timespec& deadline) override {
     return true;
   }
 
-  Result WritesDoneAsync() {
+  Result WritesDoneAsync() override {
     return Result(Status::OK);
   }
 
-  Result WritesDone(const gpr_timespec& deadline) {
+  Result WritesDone(const gpr_timespec& deadline) override {
     return Result(Status::OK);
   }
 
-  Result FinishAsync() {
+  Result FinishAsync() override {
     return Result(Status::OK);
   }
 
-  Result WaitUntilStarted(const gpr_timespec& deadline) {
+  Result WaitUntilStarted(const gpr_timespec& deadline) override {
     return Result(Status::OK);
   }
 
-  Result WaitUntilFinished(const gpr_timespec& deadline) {
+  Result WaitUntilFinished(const gpr_timespec& deadline) override {
     return Result(Status::OK);
   }
 
-  Result Finish(grpc::Status* status, const gpr_timespec& deadline) {
+  Result Finish(grpc::Status* status, const gpr_timespec& deadline) override {
     return Result(Status::OK);
   }
 
-  grpc::Status Finish(const gpr_timespec& deadline) {
+  grpc::Status Finish(const gpr_timespec& deadline) override {
     return grpc::Status(grpc::StatusCode::OK, "Ok");
   }
 
-  void TryCancel() {}
+  void TryCancel() override {}
 
-  Result Shutdown() {
+  Result Shutdown() override {
     return Result(Status::OK);
   }
 
