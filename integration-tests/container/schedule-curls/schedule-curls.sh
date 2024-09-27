@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 
+set -ex
+
 num_meta_iter=$1
 num_iter=$2
 sleep_between_curl_time=$3
