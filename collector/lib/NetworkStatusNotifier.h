@@ -46,7 +46,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   sensor::NetworkAddress* EndpointToProto(const Endpoint& endpoint);
   storage::NetworkProcessUniqueKey* ProcessToProto(const collector::IProcess& process);
 
-  void OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg);
+  void OnRecvControlMessage(const sensor::MsgToCollector* msg);
 
   void Run();
   void WaitUntilWriterStarted(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time);
