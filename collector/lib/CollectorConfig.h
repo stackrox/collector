@@ -118,8 +118,8 @@ class CollectorConfig {
   std::vector<IPNet> non_aggregated_networks_;
 
   HostConfig host_config_;
-  int64_t afterglow_period_micros_ = 300000000;  // 5 minutes in microseconds
-  bool enable_afterglow_ = true;
+  int64_t afterglow_period_micros_ = 300'000'000;  // 5 minutes in microseconds
+  bool enable_afterglow_ = false;
   bool enable_core_dump_ = false;
   bool enable_processes_listening_on_ports_;
   bool import_users_;
