@@ -156,8 +156,8 @@ github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace h1:9PNP1jnUjRhfmGMlk
 github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/stackrox/scanner v0.0.0-20240830165150-d133ba942d59 h1:XrOPpgBpAnwTXGbyAYSOongfFeVJJBWPTdWEgYw+Uck=
 github.com/stackrox/scanner v0.0.0-20240830165150-d133ba942d59/go.mod h1:xVs4A0Vur2djLSTZYtIj/5hgUORT1t405Fg0RX4/1kA=
-github.com/stackrox/stackrox v0.0.0-20240927023620-3dd4ab8c29e3 h1:OcMBvBVS34ECqIzSNy2pVOPC7HtGqcp4B2FG7QeECYI=
-github.com/stackrox/stackrox v0.0.0-20240927023620-3dd4ab8c29e3/go.mod h1:t2P+AChSxXUfL6EzbYOsyulvcf86UA/DKZo6qqCvEeE=
+github.com/stackrox/stackrox v0.0.0-20240930042038-a9f112e93b05 h1:wNlza/Qkjp+ZJw+zG0wV6NFNQuM3eW5dSp4rQqPqf74=
+github.com/stackrox/stackrox v0.0.0-20240930042038-a9f112e93b05/go.mod h1:t2P+AChSxXUfL6EzbYOsyulvcf86UA/DKZo6qqCvEeE=
 github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f h1:Ofa3PAa609eSHcHP2kCJDUWUnuEWfiqXhsuppk/QtOE=
 github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f/go.mod h1:MA8QOfq0BHJwdXa996Y4dYkAqRKB8/1K1QMMZVaNZjQ=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
