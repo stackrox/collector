@@ -113,6 +113,7 @@ virtual_machines:
     families:
       - ubuntu-2004-lts
       - ubuntu-2204-lts
+      - ubuntu-2404-lts-amd64
 
   ubuntu-arm:
     project: ubuntu-os-cloud
@@ -121,6 +122,7 @@ virtual_machines:
     families:
       - ubuntu-2004-lts-arm64
       - ubuntu-2204-lts-arm64
+      - ubuntu-2404-lts-arm64
 
   ubuntu-os-pro:
     project: ubuntu-os-pro-cloud
