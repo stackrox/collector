@@ -26,6 +26,7 @@ type Executor interface {
 	GetContainerLogs(containerID string) (string, error)
 	GetContainerPort(containerID string) (string, error)
 	IsContainerFoundFiltered(containerID, filter string) (bool, error)
+	GetContainerStat(containerID string) (*ContainerStat, error)
 }
 
 type CommandBuilder interface {

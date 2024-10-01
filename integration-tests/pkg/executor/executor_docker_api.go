@@ -3,6 +3,7 @@ package executor
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -349,4 +350,18 @@ func (d *dockerAPIExecutor) PullImage(ref string) error {
 	defer reader.Close()
 	io.Copy(io.Discard, reader)
 	return nil
+}
+
+func (d *dockerAPIExecutor) GetContainerStat(containerID string) (*ContainerStat, error) {
+	stats, err := d.client.ContainerStats(context.Background(), containerID, false)
+	if err != nil {
+		return nil, err
+	}
+	defer stats.Body.Close()
+	decoder := json.NewDecoder(stats.Body)
+	var statsJSON types.StatsJSON
+	if err := decoder.Decode(&statsJSON); err != nil {
+		return nil, err
+	}
+	return ToContainerStat(&statsJSON)
 }
