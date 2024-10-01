@@ -62,7 +62,7 @@ func PrepareLog(testName string, logName string) (*os.File, error) {
 		".", "container-logs",
 		config.VMInfo().Config,
 		config.CollectionMethod(),
-		strings.ReplaceAll(testName, "/", "_"),
+		testName,
 	}
 
 	logDirectory := filepath.Join(pathSections...)

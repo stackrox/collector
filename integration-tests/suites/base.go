@@ -406,7 +406,7 @@ func (s *IntegrationTestSuiteBase) cleanupContainers(containers ...string) {
 		exists, _ := s.Executor().ContainerExists(executor.ContainerFilter{Name: container})
 		if exists {
 			s.Executor().KillContainer(container)
-			s.Executor().CaptureLogs(s.collector.TestName(), container)
+			s.Executor().CaptureLogs(s.T().Name(), container)
 			s.Executor().RemoveContainer(executor.ContainerFilter{Name: container})
 		}
 	}
