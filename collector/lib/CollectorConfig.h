@@ -1,12 +1,15 @@
 #ifndef _COLLECTOR_CONFIG_H_
 #define _COLLECTOR_CONFIG_H_
 
+#include <optional>
 #include <ostream>
 #include <vector>
 
 #include <json/json.h>
 
 #include <grpcpp/channel.h>
+
+#include <internalapi/sensor/collector.pb.h>
 
 #include "CollectionMethod.h"
 #include "HostConfig.h"
@@ -83,7 +86,19 @@ class CollectorConfig {
   bool IsProcessesListeningOnPortsEnabled() const { return enable_processes_listening_on_ports_; }
   bool ImportUsers() const { return import_users_; }
   bool CollectConnectionStatus() const { return collect_connection_status_; }
-  bool EnableExternalIPs() const { return enable_external_ips_; }
+
+  // EnableExternalIPs will check for the existence
+  // of a runtime configuration, and defer to that value
+  // otherwise, we rely on the feature flag (env var)
+  bool EnableExternalIPs() const {
+    if (runtime_config_.has_value()) {
+      const auto& cfg = runtime_config_.value();
+      const auto& network_cfg = cfg.network_connection_config();
+      return network_cfg.enable_external_ips();
+    }
+    return enable_external_ips_;
+  }
+
   bool EnableConnectionStats() const { return enable_connection_stats_; }
   bool EnableDetailedMetrics() const { return enable_detailed_metrics_; }
   bool EnableRuntimeConfig() const { return enable_runtime_config_; }
@@ -101,6 +116,18 @@ class CollectorConfig {
   unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
 
   static std::pair<option::ArgStatus, std::string> CheckConfiguration(const char* config, Json::Value* root);
+
+  void SetRuntimeConfig(sensor::CollectorConfig&& runtime_config) {
+    runtime_config_ = runtime_config;
+  }
+
+  void SetRuntimeConfig(sensor::CollectorConfig runtime_config) {
+    runtime_config_ = std::move(runtime_config);
+  }
+
+  const std::optional<sensor::CollectorConfig>& GetRuntimeConfig() const {
+    return runtime_config_;
+  }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
@@ -156,6 +183,8 @@ class CollectorConfig {
 
   std::optional<TlsConfig> tls_config_;
 
+  std::optional<sensor::CollectorConfig> runtime_config_;
+
   void HandleAfterglowEnvVars();
   void HandleConnectionStatsEnvVars();
   void HandleSinspEnvVars();
@@ -165,6 +194,10 @@ class CollectorConfig {
   void SetSinspTotalBufferSize(unsigned int total_buffer_size);
   void SetSinspCpuPerBuffer(unsigned int buffer_size);
   void SetHostConfig(HostConfig* config);
+
+  void SetEnableExternalIPs(bool value) {
+    enable_external_ips_ = value;
+  }
 };
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);
