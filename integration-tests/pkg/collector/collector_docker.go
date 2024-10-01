@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
-	"github.com/stackrox/collector/integration-tests/pkg/log"
 )
 
 type DockerCollectorManager struct {
@@ -156,19 +155,7 @@ func (c *DockerCollectorManager) launchCollector() error {
 }
 
 func (c *DockerCollectorManager) captureLogs(containerName string) (string, error) {
-	logs, err := c.executor.GetContainerLogs(containerName)
-	if err != nil {
-		return "", log.Error("logs error (%v) for container %s\n", err, containerName)
-	}
-
-	logFile, err := common.PrepareLog(c.testName, "collector.log")
-	if err != nil {
-		return "", err
-	}
-	defer logFile.Close()
-
-	_, err = logFile.WriteString(logs)
-	return logs, nil
+	return c.executor.CaptureLogs(c.testName, containerName)
 }
 
 func (c *DockerCollectorManager) killContainer(name string) error {

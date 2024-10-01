@@ -8,7 +8,7 @@
 #
 
 - set_fact:
-    logs_root: "{{ collector_root }}/integration-tests/container-logs/{{ vm_config }}/{{ collection_method }}"
+    logs_root: "{{ collector_root }}/integration-tests/container-logs"
 
 - name: Cleanup old containers
   become: "{{ runtime_as_root }}"
@@ -122,19 +122,16 @@
         path: "{{ logs_root }}"
       delegate_to: localhost
 
-    - name: Get log files
-      find:
-        paths: "{{ remote_log_mount }}/{{ vm_config }}/{{ collection_method }}/"
-      register: remote_log_files
+    - name: Compress log files
+      ansible.builtin.archive:
+        path: "{{ remote_log_mount }}"
+        dest: /tmp/{{ vm_config }}-{{ collection_method }}.tar.gz
 
     - name: Fetch log files
       fetch:
-        src: "{{ remote_log_path }}"
+        src: /tmp/{{ vm_config }}-{{ collection_method }}.tar.gz
         dest: "{{ logs_root }}/"
         flat: true
-      loop: "{{ remote_log_files.files | map(attribute='path') | list }}"
-      loop_control:
-        loop_var: remote_log_path
 
     - name: Write integration test log
       copy:

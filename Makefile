@@ -102,7 +102,7 @@ teardown-builder:
 clean:
 	rm -rf cmake-build*
 	make -C collector clean
-	make -C integration-tests docker-clean
+	make -C integration-tests clean
 
 .PHONY: shfmt-check
 shfmt-check:

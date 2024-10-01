@@ -42,13 +42,13 @@ func (s *PerfEventOpenTestSuite) TestReadingTracepoints() {
 	if finished, _ := s.waitForContainerToExit("perf-event-open", containerID, 5*time.Second, 0); finished {
 		logs, err := s.containerLogs("perf-event-open")
 		if err != nil {
-			log.Info(logs)
+			log.Info(logs.GetSingleLog())
 			assert.FailNow(s.T(), "Failed to initialize host for performance testing")
 		}
 
-		count, err := strconv.Atoi(strings.TrimSpace(logs))
+		count, err := strconv.Atoi(strings.TrimSpace(logs.GetSingleLog()))
 		if err != nil {
-			log.Info(logs)
+			log.Info(logs.GetSingleLog())
 			assert.FailNow(s.T(), "Cannot convert result to the integer type")
 		}
 
