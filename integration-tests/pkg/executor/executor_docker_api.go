@@ -199,49 +199,45 @@ func (c *dockerAPIExecutor) CaptureLogs(testName, containerName string) (string,
 		return "", log.Error("logs error (%v) for container %s\n", err, containerName)
 	}
 
-	if logs == (ContainerLogs{}) {
-		// Nothing to log
-		return "", nil
-	}
-
-	if logs.Stderr == "" || logs.Stdout == "" {
-		// We only have stdout OR stderr to log
-		logName := fmt.Sprintf("%s.log", containerName)
-		logFile, err := common.PrepareLog(testName, logName)
-		if err != nil {
-			return "", err
-		}
-		defer logFile.Close()
-
-		l := logs.GetSingleLog()
-		_, err = logFile.WriteString(l)
-		return l, nil
-	}
-
-	// We need to log both stdout and stderr, do so on separate files
-	for _, log := range []struct {
+	type logFile = struct {
 		name    string
 		content string
-	}{
-		{
-			name:    fmt.Sprintf("%s-stdout.log", containerName),
-			content: logs.Stdout,
-		},
-		{
+	}
+
+	var logFiles []logFile
+	if logs.Empty() {
+		// Nothing to log, still we create an empty file for awareness
+		logFiles = []logFile{{
+			name: fmt.Sprintf("%s.log", containerName),
+		}}
+	} else if logs.Stderr == "" || logs.Stdout == "" {
+		// We only have stdout OR stderr to log
+		logFiles = []logFile{{
+			name:    fmt.Sprintf("%s.log", containerName),
+			content: logs.GetSingleLog(),
+		}}
+	} else {
+		// We need to log both stdout and stderr, do so on separate files
+		logFiles = []logFile{{
 			name:    fmt.Sprintf("%s-stderr.log", containerName),
 			content: logs.Stderr,
-		},
-	} {
-		logFile, err := common.PrepareLog(testName, log.name)
+		}, {
+			name:    fmt.Sprintf("%s-stdout.log", containerName),
+			content: logs.Stdout,
+		}}
+	}
+
+	for _, lf := range logFiles {
+		file, err := common.PrepareLog(testName, lf.name)
 		if err != nil {
 			return "", err
 		}
-		defer logFile.Close()
+		defer file.Close()
 
-		_, err = logFile.WriteString(log.content)
+		file.WriteString(lf.content)
 	}
 
-	return logs.Stderr, nil
+	return logFiles[0].content, nil
 }
 
 func (d *dockerAPIExecutor) KillContainer(containerID string) (string, error) {

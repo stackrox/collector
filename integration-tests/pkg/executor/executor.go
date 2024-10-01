@@ -16,6 +16,10 @@ type ContainerLogs struct {
 	Stderr string
 }
 
+func (c *ContainerLogs) Empty() bool {
+	return *c == (ContainerLogs{})
+}
+
 // Will return Stderr if it is not empty, otherwise it returns Stdout.
 // Useful for accessing the logs for collector and container-stats
 // that use a single stream.
