@@ -121,6 +121,15 @@ jobs:
           fi
           make -C "${{ github.workspace }}/ansible" destroy-vms
 
+      - name: Unarchive logs
+        if: always()
+        run: |
+          cd ${{ github.workspace }}/integration-tests/
+          for file in container-logs/*.tar.gz; do
+            tar xzf "$file"
+            rm -f "$file"
+          done
+
       - name: Store artifacts
         if: always()
         uses: actions/upload-artifact@v4
