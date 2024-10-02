@@ -122,6 +122,7 @@ jobs:
           make -C "${{ github.workspace }}/ansible" destroy-vms
 
       - name: Unarchive logs
+        if: always()
         run: |
           cd ${{ github.workspace }}/integration-tests/
           for file in container-logs/*.tar.gz; do
