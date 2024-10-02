@@ -125,7 +125,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}/integration-tests/
           for file in container-logs/*.tar.gz; do
-            tar -C xzf "$file"
+            tar xzf "$file"
             rm -f "$file"
           done
 
