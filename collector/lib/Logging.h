@@ -124,8 +124,8 @@ class ThrottledLogHeader : public ILogHeader {
 
   bool ShouldPrint() {
     std::chrono::duration elapsed = std::chrono::steady_clock::now() - last_log_;
+    count_++;
     if (elapsed < interval_) {
-      count_++;
       return false;
     }
 
