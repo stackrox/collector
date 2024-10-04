@@ -54,15 +54,21 @@ void WriteTerminationLog(std::string message);
 
 const size_t LevelPaddingWidth = 7;
 
-class LogMessage {
+class ILogHeader {
  public:
-  LogMessage(const char* file, int line, bool throttled, LogLevel level)
-      : file_(file), line_(line), level_(level), throttled_(throttled) {
-    // if in debug mode, output file names associated with log messages
-    include_file_ = CheckLogLevel(LogLevel::DEBUG);
-  }
+  ILogHeader(const char* file, int line, LogLevel level)
+      : file_(file), line_(line), level_(level) {}
+  ILogHeader(const ILogHeader&) = delete;
+  ILogHeader(ILogHeader&&) = delete;
+  ILogHeader& operator=(const ILogHeader&) = delete;
+  ILogHeader& operator=(ILogHeader&&) = delete;
+  virtual ~ILogHeader() = default;
 
-  ~LogMessage() {
+  virtual void PrintHeader() = 0;
+  inline LogLevel GetLogLevel() const { return level_; }
+
+ protected:
+  void PrintPrefix() {
     auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     auto nowTm = gmtime(&now);
 
@@ -71,25 +77,79 @@ class LogMessage {
               << std::left << std::setw(LevelPaddingWidth) << GetLogLevelName(level_)
               << " " << std::put_time(nowTm, "%Y/%m/%d %H:%M:%S")
               << "] ";
+  }
 
-    if (throttled_) {
-      std::cerr << "[Throttled] ";
-    }
-
-    if (include_file_) {
+  void PrintFile() {
+    if (CheckLogLevel(LogLevel::DEBUG)) {
       const char* basename = strrchr(file_, '/');
-      if (!basename) {
+      if (basename == nullptr) {
         basename = file_;
       } else {
         ++basename;
       }
       std::cerr << "(" << basename << ":" << line_ << ") ";
     }
+  }
+
+ private:
+  const char* file_;
+  int line_;
+  LogLevel level_;
+};
+
+class LogHeader : public ILogHeader {
+ public:
+  LogHeader(const char* file, int line, LogLevel level)
+      : ILogHeader(file, line, level) {}
+
+  void PrintHeader() override {
+    PrintPrefix();
+    PrintFile();
+  }
+};
+
+class ThrottledLogHeader : public ILogHeader {
+ public:
+  ThrottledLogHeader(const char* file, int line, LogLevel level, std::chrono::duration<unsigned int> interval)
+      : ILogHeader(file, line, level), interval_(interval) {}
+
+  void PrintHeader() override {
+    PrintPrefix();
+
+    std::cerr << "[Throttled " << count_ << " messages] ";
+    count_ = 0;
+
+    PrintFile();
+  }
+
+  bool ShouldPrint() {
+    std::chrono::duration elapsed = std::chrono::steady_clock::now() - last_log_;
+    if (elapsed < interval_) {
+      count_++;
+      return false;
+    }
+
+    last_log_ = std::chrono::steady_clock::now();
+    return true;
+  }
+
+ private:
+  std::chrono::steady_clock::time_point last_log_;
+  std::chrono::duration<unsigned int> interval_;
+  unsigned long count_{};
+};
+
+class LogMessage {
+ public:
+  LogMessage(ILogHeader& ls) : ls_(ls) {}
+
+  ~LogMessage() {
+    ls_.PrintHeader();
 
     std::cerr << buf_.str()
               << std::endl;
 
-    if (level_ == LogLevel::FATAL) {
+    if (ls_.GetLogLevel() == LogLevel::FATAL) {
       WriteTerminationLog(buf_.str());
       exit(1);
     }
@@ -102,32 +162,35 @@ class LogMessage {
   }
 
  private:
-  const char* file_;
-  int line_;
-  LogLevel level_;
+  ILogHeader& ls_;
   std::stringstream buf_;
-  bool include_file_;
-  bool throttled_;
 };
 
 }  // namespace logging
 
 }  // namespace collector
 
+// Helpers for creating unique variables within a compilation unit.
+#define CLOG_CAT_(a, b) a##b
+#define CLOG_CAT(a, b) CLOG_CAT_(a, b)
+#define CLOG_VAR(a) CLOG_CAT(a, __LINE__)
+
 #define CLOG_ENABLED(lvl) (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl))
 
 #define CLOG_IF(cond, lvl)                                                            \
+  static collector::logging::LogHeader CLOG_VAR(_clog_stmt_)(                         \
+      __FILE__, __LINE__, collector::logging::LogLevel::lvl);                         \
   if (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl) && (cond)) \
-  collector::logging::LogMessage(__FILE__, __LINE__, false, collector::logging::LogLevel::lvl)
+  collector::logging::LogMessage(CLOG_VAR(_clog_stmt_))
 
 #define CLOG(lvl) CLOG_IF(true, lvl)
 
 #define CLOG_THROTTLED_IF(cond, lvl, interval)                                          \
-  static std::chrono::steady_clock::time_point _clog_lastlog_##__LINE__;                \
+  static collector::logging::ThrottledLogHeader CLOG_VAR(_clog_stmt_)(                  \
+      __FILE__, __LINE__, collector::logging::LogLevel::lvl, interval);                 \
   if (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl) && (cond) && \
-      (std::chrono::steady_clock::now() - _clog_lastlog_##__LINE__ >= interval))        \
-  _clog_lastlog_##__LINE__ = std::chrono::steady_clock::now(),                          \
-  collector::logging::LogMessage(__FILE__, __LINE__, true, collector::logging::LogLevel::lvl)
+      CLOG_VAR(_clog_stmt_).ShouldPrint())                                              \
+  collector::logging::LogMessage(CLOG_VAR(_clog_stmt_))
 
 #define CLOG_THROTTLED(lvl, interval) CLOG_THROTTLED_IF(true, lvl, interval)
 
