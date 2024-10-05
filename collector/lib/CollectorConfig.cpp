@@ -411,10 +411,11 @@ void CollectorConfig::HandleConfigMapString(const std::string& jsonString) {
   auto status = google::protobuf::util::JsonStringToMessage(jsonString, &config);
 
   if (!status.ok()) {
-    CLOG(WARNING) << "Failed to parse config";
+    CLOG(ERROR) << "Failed to parse runtime config. Error: " << status.message();
+    CLOG(ERROR) << "ConfigMap file contents: " << jsonString;
   } else {
     SetRuntimeConfig(config);
-    CLOG(INFO) << "Set the config using a configmap";
+    CLOG(INFO) << "Set the runtime config using a configmap";
     CLOG(INFO) << config.DebugString();
   }
 }
@@ -422,17 +423,27 @@ void CollectorConfig::HandleConfigMapString(const std::string& jsonString) {
 std::string readJsonFileToString(const std::filesystem::path& filePath) {
   std::ifstream fileStream(filePath);
   if (!fileStream.is_open()) {
-    CLOG(WARNING) << "Unable to open file: " << filePath;
+    CLOG(WARNING) << "Unable to open ConfigMap file: " << filePath
+                  << ". File may not exist or permissions may be incorrect. "
+                  << "If a ConfigMap was not created intentionally, which is the default, "
+                  << "no action is needed.";
     return "";
   }
 
   std::string content((std::istreambuf_iterator<char>(fileStream)),
                       std::istreambuf_iterator<char>());
+
+  if (content.empty()) {
+    CLOG(WARNING) << "ConfigMap file is empty: " << filePath;
+  }
   return content;
 }
 
 void CollectorConfig::HandleConfigMap(const std::filesystem::path& filePath) {
   std::string jsonConfig = readJsonFileToString(filePath);
+  if (jsonConfig.empty()) {
+    CLOG(WARNING) << "No runtime configuration specified in ConfigMap.";
+  }
   HandleConfigMapString(jsonConfig);
 }
 

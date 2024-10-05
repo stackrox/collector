@@ -153,9 +153,9 @@ TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
 
 TEST(CollectorConfigTest, TestConfigMapTrue) {
   std::string jsonStr = R"({
-         "networkConnectionConfig": {
-           "enableExternalIps": true
-         }
+           "networkConnectionConfig": {
+             "enableExternalIps": true
+           }
          })";
 
   MockCollectorConfig config;
@@ -166,10 +166,34 @@ TEST(CollectorConfigTest, TestConfigMapTrue) {
 
 TEST(CollectorConfigTest, TestConfigMapFalse) {
   std::string jsonStr = R"({
-         "networkConnectionConfig": {
-           "enableExternalIps": false
-         }
+           "networkConnectionConfig": {
+             "enableExternalIps": false
+           }
          })";
+
+  MockCollectorConfig config;
+  config.MockHandleConfigMapString(jsonStr);
+
+  EXPECT_FALSE(config.EnableExternalIPs());
+}
+
+TEST(CollectorConfigTest, TestConfigMapEmpty) {
+  std::string jsonStr = R"({
+           "networkConnectionConfig": {
+           }
+         })";
+
+  MockCollectorConfig config;
+  config.MockHandleConfigMapString(jsonStr);
+
+  EXPECT_FALSE(config.EnableExternalIPs());
+}
+
+TEST(CollectorConfigTest, TestConfigMapInvalid) {
+  std::string jsonStr = R"({
+           "networkConnectionConfig": {
+           }
+         )";
 
   MockCollectorConfig config;
   config.MockHandleConfigMapString(jsonStr);
