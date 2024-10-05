@@ -443,6 +443,7 @@ void CollectorConfig::HandleConfigMap(const std::filesystem::path& filePath) {
   std::string jsonConfig = readJsonFileToString(filePath);
   if (jsonConfig.empty()) {
     CLOG(WARNING) << "No runtime configuration specified in ConfigMap.";
+    return;
   }
   HandleConfigMapString(jsonConfig);
 }
