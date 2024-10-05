@@ -1,5 +1,7 @@
 #include <optional>
 
+#include <internalapi/sensor/collector.pb.h>
+
 #include "CollectorArgs.h"
 #include "CollectorConfig.h"
 #include "gmock/gmock.h"
@@ -31,6 +33,10 @@ class MockCollectorConfig : public CollectorConfig {
 
   void MockSetEnableExternalIPs(bool value) {
     SetEnableExternalIPs(value);
+  }
+
+  void MockHandleConfigMapString(const std::string& jsonStr) {
+    HandleConfigMapString(jsonStr);
   }
 };
 
@@ -143,6 +149,32 @@ TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
   config.SetRuntimeConfig(runtime_config);
 
   EXPECT_TRUE(config.EnableExternalIPs());
+}
+
+TEST(CollectorConfigTest, TestConfigMapTrue) {
+  std::string jsonStr = R"({
+         "networkConnectionConfig": {
+           "enableExternalIps": true
+         }
+         })";
+
+  MockCollectorConfig config;
+  config.MockHandleConfigMapString(jsonStr);
+
+  EXPECT_TRUE(config.EnableExternalIPs());
+}
+
+TEST(CollectorConfigTest, TestConfigMapFalse) {
+  std::string jsonStr = R"({
+         "networkConnectionConfig": {
+           "enableExternalIps": false
+         }
+         })";
+
+  MockCollectorConfig config;
+  config.MockHandleConfigMapString(jsonStr);
+
+  EXPECT_FALSE(config.EnableExternalIPs());
 }
 
 }  // namespace collector

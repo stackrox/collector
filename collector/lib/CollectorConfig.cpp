@@ -6,6 +6,8 @@
 
 #include <libsinsp/sinsp.h>
 
+#include <google/protobuf/util/json_util.h>
+
 #include "CollectorArgs.h"
 #include "EnvVar.h"
 #include "GRPC.h"
@@ -283,6 +285,8 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   HandleAfterglowEnvVars();
   HandleConnectionStatsEnvVars();
   HandleSinspEnvVars();
+  std::string configMapFilePath = "/run/collector_runtime_config/config.json";
+  HandleConfigMap(configMapFilePath);
 
   host_config_ = ProcessHostHeuristics(*this);
 }
@@ -398,6 +402,36 @@ void CollectorConfig::HandleSinspEnvVars() {
       CLOG(ERROR) << "Invalid thread cache size value: '" << envvar << "'";
     }
   }
+}
+
+void CollectorConfig::HandleConfigMapString(const std::string& jsonString) {
+  sensor::CollectorConfig config;
+  auto status = google::protobuf::util::JsonStringToMessage(jsonString, &config);
+
+  if (!status.ok()) {
+    CLOG(WARNING) << "Failed to parse config";
+  } else {
+    SetRuntimeConfig(config);
+    CLOG(INFO) << "Set the config using a configmap";
+    CLOG(INFO) << config.DebugString();
+  }
+}
+
+std::string readJsonFileToString(const std::string& filePath) {
+  std::ifstream fileStream(filePath);
+  if (!fileStream.is_open()) {
+    CLOG(WARNING) << "Unable to open file: " << filePath;
+    return "";
+  }
+
+  std::string content((std::istreambuf_iterator<char>(fileStream)),
+                      std::istreambuf_iterator<char>());
+  return content;
+}
+
+void CollectorConfig::HandleConfigMap(const std::string& filePath) {
+  std::string jsonConfig = readJsonFileToString(filePath);
+  HandleConfigMapString(jsonConfig);
 }
 
 bool CollectorConfig::TurnOffScrape() const {
