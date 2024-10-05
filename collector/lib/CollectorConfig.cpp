@@ -79,6 +79,8 @@ PathEnvVar tls_ca_path("ROX_COLLECTOR_TLS_CA");
 PathEnvVar tls_client_cert_path("ROX_COLLECTOR_TLS_CLIENT_CERT");
 PathEnvVar tls_client_key_path("ROX_COLLECTOR_TLS_CLIENT_KEY");
 
+PathEnvVar runtime_configmap_path("RUNTIME_CONFIGMAP_PATH");
+
 }  // namespace
 
 constexpr bool CollectorConfig::kTurnOffScrape;
@@ -285,7 +287,7 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   HandleAfterglowEnvVars();
   HandleConnectionStatsEnvVars();
   HandleSinspEnvVars();
-  std::string configMapFilePath = "/run/collector_runtime_config/config.json";
+  std::filesystem::path configMapFilePath = runtime_configmap_path.valueOr("/run/collector_runtime_config/config.json");
   HandleConfigMap(configMapFilePath);
 
   host_config_ = ProcessHostHeuristics(*this);
@@ -417,7 +419,7 @@ void CollectorConfig::HandleConfigMapString(const std::string& jsonString) {
   }
 }
 
-std::string readJsonFileToString(const std::string& filePath) {
+std::string readJsonFileToString(const std::filesystem::path& filePath) {
   std::ifstream fileStream(filePath);
   if (!fileStream.is_open()) {
     CLOG(WARNING) << "Unable to open file: " << filePath;
@@ -429,7 +431,7 @@ std::string readJsonFileToString(const std::string& filePath) {
   return content;
 }
 
-void CollectorConfig::HandleConfigMap(const std::string& filePath) {
+void CollectorConfig::HandleConfigMap(const std::filesystem::path& filePath) {
   std::string jsonConfig = readJsonFileToString(filePath);
   HandleConfigMapString(jsonConfig);
 }
