@@ -188,8 +188,8 @@ class CollectorConfig {
   void HandleAfterglowEnvVars();
   void HandleConnectionStatsEnvVars();
   void HandleSinspEnvVars();
-  void HandleConfigMapString(const std::string& jsonString);
-  void HandleConfigMap(const std::filesystem::path& filePath);
+  void HandleConfigString(const std::string& jsonString);
+  void HandleConfig(const std::filesystem::path& filePath);
 
   // Protected, used for testing purposes
   void SetSinspBufferSize(unsigned int buffer_size);

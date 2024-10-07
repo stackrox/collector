@@ -79,7 +79,7 @@ PathEnvVar tls_ca_path("ROX_COLLECTOR_TLS_CA");
 PathEnvVar tls_client_cert_path("ROX_COLLECTOR_TLS_CLIENT_CERT");
 PathEnvVar tls_client_key_path("ROX_COLLECTOR_TLS_CLIENT_KEY");
 
-PathEnvVar runtime_configmap_path("RUNTIME_CONFIGMAP_PATH");
+PathEnvVar config_file("ROX_COLLECTOR_CONFIGURATION", "/etc/stackrox/collector.json");
 
 }  // namespace
 
@@ -287,7 +287,7 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   HandleAfterglowEnvVars();
   HandleConnectionStatsEnvVars();
   HandleSinspEnvVars();
-  std::filesystem::path configMapFilePath = runtime_configmap_path.valueOr("/run/collector_runtime_config/config.json");
+  std::filesystem::path configMapFilePath = runtime_configmap_path.valueOr("/run/collector/runtime_config.json");
   HandleConfigMap(configMapFilePath);
 
   host_config_ = ProcessHostHeuristics(*this);
@@ -415,8 +415,7 @@ void CollectorConfig::HandleConfigMapString(const std::string& jsonString) {
     CLOG(ERROR) << "ConfigMap file contents: " << jsonString;
   } else {
     SetRuntimeConfig(config);
-    CLOG(INFO) << "Set the runtime config using a configmap";
-    CLOG(INFO) << config.DebugString();
+    CLOG(INFO) << "Runtime configuration: " << config.DebugString();
   }
 }
 
@@ -442,7 +441,6 @@ std::string readJsonFileToString(const std::filesystem::path& filePath) {
 void CollectorConfig::HandleConfigMap(const std::filesystem::path& filePath) {
   std::string jsonConfig = readJsonFileToString(filePath);
   if (jsonConfig.empty()) {
-    CLOG(WARNING) << "No runtime configuration specified in ConfigMap.";
     return;
   }
   HandleConfigMapString(jsonConfig);
