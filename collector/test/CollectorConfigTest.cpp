@@ -35,9 +35,6 @@ class MockCollectorConfig : public CollectorConfig {
     SetEnableExternalIPs(value);
   }
 
-  void MockHandleConfigMapString(const std::string& jsonStr) {
-    HandleConfigMapString(jsonStr);
-  }
 };
 
 // Test that unmodified value is returned, when some dependency values are
