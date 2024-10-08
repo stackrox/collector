@@ -154,6 +154,16 @@ class ThrottledLogHeader : public ILogHeader {
     PrintFile();
   }
 
+  /**
+   * Check if the log message should be suppressed.
+   *
+   * Throttled logs only output a message every interval_ time windows.
+   * If the log is to be suppressed, we increment count_ so the next
+   * time it is print we can add the amount of times the log has
+   * happened.
+   *
+   * @returns true if the log has to be suppressed.
+   */
   bool Suppress() {
     std::chrono::duration elapsed = std::chrono::steady_clock::now() - last_log_;
     count_++;
