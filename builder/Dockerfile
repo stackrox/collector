@@ -5,6 +5,7 @@ ARG BUILD_DIR=/install-tmp
 USER root
 
 RUN dnf -y update \
+    && dnf -y install epel-release \
     && dnf -y install --nobest \
         autoconf \
         automake \
@@ -42,6 +43,7 @@ RUN dnf -y update \
         valgrind \
         wget \
         which \
+        yaml-cpp-devel \
         bpftool \
         # for USDT support
         systemtap-sdt-devel \

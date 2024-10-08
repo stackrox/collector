@@ -4,9 +4,9 @@
 #include <optional>
 #include <sstream>
 
-#include <libsinsp/sinsp.h>
+#include <yaml-cpp/yaml.h>
 
-#include <google/protobuf/util/json_util.h>
+#include <libsinsp/sinsp.h>
 
 #include "CollectorArgs.h"
 #include "EnvVar.h"
@@ -79,7 +79,7 @@ PathEnvVar tls_ca_path("ROX_COLLECTOR_TLS_CA");
 PathEnvVar tls_client_cert_path("ROX_COLLECTOR_TLS_CLIENT_CERT");
 PathEnvVar tls_client_key_path("ROX_COLLECTOR_TLS_CLIENT_KEY");
 
-PathEnvVar config_file("ROX_COLLECTOR_CONFIGURATION", "/etc/stackrox/collector.json");
+PathEnvVar config_file("ROX_COLLECTOR_CONFIG_PATH", "/etc/stackrox/collector.json");
 
 }  // namespace
 
@@ -287,8 +287,7 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   HandleAfterglowEnvVars();
   HandleConnectionStatsEnvVars();
   HandleSinspEnvVars();
-  std::filesystem::path configMapFilePath = runtime_configmap_path.valueOr("/run/collector/runtime_config.json");
-  HandleConfigMap(configMapFilePath);
+  HandleConfig(config_file.value());
 
   host_config_ = ProcessHostHeuristics(*this);
 }
@@ -406,44 +405,59 @@ void CollectorConfig::HandleSinspEnvVars() {
   }
 }
 
-void CollectorConfig::HandleConfigMapString(const std::string& jsonString) {
-  sensor::CollectorConfig config;
-  auto status = google::protobuf::util::JsonStringToMessage(jsonString, &config);
-
-  if (!status.ok()) {
-    CLOG(ERROR) << "Failed to parse runtime config. Error: " << status.message();
-    CLOG(ERROR) << "ConfigMap file contents: " << jsonString;
-  } else {
-    SetRuntimeConfig(config);
-    CLOG(INFO) << "Runtime configuration: " << config.DebugString();
+bool CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
+  if (yamlConfig.IsNull() || !yamlConfig.IsDefined()) {
+    CLOG(FATAL) << "Unable to read config from config file";
+    return false;
   }
+  std::string networkConnectionConfigStr = "networkConnectionConfig";
+  if (!yamlConfig[networkConnectionConfigStr]) {
+    CLOG(WARNING) << "No " + networkConnectionConfigStr + " in config file";
+    return false;
+  }
+
+  YAML::Node networkConnectionConfig = yamlConfig[networkConnectionConfigStr];
+
+  bool enableExternalIps = false;
+  std::string enableExternalIpsStr = "enableExternalIps";
+
+  if (networkConnectionConfig[enableExternalIpsStr]) {
+    enableExternalIps = networkConnectionConfig[enableExternalIpsStr].as<bool>();
+  }
+
+  sensor::CollectorConfig runtime_config;
+  auto* networkConfig = runtime_config.mutable_network_connection_config();
+  networkConfig->set_enable_external_ips(enableExternalIps);
+
+  SetRuntimeConfig(runtime_config);
+
+  return true;
 }
 
-std::string readJsonFileToString(const std::filesystem::path& filePath) {
-  std::ifstream fileStream(filePath);
-  if (!fileStream.is_open()) {
-    CLOG(WARNING) << "Unable to open ConfigMap file: " << filePath
-                  << ". File may not exist or permissions may be incorrect. "
-                  << "If a ConfigMap was not created intentionally, which is the default, "
-                  << "no action is needed.";
-    return "";
-  }
-
-  std::string content((std::istreambuf_iterator<char>(fileStream)),
-                      std::istreambuf_iterator<char>());
-
-  if (content.empty()) {
-    CLOG(WARNING) << "ConfigMap file is empty: " << filePath;
-  }
-  return content;
-}
-
-void CollectorConfig::HandleConfigMap(const std::filesystem::path& filePath) {
-  std::string jsonConfig = readJsonFileToString(filePath);
-  if (jsonConfig.empty()) {
+void CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
+  if (!std::filesystem::exists(filePath)) {
+    CLOG(DEBUG) << "No configuration file found. " << filePath;
     return;
   }
-  HandleConfigMapString(jsonConfig);
+  YAML::Node yamlConfig = YAML::LoadFile(filePath);
+
+  try {
+    YAML::Node yamlConfig = YAML::LoadFile(filePath);
+    YamlConfigToConfig(yamlConfig);
+  } catch (const YAML::BadFile& e) {
+    CLOG(FATAL) << "Failed to open the configuration file: " << filePath
+                << ". Error: " << e.what();
+  } catch (const YAML::ParserException& e) {
+    CLOG(FATAL) << "Failed to parse the configuration file: " << filePath
+                << ". Error: " << e.what();
+  } catch (const YAML::Exception& e) {
+    CLOG(FATAL) << "An error occurred while loading the configuration file: " << filePath
+                << ". Error: " << e.what();
+  } catch (const std::exception& e) {
+    CLOG(FATAL) << "An unexpected error occurred: " << e.what();
+  }
+
+  YamlConfigToConfig(yamlConfig);
 }
 
 bool CollectorConfig::TurnOffScrape() const {

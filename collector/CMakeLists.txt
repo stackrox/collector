@@ -2,6 +2,7 @@ project(collector-bin)
 
 find_package(Threads)
 find_package(CURL REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall --std=c++17 -pthread -Wno-deprecated-declarations -fno-omit-frame-pointer -rdynamic")
@@ -72,10 +73,12 @@ add_definitions(-DASSERT_TO_LOG)
 add_subdirectory(lib)
 
 add_executable(collector collector.cpp)
+target_link_libraries(collector_lib yaml-cpp)
 target_link_libraries(collector collector_lib)
 
 target_link_libraries(collector libprometheus-cpp-pull.a)
 target_link_libraries(collector libprometheus-cpp-core.a)
+target_link_libraries(collector yaml-cpp)
 
 add_executable(connscrape connscrape.cpp)
 target_link_libraries(connscrape collector_lib)

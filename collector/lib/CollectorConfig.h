@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <json/json.h>
+#include <yaml-cpp/yaml.h>
 
 #include <grpcpp/channel.h>
 
@@ -188,7 +189,7 @@ class CollectorConfig {
   void HandleAfterglowEnvVars();
   void HandleConnectionStatsEnvVars();
   void HandleSinspEnvVars();
-  void HandleConfigString(const std::string& jsonString);
+  bool YamlConfigToConfig(YAML::Node& yamlConfig);
   void HandleConfig(const std::filesystem::path& filePath);
 
   // Protected, used for testing purposes

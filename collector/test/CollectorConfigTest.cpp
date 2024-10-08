@@ -35,6 +35,9 @@ class MockCollectorConfig : public CollectorConfig {
     SetEnableExternalIPs(value);
   }
 
+  bool MockYamlConfigToConfig(YAML::Node& yamlConfig) {
+    return YamlConfigToConfig(yamlConfig);
+  }
 };
 
 // Test that unmodified value is returned, when some dependency values are
@@ -148,54 +151,64 @@ TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
   EXPECT_TRUE(config.EnableExternalIPs());
 }
 
-TEST(CollectorConfigTest, TestConfigMapTrue) {
-  std::string jsonStr = R"({
-           "networkConnectionConfig": {
-             "enableExternalIps": true
-           }
-         })";
+TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
+  std::vector<std::tuple<std::string, bool, bool>> tests = {
+      {R"(
+                  networkConnectionConfig:
+                    enableExternalIps: true
+               )",
+       true, true},
+      {R"(
+                  networkConnectionConfig:
+                    enableExternalIps: false
+               )",
+       false, true},
+      {R"(
+                  networkConnectionConfig:
+               )",
+       false, true},
+      {R"(
+                  networkConnectionConfig:
+                    unknownFields: asdf
+               )",
+       false, true},
+      {R"(
+                  unknownFields: asdf
+               )",
+       false, false}};
 
-  MockCollectorConfig config;
-  config.MockHandleConfigMapString(jsonStr);
+  for (const auto& [yamlStr, expected, valid] : tests) {
+    YAML::Node yamlNode = YAML::Load(yamlStr);
 
-  EXPECT_TRUE(config.EnableExternalIPs());
+    MockCollectorConfig config;
+
+    bool result = config.MockYamlConfigToConfig(yamlNode);
+    std::optional<sensor::CollectorConfig> runtime_config;
+    runtime_config = config.GetRuntimeConfig();
+
+    EXPECT_EQ(result, valid);
+    EXPECT_EQ(runtime_config.has_value(), valid);
+
+    if (runtime_config.has_value()) {
+      const auto& cfg = runtime_config.value();
+      const auto& network_cfg = cfg.network_connection_config();
+      EXPECT_EQ(network_cfg.enable_external_ips(), expected);
+      EXPECT_EQ(config.EnableExternalIPs(), expected);
+    }
+  }
 }
 
-TEST(CollectorConfigTest, TestConfigMapFalse) {
-  std::string jsonStr = R"({
-           "networkConnectionConfig": {
-             "enableExternalIps": false
-           }
-         })";
+TEST(CollectorConfigTest, TestYamlConfigToConfigEmpty) {
+  std::string yamlStr = R"()";
+  YAML::Node yamlNode = YAML::Load(yamlStr);
 
   MockCollectorConfig config;
-  config.MockHandleConfigMapString(jsonStr);
 
-  EXPECT_FALSE(config.EnableExternalIPs());
-}
+  EXPECT_DEATH({ config.MockYamlConfigToConfig(yamlNode); }, ".*");
+  std::optional<sensor::CollectorConfig> runtime_config;
+  runtime_config = config.GetRuntimeConfig();
 
-TEST(CollectorConfigTest, TestConfigMapEmpty) {
-  std::string jsonStr = R"({
-           "networkConnectionConfig": {
-           }
-         })";
-
-  MockCollectorConfig config;
-  config.MockHandleConfigMapString(jsonStr);
-
-  EXPECT_FALSE(config.EnableExternalIPs());
-}
-
-TEST(CollectorConfigTest, TestConfigMapInvalid) {
-  std::string jsonStr = R"({
-           "networkConnectionConfig": {
-           }
-         )";
-
-  MockCollectorConfig config;
-  config.MockHandleConfigMapString(jsonStr);
-
-  EXPECT_FALSE(config.EnableExternalIPs());
+  EXPECT_FALSE(runtime_config.has_value());
 }
 
 }  // namespace collector
