@@ -3,7 +3,7 @@
 set -e
 
 cd third_party/yaml-cpp
-cp LICENSE "${LICENSE_DIR}/gperftools-${YAMLCPP_VERSION}"
+cp LICENSE "${LICENSE_DIR}/yaml-cpp-${YAMLCPP_VERSION}"
 
 cmake -B build/ \
     -DYAML_CPP_BUILD_CONTRIB=OFF \
