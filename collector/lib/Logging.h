@@ -131,7 +131,7 @@ class LogHeader : public ILogHeader {
  * Throttled log header.
  *
  * When the same log message is triggered multiple times, this header
- * help prevent flooding the logs and instead counts the occurrences
+ * helps prevent flooding the logs and instead counts the occurrences
  * of the message, which will be output after a given time window
  * expires.
  *
@@ -158,8 +158,8 @@ class ThrottledLogHeader : public ILogHeader {
    * Check if the log message should be suppressed.
    *
    * Throttled logs only output a message every interval_ time windows.
-   * If the log is to be suppressed, we increment count_ so the next
-   * time it is print we can add the amount of times the log has
+   * Every time this method is called, we increment count_ so the next
+   * time the log is printed we can add the amount of times the log has
    * happened.
    *
    * @returns true if the log has to be suppressed.
