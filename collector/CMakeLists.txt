@@ -78,7 +78,6 @@ target_link_libraries(collector collector_lib)
 
 target_link_libraries(collector libprometheus-cpp-pull.a)
 target_link_libraries(collector libprometheus-cpp-core.a)
-target_link_libraries(collector yaml-cpp)
 
 add_executable(connscrape connscrape.cpp)
 target_link_libraries(connscrape collector_lib)
