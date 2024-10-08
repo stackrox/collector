@@ -410,19 +410,19 @@ bool CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
     CLOG(FATAL) << "Unable to read config from config file";
     return false;
   }
-  std::string networkConnectionConfigStr = "networkConnectionConfig";
-  if (!yamlConfig[networkConnectionConfigStr]) {
-    CLOG(WARNING) << "No " + networkConnectionConfigStr + " in config file";
+  YAML::Node networkConnectionConfig = yamlConfig["networkConnectionConfig"];
+  if (!networkConnectionConfig) {
+    CLOG(WARNING) << "No networkConnectionConfig in config file";
     return false;
   }
 
-  YAML::Node networkConnectionConfig = yamlConfig[networkConnectionConfigStr];
-
   bool enableExternalIps = false;
-  std::string enableExternalIpsStr = "enableExternalIps";
-
-  if (networkConnectionConfig[enableExternalIpsStr]) {
-    enableExternalIps = networkConnectionConfig[enableExternalIpsStr].as<bool>();
+  try {
+    if (networkConnectionConfig["enableExternalIps"]) {
+      enableExternalIps = networkConnectionConfig["enableExternalIps"].as<bool>();
+    }
+  } catch (const std::exception& e) {
+    CLOG(FATAL) << "An error occurred getting enableExternalIps";
   }
 
   sensor::CollectorConfig runtime_config;
@@ -454,7 +454,7 @@ void CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
     CLOG(FATAL) << "An error occurred while loading the configuration file: " << filePath
                 << ". Error: " << e.what();
   } catch (const std::exception& e) {
-    CLOG(FATAL) << "An unexpected error occurred: " << e.what();
+    CLOG(FATAL) << "An unexpected error occurred while trying to read: " << filePath << e.what();
   }
 
   YamlConfigToConfig(yamlConfig);
