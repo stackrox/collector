@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -54,10 +55,24 @@ void WriteTerminationLog(std::string message);
 
 const size_t LevelPaddingWidth = 7;
 
+/**
+ * Interface for log headers.
+ *
+ * This class defines how log headers should behave and provides some
+ * basic, reusable methods.
+ */
 class ILogHeader {
  public:
   ILogHeader(const char* file, int line, LogLevel level)
-      : file_(file), line_(line), level_(level) {}
+      : line_(line), level_(level) {
+    std::filesystem::path p(file);
+    if (p.has_filename()) {
+      file_ = p.filename().string();
+    } else {
+      file_ = p.string();
+    }
+  }
+
   ILogHeader(const ILogHeader&) = delete;
   ILogHeader(ILogHeader&&) = delete;
   ILogHeader& operator=(const ILogHeader&) = delete;
@@ -81,22 +96,26 @@ class ILogHeader {
 
   void PrintFile() {
     if (CheckLogLevel(LogLevel::DEBUG)) {
-      const char* basename = strrchr(file_, '/');
-      if (basename == nullptr) {
-        basename = file_;
-      } else {
-        ++basename;
-      }
-      std::cerr << "(" << basename << ":" << line_ << ") ";
+      std::cerr << "(" << file_ << ":" << line_ << ") ";
     }
   }
 
  private:
-  const char* file_;
+  std::string file_;
   int line_;
   LogLevel level_;
 };
 
+/**
+ * Basic log header.
+ *
+ * Most log lines will use this header.
+ *
+ * The format when running in debug level will be:
+ * [LEVEL  YYYY/MM/DD HH:mm:SS] (file:line)
+ *
+ * Other log levels exclude the (file:line) part of the header.
+ */
 class LogHeader : public ILogHeader {
  public:
   LogHeader(const char* file, int line, LogLevel level)
@@ -108,6 +127,19 @@ class LogHeader : public ILogHeader {
   }
 };
 
+/**
+ * Throttled log header.
+ *
+ * When the same log message is triggered multiple times, this header
+ * help prevent flooding the logs and instead counts the occurrences
+ * of the message, which will be output after a given time window
+ * expires.
+ *
+ * The format when running in debug level will be:
+ * [LEVEL  YYYY/MM/DD HH:mm:SS] [Throttled COUNT message] (file:line)
+ *
+ * Other log levels exclude the (file:line) part of the header.
+ */
 class ThrottledLogHeader : public ILogHeader {
  public:
   ThrottledLogHeader(const char* file, int line, LogLevel level, std::chrono::duration<unsigned int> interval)
@@ -122,15 +154,15 @@ class ThrottledLogHeader : public ILogHeader {
     PrintFile();
   }
 
-  bool ShouldPrint() {
+  bool Suppress() {
     std::chrono::duration elapsed = std::chrono::steady_clock::now() - last_log_;
     count_++;
     if (elapsed < interval_) {
-      return false;
+      return true;
     }
 
     last_log_ = std::chrono::steady_clock::now();
-    return true;
+    return false;
   }
 
  private:
@@ -189,7 +221,7 @@ class LogMessage {
   static collector::logging::ThrottledLogHeader CLOG_VAR(_clog_stmt_)(                  \
       __FILE__, __LINE__, collector::logging::LogLevel::lvl, interval);                 \
   if (collector::logging::CheckLogLevel(collector::logging::LogLevel::lvl) && (cond) && \
-      CLOG_VAR(_clog_stmt_).ShouldPrint())                                              \
+      !CLOG_VAR(_clog_stmt_).Suppress())                                                \
   collector::logging::LogMessage(CLOG_VAR(_clog_stmt_))
 
 #define CLOG_THROTTLED(lvl, interval) CLOG_THROTTLED_IF(true, lvl, interval)
