@@ -4,7 +4,6 @@
 #include <optional>
 #include <sstream>
 
-#include <yaml-cpp/yaml.h>
 
 #include <libsinsp/sinsp.h>
 
@@ -79,7 +78,7 @@ PathEnvVar tls_ca_path("ROX_COLLECTOR_TLS_CA");
 PathEnvVar tls_client_cert_path("ROX_COLLECTOR_TLS_CLIENT_CERT");
 PathEnvVar tls_client_key_path("ROX_COLLECTOR_TLS_CLIENT_KEY");
 
-PathEnvVar config_file("ROX_COLLECTOR_CONFIG_PATH", "/etc/stackrox/collector.json");
+PathEnvVar config_file("ROX_COLLECTOR_CONFIG_PATH", "/etc/stackrox/collector.yaml");
 
 }  // namespace
 
@@ -417,12 +416,8 @@ bool CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
   }
 
   bool enableExternalIps = false;
-  try {
-    if (networkConnectionConfig["enableExternalIps"]) {
-      enableExternalIps = networkConnectionConfig["enableExternalIps"].as<bool>();
-    }
-  } catch (const std::exception& e) {
-    CLOG(FATAL) << "An error occurred getting enableExternalIps";
+  if (networkConnectionConfig["enableExternalIps"]) {
+    enableExternalIps = networkConnectionConfig["enableExternalIps"].as<bool>(false);
   }
 
   sensor::CollectorConfig runtime_config;
@@ -439,7 +434,6 @@ void CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
     CLOG(DEBUG) << "No configuration file found. " << filePath;
     return;
   }
-  YAML::Node yamlConfig = YAML::LoadFile(filePath);
 
   try {
     YAML::Node yamlConfig = YAML::LoadFile(filePath);

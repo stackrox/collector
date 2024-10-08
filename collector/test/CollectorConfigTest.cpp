@@ -183,8 +183,7 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
     MockCollectorConfig config;
 
     bool result = config.MockYamlConfigToConfig(yamlNode);
-    std::optional<sensor::CollectorConfig> runtime_config;
-    runtime_config = config.GetRuntimeConfig();
+    auto runtime_config = config.GetRuntimeConfig();
 
     EXPECT_EQ(result, valid);
     EXPECT_EQ(runtime_config.has_value(), valid);
