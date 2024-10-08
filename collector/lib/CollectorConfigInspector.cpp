@@ -35,7 +35,7 @@ Json::Value CollectorConfigInspector::configToJson() {
     std::string errs;
     std::istringstream iss(jsonString);
     if (!Json::parseFromStream(readerBuilder, iss, &root, &errs)) {
-      std::cerr << "Failed to parse JSON string: " << errs;
+      CLOG(ERROR) << "Failed to parse JSON string: " << errs;
       return Json::Value();
     }
   }
@@ -49,8 +49,6 @@ bool CollectorConfigInspector::handleGet(CivetServer* server, struct mg_connecti
   if (req_info == nullptr) {
     return ServerError(conn, "unable to read request");
   }
-
-  // std::string_view url = req_info->local_uri;
 
   Json::Value root = configToJson();
 
