@@ -152,32 +152,28 @@ TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
 }
 
 TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
-  std::vector<std::tuple<std::string, bool, bool>> tests = {
+  std::vector<std::pair<std::string, bool>> tests = {
       {R"(
                   networkConnectionConfig:
                     enableExternalIps: true
                )",
-       true, true},
+       true},
       {R"(
                   networkConnectionConfig:
                     enableExternalIps: false
                )",
-       false, true},
+       false},
       {R"(
                   networkConnectionConfig:
                )",
-       false, true},
+       false},
       {R"(
                   networkConnectionConfig:
-                    unknownFields: asdf
+                    unknownField: asdf
                )",
-       false, true},
-      {R"(
-                  unknownFields: asdf
-               )",
-       false, false}};
+       false}};
 
-  for (const auto& [yamlStr, expected, valid] : tests) {
+  for (const auto& [yamlStr, expected] : tests) {
     YAML::Node yamlNode = YAML::Load(yamlStr);
 
     MockCollectorConfig config;
@@ -185,8 +181,8 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
     bool result = config.MockYamlConfigToConfig(yamlNode);
     auto runtime_config = config.GetRuntimeConfig();
 
-    EXPECT_EQ(result, valid);
-    EXPECT_EQ(runtime_config.has_value(), valid);
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(runtime_config.has_value());
 
     if (runtime_config.has_value()) {
       const auto& cfg = runtime_config.value();
@@ -197,6 +193,22 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
   }
 }
 
+TEST(CollectorConfigTest, TestYamlConfigToConfigInvalid) {
+  std::string yamlStr = R"(
+                  unknownField: asdf
+               )";
+
+  YAML::Node yamlNode = YAML::Load(yamlStr);
+
+  MockCollectorConfig config;
+
+  bool result = config.MockYamlConfigToConfig(yamlNode);
+  auto runtime_config = config.GetRuntimeConfig();
+
+  EXPECT_FALSE(result);
+  EXPECT_FALSE(runtime_config.has_value());
+}
+
 TEST(CollectorConfigTest, TestYamlConfigToConfigEmpty) {
   std::string yamlStr = R"()";
   YAML::Node yamlNode = YAML::Load(yamlStr);
@@ -204,10 +216,6 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigEmpty) {
   MockCollectorConfig config;
 
   EXPECT_DEATH({ config.MockYamlConfigToConfig(yamlNode); }, ".*");
-  std::optional<sensor::CollectorConfig> runtime_config;
-  runtime_config = config.GetRuntimeConfig();
-
-  EXPECT_FALSE(runtime_config.has_value());
 }
 
 }  // namespace collector

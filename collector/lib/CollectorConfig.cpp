@@ -4,7 +4,6 @@
 #include <optional>
 #include <sstream>
 
-
 #include <libsinsp/sinsp.h>
 
 #include "CollectorArgs.h"
@@ -450,8 +449,6 @@ void CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
   } catch (const std::exception& e) {
     CLOG(FATAL) << "An unexpected error occurred while trying to read: " << filePath << e.what();
   }
-
-  YamlConfigToConfig(yamlConfig);
 }
 
 bool CollectorConfig::TurnOffScrape() const {
