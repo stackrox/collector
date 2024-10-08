@@ -77,7 +77,7 @@ PathEnvVar tls_ca_path("ROX_COLLECTOR_TLS_CA");
 PathEnvVar tls_client_cert_path("ROX_COLLECTOR_TLS_CLIENT_CERT");
 PathEnvVar tls_client_key_path("ROX_COLLECTOR_TLS_CLIENT_KEY");
 
-PathEnvVar config_file("ROX_COLLECTOR_CONFIG_PATH", "/etc/stackrox/collector.yaml");
+PathEnvVar config_file("ROX_COLLECTOR_CONFIG_PATH", "/etc/stackrox/runtime_config.yaml");
 
 }  // namespace
 
@@ -424,6 +424,7 @@ bool CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
   networkConfig->set_enable_external_ips(enableExternalIps);
 
   SetRuntimeConfig(runtime_config);
+  CLOG(INFO) << "Runtime configuration: " << GetRuntimeConfigStr();
 
   return true;
 }
