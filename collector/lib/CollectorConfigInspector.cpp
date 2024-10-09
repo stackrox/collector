@@ -26,7 +26,7 @@ std::string CollectorConfigInspector::configToJson(bool& isError) {
   if (!status.ok()) {
     isError = true;
     CLOG(WARNING) << "Failed to convert protobuf object to JSON: " << status.ToString();
-    return "{\"error\": \"Failed to convert protobuf object to JSON\"";
+    return R"({"error": "Failed to convert protobuf object to JSON")";
   }
 
   return jsonString;
@@ -43,7 +43,7 @@ bool CollectorConfigInspector::handleGet(CivetServer* server, struct mg_connecti
   std::string jsonString = configToJson(isError);
 
   if (isError) {
-    mg_printf(conn, "HTTP/1.1 500 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
+    mg_printf(conn, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
   } else {
     mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
   }
