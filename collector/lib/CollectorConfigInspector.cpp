@@ -1,14 +1,10 @@
 #include "CollectorConfigInspector.h"
 
-#include <forward_list>
 #include <string>
-#include <unordered_map>
 
-#include <arpa/inet.h>
+#include <Logging.h>
 
 #include <google/protobuf/util/json_util.h>
-
-#include "ConnTracker.h"
 
 namespace collector {
 
@@ -19,9 +15,11 @@ CollectorConfigInspector::CollectorConfigInspector(const std::shared_ptr<Collect
 
 Json::Value CollectorConfigInspector::configToJson() {
   Json::Value root;
-  std::optional<sensor::CollectorConfig> runtime_config = config_->GetRuntimeConfig();
+  const auto& runtime_config = config_->GetRuntimeConfig();
 
-  if (runtime_config.has_value()) {
+  if (!runtime_config.has_value()) {
+    return root;
+  }
     std::string jsonString;
     const auto& config = runtime_config.value();
     google::protobuf::util::Status status = google::protobuf::util::MessageToJsonString(config, &jsonString);
