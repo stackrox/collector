@@ -1,5 +1,7 @@
 #include <optional>
 
+#include <internalapi/sensor/collector.pb.h>
+
 #include "CollectorArgs.h"
 #include "CollectorConfig.h"
 #include "gmock/gmock.h"
@@ -31,6 +33,10 @@ class MockCollectorConfig : public CollectorConfig {
 
   void MockSetEnableExternalIPs(bool value) {
     SetEnableExternalIPs(value);
+  }
+
+  bool MockYamlConfigToConfig(YAML::Node& yamlConfig) {
+    return YamlConfigToConfig(yamlConfig);
   }
 };
 
@@ -143,6 +149,71 @@ TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
   config.SetRuntimeConfig(runtime_config);
 
   EXPECT_TRUE(config.EnableExternalIPs());
+}
+
+TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
+  std::vector<std::pair<std::string, bool>> tests = {
+      {R"(
+                  networkConnectionConfig:
+                    enableExternalIps: true
+               )",
+       true},
+      {R"(
+                  networkConnectionConfig:
+                    enableExternalIps: false
+               )",
+       false},
+      {R"(
+                  networkConnectionConfig:
+               )",
+       false},
+      {R"(
+                  networkConnectionConfig:
+                    unknownField: asdf
+               )",
+       false}};
+
+  for (const auto& [yamlStr, expected] : tests) {
+    YAML::Node yamlNode = YAML::Load(yamlStr);
+
+    MockCollectorConfig config;
+
+    bool result = config.MockYamlConfigToConfig(yamlNode);
+    auto runtime_config = config.GetRuntimeConfig();
+
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(runtime_config.has_value());
+
+    const auto& cfg = runtime_config.value();
+    const auto& network_cfg = cfg.network_connection_config();
+    EXPECT_EQ(network_cfg.enable_external_ips(), expected);
+    EXPECT_EQ(config.EnableExternalIPs(), expected);
+  }
+}
+
+TEST(CollectorConfigTest, TestYamlConfigToConfigInvalid) {
+  std::string yamlStr = R"(
+                  unknownField: asdf
+               )";
+
+  YAML::Node yamlNode = YAML::Load(yamlStr);
+
+  MockCollectorConfig config;
+
+  bool result = config.MockYamlConfigToConfig(yamlNode);
+  auto runtime_config = config.GetRuntimeConfig();
+
+  EXPECT_FALSE(result);
+  EXPECT_FALSE(runtime_config.has_value());
+}
+
+TEST(CollectorConfigTest, TestYamlConfigToConfigEmpty) {
+  std::string yamlStr = R"()";
+  YAML::Node yamlNode = YAML::Load(yamlStr);
+
+  MockCollectorConfig config;
+
+  EXPECT_DEATH({ config.MockYamlConfigToConfig(yamlNode); }, ".*");
 }
 
 }  // namespace collector

@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <json/json.h>
+#include <yaml-cpp/yaml.h>
 
 #include <grpcpp/channel.h>
 
@@ -99,6 +100,14 @@ class CollectorConfig {
     return enable_external_ips_;
   }
 
+  std::string GetRuntimeConfigStr() {
+    if (runtime_config_.has_value()) {
+      const auto& cfg = runtime_config_.value();
+      return cfg.DebugString();
+    }
+    return "{}";
+  }
+
   bool EnableConnectionStats() const { return enable_connection_stats_; }
   bool EnableDetailedMetrics() const { return enable_detailed_metrics_; }
   bool EnableRuntimeConfig() const { return enable_runtime_config_; }
@@ -188,6 +197,8 @@ class CollectorConfig {
   void HandleAfterglowEnvVars();
   void HandleConnectionStatsEnvVars();
   void HandleSinspEnvVars();
+  bool YamlConfigToConfig(YAML::Node& yamlConfig);
+  void HandleConfig(const std::filesystem::path& filePath);
 
   // Protected, used for testing purposes
   void SetSinspBufferSize(unsigned int buffer_size);

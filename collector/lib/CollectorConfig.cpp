@@ -77,6 +77,8 @@ PathEnvVar tls_ca_path("ROX_COLLECTOR_TLS_CA");
 PathEnvVar tls_client_cert_path("ROX_COLLECTOR_TLS_CLIENT_CERT");
 PathEnvVar tls_client_key_path("ROX_COLLECTOR_TLS_CLIENT_KEY");
 
+PathEnvVar config_file("ROX_COLLECTOR_CONFIG_PATH", "/etc/stackrox/runtime_config.yaml");
+
 }  // namespace
 
 constexpr bool CollectorConfig::kTurnOffScrape;
@@ -283,6 +285,7 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   HandleAfterglowEnvVars();
   HandleConnectionStatsEnvVars();
   HandleSinspEnvVars();
+  HandleConfig(config_file.value());
 
   host_config_ = ProcessHostHeuristics(*this);
 }
@@ -397,6 +400,56 @@ void CollectorConfig::HandleSinspEnvVars() {
     } catch (...) {
       CLOG(ERROR) << "Invalid thread cache size value: '" << envvar << "'";
     }
+  }
+}
+
+bool CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
+  if (yamlConfig.IsNull() || !yamlConfig.IsDefined()) {
+    CLOG(FATAL) << "Unable to read config from config file";
+    return false;
+  }
+  YAML::Node networkConnectionConfig = yamlConfig["networkConnectionConfig"];
+  if (!networkConnectionConfig) {
+    CLOG(WARNING) << "No networkConnectionConfig in config file";
+    return false;
+  }
+
+  bool enableExternalIps = false;
+  if (networkConnectionConfig["enableExternalIps"]) {
+    enableExternalIps = networkConnectionConfig["enableExternalIps"].as<bool>(false);
+  }
+
+  sensor::CollectorConfig runtime_config;
+  auto* networkConfig = runtime_config.mutable_network_connection_config();
+  networkConfig->set_enable_external_ips(enableExternalIps);
+
+  SetRuntimeConfig(runtime_config);
+  CLOG(INFO) << "Runtime configuration:";
+  CLOG(INFO) << GetRuntimeConfigStr();
+
+  return true;
+}
+
+void CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
+  if (!std::filesystem::exists(filePath)) {
+    CLOG(DEBUG) << "No configuration file found. " << filePath;
+    return;
+  }
+
+  try {
+    YAML::Node yamlConfig = YAML::LoadFile(filePath);
+    YamlConfigToConfig(yamlConfig);
+  } catch (const YAML::BadFile& e) {
+    CLOG(FATAL) << "Failed to open the configuration file: " << filePath
+                << ". Error: " << e.what();
+  } catch (const YAML::ParserException& e) {
+    CLOG(FATAL) << "Failed to parse the configuration file: " << filePath
+                << ". Error: " << e.what();
+  } catch (const YAML::Exception& e) {
+    CLOG(FATAL) << "An error occurred while loading the configuration file: " << filePath
+                << ". Error: " << e.what();
+  } catch (const std::exception& e) {
+    CLOG(FATAL) << "An unexpected error occurred while trying to read: " << filePath << e.what();
   }
 }
 

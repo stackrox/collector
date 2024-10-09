@@ -89,6 +89,8 @@ internal state of Collector. Refer to the
 [troubleshooting](troubleshooting.md#introspection-endpoints) section for more details.
 The default is false.
 
+* `ROX_ENABLE_EXTERNAL_IPS`: Enables or disables the external IPs feature.
+
 NOTE: Using environment variables is a preferred way of configuring Collector,
 so if you're adding a new configuration knob, keep this in mind.
 
@@ -103,6 +105,35 @@ seconds. The default value is 30 seconds.
 * `turnOffScrape`: Turn off network scraping. The default is false.
 
 * `logLevel`: Sets logging level. The default is INFO.
+
+### File mount or ConfigMap
+
+The external IPs feature can be enabled or disabled using a file or ConfigMap. This is an optional
+method and does not have to be used. This file overwites the ENABLE_EXTERNAL_IPS feature flag.
+When using collector by itself a file can be mounted to it at /etc/stackrox/runtime_config.yaml. The
+following is an example of the contents
+
+```
+networkConnectionConfig:
+    enableExternalIps: true
+```
+
+Alternatively, if collector is used as a part of Stackrox, the configuration can be set
+using a ConfigMap. The following is an example of such a ConfigMap.
+
+```
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: collector-config
+  namespace: stackrox
+data:
+  runtime_config.yaml: |
+    networkConnectionConfig:
+        enableExternalIps: true
+```
+
+The file path can be set using the `ROX_COLLECTOR_CONFIG_PATH` environment variable.
 
 ### Other arguments
 
