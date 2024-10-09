@@ -21,8 +21,7 @@ class CollectorConfigInspector : public IntrospectionEndpoint {
 
  private:
   const std::shared_ptr<CollectorConfig> config_;
-  Json::FastWriter writer_;
-  Json::Value configToJson();
+  std::string configToJson(bool& isError);
 };
 
 }  // namespace collector
