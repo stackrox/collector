@@ -5,6 +5,7 @@
 #include <ostream>
 #include <vector>
 
+#include <gtest/gtest_prod.h>
 #include <json/json.h>
 #include <yaml-cpp/yaml.h>
 
@@ -210,6 +211,15 @@ class CollectorConfig {
   void SetEnableExternalIPs(bool value) {
     enable_external_ips_ = value;
   }
+
+  // Friend tests
+  FRIEND_TEST(CollectorConfigTest, TestSinspBufferSizeReturnUnmodified);
+  FRIEND_TEST(CollectorConfigTest, TestSinspCpuPerBufferAdjusted);
+  FRIEND_TEST(CollectorConfigTest, TestEnableExternalIpsFeatureFlag);
+  FRIEND_TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig);
+  FRIEND_TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple);
+  FRIEND_TEST(CollectorConfigTest, TestYamlConfigToConfigInvalid);
+  FRIEND_TEST(CollectorConfigTest, TestYamlConfigToConfigEmpty);
 };
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);
