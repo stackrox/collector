@@ -68,7 +68,7 @@ services:
     depends_on:
       - grpc-server-debug
   grpc-server-debug:
-    image: quay.io/rhacs-eng/grpc-server:latest
+    image: quay.io/rhacs-eng/grpc-server:<image-tag> # e.g. 4.3.8
     container_name: grpc-server
     network_mode: host
     user: 1000:1000
