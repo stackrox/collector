@@ -60,7 +60,7 @@ class CollectorConfig {
   static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
 
   CollectorConfig() = delete;
-  CollectorConfig(CollectorArgs* collectorArgs);
+  CollectorConfig(CollectorArgs* collectorArgs, bool skipHeuristics = false);
 
   bool TurnOffScrape() const { return turn_off_scrape_; }
   bool ScrapeListenEndpoints() const { return scrape_listen_endpoints_; }

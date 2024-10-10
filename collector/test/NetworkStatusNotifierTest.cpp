@@ -70,7 +70,7 @@ class Semaphore {
 
 class MockCollectorConfig : public collector::CollectorConfig {
  public:
-  MockCollectorConfig() : collector::CollectorConfig(nullptr) {}
+  MockCollectorConfig() : collector::CollectorConfig(nullptr, true) {}
 
   void DisableAfterglow() {
     enable_afterglow_ = false;
@@ -185,7 +185,7 @@ class NetworkConnectionInfoMessageParser {
 /* Simple validation that the service starts and sends at least one event */
 TEST(NetworkStatusNotifier, SimpleStartStop) {
   bool running = true;
-  CollectorConfig config_(nullptr);
+  CollectorConfig config_(nullptr, true);
   std::shared_ptr<MockConnScraper> conn_scraper = std::make_shared<MockConnScraper>();
   auto conn_tracker = std::make_shared<ConnectionTracker>();
   auto comm = std::make_shared<MockNetworkConnectionInfoServiceComm>();
