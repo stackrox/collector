@@ -31,11 +31,6 @@ using namespace testing;
 
 namespace collector {
 
-class MockCPUHeuristic : public CPUHeuristic {
- public:
-  MockCPUHeuristic() = default;
-};
-
 class MockHostInfoHeuristics : public HostInfo {
  public:
   MockHostInfoHeuristics() = default;
@@ -48,23 +43,10 @@ class MockHostInfoHeuristics : public HostInfo {
   MOCK_METHOD0(NumPossibleCPU, int());
 };
 
-class MockCollectorConfig : public CollectorConfig {
- public:
-  MockCollectorConfig()
-      : CollectorConfig() {};
-
-  void SetCollectionMethod(CollectionMethod cm) {
-    if (host_config_.HasCollectionMethod()) {
-      host_config_.SetCollectionMethod(cm);
-    }
-    collection_method_ = cm;
-  }
-};
-
 TEST(HostHeuristicsTest, TestCPUHeuristic) {
-  MockCPUHeuristic cpuHeuristic;
+  CPUHeuristic cpuHeuristic;
   MockHostInfoHeuristics host;
-  MockCollectorConfig config;
+  CollectorConfig config;
   HostConfig hconfig;
 
   EXPECT_CALL(host, NumPossibleCPU()).WillOnce(Return(10));
