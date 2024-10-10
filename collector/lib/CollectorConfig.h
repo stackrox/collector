@@ -94,8 +94,9 @@ class CollectorConfig {
   bool EnableExternalIPs() const {
     if (runtime_config_.has_value()) {
       const auto& cfg = runtime_config_.value();
-      const auto& network_cfg = cfg.network_connection_config();
-      return network_cfg.enable_external_ips();
+      const auto& networking = cfg.networking();
+      const auto& external_ips = networking.external_ips();
+      return external_ips.enable();
     }
     return enable_external_ips_;
   }
@@ -197,7 +198,7 @@ class CollectorConfig {
   void HandleAfterglowEnvVars();
   void HandleConnectionStatsEnvVars();
   void HandleSinspEnvVars();
-  bool YamlConfigToConfig(YAML::Node& yamlConfig);
+  void YamlConfigToConfig(YAML::Node& yamlConfig);
   void HandleConfig(const std::filesystem::path& filePath);
 
   // Protected, used for testing purposes

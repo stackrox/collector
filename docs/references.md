@@ -114,8 +114,9 @@ When using collector by itself a file can be mounted to it at /etc/stackrox/runt
 following is an example of the contents
 
 ```
-networkConnectionConfig:
-    enableExternalIps: true
+networking:
+  externalIps:
+    enable: true
 ```
 
 Alternatively, if collector is used as a part of Stackrox, the configuration can be set
@@ -129,8 +130,9 @@ metadata:
   namespace: stackrox
 data:
   runtime_config.yaml: |
-    networkConnectionConfig:
-        enableExternalIps: true
+    networking:
+      externalIps:
+        enable: true
 ```
 
 The file path can be set using the `ROX_COLLECTOR_CONFIG_PATH` environment variable.
