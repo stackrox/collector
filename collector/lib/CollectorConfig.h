@@ -142,7 +142,7 @@ class CollectorConfig {
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
- protected:
+ private:
   int scrape_interval_;
   CollectionMethod collection_method_;
   bool turn_off_scrape_;
@@ -220,6 +220,7 @@ class CollectorConfig {
   FRIEND_TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple);
   FRIEND_TEST(CollectorConfigTest, TestYamlConfigToConfigInvalid);
   FRIEND_TEST(CollectorConfigTest, TestYamlConfigToConfigEmpty);
+  FRIEND_TEST(NetworkStatusNotifier, UpdateIPnoAfterglow);
 };
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);
