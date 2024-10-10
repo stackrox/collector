@@ -13,7 +13,7 @@ namespace collector {
 
 class MockCollectorConfig : public CollectorConfig {
  public:
-  MockCollectorConfig() = default;
+  MockCollectorConfig() : CollectorConfig(nullptr) {}
 
   void MockSetSinspBufferSize(unsigned int value) {
     SetSinspBufferSize(value);
