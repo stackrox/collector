@@ -25,10 +25,7 @@ class CollectorArgs;
 
 class CollectorConfig {
  public:
-  static constexpr bool kTurnOffScrape = false;
-  static constexpr int kScrapeInterval = 30;
-  static constexpr CollectionMethod kCollectionMethod = CollectionMethod::CORE_BPF;
-  static constexpr const char* kSyscalls[] = {
+  static constexpr std::array kSyscalls{
       "accept",
       "accept4",
       "chdir",
@@ -52,7 +49,7 @@ class CollectorConfig {
 #endif
       "vfork",
   };
-  static constexpr const char* kSendRecvSyscalls[] = {
+  static constexpr std::array kSendRecvSyscalls{
       "sendto",
       "sendmsg",
       "sendmmsg",
@@ -61,28 +58,25 @@ class CollectorConfig {
       "recvmmsg",
   };
   static const UnorderedSet<L4ProtoPortPair> kIgnoredL4ProtoPortPairs;
-  static constexpr bool kEnableProcessesListeningOnPorts = true;
 
-  CollectorConfig();
-  void InitCollectorConfig(CollectorArgs* collectorArgs);
+  CollectorConfig() = delete;
+  CollectorConfig(CollectorArgs* collectorArgs);
 
-  std::string asString() const;
-
-  bool TurnOffScrape() const;
+  bool TurnOffScrape() const { return turn_off_scrape_; }
   bool ScrapeListenEndpoints() const { return scrape_listen_endpoints_; }
-  int ScrapeInterval() const;
-  std::string Hostname() const;
-  std::string HostProc() const;
+  int ScrapeInterval() const { return scrape_interval_; }
+  std::string Hostname() const { return hostname_; }
+  std::string HostProc() const { return host_proc_; }
   CollectionMethod GetCollectionMethod() const;
-  std::vector<std::string> Syscalls() const;
-  int64_t AfterglowPeriod() const;
-  std::string LogLevel() const;
+  std::vector<std::string> Syscalls() const { return syscalls_; }
+  int64_t AfterglowPeriod() const { return afterglow_period_micros_; }
+  static std::string LogLevel();
   bool DisableNetworkFlows() const { return disable_network_flows_; }
   const UnorderedSet<L4ProtoPortPair>& IgnoredL4ProtoPortPairs() const { return ignored_l4proto_port_pairs_; }
   const std::vector<IPNet>& IgnoredNetworks() const { return ignored_networks_; }
   const std::vector<IPNet>& NonAggregatedNetworks() const { return non_aggregated_networks_; }
   bool EnableAfterglow() const { return enable_afterglow_; }
-  bool IsCoreDumpEnabled() const;
+  bool IsCoreDumpEnabled() const { return enable_core_dump_; }
   const std::optional<TlsConfig>& TLSConfiguration() const { return tls_config_; }
   bool IsProcessesListeningOnPortsEnabled() const { return enable_processes_listening_on_ports_; }
   bool ImportUsers() const { return import_users_; }
@@ -142,14 +136,14 @@ class CollectorConfig {
   std::shared_ptr<grpc::Channel> grpc_channel;
 
  protected:
-  int scrape_interval_;
-  CollectionMethod collection_method_;
-  bool turn_off_scrape_;
+  int scrape_interval_ = 30;
+  CollectionMethod collection_method_ = CollectionMethod::CORE_BPF;
+  bool turn_off_scrape_ = false;
   std::vector<std::string> syscalls_;
   std::string hostname_;
   std::string host_proc_;
   bool disable_network_flows_ = false;
-  bool scrape_listen_endpoints_ = false;
+  bool scrape_listen_endpoints_;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
   std::vector<IPNet> ignored_networks_;
   std::vector<IPNet> non_aggregated_networks_;
@@ -157,7 +151,7 @@ class CollectorConfig {
   HostConfig host_config_;
   int64_t afterglow_period_micros_ = 300'000'000;  // 5 minutes in microseconds
   bool enable_afterglow_ = false;
-  bool enable_core_dump_ = false;
+  bool enable_core_dump_;
   bool enable_processes_listening_on_ports_;
   bool import_users_;
   bool collect_connection_status_;
@@ -170,8 +164,8 @@ class CollectorConfig {
   bool enable_introspection_;
   bool track_send_recv_;
   std::vector<double> connection_stats_quantiles_;
-  double connection_stats_error_;
-  unsigned int connection_stats_window_;
+  double connection_stats_error_ = 0.01;
+  unsigned int connection_stats_window_ = 60;
 
   // URL to the GRPC server
   std::optional<std::string> grpc_server_;
@@ -195,6 +189,15 @@ class CollectorConfig {
 
   std::optional<sensor::CollectorConfig> runtime_config_;
 
+  // Methods for handling CLI arguments
+  void HandleArgs(const CollectorArgs* args);
+  static void HandleLogLevel(const Json::Value& config, const CollectorArgs* args);
+  void HandleScrapeConfig(const Json::Value& config, const CollectorArgs* args);
+  void HandleCollectionMethod(const CollectorArgs* args);
+  void HandleTls(const Json::Value& config, const CollectorArgs* args);
+
+  // Methods for complex configurations
+  void HandleNetworkConfig();
   void HandleAfterglowEnvVars();
   void HandleConnectionStatsEnvVars();
   void HandleSinspEnvVars();
@@ -202,10 +205,10 @@ class CollectorConfig {
   void HandleConfig(const std::filesystem::path& filePath);
 
   // Protected, used for testing purposes
-  void SetSinspBufferSize(unsigned int buffer_size);
-  void SetSinspTotalBufferSize(unsigned int total_buffer_size);
-  void SetSinspCpuPerBuffer(unsigned int buffer_size);
-  void SetHostConfig(HostConfig* config);
+  void SetSinspBufferSize(unsigned int buffer_size) { sinsp_buffer_size_ = buffer_size; }
+  void SetSinspTotalBufferSize(unsigned int total_buffer_size) { sinsp_total_buffer_size_ = total_buffer_size; }
+  void SetSinspCpuPerBuffer(unsigned int buffer_size) { sinsp_cpu_per_buffer_ = buffer_size; }
+  void SetHostConfig(HostConfig* config) { host_config_ = *config; }
 
   void SetEnableExternalIPs(bool value) {
     enable_external_ips_ = value;
