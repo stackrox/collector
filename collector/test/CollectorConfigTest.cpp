@@ -35,8 +35,8 @@ class MockCollectorConfig : public CollectorConfig {
     SetEnableExternalIPs(value);
   }
 
-  bool MockYamlConfigToConfig(YAML::Node& yamlConfig) {
-    return YamlConfigToConfig(yamlConfig);
+  void MockYamlConfigToConfig(YAML::Node& yamlConfig) {
+    YamlConfigToConfig(yamlConfig);
   }
 };
 
@@ -178,10 +178,9 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
 
     MockCollectorConfig config;
 
-    bool result = config.MockYamlConfigToConfig(yamlNode);
+    config.MockYamlConfigToConfig(yamlNode);
     auto runtime_config = config.GetRuntimeConfig();
 
-    EXPECT_TRUE(result);
     EXPECT_TRUE(runtime_config.has_value());
 
     const auto& cfg = runtime_config.value();
@@ -210,10 +209,9 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigInvalid) {
 
     MockCollectorConfig config;
 
-    bool result = config.MockYamlConfigToConfig(yamlNode);
+    config.MockYamlConfigToConfig(yamlNode);
     auto runtime_config = config.GetRuntimeConfig();
 
-    EXPECT_FALSE(result);
     EXPECT_FALSE(runtime_config.has_value());
   }
 }

@@ -198,7 +198,7 @@ class CollectorConfig {
   void HandleAfterglowEnvVars();
   void HandleConnectionStatsEnvVars();
   void HandleSinspEnvVars();
-  bool YamlConfigToConfig(YAML::Node& yamlConfig);
+  void YamlConfigToConfig(YAML::Node& yamlConfig);
   void HandleConfig(const std::filesystem::path& filePath);
 
   // Protected, used for testing purposes
