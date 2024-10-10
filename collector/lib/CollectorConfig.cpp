@@ -91,7 +91,7 @@ PathEnvVar config_file("ROX_COLLECTOR_CONFIG_PATH", "/etc/stackrox/runtime_confi
 
 const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = {{L4Proto::UDP, 9}};
 
-CollectorConfig::CollectorConfig(CollectorArgs* args)
+CollectorConfig::CollectorConfig(CollectorArgs* args, bool skipHeuristics)
     : host_proc_(GetHostPath("/proc")),
       disable_network_flows_(disable_network_flows),
       scrape_listen_endpoints_(ports_feature_flag),
@@ -135,7 +135,9 @@ CollectorConfig::CollectorConfig(CollectorArgs* args)
   HandleConnectionStatsQuantiles();
   HandleConfig(config_file.value());
 
-  host_config_ = ProcessHostHeuristics(*this);
+  if (!skipHeuristics) {
+    host_config_ = ProcessHostHeuristics(*this);
+  }
 }
 
 void CollectorConfig::HandleArgs(const CollectorArgs* args) {
