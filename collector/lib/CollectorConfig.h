@@ -142,14 +142,14 @@ class CollectorConfig {
   std::vector<std::string> syscalls_;
   std::string hostname_;
   std::string host_proc_;
-  bool disable_network_flows_ = false;
+  bool disable_network_flows_;
   bool scrape_listen_endpoints_;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
   std::vector<IPNet> ignored_networks_;
   std::vector<IPNet> non_aggregated_networks_;
 
   HostConfig host_config_;
-  int64_t afterglow_period_micros_ = 300'000'000;  // 5 minutes in microseconds
+  int64_t afterglow_period_micros_;
   bool enable_afterglow_ = false;
   bool enable_core_dump_;
   bool enable_processes_listening_on_ports_;
@@ -164,26 +164,26 @@ class CollectorConfig {
   bool enable_introspection_;
   bool track_send_recv_;
   std::vector<double> connection_stats_quantiles_;
-  double connection_stats_error_ = 0.01;
-  unsigned int connection_stats_window_ = 60;
+  double connection_stats_error_;
+  unsigned int connection_stats_window_;
 
   // URL to the GRPC server
   std::optional<std::string> grpc_server_;
 
   // One ring buffer will be initialized for this many CPUs
-  unsigned int sinsp_cpu_per_buffer_ = 0;
+  unsigned int sinsp_cpu_per_buffer_;
   // Size of one ring buffer, in bytes.
-  unsigned int sinsp_buffer_size_ = 0;
+  unsigned int sinsp_buffer_size_;
   // Allowed size of all ring buffers, in bytes. The default value 512Mi is
   // based on the default memory limit set of the Collector DaemonSet, which is
   // 1Gi.
-  unsigned int sinsp_total_buffer_size_ = 512 * 1024 * 1024;
+  unsigned int sinsp_total_buffer_size_;
 
   // Max size of the thread cache. This parameter essentially translated into
   // the upper boundary for memory consumption. Note that Falco puts it's own
   // upper limit on top of this value, m_thread_table_absolute_max_size, which
   // is 2^17 (131072) and twice as large.
-  unsigned int sinsp_thread_cache_size_ = 32768;
+  unsigned int sinsp_thread_cache_size_;
 
   std::optional<TlsConfig> tls_config_;
 
@@ -199,8 +199,7 @@ class CollectorConfig {
   // Methods for complex configurations
   void HandleNetworkConfig();
   void HandleAfterglowEnvVars();
-  void HandleConnectionStatsEnvVars();
-  void HandleSinspEnvVars();
+  void HandleConnectionStatsQuantiles();
   void YamlConfigToConfig(YAML::Node& yamlConfig);
   void HandleConfig(const std::filesystem::path& filePath);
 

@@ -2,7 +2,6 @@
 
 #include <filesystem>
 #include <optional>
-#include <sstream>
 
 #include <libsinsp/sinsp.h>
 
@@ -50,9 +49,18 @@ BoolEnvVar collect_connection_status("ROX_COLLECT_CONNECTION_STATUS", true);
 
 BoolEnvVar enable_external_ips("ROX_ENABLE_EXTERNAL_IPS", false);
 
+// Stats and metrics configuration
 BoolEnvVar enable_connection_stats("ROX_COLLECTOR_ENABLE_CONNECTION_STATS", true);
-
 BoolEnvVar enable_detailed_metrics("ROX_COLLECTOR_ENABLE_DETAILED_METRICS", true);
+StringListEnvVar connection_stats_quantiles("ROX_COLLECTOR_CONNECTION_STATS_QUANTILES");
+DoubleEnvVar connection_stats_error("ROX_COLLECTOR_CONNECTION_STATS_ERROR", 0.01);
+UIntEnvVar connection_stats_window("ROX_COLLECTOR_CONNECTION_STATS_WINDOW", 60);
+
+// Sinsp configuration
+UIntEnvVar sinsp_cpu_per_buffer("ROX_COLLECTOR_SINSP_CPU_PER_BUFFER", DEFAULT_CPU_FOR_EACH_BUFFER);
+UIntEnvVar sinsp_buffer_size("ROX_COLLECTOR_SINSP_BUFFER_SIZE", DEFAULT_DRIVER_BUFFER_BYTES_DIM);
+UIntEnvVar sinsp_total_buffer_size("ROX_COLLECTOR_SINSP_TOTAL_BUFFER_SIZE", 512 * 1024 * 1024);
+UIntEnvVar sinsp_thread_cache_size("ROX_COLLECTOR_SINSP_TOTAL_BUFFER_SIZE", 32768);
 
 BoolEnvVar enable_runtime_config("ROX_COLLECTOR_RUNTIME_CONFIG_ENABLED", false);
 
@@ -98,7 +106,13 @@ CollectorConfig::CollectorConfig(CollectorArgs* args)
       use_docker_ce_(use_docker_ce),
       use_podman_ce_(use_podman_ce),
       enable_introspection_(enable_introspection),
-      track_send_recv_(track_send_recv) {
+      track_send_recv_(track_send_recv),
+      connection_stats_error_(connection_stats_error),
+      connection_stats_window_(connection_stats_window),
+      sinsp_cpu_per_buffer_(sinsp_cpu_per_buffer),
+      sinsp_buffer_size_(sinsp_buffer_size),
+      sinsp_total_buffer_size_(sinsp_total_buffer_size),
+      sinsp_thread_cache_size_(sinsp_thread_cache_size) {
   // Get hostname
   hostname_ = GetHostname();
   if (hostname_.empty()) {
@@ -118,8 +132,7 @@ CollectorConfig::CollectorConfig(CollectorArgs* args)
   HandleArgs(args);
   HandleNetworkConfig();
   HandleAfterglowEnvVars();
-  HandleConnectionStatsEnvVars();
-  HandleSinspEnvVars();
+  HandleConnectionStatsQuantiles();
   HandleConfig(config_file.value());
 
   host_config_ = ProcessHostHeuristics(*this);
@@ -290,17 +303,12 @@ void CollectorConfig::HandleAfterglowEnvVars() {
   CLOG(INFO) << "Afterglow is " << (enable_afterglow_ ? "enabled" : "disabled");
 }
 
-void CollectorConfig::HandleConnectionStatsEnvVars() {
-  const char* envvar;
-
+void CollectorConfig::HandleConnectionStatsQuantiles() {
   connection_stats_quantiles_ = {0.50, 0.90, 0.95};
 
-  if ((envvar = std::getenv("ROX_COLLECTOR_CONNECTION_STATS_QUANTILES")) != NULL) {
+  if (connection_stats_quantiles.hasValue()) {
     connection_stats_quantiles_.clear();
-    std::stringstream quantiles(envvar);
-    while (quantiles.good()) {
-      std::string quantile;
-      std::getline(quantiles, quantile, ',');
+    for (const auto& quantile : connection_stats_quantiles.value()) {
       try {
         double v = std::stod(quantile);
         connection_stats_quantiles_.push_back(v);
@@ -308,69 +316,6 @@ void CollectorConfig::HandleConnectionStatsEnvVars() {
       } catch (...) {
         CLOG(ERROR) << "Invalid quantile value: '" << quantile << "'";
       }
-    }
-  }
-
-  if ((envvar = std::getenv("ROX_COLLECTOR_CONNECTION_STATS_ERROR")) != NULL) {
-    try {
-      connection_stats_error_ = std::stod(envvar);
-      CLOG(INFO) << "Connection statistics error value: " << connection_stats_error_;
-    } catch (...) {
-      CLOG(ERROR) << "Invalid quantile error value: '" << envvar << "'";
-    }
-  }
-
-  if ((envvar = std::getenv("ROX_COLLECTOR_CONNECTION_STATS_WINDOW")) != NULL) {
-    try {
-      connection_stats_window_ = std::stoi(envvar);
-      CLOG(INFO) << "Connection statistics window: " << connection_stats_window_;
-    } catch (...) {
-      CLOG(ERROR) << "Invalid window length value: '" << envvar << "'";
-    }
-  }
-}
-
-void CollectorConfig::HandleSinspEnvVars() {
-  const char* envvar;
-
-  sinsp_cpu_per_buffer_ = DEFAULT_CPU_FOR_EACH_BUFFER;
-  sinsp_buffer_size_ = DEFAULT_DRIVER_BUFFER_BYTES_DIM;
-  // the default values for sinsp_thread_cache_size_, sinsp_total_buffer_size_
-  // are not picked up from Falco, but set in the CollectorConfig class.
-
-  if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_CPU_PER_BUFFER")) != NULL) {
-    try {
-      sinsp_cpu_per_buffer_ = std::stoi(envvar);
-      CLOG(INFO) << "Sinsp cpu per buffer: " << sinsp_cpu_per_buffer_;
-    } catch (...) {
-      CLOG(ERROR) << "Invalid cpu per buffer value: '" << envvar << "'";
-    }
-  }
-
-  if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_BUFFER_SIZE")) != NULL) {
-    try {
-      sinsp_buffer_size_ = std::stoll(envvar);
-      CLOG(INFO) << "Sinsp buffer size: " << sinsp_buffer_size_;
-    } catch (...) {
-      CLOG(ERROR) << "Invalid buffer size value: '" << envvar << "'";
-    }
-  }
-
-  if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_TOTAL_BUFFER_SIZE")) != NULL) {
-    try {
-      sinsp_total_buffer_size_ = std::stoll(envvar);
-      CLOG(INFO) << "Sinsp total buffer size: " << sinsp_total_buffer_size_;
-    } catch (...) {
-      CLOG(ERROR) << "Invalid total buffer size value: '" << envvar << "'";
-    }
-  }
-
-  if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_THREAD_CACHE_SIZE")) != NULL) {
-    try {
-      sinsp_thread_cache_size_ = std::stoll(envvar);
-      CLOG(INFO) << "Sinsp thread cache size: " << sinsp_thread_cache_size_;
-    } catch (...) {
-      CLOG(ERROR) << "Invalid thread cache size value: '" << envvar << "'";
     }
   }
 }
