@@ -10,6 +10,7 @@ extern "C" {
 #include <memory>
 
 #include "CivetServer.h"
+#include "CollectorConfigInspector.h"
 #include "CollectorStatsExporter.h"
 #include "ConnTracker.h"
 #include "Containers.h"
@@ -63,6 +64,7 @@ void CollectorService::RunForever() {
 
   std::unique_ptr<ContainerInfoInspector> container_info_inspector;
   std::unique_ptr<NetworkStatusInspector> network_status_inspector;
+  std::unique_ptr<CollectorConfigInspector> collector_config_inspector;
 
   CLOG(INFO) << "Network scrape interval set to " << config_.ScrapeInterval() << " seconds";
 
@@ -111,6 +113,8 @@ void CollectorService::RunForever() {
     server.addHandler(container_info_inspector->kBaseRoute, container_info_inspector.get());
     network_status_inspector = std::make_unique<NetworkStatusInspector>(conn_tracker);
     server.addHandler(network_status_inspector->kBaseRoute, network_status_inspector.get());
+    collector_config_inspector = std::make_unique<CollectorConfigInspector>(std::make_shared<CollectorConfig>(config_));
+    server.addHandler(collector_config_inspector->kBaseRoute, collector_config_inspector.get());
   }
 
   system_inspector_.Init(config_, conn_tracker);
