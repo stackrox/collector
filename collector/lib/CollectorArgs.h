@@ -1,10 +1,12 @@
 #ifndef _COLLECTOR_ARGS_H_
 #define _COLLECTOR_ARGS_H_
 
+#include <optional>
 #include <string>
 
 #include <json/json.h>
 
+#include "CollectionMethod.h"
 #include "optionparser.h"
 
 namespace collector {
@@ -22,7 +24,7 @@ class CollectorArgs {
   option::ArgStatus checkOptionalNumeric(const option::Option& option, bool msg);
 
   const Json::Value& CollectorConfig() const;
-  const std::string& GetCollectionMethod() const;
+  std::optional<CollectionMethod> GetCollectionMethod() const;
   const std::string& GRPCServer() const;
   const std::string& Message() const;
 
@@ -33,7 +35,7 @@ class CollectorArgs {
   static CollectorArgs* instance;
 
   Json::Value collectorConfig;
-  std::string collectionMethod;
+  std::optional<CollectionMethod> collectionMethod{std::nullopt};
   std::string message;
   std::string grpcServer;
 };

@@ -124,13 +124,9 @@ CollectorArgs::checkCollectionMethod(const option::Option& option, bool msg) {
     return ARG_OK;
   }
 
-  // Canonicalize collection method to lowercase, replace '-' with '_'
-  std::string s = option.arg;
-  std::transform(s.begin(), s.end(), s.begin(), ::tolower);
-  std::replace(s.begin(), s.end(), '-', '_');
-  collectionMethod = s;
+  collectionMethod = ParseCollectionMethod(option.arg);
 
-  CLOG(DEBUG) << "CollectionMethod: " << collectionMethod;
+  CLOG(DEBUG) << "CollectionMethod: " << CollectionMethodName(collectionMethod.value());
 
   return ARG_OK;
 }
@@ -174,7 +170,7 @@ CollectorArgs::CollectorConfig() const {
   return collectorConfig;
 }
 
-const std::string&
+std::optional<CollectionMethod>
 CollectorArgs::GetCollectionMethod() const {
   return collectionMethod;
 }
