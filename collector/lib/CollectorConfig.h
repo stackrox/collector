@@ -93,10 +93,10 @@ class CollectorConfig {
   // otherwise, we rely on the feature flag (env var)
   bool EnableExternalIPs() const {
     if (runtime_config_.has_value()) {
-      const auto& cfg = runtime_config_.value();
-      const auto& networking = cfg.networking();
-      const auto& external_ips = networking.external_ips();
-      return external_ips.enable();
+      return runtime_config_.value()
+          .networking()
+          .external_ips()
+          .enable();
     }
     return enable_external_ips_;
   }

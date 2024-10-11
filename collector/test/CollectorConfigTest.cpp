@@ -183,10 +183,11 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
 
     EXPECT_TRUE(runtime_config.has_value());
 
-    const auto& cfg = runtime_config.value();
-    const auto& networking_cfg = cfg.networking();
-    const auto& external_ips = networking_cfg.external_ips();
-    EXPECT_EQ(external_ips.enable(), expected);
+    bool enabled = runtime_config.value()
+                       .networking()
+                       .external_ips()
+                       .enable();
+    EXPECT_EQ(enabled, expected);
     EXPECT_EQ(config.EnableExternalIPs(), expected);
   }
 }

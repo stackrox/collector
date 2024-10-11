@@ -410,14 +410,14 @@ void CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
   }
   YAML::Node networking = yamlConfig["networking"];
   if (!networking) {
-    CLOG(WARNING) << "No networking in config file";
+    CLOG(INFO) << "No networking in config file";
     return;
   }
 
   bool enableExternalIps = false;
   YAML::Node externalIpsNode = networking["externalIps"];
   if (!externalIpsNode) {
-    CLOG(WARNING) << "No external IPs in config file";
+    CLOG(INFO) << "No external IPs in config file";
     return;
   }
   enableExternalIps = externalIpsNode["enable"].as<bool>(false);
