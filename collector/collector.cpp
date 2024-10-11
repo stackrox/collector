@@ -57,10 +57,10 @@ ShutdownHandler(int signum) {
 }
 
 // creates a GRPC channel, using the tls configuration provided from the args.
-std::shared_ptr<grpc::Channel> createChannel(const CollectorConfig& config) {
-  const std::string& grpc_server = *config.GetGrpcServer();
+std::shared_ptr<grpc::Channel> createChannel(const std::shared_ptr<CollectorConfig> config) {
+  const std::string& grpc_server = *config->GetGrpcServer();
   CLOG(INFO) << "Sensor configured at address: " << grpc_server;
-  const auto& tls_config = config.TLSConfiguration();
+  const auto& tls_config = config->TLSConfiguration();
 
   std::shared_ptr<grpc::ChannelCredentials> creds = grpc::InsecureChannelCredentials();
   if (tls_config.has_value()) {
@@ -136,15 +136,15 @@ int main(int argc, char** argv) {
     CLOG(FATAL) << "Error parsing arguments";
   }
 
-  CollectorConfig config;
-  config.InitCollectorConfig(args);
+  auto config = std::make_shared<CollectorConfig>();
+  config->InitCollectorConfig(args);
 
-  setCoreDumpLimit(config.IsCoreDumpEnabled());
+  setCoreDumpLimit(config->IsCoreDumpEnabled());
 
   auto& startup_diagnostics = StartupDiagnostics::GetInstance();
 
   // Extract configuration options
-  bool useGRPC = config.GetGrpcServer().has_value();
+  bool useGRPC = config->GetGrpcServer().has_value();
   std::shared_ptr<grpc::Channel> sensor_connection;
 
   if (useGRPC) {
@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
       CLOG(INFO) << "Successfully connected to Sensor.";
     } else {
       startup_diagnostics.Log();
-      CLOG(FATAL) << "Unable to connect to Sensor at '" << config.GetGrpcServer().value() << "'.";
+      CLOG(FATAL) << "Unable to connect to Sensor at '" << config->GetGrpcServer().value() << "'.";
     }
     startup_diagnostics.ConnectedToSensor();
   } else {
@@ -167,11 +167,11 @@ int main(int argc, char** argv) {
   signal(SIGTERM, ShutdownHandler);
   signal(SIGINT, ShutdownHandler);
 
-  config.grpc_channel = std::move(sensor_connection);
+  config->grpc_channel = std::move(sensor_connection);
 
   CollectorService collector(config, &g_control, &g_signum);
 
-  if (!SetupKernelDriver(collector, config)) {
+  if (!SetupKernelDriver(collector, *config.get())) {
     startup_diagnostics.Log();
     CLOG(FATAL) << "Failed to initialize collector kernel components.";
   }
