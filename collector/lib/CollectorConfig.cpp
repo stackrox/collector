@@ -4,6 +4,8 @@
 #include <optional>
 #include <sstream>
 
+#include <sys/inotify.h>
+
 #include <libsinsp/sinsp.h>
 
 #include "CollectionMethod.h"
@@ -449,6 +451,49 @@ void CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
   } catch (const std::exception& e) {
     CLOG(FATAL) << "An unexpected error occurred while trying to read: " << filePath << e.what();
   }
+}
+
+void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
+  int fd = inotify_init();
+  if (fd < 0) {
+    CLOG(FATAL) << "inotify_init failed";
+    return;
+  }
+
+  int wd = inotify_add_watch(fd, filePath.c_str(), IN_MODIFY);
+  if (wd < 0) {
+    CLOG(FATAL) << "Failed to add inotify watch for " << filePath;
+    close(fd);
+    return;
+  }
+
+  char buffer[1024];
+  while (true) {
+    int length = read(fd, buffer, sizeof(buffer));
+    if (length < 0) {
+      CLOG(FATAL) << "read error";
+    }
+
+    for (int i = 0; i < length; i += sizeof(struct inotify_event)) {
+      struct inotify_event* event = (struct inotify_event*)&buffer[i];
+      if (event->mask & IN_MODIFY) {
+        CLOG(INFO) << "Configuration file modified. Reloading...";
+        HandleConfig(filePath);  // Reload configuration
+      }
+    }
+  }
+
+  inotify_rm_watch(fd, wd);
+  close(fd);
+}
+
+void CollectorConfig::Start() {
+  thread_.Start([this] { WatchConfigFile(config_file.value()); });
+  CLOG(INFO) << "Watching config file: " << config_file.value();
+}
+
+void CollectorConfig::Stop() {
+  thread_.Stop();
 }
 
 bool CollectorConfig::TurnOffScrape() const {

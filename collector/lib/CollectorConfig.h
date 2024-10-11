@@ -15,6 +15,7 @@
 #include "CollectionMethod.h"
 #include "HostConfig.h"
 #include "NetworkConnection.h"
+#include "StoppableThread.h"
 #include "TlsConfig.h"
 #include "json/value.h"
 #include "optionparser.h"
@@ -127,6 +128,8 @@ class CollectorConfig {
   unsigned int GetSinspBufferSize() const;
   unsigned int GetSinspTotalBufferSize() const { return sinsp_total_buffer_size_; }
   unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
+  void Start();
+  void Stop();
 
   static std::pair<option::ArgStatus, std::string> CheckConfiguration(const char* config, Json::Value* root);
 
@@ -197,12 +200,14 @@ class CollectorConfig {
   std::optional<TlsConfig> tls_config_;
 
   std::optional<sensor::CollectorConfig> runtime_config_;
+  StoppableThread thread_;
 
   void HandleAfterglowEnvVars();
   void HandleConnectionStatsEnvVars();
   void HandleSinspEnvVars();
   void YamlConfigToConfig(YAML::Node& yamlConfig);
   void HandleConfig(const std::filesystem::path& filePath);
+  void WatchConfigFile(const std::filesystem::path& filePath);
 
   // Protected, used for testing purposes
   void SetSinspBufferSize(unsigned int buffer_size);
