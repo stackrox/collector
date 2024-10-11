@@ -135,8 +135,8 @@ TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
   config.MockSetEnableExternalIPs(true);
 
   sensor::CollectorConfig runtime_config;
-  sensor::CollectorConfig_Networking* networking_config = runtime_config.mutable_networking();
-  sensor::CollectorConfig_ExternalIPs* external_ips_config = networking_config->mutable_external_ips();
+  auto* networking_config = runtime_config.mutable_networking();
+  auto* external_ips_config = networking_config->mutable_external_ips();
 
   external_ips_config->set_enable(false);
 
