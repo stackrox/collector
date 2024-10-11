@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <optional>
+#include <sstream>
 
 #include <libsinsp/sinsp.h>
 
@@ -256,7 +257,7 @@ void CollectorConfig::HandleTls(const Json::Value& config, const CollectorArgs* 
 }
 
 void CollectorConfig::HandleNetworkConfig() {
-  auto filler = [](std::vector<IPNet>& output, const std::vector<std::string>& input, const std::string& error_message, const std::string& notification_message) {
+  auto filler = [](std::vector<IPNet>& output, const std::vector<std::string>& input, const std::string& notification_message, const std::string& error_message) {
     for (const std::string& str : input) {
       if (str.empty()) {
         continue;
@@ -387,19 +388,86 @@ std::string CollectorConfig::LogLevel() {
   return logging::GetLogLevelName(logging::GetLogLevel());
 }
 
+namespace {
+
+template <typename T>
+std::string VectorToYamlList(const std::vector<T>& v, size_t indent_level, bool compressed = false) {
+  std::stringstream ss;
+  if (compressed) {
+    bool first = true;
+    ss << "[ ";
+
+    for (const auto& item : v) {
+      if (first) {
+        first = false;
+      } else {
+        ss << ", ";
+      }
+
+      ss << '"' << item << '"';
+    }
+
+    ss << " ]";
+  } else {
+    std::string indent(indent_level * 2, ' ');
+    for (const auto& item : v) {
+      ss << indent << "- " << item << '\n';
+    }
+  }
+  return ss.str();
+}
+
+std::string UnorderedSetToYamlList(const UnorderedSet<L4ProtoPortPair>& p, size_t indent_level) {
+  std::stringstream ss;
+  std::string indent(indent_level * 2, ' ');
+  for (const auto& [k, v] : p) {
+    ss << indent << k << ": " << v << '\n';
+  }
+  return ss.str();
+}
+
+}  // namespace
+
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
   return os
-         << "collection_method:" << c.GetCollectionMethod()
-         << ", scrape_interval:" << c.ScrapeInterval()
-         << ", turn_off_scrape:" << c.TurnOffScrape()
-         << ", hostname:" << c.Hostname()
-         << ", processesListeningOnPorts:" << c.IsProcessesListeningOnPortsEnabled()
-         << ", logLevel:" << CollectorConfig::LogLevel()
-         << ", set_import_users:" << c.ImportUsers()
-         << ", collect_connection_status:" << c.CollectConnectionStatus()
-         << ", enable_detailed_metrics:" << c.EnableDetailedMetrics()
-         << ", enable_external_ips:" << c.EnableExternalIPs()
-         << ", track_send_recv:" << c.TrackingSendRecv();
+         << std::boolalpha << "\n"
+         << "  collection_method: " << c.GetCollectionMethod() << "\n"
+         << "  scrape_interval: " << c.ScrapeInterval() << "\n"
+         << "  turn_off_scrape: " << c.TurnOffScrape() << "\n"
+         << "  scrape_listen_endpoints: " << c.ScrapeListenEndpoints() << "\n"
+         << "  syscalls: " << VectorToYamlList(c.Syscalls(), 1, true) << "\n"
+         << "  hostname: " << c.Hostname() << "\n"
+         << "  disable_network_flows: " << c.DisableNetworkFlows() << "\n"
+         << "  ignored_l4proto_port_pairs: \n"
+         << UnorderedSetToYamlList(c.IgnoredL4ProtoPortPairs(), 2)
+         << "  ignored_networks: \n"
+         << VectorToYamlList(c.IgnoredNetworks(), 1)
+         << "  non_aggregated_networks: \n"
+         << VectorToYamlList(c.NonAggregatedNetworks(), 1)
+         << "  enable_afterglow: " << c.EnableAfterglow() << "\n"
+         << "  afterglow_period_micros: " << c.AfterglowPeriod() << "\n"
+         << "  enable_core_dump: " << c.IsCoreDumpEnabled() << "\n"
+         << "  processesListeningOnPorts: " << c.IsProcessesListeningOnPortsEnabled() << "\n"
+         << "  logLevel: " << CollectorConfig::LogLevel() << "\n"
+         << "  set_import_users: " << c.ImportUsers() << "\n"
+         << "  collect_connection_status: " << c.CollectConnectionStatus() << "\n"
+         << "  enable_detailed_metrics: " << c.EnableDetailedMetrics() << "\n"
+         << "  enable_runtime_config: " << c.EnableRuntimeConfig() << "\n"
+         << "  use_docker_ce: " << c.UseDockerCe() << "\n"
+         << "  use_podman_ce: " << c.UsePodmanCe() << "\n"
+         << "  enable_introspection: " << c.IsIntrospectionEnabled() << "\n"
+         << "  enable_external_ips: " << c.EnableExternalIPs() << "\n"
+         << "  track_send_recv: " << c.TrackingSendRecv() << "\n"
+         << "  connection_stats:\n"
+         << "    error: " << c.GetConnectionStatsError() << "\n"
+         << "    window: " << c.GetConnectionStatsWindow() << "\n"
+         << "    quantiles:\n"
+         << VectorToYamlList(c.GetConnectionStatsQuantiles(), 2)
+         << "  system_inspector:\n"
+         << "    cpu_buffer_size: " << c.GetSinspCpuPerBuffer() << "\n"
+         << "    buffer_size: " << c.GetSinspBufferSize() << "\n"
+         << "    total_buffer_size: " << c.GetSinspTotalBufferSize() << "\n"
+         << "    thread_cache_size: " << c.GetSinspThreadCacheSize() << "\n";
 }
 
 // Returns size of ring buffers to be allocated.
