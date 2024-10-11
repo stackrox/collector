@@ -35,8 +35,8 @@ class MockCollectorConfig : public CollectorConfig {
     SetEnableExternalIPs(value);
   }
 
-  bool MockYamlConfigToConfig(YAML::Node& yamlConfig) {
-    return YamlConfigToConfig(yamlConfig);
+  void MockYamlConfigToConfig(YAML::Node& yamlConfig) {
+    YamlConfigToConfig(yamlConfig);
   }
 };
 
@@ -135,9 +135,10 @@ TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
   config.MockSetEnableExternalIPs(true);
 
   sensor::CollectorConfig runtime_config;
-  sensor::NetworkConnectionConfig* network_config = runtime_config.mutable_network_connection_config();
+  auto* networking_config = runtime_config.mutable_networking();
+  auto* external_ips_config = networking_config->mutable_external_ips();
 
-  network_config->set_enable_external_ips(false);
+  external_ips_config->set_enable(false);
 
   config.SetRuntimeConfig(runtime_config);
 
@@ -145,7 +146,7 @@ TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
 
   config.MockSetEnableExternalIPs(false);
 
-  network_config->set_enable_external_ips(true);
+  external_ips_config->set_enable(true);
   config.SetRuntimeConfig(runtime_config);
 
   EXPECT_TRUE(config.EnableExternalIPs());
@@ -154,57 +155,66 @@ TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
 TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
   std::vector<std::pair<std::string, bool>> tests = {
       {R"(
-                  networkConnectionConfig:
-                    enableExternalIps: true
+                  networking:
+                    externalIps:
+                      enable: true
                )",
        true},
       {R"(
-                  networkConnectionConfig:
-                    enableExternalIps: false
+                  networking:
+                    externalIps:
+                      enable: false
                )",
        false},
       {R"(
-                  networkConnectionConfig:
+                  networking:
+                    externalIps:
                )",
        false},
-      {R"(
-                  networkConnectionConfig:
-                    unknownField: asdf
-               )",
-       false}};
+  };
 
   for (const auto& [yamlStr, expected] : tests) {
     YAML::Node yamlNode = YAML::Load(yamlStr);
 
     MockCollectorConfig config;
 
-    bool result = config.MockYamlConfigToConfig(yamlNode);
+    config.MockYamlConfigToConfig(yamlNode);
     auto runtime_config = config.GetRuntimeConfig();
 
-    EXPECT_TRUE(result);
     EXPECT_TRUE(runtime_config.has_value());
 
-    const auto& cfg = runtime_config.value();
-    const auto& network_cfg = cfg.network_connection_config();
-    EXPECT_EQ(network_cfg.enable_external_ips(), expected);
+    bool enabled = runtime_config.value()
+                       .networking()
+                       .external_ips()
+                       .enable();
+    EXPECT_EQ(enabled, expected);
     EXPECT_EQ(config.EnableExternalIPs(), expected);
   }
 }
 
 TEST(CollectorConfigTest, TestYamlConfigToConfigInvalid) {
-  std::string yamlStr = R"(
+  std::vector<std::string> tests = {
+      R"(
+                  networking:
+               )",
+      R"(
+                  networking:
+                    unknownFiled: asdf
+               )",
+      R"(
                   unknownField: asdf
-               )";
+               )"};
 
-  YAML::Node yamlNode = YAML::Load(yamlStr);
+  for (const auto& yamlStr : tests) {
+    YAML::Node yamlNode = YAML::Load(yamlStr);
 
-  MockCollectorConfig config;
+    MockCollectorConfig config;
 
-  bool result = config.MockYamlConfigToConfig(yamlNode);
-  auto runtime_config = config.GetRuntimeConfig();
+    config.MockYamlConfigToConfig(yamlNode);
+    auto runtime_config = config.GetRuntimeConfig();
 
-  EXPECT_FALSE(result);
-  EXPECT_FALSE(runtime_config.has_value());
+    EXPECT_FALSE(runtime_config.has_value());
+  }
 }
 
 TEST(CollectorConfigTest, TestYamlConfigToConfigEmpty) {

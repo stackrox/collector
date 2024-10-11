@@ -397,31 +397,35 @@ void CollectorConfig::HandleSinspEnvVars() {
   }
 }
 
-bool CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
+void CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
   if (yamlConfig.IsNull() || !yamlConfig.IsDefined()) {
     CLOG(FATAL) << "Unable to read config from config file";
-    return false;
+    return;
   }
-  YAML::Node networkConnectionConfig = yamlConfig["networkConnectionConfig"];
-  if (!networkConnectionConfig) {
-    CLOG(WARNING) << "No networkConnectionConfig in config file";
-    return false;
+  YAML::Node networking = yamlConfig["networking"];
+  if (!networking) {
+    CLOG(INFO) << "No networking in config file";
+    return;
   }
 
   bool enableExternalIps = false;
-  if (networkConnectionConfig["enableExternalIps"]) {
-    enableExternalIps = networkConnectionConfig["enableExternalIps"].as<bool>(false);
+  YAML::Node externalIpsNode = networking["externalIps"];
+  if (!externalIpsNode) {
+    CLOG(INFO) << "No external IPs in config file";
+    return;
   }
+  enableExternalIps = externalIpsNode["enable"].as<bool>(false);
 
   sensor::CollectorConfig runtime_config;
-  auto* networkConfig = runtime_config.mutable_network_connection_config();
-  networkConfig->set_enable_external_ips(enableExternalIps);
+  auto* networkingConfig = runtime_config.mutable_networking();
+  auto* externalIpsConfig = networkingConfig->mutable_external_ips();
+  externalIpsConfig->set_enable(enableExternalIps);
 
   SetRuntimeConfig(runtime_config);
   CLOG(INFO) << "Runtime configuration:";
   CLOG(INFO) << GetRuntimeConfigStr();
 
-  return true;
+  return;
 }
 
 void CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
