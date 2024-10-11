@@ -58,7 +58,7 @@ class CollectorConnectionStatsPrometheus : public CollectorConnectionStats<T> {
   }
 };
 
-CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, system_inspector::Service* si)
+CollectorStatsExporter::CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, std::shared_ptr<const CollectorConfig> config, system_inspector::Service* si)
     : registry_(std::move(registry)),
       config_(config),
       system_inspector_(si),
