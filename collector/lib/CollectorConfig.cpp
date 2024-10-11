@@ -6,6 +6,7 @@
 
 #include <libsinsp/sinsp.h>
 
+#include "CollectionMethod.h"
 #include "CollectorArgs.h"
 #include "EnvVar.h"
 #include "GRPC.h"
@@ -186,22 +187,15 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
     }
 
     // Collection Method
-    auto setCollectionMethod = [&](const std::string& cm) {
-      CLOG(INFO) << "User configured collection-method=" << cm;
-      if (cm == "ebpf") {
-        collection_method_ = CollectionMethod::EBPF;
-      } else if (cm == "core_bpf") {
-        collection_method_ = CollectionMethod::CORE_BPF;
-      } else {
-        CLOG(WARNING) << "Invalid collection-method (" << cm << "), using CO-RE BPF";
-        collection_method_ = CollectionMethod::CORE_BPF;
-      }
+    auto setCollectionMethod = [&](const CollectionMethod cm) {
+      CLOG(INFO) << "User configured collection-method=" << CollectionMethodName(cm);
+      collection_method_ = cm;
     };
 
-    if (args->GetCollectionMethod().length() > 0) {
-      setCollectionMethod(args->GetCollectionMethod());
+    if (args->GetCollectionMethod()) {
+      setCollectionMethod(args->GetCollectionMethod().value());
     } else if (collection_method.hasValue()) {
-      setCollectionMethod(collection_method.value());
+      setCollectionMethod(ParseCollectionMethod(collection_method.value()));
     }
 
     // TLS configuration

@@ -2,6 +2,7 @@
 #define COLLECTION_METHOD_H
 
 #include <ostream>
+#include <string_view>
 
 namespace collector {
 enum class CollectionMethod : uint8_t {
@@ -12,6 +13,7 @@ enum class CollectionMethod : uint8_t {
 std::ostream& operator<<(std::ostream& os, CollectionMethod method);
 
 const char* CollectionMethodName(CollectionMethod method);
+CollectionMethod ParseCollectionMethod(std::string_view method);
 
 }  // namespace collector
 

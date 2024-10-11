@@ -1,6 +1,6 @@
 #include "CollectionMethod.h"
 
-#include <sstream>
+#include <algorithm>
 
 #include <sys/types.h>
 
@@ -24,4 +24,21 @@ const char* CollectionMethodName(CollectionMethod method) {
   }
 }
 
+CollectionMethod ParseCollectionMethod(std::string_view method) {
+  // Canonicalize collection method to lowercase, replace '-' with '_'
+  std::string cm(method);
+  std::transform(cm.begin(), cm.end(), cm.begin(), ::tolower);
+  std::replace(cm.begin(), cm.end(), '-', '_');
+
+  if (cm == "ebpf") {
+    return CollectionMethod::EBPF;
+  }
+
+  if (cm == "core_bpf") {
+    return CollectionMethod::CORE_BPF;
+  }
+
+  CLOG(WARNING) << "Invalid collection-method (" << cm << "), using CO-RE BPF";
+  return CollectionMethod::CORE_BPF;
+}
 }  // namespace collector
