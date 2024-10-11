@@ -239,6 +239,8 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
     ConnMap new_conn_state, delta_conn;
     AdvertisedEndpointMap new_cep_state;
     WITH_TIMER(CollectorStats::net_fetch_state) {
+      conn_tracker_->EnableExternalIPs(config_.EnableExternalIPs());
+
       new_conn_state = conn_tracker_->FetchConnState(true, true);
       if (enable_afterglow_) {
         ConnectionTracker::ComputeDeltaAfterglow(new_conn_state, old_conn_state, delta_conn, time_micros, time_at_last_scrape, afterglow_period_micros_);
