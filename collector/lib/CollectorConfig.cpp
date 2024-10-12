@@ -400,6 +400,8 @@ void CollectorConfig::HandleSinspEnvVars() {
 }
 
 bool CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
+  std::lock_guard<std::mutex> lock(*mutex_);
+
   if (yamlConfig.IsNull() || !yamlConfig.IsDefined()) {
     CLOG(FATAL) << "Unable to read config from config file";
     return false;
