@@ -450,13 +450,14 @@ void CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
 }
 
 void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
+  CLOG(INFO) << "In WatchConfigFile";
   int fd = inotify_init();
   if (fd < 0) {
     CLOG(FATAL) << "inotify_init failed";
     return;
   }
 
-  int wd = inotify_add_watch(fd, filePath.c_str(), IN_MODIFY);
+  int wd = inotify_add_watch(fd, filePath.c_str(), IN_MODIFY | IN_MOVE_SELF | IN_DELETE_SELF);
   if (wd < 0) {
     CLOG(FATAL) << "Failed to add inotify watch for " << filePath;
     close(fd);
@@ -465,20 +466,33 @@ void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
 
   char buffer[1024];
   while (true) {
+    CLOG(INFO) << "Waiting for file event";
     int length = read(fd, buffer, sizeof(buffer));
     if (length < 0) {
-      CLOG(FATAL) << "read error";
+      CLOG(FATAL) << "Unable to read event for " << filePath;
     }
 
     for (int i = 0; i < length; i += sizeof(struct inotify_event)) {
       struct inotify_event* event = (struct inotify_event*)&buffer[i];
+      CLOG(INFO) << "Got event event->mask= " << event->mask;
+      CLOG(INFO) << "event->mask & IN_MODIFY= " << (event->mask & IN_MODIFY);
       if (event->mask & IN_MODIFY) {
-        CLOG(INFO) << "Configuration file modified. Reloading...";
-        HandleConfig(filePath);  // Reload configuration
+        CLOG(INFO) << "File was replace";
+        HandleConfig(filePath);
+      } else if ((event->mask & IN_MOVE_SELF) || (event->mask & IN_DELETE_SELF) || (event->mask & IN_IGNORED)) {
+        CLOG(INFO) << "File was removed";
+        wd = inotify_add_watch(fd, filePath.c_str(), IN_MODIFY | IN_MOVE_SELF | IN_DELETE_SELF);
+        HandleConfig(filePath);
+        if (wd < 0) {
+          CLOG(FATAL) << "Failed to add inotify watch for " << filePath;
+          close(fd);
+          return;
+        }
       }
     }
   }
 
+  CLOG(INFO) << "Leaving WatchingConfigFile " << filePath;
   inotify_rm_watch(fd, wd);
   close(fd);
 }
@@ -490,6 +504,7 @@ void CollectorConfig::Start() {
 
 void CollectorConfig::Stop() {
   thread_.Stop();
+  CLOG(INFO) << "No longer watching config file" << config_file.value();
 }
 
 bool CollectorConfig::TurnOffScrape() const {
