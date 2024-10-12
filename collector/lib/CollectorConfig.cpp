@@ -281,7 +281,6 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   HandleAfterglowEnvVars();
   HandleConnectionStatsEnvVars();
   HandleSinspEnvVars();
-  HandleConfig(config_file.value());
 
   host_config_ = ProcessHostHeuristics(*this);
 }
@@ -400,6 +399,7 @@ void CollectorConfig::HandleSinspEnvVars() {
 }
 
 void CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
+  // Don't read the file during a scrape
   std::lock_guard<std::mutex> lock(*mutex_);
 
   if (yamlConfig.IsNull() || !yamlConfig.IsDefined()) {
@@ -455,6 +455,12 @@ void CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
   }
 }
 
+void WaitForFileToExist(const std::filesystem::path& filePath) {
+  while (!std::filesystem::exists(filePath)) {
+    sleep(5);
+  }
+}
+
 void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
   CLOG(INFO) << "In WatchConfigFile";
   int fd = inotify_init();
@@ -463,6 +469,8 @@ void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
     return;
   }
 
+  WaitForFileToExist(filePath);
+  HandleConfig(filePath);
   int wd = inotify_add_watch(fd, filePath.c_str(), IN_MODIFY | IN_MOVE_SELF | IN_DELETE_SELF);
   if (wd < 0) {
     CLOG(FATAL) << "Failed to add inotify watch for " << filePath;
@@ -483,10 +491,11 @@ void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
       CLOG(INFO) << "Got event event->mask= " << event->mask;
       CLOG(INFO) << "event->mask & IN_MODIFY= " << (event->mask & IN_MODIFY);
       if (event->mask & IN_MODIFY) {
-        CLOG(INFO) << "File was replace";
+        CLOG(INFO) << "File was replaced";
         HandleConfig(filePath);
       } else if ((event->mask & IN_MOVE_SELF) || (event->mask & IN_DELETE_SELF) || (event->mask & IN_IGNORED)) {
         CLOG(INFO) << "File was removed";
+        WaitForFileToExist(filePath);
         wd = inotify_add_watch(fd, filePath.c_str(), IN_MODIFY | IN_MOVE_SELF | IN_DELETE_SELF);
         HandleConfig(filePath);
         if (wd < 0) {
