@@ -301,7 +301,7 @@ sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(c
 
 void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<sensor::NetworkConnection>* updates, const ConnMap& delta) {
   for (const auto& delta_entry : delta) {
-    CLOG(DEBUG) << delta_entry.first << " active:" << delta_entry.second.IsActive();
+    CLOG(INFO) << delta_entry.first << " active:" << delta_entry.second.IsActive();
     auto* conn_proto = ConnToProto(delta_entry.first);
     if (!delta_entry.second.IsActive()) {
       *conn_proto->mutable_close_timestamp() = google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(
