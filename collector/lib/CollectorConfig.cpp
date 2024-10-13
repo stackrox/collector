@@ -306,6 +306,13 @@ void CollectorConfig::HandleAfterglowEnvVars() {
     enable_afterglow_ = enable_afterglow.value();
   }
 
+  if (enable_runtime_config.value() && (afterglow_period_micros_ > 0 || enable_afterglow)) {
+    CLOG(WARNING) << "Afterglow and runtime configuration are both enabled.";
+    CLOG(WARNING) << "Disabling afterglow since it conflicts with runtime configuration.";
+    afterglow_period_micros_ = 0;
+    enable_afterglow_ = false;
+  }
+
   CLOG(INFO) << "Afterglow is " << (enable_afterglow_ ? "enabled" : "disabled");
 }
 
