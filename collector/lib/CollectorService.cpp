@@ -58,7 +58,9 @@ void CollectorService::RunForever() {
   prometheus::Exposer exposer("9090");
   exposer.RegisterCollectable(registry);
 
-  config_->Start();
+  if (config_->EnableRuntimeConfig()) {
+    config_->Start();
+  }
   CollectorStatsExporter exporter(registry, config_, &system_inspector_);
 
   std::unique_ptr<NetworkStatusNotifier> net_status_notifier;
@@ -137,7 +139,9 @@ void CollectorService::RunForever() {
   if (net_status_notifier) {
     net_status_notifier->Stop();
   }
-  config_->Stop();
+  if (config_->EnableRuntimeConfig()) {
+    config_->Stop();
+  }
   // Shut down these first since they access the system inspector object.
   exporter.stop();
   server.close();
