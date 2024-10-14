@@ -51,8 +51,8 @@ BoolEnvVar collect_connection_status("ROX_COLLECT_CONNECTION_STATUS", true);
 BoolEnvVar enable_external_ips("ROX_ENABLE_EXTERNAL_IPS", false);
 
 // Stats and metrics configuration
-BoolEnvVar enable_connection_stats("ROX_COLLECTOR_ENABLE_CONNECTION_STATS", true);
 BoolEnvVar enable_detailed_metrics("ROX_COLLECTOR_ENABLE_DETAILED_METRICS", true);
+BoolEnvVar enable_connection_stats("ROX_COLLECTOR_ENABLE_CONNECTION_STATS", true);
 StringListEnvVar connection_stats_quantiles("ROX_COLLECTOR_CONNECTION_STATS_QUANTILES");
 DoubleEnvVar connection_stats_error("ROX_COLLECTOR_CONNECTION_STATS_ERROR", 0.01);
 UIntEnvVar connection_stats_window("ROX_COLLECTOR_CONNECTION_STATS_WINDOW", 60);
@@ -61,7 +61,7 @@ UIntEnvVar connection_stats_window("ROX_COLLECTOR_CONNECTION_STATS_WINDOW", 60);
 UIntEnvVar sinsp_cpu_per_buffer("ROX_COLLECTOR_SINSP_CPU_PER_BUFFER", DEFAULT_CPU_FOR_EACH_BUFFER);
 UIntEnvVar sinsp_buffer_size("ROX_COLLECTOR_SINSP_BUFFER_SIZE", DEFAULT_DRIVER_BUFFER_BYTES_DIM);
 UIntEnvVar sinsp_total_buffer_size("ROX_COLLECTOR_SINSP_TOTAL_BUFFER_SIZE", 512 * 1024 * 1024);
-UIntEnvVar sinsp_thread_cache_size("ROX_COLLECTOR_SINSP_TOTAL_BUFFER_SIZE", 32768);
+UIntEnvVar sinsp_thread_cache_size("ROX_COLLECTOR_SINSP_THREAD_CACHE_SIZE", 32768);
 
 BoolEnvVar enable_runtime_config("ROX_COLLECTOR_RUNTIME_CONFIG_ENABLED", false);
 
@@ -459,6 +459,7 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << "  enable_external_ips: " << c.EnableExternalIPs() << "\n"
          << "  track_send_recv: " << c.TrackingSendRecv() << "\n"
          << "  connection_stats:\n"
+         << "    enable: " << c.EnableConnectionStats() << "\n"
          << "    error: " << c.GetConnectionStatsError() << "\n"
          << "    window: " << c.GetConnectionStatsWindow() << "\n"
          << "    quantiles:\n"
