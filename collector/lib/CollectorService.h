@@ -18,7 +18,7 @@ class CollectorService {
  private:
   bool WaitForGRPCServer();
 
-  CollectorConfig& config_;
+  const CollectorConfig& config_;
 
   std::atomic<ControlValue>* control_;
   const std::atomic<int>& signum_;
