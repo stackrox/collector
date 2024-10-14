@@ -32,7 +32,7 @@ namespace collector {
 CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlValue>* control,
                                    const std::atomic<int>* signum)
     : config_(config), control_(control), signum_(*signum) {
-  CLOG(INFO) << "Config: " << *config;
+  CLOG(INFO) << "Config: " << config;
 }
 
 void CollectorService::RunForever() {
