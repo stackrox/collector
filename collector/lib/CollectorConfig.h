@@ -64,6 +64,9 @@ class CollectorConfig {
   static constexpr bool kEnableProcessesListeningOnPorts = true;
 
   CollectorConfig();
+  CollectorConfig(const CollectorConfig&) = delete;
+  CollectorConfig(CollectorConfig&&) = delete;
+
   void InitCollectorConfig(CollectorArgs* collectorArgs);
 
   std::string asString() const;
