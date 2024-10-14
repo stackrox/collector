@@ -1,8 +1,6 @@
 #ifndef COLLECTOR_CONFIG_INSPECTOR_H
 #define COLLECTOR_CONFIG_INSPECTOR_H
 
-#include <memory>
-
 #include <json/writer.h>
 
 #include "CollectorConfig.h"
@@ -14,13 +12,13 @@ class CollectorConfigInspector : public IntrospectionEndpoint {
  public:
   static const std::string kBaseRoute;
 
-  CollectorConfigInspector(const std::shared_ptr<CollectorConfig> config);
+  CollectorConfigInspector(const CollectorConfig& config);
 
   // implementation of CivetHandler
   bool handleGet(CivetServer* server, struct mg_connection* conn) override;
 
  private:
-  const std::shared_ptr<CollectorConfig> config_;
+  const CollectorConfig& config_;
   std::string configToJson(bool& isError);
 };
 
