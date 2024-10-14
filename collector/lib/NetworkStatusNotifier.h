@@ -18,16 +18,16 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   NetworkStatusNotifier(std::shared_ptr<IConnScraper> conn_scraper,
                         std::shared_ptr<ConnectionTracker> conn_tracker,
                         std::shared_ptr<INetworkConnectionInfoServiceComm> comm,
-                        std::shared_ptr<const CollectorConfig> config,
+                        const CollectorConfig& config,
                         std::shared_ptr<CollectorConnectionStats<unsigned int>> connections_total_reporter = 0,
                         std::shared_ptr<CollectorConnectionStats<float>> connections_rate_reporter = 0)
       : conn_scraper_(conn_scraper),
-        scrape_interval_(config->ScrapeInterval()),
-        turn_off_scraping_(config->TurnOffScrape()),
-        scrape_listen_endpoints_(config->ScrapeListenEndpoints()),
+        scrape_interval_(config.ScrapeInterval()),
+        turn_off_scraping_(config.TurnOffScrape()),
+        scrape_listen_endpoints_(config.ScrapeListenEndpoints()),
         conn_tracker_(std::move(conn_tracker)),
-        afterglow_period_micros_(config->AfterglowPeriod()),
-        enable_afterglow_(config->EnableAfterglow()),
+        afterglow_period_micros_(config.AfterglowPeriod()),
+        enable_afterglow_(config.EnableAfterglow()),
         config_(config),
         comm_(comm),
         connections_total_reporter_(connections_total_reporter),
@@ -66,7 +66,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
 
   int64_t afterglow_period_micros_;
   bool enable_afterglow_;
-  const std::shared_ptr<const CollectorConfig> config_;
+  const CollectorConfig& config_;
   std::shared_ptr<INetworkConnectionInfoServiceComm> comm_;
 
   std::shared_ptr<CollectorConnectionStats<unsigned int>> connections_total_reporter_;

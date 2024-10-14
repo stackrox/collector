@@ -13,7 +13,7 @@ namespace collector {
 
 class CollectorStatsExporter {
  public:
-  CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, std::shared_ptr<const CollectorConfig> config, system_inspector::Service* si);
+  CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, system_inspector::Service* si);
 
   bool start();
   void run();
@@ -24,7 +24,7 @@ class CollectorStatsExporter {
 
  private:
   std::shared_ptr<prometheus::Registry> registry_;
-  std::shared_ptr<const CollectorConfig> config_;
+  const CollectorConfig* config_;
   system_inspector::Service* system_inspector_;
   std::shared_ptr<CollectorConnectionStats<unsigned int>> connections_total_reporter_;
   std::shared_ptr<CollectorConnectionStats<float>> connections_rate_reporter_;

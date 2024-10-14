@@ -9,7 +9,7 @@ namespace collector {
 
 class CollectorService {
  public:
-  CollectorService(std::shared_ptr<CollectorConfig> config, std::atomic<ControlValue>* control, const std::atomic<int>* signum);
+  CollectorService(const CollectorConfig& config, std::atomic<ControlValue>* control, const std::atomic<int>* signum);
 
   void RunForever();
 
@@ -18,7 +18,7 @@ class CollectorService {
  private:
   bool WaitForGRPCServer();
 
-  std::shared_ptr<CollectorConfig> config_;
+  CollectorConfig config_;
 
   std::atomic<ControlValue>* control_;
   const std::atomic<int>& signum_;

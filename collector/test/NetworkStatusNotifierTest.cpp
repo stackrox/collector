@@ -185,7 +185,7 @@ class NetworkConnectionInfoMessageParser {
 /* Simple validation that the service starts and sends at least one event */
 TEST(NetworkStatusNotifier, SimpleStartStop) {
   bool running = true;
-  auto config_ = std::make_shared<CollectorConfig>();
+  CollectorConfig config_;
   std::shared_ptr<MockConnScraper> conn_scraper = std::make_shared<MockConnScraper>();
   auto conn_tracker = std::make_shared<ConnectionTracker>();
   auto comm = std::make_shared<MockNetworkConnectionInfoServiceComm>();
@@ -245,8 +245,8 @@ TEST(NetworkStatusNotifier, SimpleStartStop) {
    - we check that the former declared connection is deleted and redeclared as part of this network */
 TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
   bool running = true;
-  auto config = std::make_shared<MockCollectorConfig>();
-  config->DisableAfterglow();
+  MockCollectorConfig config;
+  config.DisableAfterglow();
   std::shared_ptr<MockConnScraper> conn_scraper = std::make_shared<MockConnScraper>();
   auto conn_tracker = std::make_shared<ConnectionTracker>();
   auto comm = std::make_shared<MockNetworkConnectionInfoServiceComm>();
