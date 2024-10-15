@@ -225,7 +225,7 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
 
   while (writer->Sleep(next_scrape)) {
     // We don't want to scrape while reading the config file
-    std::lock_guard<std::mutex> lock(*(config_->GetMutex()));
+    std::lock_guard<std::mutex> lock(*(config_.GetMutex()));
     CLOG(DEBUG) << "Starting network status notification";
     next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
 

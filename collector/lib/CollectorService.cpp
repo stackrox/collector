@@ -32,7 +32,7 @@ namespace collector {
 CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlValue>* control,
                                    const std::atomic<int>* signum)
     : config_(config), control_(control), signum_(*signum) {
-  CLOG(INFO) << "Config: " << *config;
+  CLOG(INFO) << "Config: " << config;
 }
 
 void CollectorService::RunForever() {
@@ -59,7 +59,7 @@ void CollectorService::RunForever() {
   exposer.RegisterCollectable(registry);
 
   CollectorStatsExporter exporter(registry, &config_, &system_inspector_);
-  config_->Start();
+  config_.Start();
 
   std::unique_ptr<NetworkStatusNotifier> net_status_notifier;
 
@@ -137,7 +137,7 @@ void CollectorService::RunForever() {
   if (net_status_notifier) {
     net_status_notifier->Stop();
   }
-  config_->Stop();
+  config_.Stop();
   // Shut down these first since they access the system inspector object.
   exporter.stop();
   server.close();
