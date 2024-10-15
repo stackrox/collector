@@ -223,7 +223,7 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigEmpty) {
 
   MockCollectorConfig config;
 
-  EXPECT_DEATH({ config.MockYamlConfigToConfig(yamlNode); }, ".*");
+  EXPECT_THROW({ config.MockYamlConfigToConfig(yamlNode); }, std::runtime_error);
 }
 
 }  // namespace collector

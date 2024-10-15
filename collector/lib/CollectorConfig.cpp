@@ -398,24 +398,12 @@ void CollectorConfig::HandleSinspEnvVars() {
   }
 }
 
-void CollectorConfig::LogRuntimeConfigError(const std::string& str) {
-  if (runtime_config_.has_value()) {
-    // If a runtime config already exists and there is an error setting it
-    // log the error and continue with the existing configuration.
-    CLOG(ERROR) << str;
-  } else {
-    // If there is no runtime configuration and there is an error setting it, exit.
-    CLOG(FATAL) << str;
-  }
-}
-
 void CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
   // Don't read the file during a scrape
   std::unique_lock<std::shared_mutex> lock(mutex_);
 
   if (yamlConfig.IsNull() || !yamlConfig.IsDefined()) {
-    LogRuntimeConfigError("Unable to read config from config file");
-    return;
+    throw std::runtime_error("Unable to read config from config file");
   }
   YAML::Node networking = yamlConfig["networking"];
   if (!networking) {
@@ -443,28 +431,30 @@ void CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
   return;
 }
 
-void CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
+bool CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
   if (!std::filesystem::exists(filePath)) {
     CLOG(DEBUG) << "No configuration file found. " << filePath;
-    return;
+    return true;
   }
 
   try {
     YAML::Node yamlConfig = YAML::LoadFile(filePath);
     YamlConfigToConfig(yamlConfig);
   } catch (const YAML::BadFile& e) {
-    std::string errorMsg = "Failed to open the configuration file: " + filePath.string() + ". Error: " + e.what();
-    LogRuntimeConfigError(errorMsg);
+    CLOG(ERROR) << "Failed to open the configuration file: " << filePath << ". Error: " << e.what();
+    return false;
   } catch (const YAML::ParserException& e) {
-    std::string errorMsg = "Failed to parse the configuration file: " + filePath.string() + ". Error: " + e.what();
-    LogRuntimeConfigError(errorMsg);
+    CLOG(ERROR) << "Failed to parse the configuration file: " << filePath << ". Error: " << e.what();
+    return false;
   } catch (const YAML::Exception& e) {
-    std::string errorMsg = "An error occurred while loading the configuration file: " + filePath.string() + ". Error: " + e.what();
-    LogRuntimeConfigError(errorMsg);
+    CLOG(ERROR) << "An error occurred while loading the configuration file: " << filePath << ". Error: " << e.what();
+    return false;
   } catch (const std::exception& e) {
-    std::string errorMsg = "An unexpected error occurred while trying to read: " + filePath.string() + e.what();
-    LogRuntimeConfigError(errorMsg);
+    CLOG(ERROR) << "An unexpected error occurred while trying to read: " << filePath << e.what();
+    return false;
   }
+
+  return true;
 }
 
 void WaitForFileToExist(const std::filesystem::path& filePath) {
@@ -490,13 +480,16 @@ void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
   CLOG(INFO) << "In WatchConfigFile";
   int fd = inotify_init();
   if (fd < 0) {
-    CLOG(ERROR) << "inotify_init() failed: "<< StrError();
+    CLOG(ERROR) << "inotify_init() failed: " << StrError();
     CLOG(ERROR) << "Runtime configuration will not be used.";
     return;
   }
   WaitForFileToExist(filePath);
-  WaitForInotifyAddWatch(fd, wd, filePath);
-  HandleConfig(filePath);
+  int wd = WaitForInotifyAddWatch(fd, filePath);
+  bool success = HandleConfig(filePath);
+  if (!success) {
+    CLOG(FATAL) << "Unable to parse configuration file: " << filePath;
+  }
 
   char buffer[1024];
   while (true) {
@@ -516,7 +509,7 @@ void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
       } else if ((event->mask & IN_MOVE_SELF) || (event->mask & IN_DELETE_SELF) || (event->mask & IN_IGNORED)) {
         CLOG(INFO) << "File was removed";
         WaitForFileToExist(filePath);
-        WaitForInotifyAddWatch(fd, wd, filePath);
+        wd = WaitForInotifyAddWatch(fd, filePath);
         HandleConfig(filePath);
       }
     }
