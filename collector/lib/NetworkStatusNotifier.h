@@ -28,6 +28,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
         conn_tracker_(std::move(conn_tracker)),
         afterglow_period_micros_(config.AfterglowPeriod()),
         enable_afterglow_(config.EnableAfterglow()),
+        config_(config),
         comm_(comm),
         connections_total_reporter_(connections_total_reporter),
         connections_rate_reporter_(connections_rate_reporter) {
@@ -65,6 +66,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
 
   int64_t afterglow_period_micros_;
   bool enable_afterglow_;
+  const CollectorConfig& config_;
   std::shared_ptr<INetworkConnectionInfoServiceComm> comm_;
 
   std::shared_ptr<CollectorConnectionStats<unsigned int>> connections_total_reporter_;

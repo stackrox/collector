@@ -9,11 +9,11 @@ namespace collector {
 
 const std::string CollectorConfigInspector::kBaseRoute = "/state/config";
 
-CollectorConfigInspector::CollectorConfigInspector(const std::shared_ptr<CollectorConfig> config) : config_(config) {
+CollectorConfigInspector::CollectorConfigInspector(const CollectorConfig& config) : config_(config) {
 }
 
 std::string CollectorConfigInspector::configToJson(bool& isError) {
-  const auto& runtime_config = config_->GetRuntimeConfig();
+  const auto& runtime_config = config_.GetRuntimeConfig();
 
   if (!runtime_config.has_value()) {
     return "{}";

@@ -29,7 +29,7 @@ extern unsigned char g_bpf_drop_syscalls[];  // defined in libscap
 
 namespace collector {
 
-CollectorService::CollectorService(const CollectorConfig& config, std::atomic<ControlValue>* control,
+CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlValue>* control,
                                    const std::atomic<int>* signum)
     : config_(config), control_(control), signum_(*signum) {
   CLOG(INFO) << "Config: " << config;
@@ -91,7 +91,6 @@ void CollectorService::RunForever() {
     conn_tracker->UpdateIgnoredL4ProtoPortPairs(std::move(ignored_l4proto_port_pairs));
     conn_tracker->UpdateIgnoredNetworks(config_.IgnoredNetworks());
     conn_tracker->UpdateNonAggregatedNetworks(config_.NonAggregatedNetworks());
-    conn_tracker->EnableExternalIPs(config_.EnableExternalIPs());
 
     auto network_connection_info_service_comm = std::make_shared<NetworkConnectionInfoServiceComm>(config_.Hostname(), config_.grpc_channel);
 
@@ -113,7 +112,7 @@ void CollectorService::RunForever() {
     server.addHandler(container_info_inspector->kBaseRoute, container_info_inspector.get());
     network_status_inspector = std::make_unique<NetworkStatusInspector>(conn_tracker);
     server.addHandler(network_status_inspector->kBaseRoute, network_status_inspector.get());
-    collector_config_inspector = std::make_unique<CollectorConfigInspector>(std::make_shared<CollectorConfig>(config_));
+    collector_config_inspector = std::make_unique<CollectorConfigInspector>(config_);
     server.addHandler(collector_config_inspector->kBaseRoute, collector_config_inspector.get());
   }
 
