@@ -473,19 +473,14 @@ void WaitForFileToExist(const std::filesystem::path& filePath) {
   }
 }
 
-void WaitForInotifyAddWatch(int& fd, int& wd, const std::filesystem::path& filePath) {
+int WaitForInotifyAddWatch(int fd, const std::filesystem::path& filePath) {
   while (true) {
-    fd = inotify_init();
-    if (fd < 0) {
-      CLOG_THROTTLED(ERROR, std::chrono::seconds(30)) << "inotify_init failed";
-      continue;
-    }
     int wd = inotify_add_watch(fd, filePath.c_str(), IN_MODIFY | IN_MOVE_SELF | IN_DELETE_SELF);
     if (wd < 0) {
       CLOG_THROTTLED(ERROR, std::chrono::seconds(30)) << "Failed to add inotify watch for " << filePath;
       close(fd);
     } else {
-      return;
+      return wd;
     }
     sleep(1);
   }
@@ -493,7 +488,12 @@ void WaitForInotifyAddWatch(int& fd, int& wd, const std::filesystem::path& fileP
 
 void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
   CLOG(INFO) << "In WatchConfigFile";
-  int fd, wd;
+  int fd = inotify_init();
+  if (fd < 0) {
+    CLOG(ERROR) << "inotify_init() failed: "<< StrError();
+    CLOG(ERROR) << "Runtime configuration will not be used.";
+    return;
+  }
   WaitForFileToExist(filePath);
   WaitForInotifyAddWatch(fd, wd, filePath);
   HandleConfig(filePath);
