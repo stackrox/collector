@@ -485,7 +485,8 @@ void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
   HandleConfig(filePath);
   int wd = inotify_add_watch(fd, filePath.c_str(), IN_MODIFY | IN_MOVE_SELF | IN_DELETE_SELF);
   if (wd < 0) {
-    CLOG(FATAL) << "Failed to add inotify watch for " << filePath;
+    std::string errorMsg = "Failed to add inotify watch for " + filePath.string();
+    LogRuntimeConfigError(errorMsg);
     close(fd);
     return;
   }
@@ -495,7 +496,8 @@ void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
     CLOG(INFO) << "Waiting for file event";
     int length = read(fd, buffer, sizeof(buffer));
     if (length < 0) {
-      CLOG(FATAL) << "Unable to read event for " << filePath;
+      std::string errorMsg = "Unable to read event for " + filePath.string();
+      LogRuntimeConfigError(errorMsg);
     }
 
     for (int i = 0; i < length; i += sizeof(struct inotify_event)) {
@@ -509,12 +511,13 @@ void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
         CLOG(INFO) << "File was removed";
         WaitForFileToExist(filePath);
         wd = inotify_add_watch(fd, filePath.c_str(), IN_MODIFY | IN_MOVE_SELF | IN_DELETE_SELF);
-        HandleConfig(filePath);
         if (wd < 0) {
-          CLOG(FATAL) << "Failed to add inotify watch for " << filePath;
+          std::string errorMsg = "Failed to add inotify watch for " + filePath.string();
+          LogRuntimeConfigError(errorMsg);
           close(fd);
           return;
         }
+        HandleConfig(filePath);
       }
     }
   }
