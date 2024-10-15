@@ -460,7 +460,7 @@ bool CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
 void CollectorConfig::WaitForFileToExist(const std::filesystem::path& filePath) {
   while (!std::filesystem::exists(filePath)) {
     if (runtime_config_.has_value()) {
-      CLOG(INFO) << "The configuration file has been deleted. Resetting the configuration";
+      CLOG(INFO) << "The configuration file has been deleted. Resetting the configuration.";
       runtime_config_.reset();
     }
     sleep(1);
@@ -481,7 +481,6 @@ int WaitForInotifyAddWatch(int fd, const std::filesystem::path& filePath) {
 }
 
 void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
-  CLOG(INFO) << "In WatchConfigFile";
   int fd = inotify_init();
   if (fd < 0) {
     CLOG(ERROR) << "inotify_init() failed: " << StrError();
@@ -497,7 +496,6 @@ void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
 
   char buffer[1024];
   while (true) {
-    CLOG(INFO) << "Waiting for file event";
     int length = read(fd, buffer, sizeof(buffer));
     if (length < 0) {
       CLOG(ERROR) << "Unable to read event for " << filePath;
@@ -505,13 +503,9 @@ void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
 
     for (int i = 0; i < length; i += sizeof(struct inotify_event)) {
       struct inotify_event* event = (struct inotify_event*)&buffer[i];
-      CLOG(INFO) << "Got event event->mask= " << event->mask;
-      CLOG(INFO) << "event->mask & IN_MODIFY= " << (event->mask & IN_MODIFY);
       if (event->mask & IN_MODIFY) {
-        CLOG(INFO) << "File was replaced";
         HandleConfig(filePath);
       } else if ((event->mask & IN_MOVE_SELF) || (event->mask & IN_DELETE_SELF) || (event->mask & IN_IGNORED)) {
-        CLOG(INFO) << "File was removed";
         WaitForFileToExist(filePath);
         wd = WaitForInotifyAddWatch(fd, filePath);
         HandleConfig(filePath);
@@ -519,7 +513,7 @@ void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
     }
   }
 
-  CLOG(INFO) << "Leaving WatchingConfigFile " << filePath;
+  CLOG(INFO) << "No longer using inotify on " << filePath;
   inotify_rm_watch(fd, wd);
   close(fd);
 }
