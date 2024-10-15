@@ -3,6 +3,7 @@
 
 #include <optional>
 #include <ostream>
+#include <shared_mutex>
 #include <vector>
 
 #include <json/json.h>
@@ -96,6 +97,7 @@ class CollectorConfig {
   // of a runtime configuration, and defer to that value
   // otherwise, we rely on the feature flag (env var)
   bool EnableExternalIPs() const {
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (runtime_config_.has_value()) {
       return runtime_config_.value()
           .networking()
@@ -130,7 +132,6 @@ class CollectorConfig {
   unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
   void Start();
   void Stop();
-
 
   static std::pair<option::ArgStatus, std::string> CheckConfiguration(const char* config, Json::Value* root);
 
@@ -202,7 +203,7 @@ class CollectorConfig {
 
   std::optional<sensor::CollectorConfig> runtime_config_;
   StoppableThread thread_;
-  std::mutex mutex_{};
+  mutable std::shared_mutex mutex_{};
 
   void HandleAfterglowEnvVars();
   void HandleConnectionStatsEnvVars();
