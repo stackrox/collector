@@ -398,12 +398,23 @@ void CollectorConfig::HandleSinspEnvVars() {
   }
 }
 
+void CollectorConfig::LogRuntimeConfigError(const std::string& str) {
+  if (runtime_config_.has_value()) {
+    // If a runtime config already exists and there is an error setting it
+    // log the error and continue with the existing configuration.
+    CLOG(ERROR) << str;
+  } else {
+    // If there is no runtime configuration and there is an error setting it, exit.
+    CLOG(FATAL) << str;
+  }
+}
+
 void CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
   // Don't read the file during a scrape
   std::unique_lock<std::shared_mutex> lock(mutex_);
 
   if (yamlConfig.IsNull() || !yamlConfig.IsDefined()) {
-    CLOG(FATAL) << "Unable to read config from config file";
+    LogRuntimeConfigError("Unable to read config from config file");
     return;
   }
   YAML::Node networking = yamlConfig["networking"];
@@ -442,16 +453,17 @@ void CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
     YAML::Node yamlConfig = YAML::LoadFile(filePath);
     YamlConfigToConfig(yamlConfig);
   } catch (const YAML::BadFile& e) {
-    CLOG(FATAL) << "Failed to open the configuration file: " << filePath
-                << ". Error: " << e.what();
+    std::string errorMsg = "Failed to open the configuration file: " + filePath.string() + ". Error: " + e.what();
+    LogRuntimeConfigError(errorMsg);
   } catch (const YAML::ParserException& e) {
-    CLOG(FATAL) << "Failed to parse the configuration file: " << filePath
-                << ". Error: " << e.what();
+    std::string errorMsg = "Failed to parse the configuration file: " + filePath.string() + ". Error: " + e.what();
+    LogRuntimeConfigError(errorMsg);
   } catch (const YAML::Exception& e) {
-    CLOG(FATAL) << "An error occurred while loading the configuration file: " << filePath
-                << ". Error: " << e.what();
+    std::string errorMsg = "An error occurred while loading the configuration file: " + filePath.string() + ". Error: " + e.what();
+    LogRuntimeConfigError(errorMsg);
   } catch (const std::exception& e) {
-    CLOG(FATAL) << "An unexpected error occurred while trying to read: " << filePath << e.what();
+    std::string errorMsg = "An unexpected error occurred while trying to read: " + filePath.string() + e.what();
+    LogRuntimeConfigError(errorMsg);
   }
 }
 

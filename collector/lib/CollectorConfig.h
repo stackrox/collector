@@ -208,6 +208,7 @@ class CollectorConfig {
   void HandleAfterglowEnvVars();
   void HandleConnectionStatsEnvVars();
   void HandleSinspEnvVars();
+  void LogRuntimeConfigError(const std::string& str);
   void YamlConfigToConfig(YAML::Node& yamlConfig);
   void HandleConfig(const std::filesystem::path& filePath);
   void WatchConfigFile(const std::filesystem::path& filePath);
