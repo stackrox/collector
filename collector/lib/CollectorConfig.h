@@ -164,7 +164,7 @@ class CollectorConfig {
   bool enable_processes_listening_on_ports_;
   bool import_users_;
   bool collect_connection_status_;
-  bool enable_external_ips_;
+  bool enable_external_ips_ = false;
   bool enable_connection_stats_;
   bool enable_detailed_metrics_;
   bool enable_runtime_config_;
