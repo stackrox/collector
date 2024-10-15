@@ -425,8 +425,7 @@ void CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
   externalIpsConfig->set_enable(enableExternalIps);
 
   SetRuntimeConfig(runtime_config);
-  CLOG(INFO) << "Runtime configuration:";
-  CLOG(INFO) << GetRuntimeConfigStr();
+  CLOG(INFO) << "Runtime configuration:\n" + GetRuntimeConfigStr();
 
   return;
 }
