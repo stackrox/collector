@@ -457,8 +457,12 @@ bool CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
   return true;
 }
 
-void WaitForFileToExist(const std::filesystem::path& filePath) {
+void CollectorConfig::WaitForFileToExist(const std::filesystem::path& filePath) {
   while (!std::filesystem::exists(filePath)) {
+    if (runtime_config_.has_value()) {
+      CLOG(INFO) << "The configuration file has been deleted. Resetting the configuration";
+      runtime_config_.reset();
+    }
     sleep(1);
   }
 }
