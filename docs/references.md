@@ -141,6 +141,9 @@ data:
 ```
 
 The file path can be set using the `ROX_COLLECTOR_CONFIG_PATH` environment variable.
+Whenever the ConfigMap or config file is updated or created, collector will update
+the configuration. If the ConfigMap or config file is deleted the environment variable
+will be used instead. The ConfigMap can be created after collector start up.
 
 ### Other arguments
 
