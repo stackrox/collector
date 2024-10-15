@@ -473,31 +473,37 @@ void WaitForFileToExist(const std::filesystem::path& filePath) {
   }
 }
 
+void WaitForInotifyAddWatch(int& fd, int& wd, const std::filesystem::path& filePath) {
+  while (true) {
+    fd = inotify_init();
+    if (fd < 0) {
+      CLOG_THROTTLED(ERROR, std::chrono::seconds(30)) << "inotify_init failed";
+      continue;
+    }
+    int wd = inotify_add_watch(fd, filePath.c_str(), IN_MODIFY | IN_MOVE_SELF | IN_DELETE_SELF);
+    if (wd < 0) {
+      CLOG_THROTTLED(ERROR, std::chrono::seconds(30)) << "Failed to add inotify watch for " << filePath;
+      close(fd);
+    } else {
+      return;
+    }
+    sleep(1);
+  }
+}
+
 void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
   CLOG(INFO) << "In WatchConfigFile";
-  int fd = inotify_init();
-  if (fd < 0) {
-    CLOG(FATAL) << "inotify_init failed";
-    return;
-  }
-
+  int fd, wd;
   WaitForFileToExist(filePath);
+  WaitForInotifyAddWatch(fd, wd, filePath);
   HandleConfig(filePath);
-  int wd = inotify_add_watch(fd, filePath.c_str(), IN_MODIFY | IN_MOVE_SELF | IN_DELETE_SELF);
-  if (wd < 0) {
-    std::string errorMsg = "Failed to add inotify watch for " + filePath.string();
-    LogRuntimeConfigError(errorMsg);
-    close(fd);
-    return;
-  }
 
   char buffer[1024];
   while (true) {
     CLOG(INFO) << "Waiting for file event";
     int length = read(fd, buffer, sizeof(buffer));
     if (length < 0) {
-      std::string errorMsg = "Unable to read event for " + filePath.string();
-      LogRuntimeConfigError(errorMsg);
+      CLOG(ERROR) << "Unable to read event for " << filePath;
     }
 
     for (int i = 0; i < length; i += sizeof(struct inotify_event)) {
@@ -510,13 +516,7 @@ void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
       } else if ((event->mask & IN_MOVE_SELF) || (event->mask & IN_DELETE_SELF) || (event->mask & IN_IGNORED)) {
         CLOG(INFO) << "File was removed";
         WaitForFileToExist(filePath);
-        wd = inotify_add_watch(fd, filePath.c_str(), IN_MODIFY | IN_MOVE_SELF | IN_DELETE_SELF);
-        if (wd < 0) {
-          std::string errorMsg = "Failed to add inotify watch for " + filePath.string();
-          LogRuntimeConfigError(errorMsg);
-          close(fd);
-          return;
-        }
+        WaitForInotifyAddWatch(fd, wd, filePath);
         HandleConfig(filePath);
       }
     }
