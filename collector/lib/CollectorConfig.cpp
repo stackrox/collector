@@ -400,7 +400,7 @@ void CollectorConfig::HandleSinspEnvVars() {
 
 void CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
   // Don't read the file during a scrape
-  std::lock_guard<std::mutex> lock(*mutex_);
+  std::unique_lock<std::shared_mutex> lock(mutex_);
 
   if (yamlConfig.IsNull() || !yamlConfig.IsDefined()) {
     CLOG(FATAL) << "Unable to read config from config file";
@@ -457,7 +457,7 @@ void CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
 
 void WaitForFileToExist(const std::filesystem::path& filePath) {
   while (!std::filesystem::exists(filePath)) {
-    sleep(5);
+    sleep(1);
   }
 }
 

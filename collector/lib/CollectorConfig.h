@@ -131,9 +131,6 @@ class CollectorConfig {
   void Start();
   void Stop();
 
-  std::mutex* GetMutex() const {
-    return mutex_;
-  }
 
   static std::pair<option::ArgStatus, std::string> CheckConfiguration(const char* config, Json::Value* root);
 
@@ -205,7 +202,7 @@ class CollectorConfig {
 
   std::optional<sensor::CollectorConfig> runtime_config_;
   StoppableThread thread_;
-  std::mutex* mutex_ = new std::mutex();
+  std::mutex mutex_{};
 
   void HandleAfterglowEnvVars();
   void HandleConnectionStatsEnvVars();
