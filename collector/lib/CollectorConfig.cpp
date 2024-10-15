@@ -11,7 +11,6 @@
 #include "EnvVar.h"
 #include "GRPC.h"
 #include "HostHeuristics.h"
-#include "HostInfo.h"
 #include "Logging.h"
 #include "TlsConfig.h"
 #include "Utility.h"
@@ -43,7 +42,7 @@ FloatEnvVar afterglow_period("ROX_AFTERGLOW_PERIOD", 300.0);
 BoolEnvVar set_enable_core_dump("ENABLE_CORE_DUMP", false);
 
 // If true, add originator process information in NetworkEndpoint
-BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", CollectorConfig::kEnableProcessesListeningOnPorts);
+BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", true);
 
 BoolEnvVar set_import_users("ROX_COLLECTOR_SET_IMPORT_USERS", false);
 
@@ -51,9 +50,18 @@ BoolEnvVar collect_connection_status("ROX_COLLECT_CONNECTION_STATUS", true);
 
 BoolEnvVar enable_external_ips("ROX_ENABLE_EXTERNAL_IPS", false);
 
-BoolEnvVar enable_connection_stats("ROX_COLLECTOR_ENABLE_CONNECTION_STATS", true);
-
+// Stats and metrics configuration
 BoolEnvVar enable_detailed_metrics("ROX_COLLECTOR_ENABLE_DETAILED_METRICS", true);
+BoolEnvVar enable_connection_stats("ROX_COLLECTOR_ENABLE_CONNECTION_STATS", true);
+StringListEnvVar connection_stats_quantiles("ROX_COLLECTOR_CONNECTION_STATS_QUANTILES");
+DoubleEnvVar connection_stats_error("ROX_COLLECTOR_CONNECTION_STATS_ERROR", 0.01);
+UIntEnvVar connection_stats_window("ROX_COLLECTOR_CONNECTION_STATS_WINDOW", 60);
+
+// Sinsp configuration
+UIntEnvVar sinsp_cpu_per_buffer("ROX_COLLECTOR_SINSP_CPU_PER_BUFFER", DEFAULT_CPU_FOR_EACH_BUFFER);
+UIntEnvVar sinsp_buffer_size("ROX_COLLECTOR_SINSP_BUFFER_SIZE", DEFAULT_DRIVER_BUFFER_BYTES_DIM);
+UIntEnvVar sinsp_total_buffer_size("ROX_COLLECTOR_SINSP_TOTAL_BUFFER_SIZE", 512 * 1024 * 1024);
+UIntEnvVar sinsp_thread_cache_size("ROX_COLLECTOR_SINSP_THREAD_CACHE_SIZE", 32768);
 
 BoolEnvVar enable_runtime_config("ROX_COLLECTOR_RUNTIME_CONFIG_ENABLED", false);
 
@@ -82,34 +90,35 @@ PathEnvVar config_file("ROX_COLLECTOR_CONFIG_PATH", "/etc/stackrox/runtime_confi
 
 }  // namespace
 
-constexpr bool CollectorConfig::kTurnOffScrape;
-constexpr int CollectorConfig::kScrapeInterval;
-constexpr CollectionMethod CollectorConfig::kCollectionMethod;
-constexpr const char* CollectorConfig::kSyscalls[];
-constexpr bool CollectorConfig::kEnableProcessesListeningOnPorts;
-
 const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = {{L4Proto::UDP, 9}};
-;
 
-CollectorConfig::CollectorConfig() {
-  // Set default configuration values
-  scrape_interval_ = kScrapeInterval;
-  turn_off_scrape_ = kTurnOffScrape;
-  collection_method_ = kCollectionMethod;
-}
-
-void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
-  enable_processes_listening_on_ports_ = set_processes_listening_on_ports.value();
-  import_users_ = set_import_users.value();
-  collect_connection_status_ = collect_connection_status.value();
-  enable_external_ips_ = enable_external_ips.value();
-  enable_connection_stats_ = enable_connection_stats.value();
-  enable_detailed_metrics_ = enable_detailed_metrics.value();
-  enable_runtime_config_ = enable_runtime_config.value();
-  use_docker_ce_ = use_docker_ce.value();
-  use_podman_ce_ = use_podman_ce.value();
-  enable_introspection_ = enable_introspection.value();
-  track_send_recv_ = track_send_recv.value();
+CollectorConfig::CollectorConfig(CollectorArgs* args, bool skipHeuristics)
+    : host_proc_(GetHostPath("/proc")),
+      disable_network_flows_(disable_network_flows),
+      scrape_listen_endpoints_(ports_feature_flag),
+      enable_core_dump_(set_enable_core_dump),
+      enable_processes_listening_on_ports_(set_processes_listening_on_ports),
+      import_users_(set_import_users),
+      collect_connection_status_(collect_connection_status),
+      enable_external_ips_(enable_external_ips),
+      enable_connection_stats_(enable_connection_stats),
+      enable_detailed_metrics_(enable_detailed_metrics),
+      enable_runtime_config_(enable_runtime_config),
+      use_docker_ce_(use_docker_ce),
+      use_podman_ce_(use_podman_ce),
+      enable_introspection_(enable_introspection),
+      track_send_recv_(track_send_recv),
+      connection_stats_error_(connection_stats_error),
+      connection_stats_window_(connection_stats_window),
+      sinsp_cpu_per_buffer_(sinsp_cpu_per_buffer),
+      sinsp_buffer_size_(sinsp_buffer_size),
+      sinsp_total_buffer_size_(sinsp_total_buffer_size),
+      sinsp_thread_cache_size_(sinsp_thread_cache_size) {
+  // Get hostname
+  hostname_ = GetHostname();
+  if (hostname_.empty()) {
+    CLOG(FATAL) << "Unable to determine the hostname. Consider setting the environment variable NODE_HOSTNAME";
+  }
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.emplace_back(syscall);
@@ -121,167 +130,156 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
     }
   }
 
-  // Get hostname
-  hostname_ = GetHostname();
-  if (hostname_.empty()) {
-    CLOG(FATAL) << "Unable to determine the hostname. Consider setting the environment variable NODE_HOSTNAME";
+  HandleArgs(args);
+  HandleNetworkConfig();
+  HandleAfterglowEnvVars();
+  HandleConnectionStatsQuantiles();
+  HandleConfig(config_file.value());
+
+  if (!skipHeuristics) {
+    host_config_ = ProcessHostHeuristics(*this);
+  }
+}
+
+void CollectorConfig::HandleArgs(const CollectorArgs* args) {
+  if (args == nullptr) {
+    return;
+  }
+  auto config = args->CollectorConfig();
+
+  if (config.empty() && collector_config.hasValue()) {
+    Json::Value root;
+    const auto& [status, msg] = CheckConfiguration(collector_config.value().c_str(), &root);
+    if (!msg.empty()) {
+      CLOG(INFO) << msg;
+    }
+
+    if (status == option::ARG_OK) {
+      config = root;
+    }
   }
 
-  // Get path to host proc dir
-  host_proc_ = GetHostPath("/proc");
+  HandleLogLevel(config, args);
+  HandleScrapeConfig(config, args);
+  HandleCollectionMethod(args);
+  HandleTls(config, args);
+}
 
-  // Check user provided configuration
-  if (args) {
-    auto config = args->CollectorConfig();
-
-    if (config.empty() && collector_config.hasValue()) {
-      Json::Value root;
-      const auto& [status, msg] = CheckConfiguration(collector_config.value().c_str(), &root);
-      if (!msg.empty()) {
-        CLOG(INFO) << msg;
-      }
-
-      if (status == option::ARG_OK) {
-        config = root;
-      }
-    }
-
-    // Log Level
-    // process this first to ensure logging behaves correctly
-    auto setLogLevel = [](const std::string& level) {
-      logging::LogLevel lvl;
-      if (logging::ParseLogLevelName(level, &lvl)) {
-        logging::SetLogLevel(lvl);
-        CLOG(INFO) << "User configured logLevel=" << level;
-      } else {
-        CLOG(INFO) << "User configured logLevel is invalid " << level;
-      }
-    };
-    if (!config["logLevel"].empty()) {
-      setLogLevel(config["logLevel"].asString());
-    } else if (log_level.hasValue()) {
-      setLogLevel(log_level.value());
-    }
-
-    // Scrape Interval
-    auto setScrapeInterval = [&](int interval) {
-      scrape_interval_ = interval;
-      CLOG(INFO) << "User configured scrapeInterval=" << scrape_interval_;
-    };
-    if (!config["scrapeInterval"].empty()) {
-      setScrapeInterval(config["scrapeInterval"].asInt());
-    } else if (scrape_interval.hasValue()) {
-      setScrapeInterval(scrape_interval.value());
-    }
-
-    // Scrape Enabled/Disabled
-    auto setScrapeOff = [&](bool off) {
-      turn_off_scrape_ = off;
-      CLOG(INFO) << "User configured turnOffScrape=" << turn_off_scrape_;
-    };
-
-    if (!config["turnOffScrape"].empty()) {
-      setScrapeOff(config["turnOffScrape"].asBool());
-    } else if (scrape_off.hasValue()) {
-      setScrapeOff(scrape_off.value());
-    }
-
-    // Collection Method
-    auto setCollectionMethod = [&](const CollectionMethod cm) {
-      CLOG(INFO) << "User configured collection-method=" << CollectionMethodName(cm);
-      collection_method_ = cm;
-    };
-
-    if (args->GetCollectionMethod()) {
-      setCollectionMethod(args->GetCollectionMethod().value());
-    } else if (collection_method.hasValue()) {
-      setCollectionMethod(ParseCollectionMethod(collection_method.value()));
-    }
-
-    // TLS configuration
-    std::filesystem::path ca_cert_path;
-    std::filesystem::path client_cert_path;
-    std::filesystem::path client_key_path;
-    if (!config["tlsConfig"].empty()) {
-      ca_cert_path = config["tlsConfig"]["caCertPath"].asString();
-      client_cert_path = config["tlsConfig"]["clientCertPath"].asString();
-      client_key_path = config["tlsConfig"]["clientKeyPath"].asString();
-    } else if (tls_certs_path.hasValue()) {
-      const std::filesystem::path& tls_base_path = tls_certs_path.value();
-      ca_cert_path = tls_ca_path.valueOr(tls_base_path / "ca.pem");
-      client_cert_path = tls_client_cert_path.valueOr(tls_base_path / "cert.pem");
-      client_key_path = tls_client_key_path.valueOr(tls_base_path / "key.pem");
+void CollectorConfig::HandleLogLevel(const Json::Value& config, const CollectorArgs* args) {
+  // Log Level
+  // process this first to ensure logging behaves correctly
+  auto setLogLevel = [](const std::string& level) {
+    logging::LogLevel lvl;
+    if (logging::ParseLogLevelName(level, &lvl)) {
+      logging::SetLogLevel(lvl);
+      CLOG(INFO) << "User configured logLevel=" << level;
     } else {
-      ca_cert_path = tls_ca_path.valueOr("");
-      client_cert_path = tls_client_cert_path.valueOr("");
-      client_key_path = tls_client_key_path.valueOr("");
+      CLOG(INFO) << "User configured logLevel is invalid " << level;
     }
-    tls_config_ = TlsConfig(ca_cert_path, client_cert_path, client_key_path);
+  };
+  if (!config["logLevel"].empty()) {
+    setLogLevel(config["logLevel"].asString());
+  } else if (log_level.hasValue()) {
+    setLogLevel(log_level.value());
+  }
+}
 
-    if (!args->GRPCServer().empty()) {
-      grpc_server_ = args->GRPCServer();
-    } else if (grpc_server.hasValue()) {
-      const auto& [status, msg] = CheckGrpcServer(grpc_server.value());
-      if (status == option::ARG_OK) {
-        grpc_server_ = grpc_server.value();
-      } else if (!msg.empty()) {
-        CLOG(INFO) << msg;
+void CollectorConfig::HandleScrapeConfig(const Json::Value& config, const CollectorArgs* args) {
+  // Scrape Interval
+  auto setScrapeInterval = [&](int interval) {
+    scrape_interval_ = interval;
+    CLOG(INFO) << "User configured scrapeInterval=" << scrape_interval_;
+  };
+  if (!config["scrapeInterval"].empty()) {
+    setScrapeInterval(config["scrapeInterval"].asInt());
+  } else if (scrape_interval.hasValue()) {
+    setScrapeInterval(scrape_interval.value());
+  }
+
+  // Scrape Enabled/Disabled
+  auto setScrapeOff = [&](bool off) {
+    turn_off_scrape_ = off;
+    CLOG(INFO) << "User configured turnOffScrape=" << turn_off_scrape_;
+  };
+
+  if (!config["turnOffScrape"].empty()) {
+    setScrapeOff(config["turnOffScrape"].asBool());
+  } else if (scrape_off.hasValue()) {
+    setScrapeOff(scrape_off.value());
+  }
+}
+
+void CollectorConfig::HandleCollectionMethod(const CollectorArgs* args) {
+  auto setCollectionMethod = [&](const CollectionMethod cm) {
+    CLOG(INFO) << "User configured collection-method=" << CollectionMethodName(cm);
+    collection_method_ = cm;
+  };
+
+  if (args->GetCollectionMethod()) {
+    setCollectionMethod(args->GetCollectionMethod().value());
+  } else if (collection_method.hasValue()) {
+    setCollectionMethod(ParseCollectionMethod(collection_method.value()));
+  }
+}
+
+void CollectorConfig::HandleTls(const Json::Value& config, const CollectorArgs* args) {
+  // TLS configuration
+  std::filesystem::path ca_cert_path;
+  std::filesystem::path client_cert_path;
+  std::filesystem::path client_key_path;
+
+  if (!config["tlsConfig"].empty()) {
+    ca_cert_path = config["tlsConfig"]["caCertPath"].asString();
+    client_cert_path = config["tlsConfig"]["clientCertPath"].asString();
+    client_key_path = config["tlsConfig"]["clientKeyPath"].asString();
+  } else if (tls_certs_path.hasValue()) {
+    const std::filesystem::path& tls_base_path = tls_certs_path.value();
+    ca_cert_path = tls_ca_path.valueOr(tls_base_path / "ca.pem");
+    client_cert_path = tls_client_cert_path.valueOr(tls_base_path / "cert.pem");
+    client_key_path = tls_client_key_path.valueOr(tls_base_path / "key.pem");
+  } else {
+    ca_cert_path = tls_ca_path.valueOr("");
+    client_cert_path = tls_client_cert_path.valueOr("");
+    client_key_path = tls_client_key_path.valueOr("");
+  }
+  tls_config_ = TlsConfig(ca_cert_path, client_cert_path, client_key_path);
+
+  if (!args->GRPCServer().empty()) {
+    grpc_server_ = args->GRPCServer();
+  } else if (grpc_server.hasValue()) {
+    const auto& [status, msg] = CheckGrpcServer(grpc_server.value());
+    if (status == option::ARG_OK) {
+      grpc_server_ = grpc_server.value();
+    } else if (!msg.empty()) {
+      CLOG(INFO) << msg;
+    }
+  }
+}
+
+void CollectorConfig::HandleNetworkConfig() {
+  auto filler = [](std::vector<IPNet>& output, const std::vector<std::string>& input, const std::string& notification_message, const std::string& error_message) {
+    for (const std::string& str : input) {
+      if (str.empty()) {
+        continue;
+      }
+
+      std::optional<IPNet> net = IPNet::parse(str);
+
+      if (net) {
+        CLOG(INFO) << notification_message << " : " << *net;
+        output.emplace_back(std::move(*net));
+      } else {
+        CLOG(ERROR) << error_message << " : " << str;
       }
     }
-  }
-
-  if (disable_network_flows) {
-    disable_network_flows_ = true;
-  }
-
-  if (ports_feature_flag) {
-    scrape_listen_endpoints_ = true;
-  }
+  };
 
   if (network_drop_ignored) {
     ignored_l4proto_port_pairs_ = kIgnoredL4ProtoPortPairs;
   }
 
-  for (const std::string& str : ignored_networks.value()) {
-    if (str.empty()) {
-      continue;
-    }
-
-    std::optional<IPNet> net = IPNet::parse(str);
-
-    if (net) {
-      CLOG(INFO) << "Ignore network : " << *net;
-      ignored_networks_.emplace_back(std::move(*net));
-    } else {
-      CLOG(ERROR) << "Invalid network in ROX_IGNORE_NETWORKS : " << str;
-    }
-  }
-
-  for (const std::string& str : non_aggregated_networks.value()) {
-    if (str.empty()) {
-      continue;
-    }
-
-    std::optional<IPNet> net = IPNet::parse(str);
-
-    if (net) {
-      CLOG(INFO) << "Non-aggregated network : " << *net;
-      non_aggregated_networks_.emplace_back(std::move(*net));
-    } else {
-      CLOG(ERROR) << "Invalid network in ROX_NON_AGGREGATED_NETWORKS : " << str;
-    }
-  }
-
-  if (set_enable_core_dump) {
-    enable_core_dump_ = true;
-  }
-
-  HandleAfterglowEnvVars();
-  HandleConnectionStatsEnvVars();
-  HandleSinspEnvVars();
-  HandleConfig(config_file.value());
-
-  host_config_ = ProcessHostHeuristics(*this);
+  filler(ignored_networks_, ignored_networks.value(), "Ignore network", "Invalid network in ROX_IGNORE_NETWORKS");
+  filler(non_aggregated_networks_, non_aggregated_networks.value(), "Non-aggregated network", "Invalid network in ROX_NON_AGGREGATED_NETWORKS");
 }
 
 void CollectorConfig::HandleAfterglowEnvVars() {
@@ -308,17 +306,12 @@ void CollectorConfig::HandleAfterglowEnvVars() {
   CLOG(INFO) << "Afterglow is " << (enable_afterglow_ ? "enabled" : "disabled");
 }
 
-void CollectorConfig::HandleConnectionStatsEnvVars() {
-  const char* envvar;
-
+void CollectorConfig::HandleConnectionStatsQuantiles() {
   connection_stats_quantiles_ = {0.50, 0.90, 0.95};
 
-  if ((envvar = std::getenv("ROX_COLLECTOR_CONNECTION_STATS_QUANTILES")) != NULL) {
+  if (connection_stats_quantiles.hasValue()) {
     connection_stats_quantiles_.clear();
-    std::stringstream quantiles(envvar);
-    while (quantiles.good()) {
-      std::string quantile;
-      std::getline(quantiles, quantile, ',');
+    for (const auto& quantile : connection_stats_quantiles.value()) {
       try {
         double v = std::stod(quantile);
         connection_stats_quantiles_.push_back(v);
@@ -326,73 +319,6 @@ void CollectorConfig::HandleConnectionStatsEnvVars() {
       } catch (...) {
         CLOG(ERROR) << "Invalid quantile value: '" << quantile << "'";
       }
-    }
-  }
-
-  connection_stats_error_ = 0.01;
-
-  if ((envvar = std::getenv("ROX_COLLECTOR_CONNECTION_STATS_ERROR")) != NULL) {
-    try {
-      connection_stats_error_ = std::stod(envvar);
-      CLOG(INFO) << "Connection statistics error value: " << connection_stats_error_;
-    } catch (...) {
-      CLOG(ERROR) << "Invalid quantile error value: '" << envvar << "'";
-    }
-  }
-
-  connection_stats_window_ = 60;
-
-  if ((envvar = std::getenv("ROX_COLLECTOR_CONNECTION_STATS_WINDOW")) != NULL) {
-    try {
-      connection_stats_window_ = std::stoi(envvar);
-      CLOG(INFO) << "Connection statistics window: " << connection_stats_window_;
-    } catch (...) {
-      CLOG(ERROR) << "Invalid window length value: '" << envvar << "'";
-    }
-  }
-}
-
-void CollectorConfig::HandleSinspEnvVars() {
-  const char* envvar;
-
-  sinsp_cpu_per_buffer_ = DEFAULT_CPU_FOR_EACH_BUFFER;
-  sinsp_buffer_size_ = DEFAULT_DRIVER_BUFFER_BYTES_DIM;
-  // the default values for sinsp_thread_cache_size_, sinsp_total_buffer_size_
-  // are not picked up from Falco, but set in the CollectorConfig class.
-
-  if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_CPU_PER_BUFFER")) != NULL) {
-    try {
-      sinsp_cpu_per_buffer_ = std::stoi(envvar);
-      CLOG(INFO) << "Sinsp cpu per buffer: " << sinsp_cpu_per_buffer_;
-    } catch (...) {
-      CLOG(ERROR) << "Invalid cpu per buffer value: '" << envvar << "'";
-    }
-  }
-
-  if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_BUFFER_SIZE")) != NULL) {
-    try {
-      sinsp_buffer_size_ = std::stoll(envvar);
-      CLOG(INFO) << "Sinsp buffer size: " << sinsp_buffer_size_;
-    } catch (...) {
-      CLOG(ERROR) << "Invalid buffer size value: '" << envvar << "'";
-    }
-  }
-
-  if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_TOTAL_BUFFER_SIZE")) != NULL) {
-    try {
-      sinsp_total_buffer_size_ = std::stoll(envvar);
-      CLOG(INFO) << "Sinsp total buffer size: " << sinsp_total_buffer_size_;
-    } catch (...) {
-      CLOG(ERROR) << "Invalid total buffer size value: '" << envvar << "'";
-    }
-  }
-
-  if ((envvar = std::getenv("ROX_COLLECTOR_SINSP_THREAD_CACHE_SIZE")) != NULL) {
-    try {
-      sinsp_thread_cache_size_ = std::stoll(envvar);
-      CLOG(INFO) << "Sinsp thread cache size: " << sinsp_thread_cache_size_;
-    } catch (...) {
-      CLOG(ERROR) << "Invalid thread cache size value: '" << envvar << "'";
     }
   }
 }
@@ -451,14 +377,6 @@ void CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
   }
 }
 
-bool CollectorConfig::TurnOffScrape() const {
-  return turn_off_scrape_;
-}
-
-int CollectorConfig::ScrapeInterval() const {
-  return scrape_interval_;
-}
-
 CollectionMethod CollectorConfig::GetCollectionMethod() const {
   if (host_config_.HasCollectionMethod()) {
     return host_config_.GetCollectionMethod();
@@ -466,43 +384,91 @@ CollectionMethod CollectorConfig::GetCollectionMethod() const {
   return collection_method_;
 }
 
-std::string CollectorConfig::Hostname() const {
-  return hostname_;
-}
-
-std::string CollectorConfig::HostProc() const {
-  return host_proc_;
-}
-
-std::vector<std::string> CollectorConfig::Syscalls() const {
-  return syscalls_;
-}
-
-std::string CollectorConfig::LogLevel() const {
+std::string CollectorConfig::LogLevel() {
   return logging::GetLogLevelName(logging::GetLogLevel());
 }
 
-int64_t CollectorConfig::AfterglowPeriod() const {
-  return afterglow_period_micros_;
+namespace {
+
+template <typename T>
+std::string VectorToYamlList(const std::vector<T>& v, size_t indent_level, bool compressed = false) {
+  std::stringstream ss;
+  if (compressed) {
+    bool first = true;
+    ss << "[ ";
+
+    for (const auto& item : v) {
+      if (first) {
+        first = false;
+      } else {
+        ss << ", ";
+      }
+
+      ss << '"' << item << '"';
+    }
+
+    ss << " ]";
+  } else {
+    std::string indent(indent_level * 2, ' ');
+    for (const auto& item : v) {
+      ss << indent << "- " << item << '\n';
+    }
+  }
+  return ss.str();
 }
 
-bool CollectorConfig::IsCoreDumpEnabled() const {
-  return enable_core_dump_;
+std::string UnorderedSetToYamlList(const UnorderedSet<L4ProtoPortPair>& p, size_t indent_level) {
+  std::stringstream ss;
+  std::string indent(indent_level * 2, ' ');
+  for (const auto& [k, v] : p) {
+    ss << indent << k << ": " << v << '\n';
+  }
+  return ss.str();
 }
+
+}  // namespace
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
   return os
-         << "collection_method:" << c.GetCollectionMethod()
-         << ", scrape_interval:" << c.ScrapeInterval()
-         << ", turn_off_scrape:" << c.TurnOffScrape()
-         << ", hostname:" << c.Hostname()
-         << ", processesListeningOnPorts:" << c.IsProcessesListeningOnPortsEnabled()
-         << ", logLevel:" << c.LogLevel()
-         << ", set_import_users:" << c.ImportUsers()
-         << ", collect_connection_status:" << c.CollectConnectionStatus()
-         << ", enable_detailed_metrics:" << c.EnableDetailedMetrics()
-         << ", enable_external_ips:" << c.EnableExternalIPs()
-         << ", track_send_recv:" << c.TrackingSendRecv();
+         << std::boolalpha << "\n"
+         << "  collection_method: " << c.GetCollectionMethod() << "\n"
+         << "  scrape_interval: " << c.ScrapeInterval() << "\n"
+         << "  turn_off_scrape: " << c.TurnOffScrape() << "\n"
+         << "  scrape_listen_endpoints: " << c.ScrapeListenEndpoints() << "\n"
+         << "  syscalls: " << VectorToYamlList(c.Syscalls(), 1, true) << "\n"
+         << "  hostname: " << c.Hostname() << "\n"
+         << "  disable_network_flows: " << c.DisableNetworkFlows() << "\n"
+         << "  ignored_l4proto_port_pairs: \n"
+         << UnorderedSetToYamlList(c.IgnoredL4ProtoPortPairs(), 2)
+         << "  ignored_networks: \n"
+         << VectorToYamlList(c.IgnoredNetworks(), 1)
+         << "  non_aggregated_networks: \n"
+         << VectorToYamlList(c.NonAggregatedNetworks(), 1)
+         << "  enable_afterglow: " << c.EnableAfterglow() << "\n"
+         << "  afterglow_period_micros: " << c.AfterglowPeriod() << "\n"
+         << "  enable_core_dump: " << c.IsCoreDumpEnabled() << "\n"
+         << "  processesListeningOnPorts: " << c.IsProcessesListeningOnPortsEnabled() << "\n"
+         << "  logLevel: " << CollectorConfig::LogLevel() << "\n"
+         << "  set_import_users: " << c.ImportUsers() << "\n"
+         << "  collect_connection_status: " << c.CollectConnectionStatus() << "\n"
+         << "  enable_detailed_metrics: " << c.EnableDetailedMetrics() << "\n"
+         << "  enable_runtime_config: " << c.EnableRuntimeConfig() << "\n"
+         << "  use_docker_ce: " << c.UseDockerCe() << "\n"
+         << "  use_podman_ce: " << c.UsePodmanCe() << "\n"
+         << "  enable_introspection: " << c.IsIntrospectionEnabled() << "\n"
+         << "  enable_external_ips: " << c.EnableExternalIPs() << "\n"
+         << "  track_send_recv: " << c.TrackingSendRecv() << "\n"
+         << "  connection_stats:\n"
+         << "    enable: " << c.EnableConnectionStats() << "\n"
+         << "    error: " << c.GetConnectionStatsError() << "\n"
+         << "    window: " << c.GetConnectionStatsWindow() << "\n"
+         << "    quantiles:\n"
+         << VectorToYamlList(c.GetConnectionStatsQuantiles(), 2)
+         << "  system_inspector:\n"
+         << "    cpu_buffer_size: " << c.GetSinspCpuPerBuffer() << "\n"
+         << "    buffer_size: " << c.GetSinspBufferSize() << "\n"
+         << "    total_buffer_size: " << c.GetSinspTotalBufferSize() << "\n"
+         << "    thread_cache_size: " << c.GetSinspThreadCacheSize() << "\n";
 }
 
 // Returns size of ring buffers to be allocated.
@@ -569,22 +535,6 @@ unsigned int CollectorConfig::GetSinspBufferSize() const {
   }
 
   return effective_buffer_size;
-}
-
-void CollectorConfig::SetSinspBufferSize(unsigned int buffer_size) {
-  sinsp_buffer_size_ = buffer_size;
-}
-
-void CollectorConfig::SetSinspTotalBufferSize(unsigned int total_buffer_size) {
-  sinsp_total_buffer_size_ = total_buffer_size;
-}
-
-void CollectorConfig::SetHostConfig(HostConfig* config) {
-  host_config_ = *config;
-}
-
-void CollectorConfig::SetSinspCpuPerBuffer(unsigned int cpu_per_buffer) {
-  sinsp_cpu_per_buffer_ = cpu_per_buffer;
 }
 
 std::pair<option::ArgStatus, std::string> CollectorConfig::CheckConfiguration(const char* config, Json::Value* root) {
