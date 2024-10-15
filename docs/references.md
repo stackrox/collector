@@ -89,7 +89,12 @@ internal state of Collector. Refer to the
 [troubleshooting](troubleshooting.md#introspection-endpoints) section for more details.
 The default is false.
 
-* `ROX_ENABLE_EXTERNAL_IPS`: Enables or disables the external IPs feature.
+* `ROX_COLLECTOR_EXTERNAL_IPS_ENABLE`: Manually enables or disables the external
+IPs feature. When enabled, Collector will send full details about IPs communicating
+with the cluster. When disabled, external IPs are aggregated as an "External sources"
+bucket (unless they match a defined CIDR-block). Runtime configuration is the
+preferred method to control external IPs, and it overrides this variable.
+Default is disabled.
 
 NOTE: Using environment variables is a preferred way of configuring Collector,
 so if you're adding a new configuration knob, keep this in mind.
