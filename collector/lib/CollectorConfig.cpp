@@ -463,6 +463,7 @@ void CollectorConfig::WaitForFileToExist(const std::filesystem::path& filePath) 
     sleep(1);
     count++;
     if (count > 45) {
+      std::unique_lock<std::shared_mutex> lock(mutex_);
       runtime_config_.reset();
     }
   }
