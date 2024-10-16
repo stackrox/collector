@@ -142,8 +142,8 @@ data:
 
 The file path can be set using the `ROX_COLLECTOR_CONFIG_PATH` environment variable.
 Whenever the configuration file is updated or created, collector will update
-the configuration. If the configuration file is deleted the environment variable
-will be used instead. The configuration file can be created after collector start up.
+the configuration. If the configuration file is deleted the configuration will revert
+to the default. The configuration file can be created after collector start up.
 
 ### Other arguments
 
