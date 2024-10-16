@@ -211,6 +211,7 @@ class CollectorConfig {
   void YamlConfigToConfig(YAML::Node& yamlConfig);
   bool HandleConfig(const std::filesystem::path& filePath);
   void WaitForFileToExist(const std::filesystem::path& filePath);
+  int WaitForInotifyAddWatch(int fd, const std::filesystem::path& filePath);
   void WatchConfigFile(const std::filesystem::path& filePath);
 
   // Protected, used for testing purposes
