@@ -471,7 +471,6 @@ int WaitForInotifyAddWatch(int fd, const std::filesystem::path& filePath) {
     int wd = inotify_add_watch(fd, filePath.c_str(), IN_MODIFY | IN_MOVE_SELF | IN_DELETE_SELF);
     if (wd < 0) {
       CLOG_THROTTLED(ERROR, std::chrono::seconds(30)) << "Failed to add inotify watch for " << filePath;
-      close(fd);
     } else {
       return wd;
     }
@@ -500,12 +499,14 @@ void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
       CLOG(ERROR) << "Unable to read event for " << filePath;
     }
 
-    for (int i = 0; i < length; i += sizeof(struct inotify_event)) {
-      struct inotify_event* event = (struct inotify_event*)&buffer[i];
+    struct inotify_event *event = buffer;
+    for (int i = 0; i < length; i += sizeof(struct inotify_event) + event->len) {
+      event = (struct inotify_event*)&buffer[i];
       if (event->mask & IN_MODIFY) {
         HandleConfig(filePath);
       } else if ((event->mask & IN_MOVE_SELF) || (event->mask & IN_DELETE_SELF) || (event->mask & IN_IGNORED)) {
         WaitForFileToExist(filePath);
+        inotify_rm_watch(fd, wd);
         wd = WaitForInotifyAddWatch(fd, filePath);
         HandleConfig(filePath);
       }
