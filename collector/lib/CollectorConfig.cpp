@@ -459,14 +459,11 @@ bool CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
 
 void CollectorConfig::WaitForFileToExist(const std::filesystem::path& filePath) {
   int count = 0;
-  while (!std::filesystem::exists(filePath)) {
+  while (!std::filesystem::exists(filePath) && !thread_.should_stop()) {
     sleep(1);
     count++;
     if (count > 45) {
       runtime_config_.reset();
-    }
-    if (thread_.should_stop()) {
-      break;
     }
   }
 }
