@@ -241,7 +241,7 @@ spec:
       - name: name
         value: buildah-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.2@sha256:f1f2994a48c484f822f65bd88133738dfa8d6fb3057b6e3441defb6022e81e42
+        value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.2@sha256:b86c08ac2cf8d33a049d084994e0fecea870f4c0cd06f3cd0e97e04026c9e213
       - name: kind
         value: task
       resolver: bundles
@@ -284,7 +284,7 @@ spec:
       - name: name
         value: buildah-remote-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:8b0332f55f118cba886fb55e8d56b8110bc15cfaab51307f28e7c17da5990304
+        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:99f3361cc8d259be65cd89d92142ff0f59bd2b66a49a54ad508f08a1a962f5ed
       - name: kind
         value: task
       resolver: bundles
@@ -328,7 +328,7 @@ spec:
       - name: name
         value: buildah-remote-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:8b0332f55f118cba886fb55e8d56b8110bc15cfaab51307f28e7c17da5990304
+        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:99f3361cc8d259be65cd89d92142ff0f59bd2b66a49a54ad508f08a1a962f5ed
       - name: kind
         value: task
       resolver: bundles
@@ -372,7 +372,7 @@ spec:
       - name: name
         value: buildah-remote-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:8b0332f55f118cba886fb55e8d56b8110bc15cfaab51307f28e7c17da5990304
+        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:99f3361cc8d259be65cd89d92142ff0f59bd2b66a49a54ad508f08a1a962f5ed
       - name: kind
         value: task
       resolver: bundles
@@ -399,7 +399,7 @@ spec:
       - name: name
         value: build-image-index
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-build-image-index:0.1@sha256:e4871851566d8b496966b37bcb8c5ce9748a52487f116373d96c6cd28ef684c6
+        value: quay.io/konflux-ci/tekton-catalog/task-build-image-index:0.1@sha256:327d745a58c1589b0ff196ed526d12a8a0a20ae22fd1c9dd1577b850a977dc3b
       - name: kind
         value: task
       resolver: bundles
@@ -430,7 +430,7 @@ spec:
       - name: name
         value: build-image-index
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-build-image-index:0.1@sha256:e4871851566d8b496966b37bcb8c5ce9748a52487f116373d96c6cd28ef684c6
+        value: quay.io/konflux-ci/tekton-catalog/task-build-image-index:0.1@sha256:327d745a58c1589b0ff196ed526d12a8a0a20ae22fd1c9dd1577b850a977dc3b
       - name: kind
         value: task
       resolver: bundles
