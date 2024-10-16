@@ -425,7 +425,8 @@ void CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
   externalIpsConfig->set_enable(enableExternalIps);
 
   SetRuntimeConfig(runtime_config);
-  CLOG(INFO) << "Runtime configuration:\n" + GetRuntimeConfigStr();
+  CLOG(INFO) << "Runtime configuration:\n"
+             << GetRuntimeConfigStr();
 
   return;
 }
@@ -457,12 +458,13 @@ bool CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
 }
 
 void CollectorConfig::WaitForFileToExist(const std::filesystem::path& filePath) {
+  int count = 0;
   while (!std::filesystem::exists(filePath)) {
-    if (runtime_config_.has_value()) {
-      CLOG(INFO) << "The configuration file has been deleted. Resetting the configuration.";
+    sleep(1);
+    count++;
+    if (count > 45) {
       runtime_config_.reset();
     }
-    sleep(1);
   }
 }
 
@@ -499,7 +501,7 @@ void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
       CLOG(ERROR) << "Unable to read event for " << filePath;
     }
 
-    struct inotify_event *event = buffer;
+    struct inotify_event* event = buffer;
     for (int i = 0; i < length; i += sizeof(struct inotify_event) + event->len) {
       event = (struct inotify_event*)&buffer[i];
       if (event->mask & IN_MODIFY) {
