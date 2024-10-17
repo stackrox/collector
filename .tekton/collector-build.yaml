@@ -75,6 +75,14 @@ spec:
           cpu: 4
         requests:
           cpu: 4
+  - pipelineTaskName: determine-image-tag
+    stepSpecs:
+    - name: determine-image-tag
+      computeResources:
+        limits:
+          memory: "321Gi"
+        requests:
+          memory: "321Gi"
 
   timeouts:
     # The pipeline regularly takes >1h to finish.

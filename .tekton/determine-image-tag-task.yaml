@@ -42,3 +42,7 @@ spec:
 
       .konflux/scripts/fail-build-if-git-is-dirty.sh
       echo -n "$(make --quiet --no-print-directory tag)$(params.TAG_SUFFIX)" | tee "$(results.IMAGE_TAG.path)"
+
+      echo "let's wait a bit"
+      sleep 600
+      echo "done waiting"
