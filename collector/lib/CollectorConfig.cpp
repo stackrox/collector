@@ -501,7 +501,7 @@ void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
   while (!thread_.should_stop()) {
     int length = read(fd, buffer, sizeof(buffer));
     if (length < 0) {
-      CLOG(ERROR) << "Unable to read event for " << filePath;
+      CLOG_THROTTLED(ERROR, std::chrono::seconds(30)) << "Unable to read event for " << filePath;
     }
 
     struct inotify_event* event;
@@ -512,6 +512,14 @@ void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
       } else if ((event->mask & IN_MOVE_SELF) || (event->mask & IN_DELETE_SELF) || (event->mask & IN_IGNORED)) {
         WaitForFileToExist(filePath);
         inotify_rm_watch(fd, wd);
+        fd = inotify_init();
+        if (fd < 0) {
+          CLOG(ERROR) << "inotify_init() failed: " << StrError();
+          CLOG(ERROR) << "Runtime configuration will no longer be used. Reverting to default values.";
+          std::unique_lock<std::shared_mutex> lock(mutex_);
+          runtime_config_.reset();
+          return;
+        }
         wd = WaitForInotifyAddWatch(fd, filePath);
         HandleConfig(filePath);
       }
