@@ -1,6 +1,3 @@
-#include <gmock/gmock-actions.h>
-#include <gmock/gmock-spec-builders.h>
-
 #include "Utility.cpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

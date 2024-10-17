@@ -2,7 +2,6 @@
 
 #include <internalapi/sensor/collector.pb.h>
 
-#include "CollectorArgs.h"
 #include "CollectorConfig.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -11,58 +10,29 @@ using namespace testing;
 
 namespace collector {
 
-class MockCollectorConfig : public CollectorConfig {
- public:
-  MockCollectorConfig() = default;
-
-  void MockSetSinspBufferSize(unsigned int value) {
-    SetSinspBufferSize(value);
-  }
-
-  void MockSetSinspTotalBufferSize(unsigned int value) {
-    SetSinspTotalBufferSize(value);
-  }
-
-  void MockSetHostConfig(HostConfig* config) {
-    SetHostConfig(config);
-  }
-
-  void MockSetSinspCpuPerBuffer(unsigned int value) {
-    SetSinspCpuPerBuffer(value);
-  }
-
-  void MockSetEnableExternalIPs(bool value) {
-    SetEnableExternalIPs(value);
-  }
-
-  void MockYamlConfigToConfig(YAML::Node& yamlConfig) {
-    YamlConfigToConfig(yamlConfig);
-  }
-};
-
 // Test that unmodified value is returned, when some dependency values are
 // missing
 TEST(CollectorConfigTest, TestSinspBufferSizeReturnUnmodified) {
   using namespace collector;
 
-  MockCollectorConfig config;
+  CollectorConfig config;
   HostConfig hconfig;
   hconfig.SetNumPossibleCPUs(0);
-  config.MockSetSinspCpuPerBuffer(0);
-  config.MockSetSinspTotalBufferSize(0);
-  config.MockSetSinspBufferSize(1);
-  config.MockSetHostConfig(&hconfig);
+  config.SetSinspCpuPerBuffer(0);
+  config.SetSinspTotalBufferSize(0);
+  config.SetSinspBufferSize(1);
+  config.SetHostConfig(&hconfig);
 
   // CPU-per-buffer is not initialized
   EXPECT_EQ(1, config.GetSinspBufferSize());
 
   // Number of CPUs is not initialized
-  config.MockSetSinspCpuPerBuffer(1);
+  config.SetSinspCpuPerBuffer(1);
   EXPECT_EQ(1, config.GetSinspBufferSize());
 
   // Total buffers size is not initialized
   hconfig.SetNumPossibleCPUs(1);
-  config.MockSetHostConfig(&hconfig);
+  config.SetHostConfig(&hconfig);
   EXPECT_EQ(1, config.GetSinspBufferSize());
 }
 
@@ -70,37 +40,37 @@ TEST(CollectorConfigTest, TestSinspBufferSizeReturnUnmodified) {
 TEST(CollectorConfigTest, TestSinspCpuPerBufferAdjusted) {
   using namespace collector;
 
-  MockCollectorConfig config;
+  CollectorConfig config;
   HostConfig hconfig;
-  config.MockSetSinspTotalBufferSize(512 * 1024 * 1024);
-  config.MockSetSinspBufferSize(8 * 1024 * 1024);
-  config.MockSetSinspCpuPerBuffer(1);
+  config.SetSinspTotalBufferSize(512 * 1024 * 1024);
+  config.SetSinspBufferSize(8 * 1024 * 1024);
+  config.SetSinspCpuPerBuffer(1);
 
   // Low number of CPUs, raw value
   hconfig.SetNumPossibleCPUs(16);
-  config.MockSetHostConfig(&hconfig);
+  config.SetHostConfig(&hconfig);
   EXPECT_EQ(8 * 1024 * 1024, config.GetSinspBufferSize());
 
   // High number of CPUs, adjusted value to power of 2
   hconfig.SetNumPossibleCPUs(150);
-  config.MockSetHostConfig(&hconfig);
+  config.SetHostConfig(&hconfig);
   EXPECT_EQ(2 * 1024 * 1024, config.GetSinspBufferSize());
 
   // Extreme number of CPUs, adjusted value to power of 2
   hconfig.SetNumPossibleCPUs(1024);
-  config.MockSetHostConfig(&hconfig);
+  config.SetHostConfig(&hconfig);
   EXPECT_EQ(512 * 1024, config.GetSinspBufferSize());
 
   // Extreme number of CPUs and low total buffer size, adjusted value is not
   // less than one page
-  config.MockSetSinspTotalBufferSize(512 * 1024);
+  config.SetSinspTotalBufferSize(512 * 1024);
   hconfig.SetNumPossibleCPUs(1024);
-  config.MockSetHostConfig(&hconfig);
+  config.SetHostConfig(&hconfig);
   EXPECT_EQ(16384, config.GetSinspBufferSize());
 }
 
 TEST(CollectorConfigTest, TestSetRuntimeConfig) {
-  MockCollectorConfig config;
+  CollectorConfig config;
 
   EXPECT_EQ(std::nullopt, config.GetRuntimeConfig());
 
@@ -112,27 +82,27 @@ TEST(CollectorConfigTest, TestSetRuntimeConfig) {
 }
 
 TEST(CollectorConfigTest, TestEnableExternalIpsFeatureFlag) {
-  MockCollectorConfig config;
+  CollectorConfig config;
 
   // without the presence of the runtime configuration
   // the enable_external_ips_ flag should be used
 
-  config.MockSetEnableExternalIPs(false);
+  config.SetEnableExternalIPs(false);
 
   EXPECT_FALSE(config.EnableExternalIPs());
 
-  config.MockSetEnableExternalIPs(true);
+  config.SetEnableExternalIPs(true);
 
   EXPECT_TRUE(config.EnableExternalIPs());
 }
 
 TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
-  MockCollectorConfig config;
+  CollectorConfig config;
 
   // With the presence of runtime config, the feature
   // flag should be ignored
 
-  config.MockSetEnableExternalIPs(true);
+  config.SetEnableExternalIPs(true);
 
   sensor::CollectorConfig runtime_config;
   auto* networking_config = runtime_config.mutable_networking();
@@ -144,7 +114,7 @@ TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
 
   EXPECT_FALSE(config.EnableExternalIPs());
 
-  config.MockSetEnableExternalIPs(false);
+  config.SetEnableExternalIPs(false);
 
   external_ips_config->set_enable(true);
   config.SetRuntimeConfig(runtime_config);
@@ -176,9 +146,9 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
   for (const auto& [yamlStr, expected] : tests) {
     YAML::Node yamlNode = YAML::Load(yamlStr);
 
-    MockCollectorConfig config;
+    CollectorConfig config;
 
-    config.MockYamlConfigToConfig(yamlNode);
+    config.YamlConfigToConfig(yamlNode);
     auto runtime_config = config.GetRuntimeConfig();
 
     EXPECT_TRUE(runtime_config.has_value());
@@ -208,9 +178,9 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigInvalid) {
   for (const auto& yamlStr : tests) {
     YAML::Node yamlNode = YAML::Load(yamlStr);
 
-    MockCollectorConfig config;
+    CollectorConfig config;
 
-    config.MockYamlConfigToConfig(yamlNode);
+    config.YamlConfigToConfig(yamlNode);
     auto runtime_config = config.GetRuntimeConfig();
 
     EXPECT_FALSE(runtime_config.has_value());
@@ -221,9 +191,9 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigEmpty) {
   std::string yamlStr = R"()";
   YAML::Node yamlNode = YAML::Load(yamlStr);
 
-  MockCollectorConfig config;
+  CollectorConfig config;
 
-  EXPECT_DEATH({ config.MockYamlConfigToConfig(yamlNode); }, ".*");
+  EXPECT_DEATH({ config.YamlConfigToConfig(yamlNode); }, ".*");
 }
 
 }  // namespace collector

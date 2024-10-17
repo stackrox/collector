@@ -5,6 +5,7 @@
 #include <ostream>
 #include <vector>
 
+#include <gtest/gtest_prod.h>
 #include <json/json.h>
 #include <yaml-cpp/yaml.h>
 
@@ -144,7 +145,7 @@ class CollectorConfig {
 
   std::shared_ptr<grpc::Channel> grpc_channel;
 
- protected:
+ private:
   int scrape_interval_;
   CollectionMethod collection_method_;
   bool turn_off_scrape_;
@@ -213,6 +214,16 @@ class CollectorConfig {
   void SetEnableExternalIPs(bool value) {
     enable_external_ips_ = value;
   }
+
+  // Friend tests
+  FRIEND_TEST(CollectorConfigTest, TestSinspBufferSizeReturnUnmodified);
+  FRIEND_TEST(CollectorConfigTest, TestSinspCpuPerBufferAdjusted);
+  FRIEND_TEST(CollectorConfigTest, TestEnableExternalIpsFeatureFlag);
+  FRIEND_TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig);
+  FRIEND_TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple);
+  FRIEND_TEST(CollectorConfigTest, TestYamlConfigToConfigInvalid);
+  FRIEND_TEST(CollectorConfigTest, TestYamlConfigToConfigEmpty);
+  FRIEND_TEST(NetworkStatusNotifier, UpdateIPnoAfterglow);
 };
 
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);

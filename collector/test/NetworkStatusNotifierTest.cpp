@@ -16,8 +16,6 @@
 
 namespace collector {
 
-namespace {
-
 using grpc_duplex_impl::Result;
 using grpc_duplex_impl::Status;
 using ::testing::Invoke;
@@ -66,15 +64,6 @@ class Semaphore {
   int value_;
   std::condition_variable cond_;
   std::mutex mutex_;
-};
-
-class MockCollectorConfig : public collector::CollectorConfig {
- public:
-  MockCollectorConfig() : collector::CollectorConfig() {}
-
-  void DisableAfterglow() {
-    enable_afterglow_ = false;
-  }
 };
 
 class MockConnScraper : public IConnScraper {
@@ -245,8 +234,8 @@ TEST(NetworkStatusNotifier, SimpleStartStop) {
    - we check that the former declared connection is deleted and redeclared as part of this network */
 TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
   bool running = true;
-  MockCollectorConfig config;
-  config.DisableAfterglow();
+  CollectorConfig config;
+  config.enable_afterglow_ = false;
   std::shared_ptr<MockConnScraper> conn_scraper = std::make_shared<MockConnScraper>();
   auto conn_tracker = std::make_shared<ConnectionTracker>();
   auto comm = std::make_shared<MockNetworkConnectionInfoServiceComm>();
@@ -336,7 +325,5 @@ TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
 
   net_status_notifier->Stop();
 }
-
-}  // namespace
 
 }  // namespace collector
