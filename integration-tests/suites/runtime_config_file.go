@@ -1,81 +1,102 @@
 package suites
 
 import (
-	"fmt"
+	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
-	"github.com/stackrox/collector/integration-tests/pkg/common"
-	"github.com/stackrox/collector/integration-tests/pkg/config"
-	"github.com/stretchr/testify/assert"
+	"github.com/stackrox/collector/integration-tests/pkg/types"
 )
 
 type RuntimeConfigFileTestSuite struct {
 	IntegrationTestSuiteBase
 }
 
-// Launches collector
+func (s *RuntimeConfigFileTestSuite) createDir(runtimeConfigDir string) {
+	_, err := s.execContainer("collector", []string{"mkdir", runtimeConfigDir})
+	s.Require().NoError(err)
+}
+
+func (s *RuntimeConfigFileTestSuite) deleteFile(file string) {
+	_, err := s.execContainer("collector", []string{"rm", file})
+	s.Require().NoError(err)
+}
+
+func (s *RuntimeConfigFileTestSuite) setExternalIpsEnable(runtimeConfigFile string, enable bool) {
+	configStr := "networking:\n  externalIps:\n    enable: " + strconv.FormatBool(enable)
+	_, err := s.execContainer("collector", []string{"/bin/bash", "-c", "echo '" + configStr + "' > " + runtimeConfigFile})
+	s.Require().NoError(err)
+}
+
+// Launches collector and creates the directory for runtime configuration.
+// Writes various things to the file for runtime configuration and checks
+// the config introspection endpoint to make sure that the configuration is
+// correct.
 func (s *RuntimeConfigFileTestSuite) SetupSuite() {
-	s.RegisterCleanup("nginx", "nginx-curl")
 	s.StartContainerStats()
 
 	collectorOptions := collector.StartupOptions{
-		Config: map[string]any{
-			// turnOffScrape will be true, but the scrapeInterval
-			// also controls the reporting interval for network events
-			"scrapeInterval": s.ScrapeInterval,
-		},
 		Env: map[string]string{
-			"ROX_AFTERGLOW_PERIOD": "0",
-			"ROX_ENABLE_AFTERGLOW": "false",
+			"ROX_AFTERGLOW_PERIOD":               "0",
+			"ROX_ENABLE_AFTERGLOW":               "false",
+			"ROX_COLLECTOR_INTROSPECTION_ENABLE": "true",
+		},
+	}
+
+	externalIpsTrue := types.RuntimeConfig{
+		Networking: types.Networking{
+			ExternalIps: types.ExternalIps{
+				Enable: true,
+			},
+		},
+	}
+
+	externalIpsFalse := types.RuntimeConfig{
+		Networking: types.Networking{
+			ExternalIps: types.ExternalIps{
+				Enable: false,
+			},
 		},
 	}
 
 	s.StartCollector(false, &collectorOptions)
+	runtimeConfigDir := "/etc/stackrox"
+	runtimeConfigFile := filepath.Join(runtimeConfigDir, "/runtime_config.yaml")
+	s.createDir(runtimeConfigDir)
 
+	runtimeConfigSuccess := s.Sensor().ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
+	s.Require().True(runtimeConfigSuccess)
+
+	s.setExternalIpsEnable(runtimeConfigFile, true)
+	runtimeConfigSuccess = s.Sensor().ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsTrue)
+	s.Require().True(runtimeConfigSuccess)
+
+	s.setExternalIpsEnable(runtimeConfigFile, false)
+	runtimeConfigSuccess = s.Sensor().ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
+	s.Require().True(runtimeConfigSuccess)
+
+	s.deleteFile(runtimeConfigFile)
+	runtimeConfigSuccess = s.Sensor().ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
+	s.Require().True(runtimeConfigSuccess)
+
+	s.setExternalIpsEnable(runtimeConfigFile, true)
+	runtimeConfigSuccess = s.Sensor().ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsTrue)
+	s.Require().True(runtimeConfigSuccess)
+
+	s.deleteFile(runtimeConfigFile)
+	runtimeConfigSuccess = s.Sensor().ExpectRuntimeConfig(s.T(), 60*time.Second, externalIpsFalse)
+	s.Require().True(runtimeConfigSuccess)
+
+	s.setExternalIpsEnable(runtimeConfigFile, false)
+	runtimeConfigSuccess = s.Sensor().ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
+	s.Require().True(runtimeConfigSuccess)
 }
 
 func (s *RuntimeConfigFileTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainers("nginx", "nginx-curl")
 	s.WritePerfResults()
 }
 
 func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFile() {
-	networkInfos := s.Sensor().ExpectConnectionsN(s.T(), s.ServerContainer, 10*time.Second, s.ExpectedActive+s.ExpectedInactive)
-
-	observedActive := 0
-	observedInactive := 0
-
-	for _, info := range networkInfos {
-		if info.IsActive() {
-			observedActive++
-		} else {
-			observedInactive++
-		}
-	}
-
-	assert.Equal(s.T(), s.ExpectedActive, observedActive, "Unexpected number of active connections reported")
-	assert.Equal(s.T(), s.ExpectedInactive, observedInactive, "Unexpected number of inactive connections reported")
-
-	// Server side checks
-
-	actualServerEndpoint := networkInfos[0].LocalAddress
-	actualClientEndpoint := networkInfos[0].RemoteAddress
-
-	// From server perspective, network connection info only has local port and remote IP
-	assert.Equal(s.T(), fmt.Sprintf(":%s", s.ServerPort), actualServerEndpoint)
-	assert.Equal(s.T(), s.ClientIP, actualClientEndpoint)
-
-	// client side checks
-
-	// NetworkSignalHandler does not currently report endpoints.
-	// See the comment above for the server container endpoint test for more info.
-	assert.Equal(s.T(), 0, len(s.Sensor().Endpoints(s.ClientContainer)))
-
-	networkInfos = s.Sensor().Connections(s.ClientContainer)
-
-	actualClientEndpoint = networkInfos[0].LocalAddress
-	actualServerEndpoint = networkInfos[0].RemoteAddress
 }
