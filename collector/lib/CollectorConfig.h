@@ -132,6 +132,7 @@ class CollectorConfig {
   unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
   void Start();
   void Stop();
+  bool DisableProcessArguments() const { return disable_process_arguments_; }
 
   static std::pair<option::ArgStatus, std::string> CheckConfiguration(const char* config, Json::Value* root);
 
@@ -183,6 +184,8 @@ class CollectorConfig {
 
   // URL to the GRPC server
   std::optional<std::string> grpc_server_;
+
+  bool disable_process_arguments_ = false;
 
   // One ring buffer will be initialized for this many CPUs
   unsigned int sinsp_cpu_per_buffer_ = 0;

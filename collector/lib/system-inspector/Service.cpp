@@ -58,7 +58,8 @@ void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTrac
   }
   AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(),
                                                     signal_client_.get(),
-                                                    &userspace_stats_));
+                                                    &userspace_stats_,
+                                                    config));
 
   if (signal_handlers_.size() == 2) {
     // self-check handlers do not count towards this check, because they
