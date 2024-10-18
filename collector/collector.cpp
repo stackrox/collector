@@ -121,6 +121,28 @@ void initialChecks() {
 }
 
 int main(int argc, char** argv) {
+  // Drop not needed capabilities. Depending on the environment they might be
+  // already dropped, but still make sure we use as little as possible.
+  capng_clear(CAPNG_SELECT_ALL);
+  capng_type_t cap_types = static_cast<capng_type_t>(CAPNG_EFFECTIVE |
+                                                     CAPNG_PERMITTED);
+  capng_updatev(CAPNG_ADD, cap_types,
+                // BPF is needed to load bpf programs and maps
+                CAP_BPF,
+                // PERFMON needed for using kprobes and tracepoints
+                CAP_PERFMON,
+                // DAC_READ_SEARCH is needed to check tracefs
+                CAP_DAC_READ_SEARCH,
+                // SYS_RESOURCE is needed for setrlimits
+                CAP_SYS_RESOURCE,
+                // SYS_PTRACE and SYS_ADMIN are needed to read /proc/$PID/ns
+                CAP_SYS_PTRACE,
+                CAP_SYS_ADMIN, -1);
+
+  if (capng_apply(CAPNG_SELECT_ALL) != 0) {
+    CLOG(WARNING) << "Failed to drop capabilities: " << StrError();
+  }
+
   // Print system information before doing actual work.
   auto& host_info = HostInfo::Instance();
   CLOG(INFO) << "Collector Version: " << GetCollectorVersion();

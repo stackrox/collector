@@ -2,6 +2,10 @@
 
 #include <google/protobuf/util/time_util.h>
 
+extern "C" {
+#include <cap-ng.h>
+}
+
 #include "CollectorStats.h"
 #include "DuplexGRPC.h"
 #include "GRPCUtil.h"
@@ -108,6 +112,20 @@ void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& netwo
 }
 
 void NetworkStatusNotifier::Run() {
+  capng_clear(CAPNG_SELECT_ALL);
+  capng_type_t cap_types = static_cast<capng_type_t>(CAPNG_EFFECTIVE |
+                                                     CAPNG_PERMITTED);
+  capng_updatev(CAPNG_ADD, cap_types,
+                // DAC_READ_SEARCH is needed to check tracefs
+                CAP_DAC_READ_SEARCH,
+                // SYS_PTRACE and SYS_ADMIN are needed to read /proc/$PID/ns
+                CAP_SYS_PTRACE,
+                CAP_SYS_ADMIN, -1);
+
+  if (capng_apply(CAPNG_SELECT_ALL) != 0) {
+    CLOG(WARNING) << "Failed to drop capabilities: " << StrError();
+  }
+
   Profiler::RegisterCPUThread();
   auto next_attempt = std::chrono::system_clock::now();
 

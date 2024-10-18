@@ -4,6 +4,10 @@
 #include <iostream>
 #include <math.h>
 
+extern "C" {
+#include <cap-ng.h>
+}
+
 #include "Containers.h"
 #include "EventNames.h"
 #include "Logging.h"
@@ -105,6 +109,11 @@ class CollectorTimerGauge {
 };
 
 void CollectorStatsExporter::run() {
+  capng_clear(CAPNG_SELECT_ALL);
+  if (capng_apply(CAPNG_SELECT_ALL) != 0) {
+    CLOG(WARNING) << "Failed to drop capabilities: " << StrError();
+  }
+
   auto& collectorEventCounters = prometheus::BuildGauge()
                                      .Name("rox_collector_events")
                                      .Help("Collector events")
