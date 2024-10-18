@@ -10,10 +10,17 @@
 
 namespace collector {
 
-using ProcessSignal = ProcessSignalFormatter::ProcessSignal;
 using LineageInfo = ProcessSignalFormatter::LineageInfo;
+using namespace testing;
 
-namespace {
+class MockCollectorConfig : public CollectorConfig {
+ public:
+  MockCollectorConfig() = default;
+
+  void SetDisableProcessArguments(bool value) {
+    disable_process_arguments_ = value;
+  }
+};
 
 TEST(ProcessSignalFormatterTest, NoProcessTest) {
   sinsp* inspector = NULL;
@@ -628,6 +635,63 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   CollectorStats::Reset();
 }
 
-}  // namespace
+TEST(ProcessSignalFormatterTest, ProcessArguments) {
+  std::unique_ptr<sinsp> inspector(new sinsp());
+  MockCollectorConfig config;
+
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+
+  auto tinfo = inspector->build_threadinfo();
+  tinfo->m_pid = 3;
+  tinfo->m_tid = 3;
+  tinfo->m_ptid = -1;
+  tinfo->m_vpid = 0;
+  tinfo->m_user.set_uid(42);
+  tinfo->m_container_id = "";
+  tinfo->m_exepath = "qwerty";
+
+  std::vector<std::string> args = {std::string("args")};
+  tinfo->set_args(args);
+
+  std::unique_ptr<sinsp_evt> evt(new sinsp_evt());
+  std::unique_ptr<scap_evt> s_evt(new scap_evt());
+
+  s_evt->type = PPME_SYSCALL_EXECVE_19_X;
+  evt.get()->set_tinfo(tinfo.get());
+  evt.get()->set_scap_evt(s_evt.get());
+
+  auto signal = processSignalFormatter.CreateProcessSignal(evt.get());
+  EXPECT_FALSE(signal->args().empty());
+}
+
+TEST(ProcessSignalFormatterTest, NoProcessArguments) {
+  std::unique_ptr<sinsp> inspector(new sinsp());
+  MockCollectorConfig config;
+
+  config.SetDisableProcessArguments(true);
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+
+  auto tinfo = inspector->build_threadinfo();
+  tinfo->m_pid = 3;
+  tinfo->m_tid = 3;
+  tinfo->m_ptid = -1;
+  tinfo->m_vpid = 0;
+  tinfo->m_user.set_uid(42);
+  tinfo->m_container_id = "";
+  tinfo->m_exepath = "qwerty";
+
+  std::vector<std::string> args = {std::string("args")};
+  tinfo->set_args(args);
+
+  std::unique_ptr<sinsp_evt> evt(new sinsp_evt());
+  std::unique_ptr<scap_evt> s_evt(new scap_evt());
+
+  s_evt->type = PPME_SYSCALL_EXECVE_19_X;
+  evt.get()->set_tinfo(tinfo.get());
+  evt.get()->set_scap_evt(s_evt.get());
+
+  auto signal = processSignalFormatter.CreateProcessSignal(evt.get());
+  EXPECT_TRUE(signal->args().empty());
+}
 
 }  // namespace collector

@@ -148,11 +148,13 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
     signal->set_exec_file_path(name_sanitized ? *name_sanitized : *name);
   }
 
-  // set process arguments
-  if (const char* args = event_extractor_->get_proc_args(event)) {
-    std::string args_str = args;
-    auto args_sanitized = SanitizedUTF8(args_str);
-    signal->set_args(args_sanitized ? *args_sanitized : args_str);
+  // set process arguments, if not explicitely disabled
+  if (!config_.DisableProcessArguments()) {
+    if (const char* args = event_extractor_->get_proc_args(event)) {
+      std::string args_str = args;
+      auto args_sanitized = SanitizedUTF8(args_str);
+      signal->set_args(args_sanitized ? *args_sanitized : args_str);
+    }
   }
 
   // set pid

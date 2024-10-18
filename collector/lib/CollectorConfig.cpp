@@ -83,6 +83,7 @@ PathEnvVar tls_client_key_path("ROX_COLLECTOR_TLS_CLIENT_KEY");
 
 PathEnvVar config_file("ROX_COLLECTOR_CONFIG_PATH", "/etc/stackrox/runtime_config.yaml");
 
+BoolEnvVar disable_process_arguments("ROX_COLLECTOR_NO_PROCESS_ARGUMENTS", false);
 }  // namespace
 
 constexpr bool CollectorConfig::kTurnOffScrape;
@@ -113,6 +114,7 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   use_podman_ce_ = use_podman_ce.value();
   enable_introspection_ = enable_introspection.value();
   track_send_recv_ = track_send_recv.value();
+  disable_process_arguments_ = disable_process_arguments.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.emplace_back(syscall);
