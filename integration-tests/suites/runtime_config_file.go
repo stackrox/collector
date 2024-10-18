@@ -24,10 +24,14 @@ func (s *RuntimeConfigFileTestSuite) deleteFile(file string) {
 	s.Require().NoError(err)
 }
 
-func (s *RuntimeConfigFileTestSuite) setExternalIpsEnable(runtimeConfigFile string, enable bool) {
-	configStr := "networking:\n  externalIps:\n    enable: " + strconv.FormatBool(enable)
+func (s *RuntimeConfigFileTestSuite) setRuntimeConfig(runtimeConfigFile string, configStr string) {
 	_, err := s.execContainer("collector", []string{"/bin/bash", "-c", "echo '" + configStr + "' > " + runtimeConfigFile})
 	s.Require().NoError(err)
+}
+
+func (s *RuntimeConfigFileTestSuite) setExternalIpsEnable(runtimeConfigFile string, enable bool) {
+	configStr := "networking:\n  externalIps:\n    enable: " + strconv.FormatBool(enable)
+	s.setRuntimeConfig(runtimeConfigFile, configStr)
 }
 
 // Launches collector and creates the directory for runtime configuration.
@@ -90,6 +94,11 @@ func (s *RuntimeConfigFileTestSuite) SetupSuite() {
 	s.Require().True(runtimeConfigSuccess)
 
 	s.setExternalIpsEnable(runtimeConfigFile, false)
+	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
+	s.Require().True(runtimeConfigSuccess)
+
+	invalidConfig := "asdf"
+	s.setRuntimeConfig(runtimeConfigFile, invalidConfig)
 	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
 	s.Require().True(runtimeConfigSuccess)
 }
