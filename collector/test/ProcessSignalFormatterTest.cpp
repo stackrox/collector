@@ -12,6 +12,25 @@ namespace collector {
 
 using ProcessSignal = ProcessSignalFormatter::ProcessSignal;
 using LineageInfo = ProcessSignalFormatter::LineageInfo;
+using namespace testing;
+
+class MockCollectorConfig : public CollectorConfig {
+ public:
+  MockCollectorConfig() = default;
+
+  void SetDisableProcessArguments(bool value) {
+    disable_process_arguments_ = value;
+  }
+};
+
+class MockProcessSignalFormatter : public ProcessSignalFormatter {
+ public:
+  MockProcessSignalFormatter(sinsp* inspector, const CollectorConfig& config) : ProcessSignalFormatter(inspector, config) {};
+
+  ProcessSignal* MockCreateProcessSignal(sinsp_evt* event) {
+    return CreateProcessSignal(event);
+  }
+};
 
 namespace {
 
@@ -628,6 +647,35 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   CollectorStats::Reset();
 }
 
+TEST(ProcessSignalFormatterTest, NoProcessArguments) {
+  std::unique_ptr<sinsp> inspector(new sinsp());
+  MockCollectorConfig config;
+
+  config.SetDisableProcessArguments(true);
+  MockProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+
+  auto tinfo = inspector->build_threadinfo();
+  tinfo->m_pid = 3;
+  tinfo->m_tid = 3;
+  tinfo->m_ptid = -1;
+  tinfo->m_vpid = 0;
+  tinfo->m_user.set_uid(42);
+  tinfo->m_container_id = "";
+  tinfo->m_exepath = "qwerty";
+
+  std::vector<std::string> args = {std::string("args")};
+  tinfo->set_args(args);
+
+  std::unique_ptr<sinsp_evt> evt(new sinsp_evt());
+  std::unique_ptr<scap_evt> s_evt(new scap_evt());
+
+  s_evt->type = PPME_SYSCALL_EXECVE_19_X;
+  evt.get()->set_tinfo(tinfo.get());
+  evt.get()->set_scap_evt(s_evt.get());
+
+  auto signal = processSignalFormatter.MockCreateProcessSignal(evt.get());
+  EXPECT_TRUE(signal->args().empty());
+}
 }  // namespace
 
 }  // namespace collector

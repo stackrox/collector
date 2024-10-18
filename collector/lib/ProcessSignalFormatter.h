@@ -38,9 +38,12 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
 
   void GetProcessLineage(sinsp_threadinfo* tinfo, std::vector<LineageInfo>& lineage);
 
+ protected:
+  // Only protected, for testing purposes
+  ProcessSignal* CreateProcessSignal(sinsp_evt* event);
+
  private:
   Signal* CreateSignal(sinsp_evt* event);
-  ProcessSignal* CreateProcessSignal(sinsp_evt* event);
   bool ValidateProcessDetails(const sinsp_threadinfo* tinfo);
   bool ValidateProcessDetails(sinsp_evt* event);
   std::string ProcessDetails(sinsp_evt* event);
