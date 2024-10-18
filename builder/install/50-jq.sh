@@ -7,6 +7,11 @@ if [ -n "${WITH_RHEL_RPMS}" ]; then
     exit 0
 fi
 
+if [ "${USE_CCACHE}" = "true" ]; then
+    export CC="ccache gcc"
+    export CXX="ccache g++"
+fi
+
 wget "https://github.com/stedolan/jq/releases/download/jq-${JQ_VERSION}/jq-${JQ_VERSION}.tar.gz"
 tar -zxf "jq-${JQ_VERSION}.tar.gz"
 cd "jq-${JQ_VERSION}"

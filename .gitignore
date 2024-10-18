@@ -1,5 +1,7 @@
 .idea/
 .rox/
+.ccache/
+builder/.ccache/
 
 integration-tests/container-logs/
 integration-tests/*.log
