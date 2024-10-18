@@ -4,6 +4,9 @@
 #include <optional>
 #include <sstream>
 
+#include <sys/inotify.h>
+#include <sys/select.h>
+
 #include <libsinsp/sinsp.h>
 
 #include "CollectionMethod.h"
@@ -279,7 +282,6 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   HandleAfterglowEnvVars();
   HandleConnectionStatsEnvVars();
   HandleSinspEnvVars();
-  HandleConfig(config_file.value());
 
   host_config_ = ProcessHostHeuristics(*this);
 }
@@ -398,9 +400,11 @@ void CollectorConfig::HandleSinspEnvVars() {
 }
 
 void CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
+  // Don't read the file during a scrape
+  std::unique_lock<std::shared_mutex> lock(mutex_);
+
   if (yamlConfig.IsNull() || !yamlConfig.IsDefined()) {
-    CLOG(FATAL) << "Unable to read config from config file";
-    return;
+    throw std::runtime_error("Unable to read config from config file");
   }
   YAML::Node networking = yamlConfig["networking"];
   if (!networking) {
@@ -422,33 +426,147 @@ void CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
   externalIpsConfig->set_enable(enableExternalIps);
 
   SetRuntimeConfig(runtime_config);
-  CLOG(INFO) << "Runtime configuration:";
-  CLOG(INFO) << GetRuntimeConfigStr();
+  CLOG(INFO) << "Runtime configuration:\n"
+             << GetRuntimeConfigStr();
 
   return;
 }
 
-void CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
+bool CollectorConfig::HandleConfig(const std::filesystem::path& filePath) {
   if (!std::filesystem::exists(filePath)) {
     CLOG(DEBUG) << "No configuration file found. " << filePath;
-    return;
+    return true;
   }
 
   try {
     YAML::Node yamlConfig = YAML::LoadFile(filePath);
     YamlConfigToConfig(yamlConfig);
   } catch (const YAML::BadFile& e) {
-    CLOG(FATAL) << "Failed to open the configuration file: " << filePath
-                << ". Error: " << e.what();
+    CLOG(ERROR) << "Failed to open the configuration file: " << filePath << ". Error: " << e.what();
+    return false;
   } catch (const YAML::ParserException& e) {
-    CLOG(FATAL) << "Failed to parse the configuration file: " << filePath
-                << ". Error: " << e.what();
+    CLOG(ERROR) << "Failed to parse the configuration file: " << filePath << ". Error: " << e.what();
+    return false;
   } catch (const YAML::Exception& e) {
-    CLOG(FATAL) << "An error occurred while loading the configuration file: " << filePath
-                << ". Error: " << e.what();
+    CLOG(ERROR) << "An error occurred while loading the configuration file: " << filePath << ". Error: " << e.what();
+    return false;
   } catch (const std::exception& e) {
-    CLOG(FATAL) << "An unexpected error occurred while trying to read: " << filePath << e.what();
+    CLOG(ERROR) << "An unexpected error occurred while trying to read: " << filePath << e.what();
+    return false;
   }
+
+  return true;
+}
+
+void CollectorConfig::WaitForFileToExist(const std::filesystem::path& filePath) {
+  int count = 0;
+  while (!std::filesystem::exists(filePath) && !thread_.should_stop()) {
+    sleep(1);
+    count++;
+    if (count == 45) {
+      std::unique_lock<std::shared_mutex> lock(mutex_);
+      runtime_config_.reset();
+    }
+  }
+}
+
+int CollectorConfig::WaitForInotifyAddWatch(int fd, const std::filesystem::path& filePath) {
+  while (!thread_.should_stop()) {
+    int wd = inotify_add_watch(fd, filePath.c_str(), IN_MODIFY | IN_MOVE_SELF | IN_DELETE_SELF);
+    if (wd < 0) {
+      CLOG_THROTTLED(ERROR, std::chrono::seconds(30)) << "Failed to add inotify watch for " << filePath << ": (" << errno << ") " << StrError();
+    } else {
+      return wd;
+    }
+    sleep(1);
+  }
+
+  return -1;
+}
+
+void CollectorConfig::WatchConfigFile(const std::filesystem::path& filePath) {
+  fd_set rfds;
+  struct timeval tv = {};
+  int fd = inotify_init();
+  if (fd < 0) {
+    CLOG(ERROR) << "inotify_init() failed: " << StrError();
+    CLOG(ERROR) << "Runtime configuration will not be used.";
+    return;
+  }
+
+  WaitForFileToExist(filePath);
+  int wd = WaitForInotifyAddWatch(fd, filePath);
+  if (wd == -1) {
+    CLOG(ERROR) << "Failed to add inotify watch, runtime configuration will not be used.";
+    close(fd);
+    return;
+  }
+
+  bool success = HandleConfig(filePath);
+  if (!success) {
+    CLOG(FATAL) << "Unable to parse configuration file: " << filePath;
+  }
+
+  char buffer[1024];
+
+  while (!thread_.should_stop()) {
+    tv.tv_sec = 2;
+    tv.tv_usec = 0;
+    FD_ZERO(&rfds);
+    FD_SET(fd, &rfds);
+
+    int retval = select(FD_SETSIZE, &rfds, nullptr, nullptr, &tv);
+    if (retval < 0) {
+      CLOG(WARNING) << "'select' call failed: (" << errno << ") " << StrError(errno);
+      continue;
+    }
+
+    if (retval == 0) {
+      // select timed out, check if we should be stopping.
+      continue;
+    }
+
+    // Received event from inotify.
+    int length = read(fd, buffer, sizeof(buffer));
+    if (length < 0) {
+      CLOG_THROTTLED(ERROR, std::chrono::seconds(30)) << "Unable to read event for " << filePath;
+      continue;
+    }
+
+    struct inotify_event* event;
+    for (int i = 0; i < length; i += sizeof(struct inotify_event) + event->len) {
+      event = (struct inotify_event*)&buffer[i];
+      if (event->mask & IN_MODIFY) {
+        HandleConfig(filePath);
+      } else if ((event->mask & IN_MOVE_SELF) || (event->mask & IN_DELETE_SELF)) {
+        inotify_rm_watch(fd, wd);
+
+        WaitForFileToExist(filePath);
+        wd = WaitForInotifyAddWatch(fd, filePath);
+        if (wd == -1) {
+          // Only situation that could get us here is if collector is
+          // stopping, so we break out and let the thread finish.
+          break;
+        }
+
+        HandleConfig(filePath);
+      }
+    }
+  }
+
+  CLOG(INFO) << "No longer using inotify on " << filePath;
+  inotify_rm_watch(fd, wd);
+  close(fd);
+}
+
+void CollectorConfig::Start() {
+  thread_.Start([this] { WatchConfigFile(config_file.value()); });
+  CLOG(INFO) << "Watching config file: " << config_file.value();
+}
+
+void CollectorConfig::Stop() {
+  thread_.Stop();
+  CLOG(INFO) << "No longer watching config file" << config_file.value();
 }
 
 bool CollectorConfig::TurnOffScrape() const {

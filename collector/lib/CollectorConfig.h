@@ -3,6 +3,7 @@
 
 #include <optional>
 #include <ostream>
+#include <shared_mutex>
 #include <vector>
 
 #include <json/json.h>
@@ -15,6 +16,7 @@
 #include "CollectionMethod.h"
 #include "HostConfig.h"
 #include "NetworkConnection.h"
+#include "StoppableThread.h"
 #include "TlsConfig.h"
 #include "json/value.h"
 #include "optionparser.h"
@@ -95,6 +97,7 @@ class CollectorConfig {
   // of a runtime configuration, and defer to that value
   // otherwise, we rely on the feature flag (env var)
   bool EnableExternalIPs() const {
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     if (runtime_config_.has_value()) {
       return runtime_config_.value()
           .networking()
@@ -127,6 +130,8 @@ class CollectorConfig {
   unsigned int GetSinspBufferSize() const;
   unsigned int GetSinspTotalBufferSize() const { return sinsp_total_buffer_size_; }
   unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
+  void Start();
+  void Stop();
 
   static std::pair<option::ArgStatus, std::string> CheckConfiguration(const char* config, Json::Value* root);
 
@@ -197,12 +202,17 @@ class CollectorConfig {
   std::optional<TlsConfig> tls_config_;
 
   std::optional<sensor::CollectorConfig> runtime_config_;
+  StoppableThread thread_;
+  mutable std::shared_mutex mutex_{};
 
   void HandleAfterglowEnvVars();
   void HandleConnectionStatsEnvVars();
   void HandleSinspEnvVars();
   void YamlConfigToConfig(YAML::Node& yamlConfig);
-  void HandleConfig(const std::filesystem::path& filePath);
+  bool HandleConfig(const std::filesystem::path& filePath);
+  void WaitForFileToExist(const std::filesystem::path& filePath);
+  int WaitForInotifyAddWatch(int fd, const std::filesystem::path& filePath);
+  void WatchConfigFile(const std::filesystem::path& filePath);
 
   // Protected, used for testing purposes
   void SetSinspBufferSize(unsigned int buffer_size);
