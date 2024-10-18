@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
+	"github.com/stackrox/collector/integration-tests/pkg/introspection_endpoints"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 )
 
@@ -65,31 +66,31 @@ func (s *RuntimeConfigFileTestSuite) SetupSuite() {
 	runtimeConfigFile := filepath.Join(runtimeConfigDir, "/runtime_config.yaml")
 	s.createDir(runtimeConfigDir)
 
-	runtimeConfigSuccess := s.Sensor().ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
+	runtimeConfigSuccess := introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
 	s.Require().True(runtimeConfigSuccess)
 
 	s.setExternalIpsEnable(runtimeConfigFile, true)
-	runtimeConfigSuccess = s.Sensor().ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsTrue)
+	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsTrue)
 	s.Require().True(runtimeConfigSuccess)
 
 	s.setExternalIpsEnable(runtimeConfigFile, false)
-	runtimeConfigSuccess = s.Sensor().ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
+	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
 	s.Require().True(runtimeConfigSuccess)
 
 	s.deleteFile(runtimeConfigFile)
-	runtimeConfigSuccess = s.Sensor().ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
+	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
 	s.Require().True(runtimeConfigSuccess)
 
 	s.setExternalIpsEnable(runtimeConfigFile, true)
-	runtimeConfigSuccess = s.Sensor().ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsTrue)
+	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsTrue)
 	s.Require().True(runtimeConfigSuccess)
 
 	s.deleteFile(runtimeConfigFile)
-	runtimeConfigSuccess = s.Sensor().ExpectRuntimeConfig(s.T(), 60*time.Second, externalIpsFalse)
+	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 60*time.Second, externalIpsFalse)
 	s.Require().True(runtimeConfigSuccess)
 
 	s.setExternalIpsEnable(runtimeConfigFile, false)
-	runtimeConfigSuccess = s.Sensor().ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
+	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
 	s.Require().True(runtimeConfigSuccess)
 }
 
