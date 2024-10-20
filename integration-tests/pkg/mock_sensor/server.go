@@ -171,8 +171,11 @@ func (m *MockSensor) HasConnection(containerID string, conn types.NetworkInfo) b
 	defer m.networkMutex.Unlock()
 
 	if conns, ok := m.connections[containerID]; ok {
-		_, exists := conns[conn]
-		return exists
+		for connection := range conns {
+			if connection.Equal(conn) {
+				return true
+			}
+		}
 	}
 
 	return false
@@ -489,8 +492,16 @@ func (m *MockSensor) pushEndpoint(containerID string, endpoint *sensorAPI.Networ
 // translateAddress is a helper function for converting binary representations
 // of network addresses (in the signals) to usable forms for testing
 func (m *MockSensor) translateAddress(addr *sensorAPI.NetworkAddress) string {
+	address := utils.IPFromBytes(addr.GetAddressData())
+	if (address == utils.IPAddress{}) {
+		ipNetworkData := addr.GetIpNetwork()
+		if len(ipNetworkData) > 0 {
+			ipNetworkData = ipNetworkData[:len(ipNetworkData)-1]
+			address = utils.IPFromBytes(ipNetworkData)
+		}
+	}
 	ipPortPair := utils.NetworkPeerID{
-		Address: utils.IPFromBytes(addr.GetAddressData()),
+		Address: address,
 		Port:    uint16(addr.GetPort()),
 	}
 	return ipPortPair.String()

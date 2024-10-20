@@ -1,11 +1,14 @@
 package suites
 
 import (
+	"fmt"
 	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
+	"github.com/stackrox/collector/integration-tests/pkg/common"
+	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/introspection_endpoints"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 )
@@ -39,12 +42,27 @@ func (s *RuntimeConfigFileTestSuite) setExternalIpsEnable(runtimeConfigFile stri
 // the config introspection endpoint to make sure that the configuration is
 // correct.
 func (s *RuntimeConfigFileTestSuite) SetupSuite() {
+	s.RegisterCleanup("external-connection")
+
 	s.StartContainerStats()
+
+	normalizedIp := "255.255.255.255"
+	externalIp := "8.8.8.8"
+	serverPort := 53
+	externalUrl := fmt.Sprintf("http://%s:%d", externalIp, serverPort)
+	image_store := config.Images()
+	containerID, err := s.Executor().StartContainer(
+		config.ContainerStartConfig{
+			Name:    "external-connection",
+			Image:   image_store.QaImageByKey("qa-alpine-curl"),
+			Command: []string{"sh", "-c", "while true; do curl " + externalUrl + "; sleep 1; done"},
+		})
+	s.Require().NoError(err)
+	clientContainer := common.ContainerShortID(containerID)
 
 	collectorOptions := collector.StartupOptions{
 		Env: map[string]string{
-			"ROX_AFTERGLOW_PERIOD":               "0",
-			"ROX_ENABLE_AFTERGLOW":               "false",
+			"ROX_AFTERGLOW_PERIOD":               "2",
 			"ROX_COLLECTOR_INTROSPECTION_ENABLE": "true",
 		},
 	}
@@ -65,6 +83,28 @@ func (s *RuntimeConfigFileTestSuite) SetupSuite() {
 		},
 	}
 
+	activeNormalizedConnection := types.NetworkInfo{
+		LocalAddress:   "",
+		RemoteAddress:  fmt.Sprintf("%s:%d", normalizedIp, serverPort),
+		Role:           "ROLE_CLIENT",
+		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+		CloseTimestamp: types.NilTimestamp,
+	}
+
+	activeUnnormalizedConnection := types.NetworkInfo{
+		LocalAddress:   "",
+		RemoteAddress:  fmt.Sprintf("%s:%d", externalIp, serverPort),
+		Role:           "ROLE_CLIENT",
+		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+		CloseTimestamp: types.NilTimestamp,
+	}
+
+	inactiveNormalizedConnection := activeNormalizedConnection
+	inactiveNormalizedConnection.CloseTimestamp = "Not nill time"
+
+	inactiveUnnormalizedConnection := activeUnnormalizedConnection
+	inactiveUnnormalizedConnection.CloseTimestamp = "Not nill time"
+
 	s.StartCollector(false, &collectorOptions)
 	runtimeConfigDir := "/etc/stackrox"
 	runtimeConfigFile := filepath.Join(runtimeConfigDir, "/runtime_config.yaml")
@@ -72,14 +112,20 @@ func (s *RuntimeConfigFileTestSuite) SetupSuite() {
 
 	runtimeConfigSuccess := introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
 	s.Require().True(runtimeConfigSuccess)
+	expectedConnections := []types.NetworkInfo{activeNormalizedConnection}
+	s.Sensor().ExpectConnections(s.T(), clientContainer, 5*time.Second, expectedConnections...)
 
 	s.setExternalIpsEnable(runtimeConfigFile, true)
 	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsTrue)
 	s.Require().True(runtimeConfigSuccess)
+	expectedConnections = append(expectedConnections, activeUnnormalizedConnection, inactiveNormalizedConnection)
+	s.Sensor().ExpectConnections(s.T(), clientContainer, 5*time.Second, expectedConnections...)
 
 	s.setExternalIpsEnable(runtimeConfigFile, false)
 	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
 	s.Require().True(runtimeConfigSuccess)
+	expectedConnections = append(expectedConnections, activeNormalizedConnection, inactiveNormalizedConnection)
+	//s.Sensor().ExpectConnections(s.T(), clientContainer, 5*time.Second, expectedConnections...)
 
 	s.deleteFile(runtimeConfigFile)
 	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
@@ -105,6 +151,7 @@ func (s *RuntimeConfigFileTestSuite) SetupSuite() {
 
 func (s *RuntimeConfigFileTestSuite) TearDownSuite() {
 	s.StopCollector()
+	s.cleanupContainers("external-connection")
 	s.WritePerfResults()
 }
 
