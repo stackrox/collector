@@ -1,12 +1,14 @@
 #ifndef _COLLECTOR_CONFIG_H_
 #define _COLLECTOR_CONFIG_H_
 
+#include <filesystem>
 #include <optional>
 #include <ostream>
 #include <shared_mutex>
 #include <vector>
 
 #include <json/json.h>
+#include <sys/inotify.h>
 #include <yaml-cpp/yaml.h>
 
 #include <grpcpp/channel.h>
@@ -15,6 +17,7 @@
 
 #include "CollectionMethod.h"
 #include "HostConfig.h"
+#include "Inotify.h"
 #include "NetworkConnection.h"
 #include "StoppableThread.h"
 #include "TlsConfig.h"
@@ -204,6 +207,7 @@ class CollectorConfig {
 
   std::optional<TlsConfig> tls_config_;
 
+  std::filesystem::path config_file_;
   std::optional<sensor::CollectorConfig> runtime_config_;
   StoppableThread thread_;
   mutable std::shared_mutex mutex_{};
@@ -212,10 +216,10 @@ class CollectorConfig {
   void HandleConnectionStatsEnvVars();
   void HandleSinspEnvVars();
   void YamlConfigToConfig(YAML::Node& yamlConfig);
-  bool HandleConfig(const std::filesystem::path& filePath);
-  void WaitForFileToExist(const std::filesystem::path& filePath);
-  int WaitForInotifyAddWatch(int fd, const std::filesystem::path& filePath);
-  void WatchConfigFile(const std::filesystem::path& filePath);
+  bool HandleConfig();
+  void WatchConfigFile();
+  bool HandleConfigDirectoryEvent(Inotify& inotify, const struct inotify_event* event);
+  void HandleConfigFileEvent(Inotify& inotify, const struct inotify_event* event);
 
   // Protected, used for testing purposes
   void SetSinspBufferSize(unsigned int buffer_size);
