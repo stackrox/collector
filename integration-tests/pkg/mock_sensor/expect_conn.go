@@ -33,7 +33,7 @@ loop:
 		case <-timer:
 			// we know they don't match at this point, but by using
 			// ElementsMatch we get much better logging about the differences
-			return assert.ElementsMatch(t, expected, s.Connections(containerID), "timed out waiting for networks")
+			return assert.ElementsMatch(t, expected, s.Connections(containerID), "timed out waiting for network connections")
 		case network := <-s.LiveConnections():
 			if network.GetContainerId() != containerID {
 				continue loop
@@ -72,9 +72,50 @@ loop:
 			if conn.GetContainerId() != containerID {
 				continue loop
 			}
-
 			if len(s.Connections(containerID)) == n {
 				return s.Connections(containerID)
+			}
+		}
+	}
+}
+
+func (s *MockSensor) checkIfConnectionsMatchExpected(t *testing.T, connections []types.NetworkInfo, expected []types.NetworkInfo) bool {
+	if len(connections) > len(expected) {
+		return assert.ElementsMatch(t, expected, connections, "networking connections do not match")
+	}
+
+	if len(connections) == len(expected) {
+		types.SortConnections(connections)
+		for i, _ := range expected {
+			if !expected[i].Equal(connections[i]) {
+				return assert.ElementsMatch(t, expected, connections, "networking connections do not match")
+			}
+		}
+		return true
+	}
+	return false
+}
+
+func (s *MockSensor) ExpectExactConnections(t *testing.T, containerID string, timeout time.Duration, expected ...types.NetworkInfo) bool {
+	types.SortConnections(expected)
+	timer := time.NewTimer(timeout)
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-timer.C:
+			connections := s.Connections(containerID)
+			types.SortConnections(connections)
+			return s.checkIfConnectionsMatchExpected(t, connections, expected)
+		case <-ticker.C:
+			connections := s.Connections(containerID)
+			types.SortConnections(connections)
+			success := s.checkIfConnectionsMatchExpected(t, connections, expected)
+			if success {
+				return true
+			} else if len(connections) >= len(expected) {
+				return assert.ElementsMatch(t, expected, connections, "networking connections do not match")
 			}
 		}
 	}
