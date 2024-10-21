@@ -3,10 +3,13 @@
 
 #include <memory>
 
+#include <gtest/gtest_prod.h>
+
 #include "api/v1/signal.pb.h"
 #include "internalapi/sensor/signal_iservice.pb.h"
 #include "storage/process_indicator.pb.h"
 
+#include "CollectorConfig.h"
 #include "CollectorStats.h"
 #include "ContainerMetadata.h"
 #include "EventNames.h"
@@ -25,7 +28,7 @@ namespace collector {
 
 class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
  public:
-  ProcessSignalFormatter(sinsp* inspector);
+  ProcessSignalFormatter(sinsp* inspector, const CollectorConfig& config);
   ~ProcessSignalFormatter();
 
   using Signal = v1::Signal;
@@ -38,8 +41,11 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
   void GetProcessLineage(sinsp_threadinfo* tinfo, std::vector<LineageInfo>& lineage);
 
  private:
-  Signal* CreateSignal(sinsp_evt* event);
+  FRIEND_TEST(ProcessSignalFormatterTest, NoProcessArguments);
+  FRIEND_TEST(ProcessSignalFormatterTest, ProcessArguments);
+
   ProcessSignal* CreateProcessSignal(sinsp_evt* event);
+  Signal* CreateSignal(sinsp_evt* event);
   bool ValidateProcessDetails(const sinsp_threadinfo* tinfo);
   bool ValidateProcessDetails(sinsp_evt* event);
   std::string ProcessDetails(sinsp_evt* event);
@@ -52,6 +58,8 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
   const EventNames& event_names_;
   std::unique_ptr<system_inspector::EventExtractor> event_extractor_;
   ContainerMetadata container_metadata_;
+
+  const CollectorConfig& config_;
 };
 
 }  // namespace collector
