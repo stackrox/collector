@@ -130,6 +130,31 @@ func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConf
 		return "", errors.Wrapf(err, "start %s", startConfig.Name)
 	}
 
+	RetryWithTimeout(func() (output string, err error) {
+		inspect, err := d.client.ContainerExecInspect(ctx, resp.ID)
+
+		if err != nil {
+			// The client doesn't expose any specific error type in this
+			// case, but "no exec session" is a general error we will see
+			// when a container is not started yet.
+			prefix := "Error response from daemon: no exec session with ID"
+			if strings.HasPrefix(fmt.Sprint(err), prefix) {
+				return NoOutput, err
+			}
+
+			// If it's something outstanding, log it
+			log.Warn("Failed to inspect %s: %+v", startConfig.Name, err)
+			return NoOutput, err
+		}
+
+		if inspect.Running == true {
+			return NoOutput, nil
+		} else {
+			return NoOutput, fmt.Errorf("Container %s is not running",
+				startConfig.Name)
+		}
+	}, fmt.Errorf("Container %s didn't start in time", startConfig.Name))
+
 	log.Info("start %s with %s (%s)\n",
 		startConfig.Name, startConfig.Image, common.ContainerShortID(resp.ID))
 	return resp.ID, nil
