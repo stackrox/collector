@@ -113,40 +113,55 @@ func (s *RuntimeConfigFileTestSuite) SetupSuite() {
 	runtimeConfigSuccess := introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
 	s.Require().True(runtimeConfigSuccess)
 	expectedConnections := []types.NetworkInfo{activeNormalizedConnection}
-	s.Sensor().ExpectConnections(s.T(), clientContainer, 5*time.Second, expectedConnections...)
+	connectionSuccess := s.Sensor().ExpectExactConnections(s.T(), clientContainer, 10*time.Second, expectedConnections...)
+	s.Require().True(connectionSuccess)
 
 	s.setExternalIpsEnable(runtimeConfigFile, true)
 	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsTrue)
 	s.Require().True(runtimeConfigSuccess)
 	expectedConnections = append(expectedConnections, activeUnnormalizedConnection, inactiveNormalizedConnection)
-	s.Sensor().ExpectConnections(s.T(), clientContainer, 5*time.Second, expectedConnections...)
+	connectionSuccess = s.Sensor().ExpectExactConnections(s.T(), clientContainer, 10*time.Second, expectedConnections...)
+	s.Require().True(connectionSuccess)
 
 	s.setExternalIpsEnable(runtimeConfigFile, false)
 	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
 	s.Require().True(runtimeConfigSuccess)
-	expectedConnections = append(expectedConnections, activeNormalizedConnection, inactiveNormalizedConnection)
-	//s.Sensor().ExpectConnections(s.T(), clientContainer, 5*time.Second, expectedConnections...)
+	expectedConnections = append(expectedConnections, activeNormalizedConnection, inactiveUnnormalizedConnection)
+	connectionSuccess = s.Sensor().ExpectExactConnections(s.T(), clientContainer, 10*time.Second, expectedConnections...)
+	s.Require().True(connectionSuccess)
 
 	s.deleteFile(runtimeConfigFile)
 	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
 	s.Require().True(runtimeConfigSuccess)
+	connectionSuccess = s.Sensor().ExpectExactConnections(s.T(), clientContainer, 10*time.Second, expectedConnections...)
+	s.Require().True(connectionSuccess)
 
 	s.setExternalIpsEnable(runtimeConfigFile, true)
 	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsTrue)
 	s.Require().True(runtimeConfigSuccess)
+	expectedConnections = append(expectedConnections, activeUnnormalizedConnection, inactiveNormalizedConnection)
+	connectionSuccess = s.Sensor().ExpectExactConnections(s.T(), clientContainer, 10*time.Second, expectedConnections...)
+	s.Require().True(connectionSuccess)
 
 	s.deleteFile(runtimeConfigFile)
 	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 60*time.Second, externalIpsFalse)
 	s.Require().True(runtimeConfigSuccess)
+	expectedConnections = append(expectedConnections, activeNormalizedConnection, inactiveUnnormalizedConnection)
+	connectionSuccess = s.Sensor().ExpectExactConnections(s.T(), clientContainer, 10*time.Second, expectedConnections...)
+	s.Require().True(connectionSuccess)
 
 	s.setExternalIpsEnable(runtimeConfigFile, false)
 	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
 	s.Require().True(runtimeConfigSuccess)
+	connectionSuccess = s.Sensor().ExpectExactConnections(s.T(), clientContainer, 10*time.Second, expectedConnections...)
+	s.Require().True(connectionSuccess)
 
 	invalidConfig := "asdf"
 	s.setRuntimeConfig(runtimeConfigFile, invalidConfig)
 	runtimeConfigSuccess = introspection_endpoints.ExpectRuntimeConfig(s.T(), 30*time.Second, externalIpsFalse)
 	s.Require().True(runtimeConfigSuccess)
+	connectionSuccess = s.Sensor().ExpectExactConnections(s.T(), clientContainer, 10*time.Second, expectedConnections...)
+	s.Require().True(connectionSuccess)
 }
 
 func (s *RuntimeConfigFileTestSuite) TearDownSuite() {

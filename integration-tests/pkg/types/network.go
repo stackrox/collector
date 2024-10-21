@@ -1,5 +1,9 @@
 package types
 
+import (
+	"sort"
+)
+
 const (
 	NilTimestamp = "<nil>"
 )
@@ -23,4 +27,32 @@ func (n *NetworkInfo) Equal(other NetworkInfo) bool {
 		n.Role == other.Role &&
 		n.SocketFamily == other.SocketFamily &&
 		n.IsActive() == other.IsActive()
+}
+
+func (n *NetworkInfo) Less(other NetworkInfo) bool {
+	if n.LocalAddress != other.LocalAddress {
+		return n.LocalAddress < other.LocalAddress
+	}
+
+	if n.RemoteAddress != other.RemoteAddress {
+		return n.RemoteAddress < other.RemoteAddress
+	}
+
+	if n.Role != other.Role {
+		return n.Role < other.Role
+	}
+
+	if n.SocketFamily != other.SocketFamily {
+		return n.SocketFamily < other.SocketFamily
+	}
+
+	if n.IsActive() != other.IsActive() {
+		return n.IsActive()
+	}
+
+	return false
+}
+
+func SortConnections(connections []NetworkInfo) {
+	sort.Slice(connections, func(i, j int) bool { return connections[i].Less(connections[j]) })
 }
