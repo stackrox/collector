@@ -130,6 +130,28 @@ func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConf
 		return "", errors.Wrapf(err, "start %s", startConfig.Name)
 	}
 
+	tickSeconds := time.Second
+	timeout := 30 * time.Second
+
+	tick := time.Tick(tickSeconds)
+	timer := time.After(timeout)
+
+	for {
+		select {
+		case <-tick:
+			inspect, err := d.client.ContainerExecInspect(ctx, resp.ID)
+
+			if inspect.Running == true {
+				break
+			}
+
+			log.Info("Wait for container %s to start, %w", startConfig.Name, err)
+		case <-timer:
+			return "", errors.Wrapf(err, "Container %s didn't start in time",
+				startConfig.Name)
+		}
+	}
+
 	log.Info("start %s with %s (%s)\n",
 		startConfig.Name, startConfig.Image, common.ContainerShortID(resp.ID))
 	return resp.ID, nil
