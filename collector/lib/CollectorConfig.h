@@ -8,7 +8,6 @@
 #include <vector>
 
 #include <json/json.h>
-#include <sys/inotify.h>
 #include <yaml-cpp/yaml.h>
 
 #include <grpcpp/channel.h>
@@ -17,9 +16,7 @@
 
 #include "CollectionMethod.h"
 #include "HostConfig.h"
-#include "Inotify.h"
 #include "NetworkConnection.h"
-#include "StoppableThread.h"
 #include "TlsConfig.h"
 #include "json/value.h"
 #include "optionparser.h"
@@ -100,7 +97,7 @@ class CollectorConfig {
   // of a runtime configuration, and defer to that value
   // otherwise, we rely on the feature flag (env var)
   bool EnableExternalIPs() const {
-    std::shared_lock<std::shared_mutex> lock(mutex_);
+    auto lock = ReadLock();
     if (runtime_config_.has_value()) {
       return runtime_config_.value()
           .networking()
@@ -111,11 +108,17 @@ class CollectorConfig {
   }
 
   std::string GetRuntimeConfigStr() {
+    auto lock = ReadLock();
     if (runtime_config_.has_value()) {
       const auto& cfg = runtime_config_.value();
       return cfg.DebugString();
     }
     return "{}";
+  }
+
+  void ResetRuntimeConfig() {
+    auto lock = WriteLock();
+    runtime_config_.reset();
   }
 
   bool EnableConnectionStats() const { return enable_connection_stats_; }
@@ -133,18 +136,19 @@ class CollectorConfig {
   unsigned int GetSinspBufferSize() const;
   unsigned int GetSinspTotalBufferSize() const { return sinsp_total_buffer_size_; }
   unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
-  void Start();
-  void Stop();
   bool DisableProcessArguments() const { return disable_process_arguments_; }
 
   static std::pair<option::ArgStatus, std::string> CheckConfiguration(const char* config, Json::Value* root);
 
   void SetRuntimeConfig(sensor::CollectorConfig&& runtime_config) {
+    auto lock = WriteLock();
     runtime_config_ = runtime_config;
   }
 
-  void SetRuntimeConfig(sensor::CollectorConfig runtime_config) {
-    runtime_config_ = std::move(runtime_config);
+  void SetRuntimeConfig(const sensor::CollectorConfig& runtime_config) {
+    // Create a copy and move it over
+    auto rt = runtime_config;
+    SetRuntimeConfig(std::move(rt));
   }
 
   const std::optional<sensor::CollectorConfig>& GetRuntimeConfig() const {
@@ -152,6 +156,14 @@ class CollectorConfig {
   }
 
   std::shared_ptr<grpc::Channel> grpc_channel;
+
+  std::unique_lock<std::shared_mutex> WriteLock() const {
+    return std::unique_lock(mutex_);
+  }
+
+  std::shared_lock<std::shared_mutex> ReadLock() const {
+    return std::shared_lock(mutex_);
+  }
 
  protected:
   int scrape_interval_;
@@ -207,19 +219,12 @@ class CollectorConfig {
 
   std::optional<TlsConfig> tls_config_;
 
-  std::filesystem::path config_file_;
   std::optional<sensor::CollectorConfig> runtime_config_;
-  StoppableThread thread_;
   mutable std::shared_mutex mutex_{};
 
   void HandleAfterglowEnvVars();
   void HandleConnectionStatsEnvVars();
   void HandleSinspEnvVars();
-  void YamlConfigToConfig(YAML::Node& yamlConfig);
-  bool HandleConfig();
-  void WatchConfigFile();
-  bool HandleConfigDirectoryEvent(Inotify& inotify, const struct inotify_event* event);
-  void HandleConfigFileEvent(Inotify& inotify, const struct inotify_event* event);
 
   // Protected, used for testing purposes
   void SetSinspBufferSize(unsigned int buffer_size);

@@ -15,7 +15,6 @@
 #include "GRPC.h"
 #include "HostHeuristics.h"
 #include "HostInfo.h"
-#include "Inotify.h"
 #include "Logging.h"
 #include "TlsConfig.h"
 #include "Utility.h"
@@ -82,8 +81,6 @@ PathEnvVar tls_ca_path("ROX_COLLECTOR_TLS_CA");
 PathEnvVar tls_client_cert_path("ROX_COLLECTOR_TLS_CLIENT_CERT");
 PathEnvVar tls_client_key_path("ROX_COLLECTOR_TLS_CLIENT_KEY");
 
-PathEnvVar config_file("ROX_COLLECTOR_CONFIG_PATH", "/etc/stackrox/runtime_config.yaml");
-
 BoolEnvVar disable_process_arguments("ROX_COLLECTOR_NO_PROCESS_ARGUMENTS", false);
 }  // namespace
 
@@ -116,7 +113,6 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   enable_introspection_ = enable_introspection.value();
   track_send_recv_ = track_send_recv.value();
   disable_process_arguments_ = disable_process_arguments.value();
-  config_file_ = config_file.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.emplace_back(syscall);
@@ -401,198 +397,6 @@ void CollectorConfig::HandleSinspEnvVars() {
       CLOG(ERROR) << "Invalid thread cache size value: '" << envvar << "'";
     }
   }
-}
-
-void CollectorConfig::YamlConfigToConfig(YAML::Node& yamlConfig) {
-  // Don't read the file during a scrape
-  std::unique_lock<std::shared_mutex> lock(mutex_);
-
-  if (yamlConfig.IsNull() || !yamlConfig.IsDefined()) {
-    throw std::runtime_error("Unable to read config from config file");
-  }
-  YAML::Node networking = yamlConfig["networking"];
-  if (!networking) {
-    CLOG(INFO) << "No networking in config file";
-    return;
-  }
-
-  bool enableExternalIps = false;
-  YAML::Node externalIpsNode = networking["externalIps"];
-  if (!externalIpsNode) {
-    CLOG(INFO) << "No external IPs in config file";
-    return;
-  }
-  enableExternalIps = externalIpsNode["enable"].as<bool>(false);
-
-  sensor::CollectorConfig runtime_config;
-  auto* networkingConfig = runtime_config.mutable_networking();
-  auto* externalIpsConfig = networkingConfig->mutable_external_ips();
-  externalIpsConfig->set_enable(enableExternalIps);
-
-  SetRuntimeConfig(runtime_config);
-  CLOG(INFO) << "Runtime configuration:\n"
-             << GetRuntimeConfigStr();
-
-  return;
-}
-
-bool CollectorConfig::HandleConfig() {
-  if (!std::filesystem::exists(config_file_)) {
-    CLOG(DEBUG) << "No configuration file found. " << config_file_;
-    return true;
-  }
-
-  try {
-    YAML::Node yamlConfig = YAML::LoadFile(config_file_);
-    YamlConfigToConfig(yamlConfig);
-  } catch (const YAML::BadFile& e) {
-    CLOG(ERROR) << "Failed to open the configuration file: " << config_file_ << ". Error: " << e.what();
-    return false;
-  } catch (const YAML::ParserException& e) {
-    CLOG(ERROR) << "Failed to parse the configuration file: " << config_file_ << ". Error: " << e.what();
-    return false;
-  } catch (const YAML::Exception& e) {
-    CLOG(ERROR) << "An error occurred while loading the configuration file: " << config_file_ << ". Error: " << e.what();
-    return false;
-  } catch (const std::exception& e) {
-    CLOG(ERROR) << "An unexpected error occurred while trying to read: " << config_file_ << e.what();
-    return false;
-  }
-
-  return true;
-}
-
-void CollectorConfig::WatchConfigFile() {
-  Inotify inotify;
-  if (!inotify.IsValid()) {
-    CLOG(ERROR) << "Runtime configuration will not be used.";
-    return;
-  }
-
-  int parent_wd = inotify.AddDirectoryWatcher(config_file_.parent_path());
-  if (parent_wd < 0) {
-    CLOG(ERROR) << "Runtime configuration will not be used.";
-    return;
-  }
-
-  if (std::filesystem::exists(config_file_)) {
-    if (!HandleConfig()) {
-      CLOG(FATAL) << "Unable to parse configuration file: " << config_file_;
-    }
-
-    int wd = inotify.AddFileWatcher(config_file_);
-    if (wd < 0) {
-      CLOG(WARNING) << "Failed to add inotify watch to configuration file: (" << errno << ") " << StrError();
-    }
-  }
-
-  while (!thread_.should_stop()) {
-    InotifyResult res = inotify.GetNext();
-
-    switch (res.index()) {
-      case INOTIFY_OK: {
-        const struct inotify_event* event = std::get<INOTIFY_OK>(res);
-        if (event->wd == parent_wd) {
-          if (!HandleConfigDirectoryEvent(inotify, event)) {
-            return;
-          }
-        } else {
-          HandleConfigFileEvent(inotify, event);
-        }
-      } break;
-      case INOTIFY_ERROR:
-        CLOG_THROTTLED(WARNING, std::chrono::seconds(30)) << std::get<InotifyError>(res).what();
-        break;
-      case INOTIFY_TIMEOUT:
-        // Nothing to do
-        break;
-    }
-  }
-}
-
-bool CollectorConfig::HandleConfigDirectoryEvent(Inotify& inotify, const struct inotify_event* event) {
-  std::string_view event_file(static_cast<const char*>(event->name));
-  CLOG(INFO) << "Got directory event for " << config_file_.parent_path() / event->name << " - mask: [ " << Inotify::MaskToString(event->mask) << " ]";
-
-  if ((event->mask & (IN_MOVE_SELF | IN_DELETE_SELF)) != 0) {
-    CLOG(ERROR) << "Configuration directory was removed or renamed. Stopping runtime configuration";
-    return false;
-  }
-
-  if (event_file == config_file_.filename()) {
-    if ((event->mask & IN_CREATE) != 0) {
-      inotify.AddFileWatcher(config_file_);
-      HandleConfig();
-    } else if ((event->mask & IN_DELETE) != 0) {
-      inotify.RemoveWatcher(config_file_);
-    } else if ((event->mask & IN_MOVED_TO) != 0) {
-      inotify.RemoveWatcher(event->wd);
-      if (std::filesystem::exists(config_file_)) {
-        inotify.AddFileWatcher(config_file_);
-        HandleConfig();
-      }
-    }
-    return true;
-  }
-
-  // k8s handling of configmap updates
-  //
-  // k8s does something a bit complicated involving symlinks,
-  // basically:
-  // - config.yml -> ..data/config.yml
-  // - ..data -> ..data_timestamp
-  // - ..data_<timestamp>/config.yml
-  //
-  // When updating a configmap, a new ..data_<timestamp>
-  // directory will be created with the new value for it,
-  // a ..data_tmp symlink is created and pointed to this
-  // new ..data_<timestamp> directory, then ..data_tmp is
-  // moved and overwrites ..data
-  // So the easiest way for us to detect a configmap change
-  // is to look for a moved_to event for ..data
-  if (((event->mask & IN_MOVED_TO) != 0) && event_file == "..data") {
-    if (std::filesystem::exists(config_file_)) {
-      inotify.AddFileWatcher(config_file_);
-      HandleConfig();
-    } else {
-      inotify.RemoveWatcher(config_file_);
-    }
-  }
-
-  return true;
-}
-
-void CollectorConfig::HandleConfigFileEvent(Inotify& inotify, const struct inotify_event* event) {
-  CLOG(INFO) << "Got event for " << config_file_ << " - mask: [ " << Inotify::MaskToString(event->mask) << " ]";
-  if ((event->mask & IN_MODIFY) != 0) {
-    auto watcher = inotify.FindWatcher(event->wd);
-    if (watcher == inotify.WatcherEnd()) {
-      CLOG(ERROR) << "Got event for inexisting watcher, attempting to readd it.";
-      inotify.AddFileWatcher(config_file_);
-      HandleConfig();
-      return;
-    }
-
-    HandleConfig();
-  } else if ((event->mask & IN_MOVE_SELF) != 0) {
-    inotify.RemoveWatcher(event->wd);
-    if (std::filesystem::exists(config_file_)) {
-      inotify.AddFileWatcher(config_file_);
-      HandleConfig();
-    }
-  } else if ((event->mask & IN_DELETE_SELF) != 0) {
-    inotify.RemoveWatcher(config_file_);
-  }
-}
-
-void CollectorConfig::Start() {
-  thread_.Start([this] { WatchConfigFile(); });
-  CLOG(INFO) << "Watching config file: " << config_file_;
-}
-
-void CollectorConfig::Stop() {
-  thread_.Stop();
-  CLOG(INFO) << "No longer watching config file" << config_file_;
 }
 
 bool CollectorConfig::TurnOffScrape() const {

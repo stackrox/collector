@@ -1,6 +1,7 @@
 #include "CollectorService.h"
 
 #include "CollectionMethod.h"
+#include "ConfigLoader.h"
 #include "ContainerInfoInspector.h"
 
 extern "C" {
@@ -59,7 +60,8 @@ void CollectorService::RunForever() {
   exposer.RegisterCollectable(registry);
 
   CollectorStatsExporter exporter(registry, &config_, &system_inspector_);
-  config_.Start();
+  ConfigLoader configLoader(config_);
+  configLoader.Start();
 
   std::unique_ptr<NetworkStatusNotifier> net_status_notifier;
 
@@ -137,7 +139,7 @@ void CollectorService::RunForever() {
   if (net_status_notifier) {
     net_status_notifier->Stop();
   }
-  config_.Stop();
+  configLoader.Stop();
   // Shut down these first since they access the system inspector object.
   exporter.stop();
   server.close();
