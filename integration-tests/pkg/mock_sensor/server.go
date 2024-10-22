@@ -498,9 +498,13 @@ func (m *MockSensor) translateAddress(addr *sensorAPI.NetworkAddress) string {
 			Port:    uint16(addr.GetPort()),
 		}
 	} else {
+		// If there is no address data IpNetwork should be set and represent
+		// a CIDR block or external IP address.
 		ipNetworkData := addr.GetIpNetwork()
 		if len(ipNetworkData) > 0 {
 			ipNetwork := utils.IPNetworkFromCIDRBytes(ipNetworkData)
+			// If the prefix length is 32 this is a regular IP address
+			// and not a CIDR block
 			if ipNetwork.PrefixLen() == byte(32) {
 				address := ipNetwork.IP()
 				ipPortPair = utils.NetworkPeerID{
