@@ -4,7 +4,14 @@
 
 namespace collector {
 
-int Inotify::AddWatcher(const std::filesystem::path& p, uint32_t flags) {
+std::ostream& operator<<(std::ostream& os, const Watcher& w) {
+  return os << "Watcher:"
+            << "\n  path: " << w.path
+            << "\n  wd: " << w.wd
+            << "\n  tag: " << w.tag;
+}
+
+int Inotify::AddWatcher(const std::filesystem::path& p, uint32_t flags, int tag) {
   int wd = inotify_add_watch(fd_, p.c_str(), flags);
   if (wd < 0) {
     CLOG(ERROR) << "Unable to watch " << p << ": (" << errno << ") " << StrError();
@@ -13,60 +20,59 @@ int Inotify::AddWatcher(const std::filesystem::path& p, uint32_t flags) {
 
   auto it = FindWatcher(p);
   if (it == watchers_.end()) {
-    auto t = std::filesystem::last_write_time(p);
-    watchers_.emplace_back(wd, p, t);
+    watchers_.emplace_back(wd, p, tag);
   } else {
-    RemoveWatcher(it->GetDescriptor());
-    it->SetDescriptor(wd);
+    if (it->wd != wd) {
+      inotify_rm_watch(fd_, it->wd);
+      it->wd = wd;
+    }
+    it->tag = tag;
   }
 
   return wd;
 }
 
-int Inotify::AddFileWatcher(const std::filesystem::path& p) {
-  uint32_t flags = IN_MODIFY | IN_MOVE_SELF | IN_DELETE_SELF;
-  return AddWatcher(p, flags);
+int Inotify::AddFileWatcher(const std::filesystem::path& p, int tag) {
+  uint32_t flags = IN_MODIFY | IN_MOVE_SELF | IN_DELETE_SELF | IN_DONT_FOLLOW;
+  CLOG(DEBUG) << "Adding file watcher to " << p;
+  return AddWatcher(p, flags, tag);
 }
 
-int Inotify::AddDirectoryWatcher(const std::filesystem::path& p) {
-  uint32_t flags = IN_CREATE | IN_DELETE | IN_MOVED_TO | IN_MOVE_SELF | IN_DELETE_SELF;
-  return AddWatcher(p, flags);
+int Inotify::AddDirectoryWatcher(const std::filesystem::path& p, int tag) {
+  uint32_t flags = IN_CREATE | IN_DELETE | IN_MOVE_SELF | IN_DELETE_SELF | IN_DONT_FOLLOW;
+  CLOG(DEBUG) << "Adding directory watcher to " << p;
+  return AddWatcher(p, flags, tag);
 }
 
 int Inotify::RemoveWatcher(int wd) {
-  auto it = FindWatcher(wd);
-  if (it != watchers_.end()) {
-    watchers_.erase(it, it + 1);
-    return inotify_rm_watch(fd_, wd);
-  }
-
-  return 0;
+  return RemoveWatcher(FindWatcher(wd));
 }
 
 int Inotify::RemoveWatcher(const std::filesystem::path& p) {
-  auto it = FindWatcher(p);
-  if (it != watchers_.end()) {
-    int res = inotify_rm_watch(fd_, it->GetDescriptor());
-    watchers_.erase(it, it + 1);
-    return res;
-  }
+  return RemoveWatcher(FindWatcher(p));
+}
 
-  return 0;
+int Inotify::RemoveWatcher(WatcherIterator it) {
+  int res = 0;
+  if (it != watchers_.end()) {
+    res = inotify_rm_watch(fd_, it->wd);
+    watchers_.erase(it, it + 1);
+  }
+  return res;
 }
 
 Inotify::WatcherIterator Inotify::FindWatcher(const std::filesystem::path& needle) {
   for (auto it = watchers_.begin(); it != watchers_.end(); it++) {
-    if (it->GetPath() == needle) {
+    if (it->path == needle) {
       return it;
     }
   }
-
   return watchers_.end();
 }
 
 Inotify::WatcherIterator Inotify::FindWatcher(int needle) {
   for (auto it = watchers_.begin(); it != watchers_.end(); it++) {
-    if (it->GetDescriptor() == needle) {
+    if (it->wd == needle) {
       return it;
     }
   }
@@ -102,12 +108,12 @@ InotifyResult Inotify::GetNext() {
   // Received event from inotify.
   read_data_ = read(fd_, buffer_.data(), buffer_.size());
   if (read_data_ < 0) {
-    read_data_ = 0;
-    curr_byte_ = 0;
     return InotifyError("inotify: Unable to read event: (" + std::to_string(errno) + ") " + StrError());
   }
 
-  return (const struct inotify_event*)&buffer_.at(0);
+  const auto* event = (const struct inotify_event*)&buffer_.at(0);
+  curr_byte_ = sizeof(struct inotify_event) + event->len;
+  return event;
 }
 
 std::string Inotify::MaskToString(uint32_t mask) {

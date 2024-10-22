@@ -34,10 +34,6 @@ class MockCollectorConfig : public CollectorConfig {
   void MockSetEnableExternalIPs(bool value) {
     SetEnableExternalIPs(value);
   }
-
-  void MockYamlConfigToConfig(YAML::Node& yamlConfig) {
-    YamlConfigToConfig(yamlConfig);
-  }
 };
 
 // Test that unmodified value is returned, when some dependency values are
@@ -150,84 +146,6 @@ TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
   config.SetRuntimeConfig(runtime_config);
 
   EXPECT_TRUE(config.EnableExternalIPs());
-}
-
-TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
-  std::vector<std::pair<std::string, bool>> tests = {
-      {R"(
-                  networking:
-                    externalIps:
-                      enable: true
-               )",
-       true},
-      {R"(
-                  networking:
-                    externalIps:
-                      enable: false
-               )",
-       false},
-      {R"(
-                  networking:
-                    externalIps:
-               )",
-       false},
-  };
-
-  for (const auto& [yamlStr, expected] : tests) {
-    YAML::Node yamlNode = YAML::Load(yamlStr);
-
-    MockCollectorConfig config;
-
-    config.MockYamlConfigToConfig(yamlNode);
-    auto runtime_config = config.GetRuntimeConfig();
-
-    EXPECT_TRUE(runtime_config.has_value());
-
-    bool enabled = runtime_config.value()
-                       .networking()
-                       .external_ips()
-                       .enable();
-    EXPECT_EQ(enabled, expected);
-    EXPECT_EQ(config.EnableExternalIPs(), expected);
-  }
-}
-
-TEST(CollectorConfigTest, TestYamlConfigToConfigInvalid) {
-  std::vector<std::string> tests = {
-      R"(
-                  networking:
-               )",
-      R"(
-                  networking:
-                    unknownFiled: asdf
-               )",
-      R"(
-                  unknownField: asdf
-               )"};
-
-  for (const auto& yamlStr : tests) {
-    YAML::Node yamlNode = YAML::Load(yamlStr);
-
-    MockCollectorConfig config;
-
-    config.MockYamlConfigToConfig(yamlNode);
-    auto runtime_config = config.GetRuntimeConfig();
-
-    EXPECT_FALSE(runtime_config.has_value());
-  }
-}
-
-TEST(CollectorConfigTest, TestYamlConfigToConfigEmpty) {
-  std::string yamlStr = R"()";
-  YAML::Node yamlNode = YAML::Load(yamlStr);
-
-  MockCollectorConfig config;
-
-  EXPECT_THROW({ config.MockYamlConfigToConfig(yamlNode); }, std::runtime_error);
-
-  auto runtime_config = config.GetRuntimeConfig();
-
-  EXPECT_FALSE(runtime_config.has_value());
 }
 
 }  // namespace collector

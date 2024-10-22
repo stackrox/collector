@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <ostream>
 #include <string>
 #include <unistd.h>
 #include <variant>
@@ -46,25 +47,15 @@ static_assert(std::is_same_v<const inotify_event*, std::variant_alternative_t<IN
 static_assert(std::is_same_v<InotifyError, std::variant_alternative_t<INOTIFY_ERROR, InotifyResult>>);
 static_assert(std::is_same_v<InotifyTimeout, std::variant_alternative_t<INOTIFY_TIMEOUT, InotifyResult>>);
 
-class Watcher {
- public:
-  Watcher() = delete;
-  Watcher(int wd, std::filesystem::path p, std::filesystem::file_time_type t)
-      : wd_(wd), p_(std::move(p)), time_(t) {}
+struct Watcher {
+  Watcher(int wd, std::filesystem::path path, int tag)
+      : wd(wd), path(std::move(path)), tag(tag) {}
 
-  int GetDescriptor() const { return wd_; }
-  const std::filesystem::path& GetPath() { return p_; }
-  const std::filesystem::file_time_type& GetModifiedTime() { return time_; }
-
-  void SetDescriptor(int wd) { wd_ = wd; }
-  void SetPath(const std::filesystem::path& p) { p_ = p; }
-  void SetModifiedTime(const std::filesystem::file_time_type t) { time_ = t; }
-
- private:
-  int wd_;
-  std::filesystem::path p_;
-  std::filesystem::file_time_type time_;
+  int wd;
+  std::filesystem::path path;
+  int tag;
 };
+std::ostream& operator<<(std::ostream& os, const Watcher& w);
 
 class Inotify {
  public:
@@ -80,7 +71,7 @@ class Inotify {
 
   ~Inotify() {
     for (const auto& w : watchers_) {
-      inotify_rm_watch(fd_, w.GetDescriptor());
+      inotify_rm_watch(fd_, w.wd);
     }
     close(fd_);
   }
@@ -91,14 +82,15 @@ class Inotify {
 
   using WatcherStore = std::vector<Watcher>;
   using WatcherIterator = WatcherStore::iterator;
-  int AddWatcher(const std::filesystem::path& p, uint32_t flags);
-  int AddFileWatcher(const std::filesystem::path& p);
-  int AddDirectoryWatcher(const std::filesystem::path& p);
+  int AddWatcher(const std::filesystem::path& p, uint32_t flags, int tag);
+  int AddFileWatcher(const std::filesystem::path& p, int tag = 0);
+  int AddDirectoryWatcher(const std::filesystem::path& p, int tag = 0);
   int RemoveWatcher(int wd);
   int RemoveWatcher(const std::filesystem::path& p);
+  int RemoveWatcher(WatcherIterator it);
   WatcherIterator FindWatcher(const std::filesystem::path& needle);
   WatcherIterator FindWatcher(int needle);
-  WatcherIterator WatcherEnd() { return watchers_.end(); }
+  bool WatcherNotFound(WatcherIterator w) { return w == watchers_.end(); }
   InotifyResult GetNext();
   static std::string MaskToString(uint32_t mask);
 
@@ -110,23 +102,35 @@ class Inotify {
 
   // Watchers should probably be organized in a map. However,
   // sometimes we'll want to look for these with a path, sometimes
-  // with a wd, so instead of over complicating things and assuming
-  // we will only have a couple watchers for now, we just do a
-  // vector of pairs and find by iterating. If we ever need more than
-  // just a couple, we MUST change this.
+  // with a wd, so instead of over complicating things and assuming we
+  // will only have a couple watchers for now, we just do a vector and
+  // find by iterating. If we ever need more than just a couple, we
+  // MUST change this.
   WatcherStore watchers_;
 
-  static constexpr std::array<unsigned int, 26> BIT_MASKS{
+  friend std::ostream& operator<<(std::ostream& os, const Inotify& inotify) {
+    bool first = true;
+    for (const auto& w : inotify.watchers_) {
+      if (first) {
+        first = false;
+      } else {
+        os << "\n";
+      }
+
+      os << w;
+    }
+    return os;
+  }
+
+  static constexpr std::array<unsigned int, 17> BIT_MASKS{
       IN_ACCESS,
       IN_MODIFY,
       IN_ATTRIB,
       IN_CLOSE_WRITE,
       IN_CLOSE_NOWRITE,
-      IN_CLOSE,
       IN_OPEN,
       IN_MOVED_FROM,
       IN_MOVED_TO,
-      IN_MOVE,
       IN_CREATE,
       IN_DELETE,
       IN_DELETE_SELF,
@@ -134,26 +138,19 @@ class Inotify {
       IN_UNMOUNT,
       IN_Q_OVERFLOW,
       IN_IGNORED,
-      IN_ONLYDIR,
-      IN_DONT_FOLLOW,
-      IN_EXCL_UNLINK,
-      IN_MASK_CREATE,
-      IN_MASK_ADD,
       IN_ISDIR,
       IN_ONESHOT,
   };
 
-  static constexpr std::array<const char*, 26> MASK_STR{
+  static constexpr std::array<const char*, 17> MASK_STR{
       "access",
       "modify",
       "attrib",
       "close_write",
       "close_nowrite",
-      "close",
       "open",
       "moved_from",
       "moved_to",
-      "move",
       "create",
       "delete",
       "delete_self",
@@ -161,11 +158,6 @@ class Inotify {
       "unmount",
       "q_overflow",
       "ignored",
-      "onlydir",
-      "dont_follow",
-      "excl_unlink",
-      "mask_create",
-      "mask_add",
       "isdir",
       "oneshot",
   };
