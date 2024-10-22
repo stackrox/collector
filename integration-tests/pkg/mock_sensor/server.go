@@ -489,17 +489,32 @@ func (m *MockSensor) pushEndpoint(containerID string, endpoint *sensorAPI.Networ
 // translateAddress is a helper function for converting binary representations
 // of network addresses (in the signals) to usable forms for testing
 func (m *MockSensor) translateAddress(addr *sensorAPI.NetworkAddress) string {
-	address := utils.IPFromBytes(addr.GetAddressData())
-	if (address == utils.IPAddress{}) {
+	ipPortPair := utils.NetworkPeerID{}
+	addressData := addr.GetAddressData()
+	if len(addressData) > 0 {
+		address := utils.IPFromBytes(addressData)
+		ipPortPair = utils.NetworkPeerID{
+			Address: address,
+			Port:    uint16(addr.GetPort()),
+		}
+	} else {
 		ipNetworkData := addr.GetIpNetwork()
 		if len(ipNetworkData) > 0 {
-			ipNetworkData = ipNetworkData[:len(ipNetworkData)-1]
-			address = utils.IPFromBytes(ipNetworkData)
+			ipNetwork := utils.IPNetworkFromCIDRBytes(ipNetworkData)
+			if ipNetwork.PrefixLen() == byte(32) {
+				address := ipNetwork.IP()
+				ipPortPair = utils.NetworkPeerID{
+					Address: address,
+					Port:    uint16(addr.GetPort()),
+				}
+			} else {
+				ipPortPair = utils.NetworkPeerID{
+					IPNetwork: ipNetwork,
+					Port:      uint16(addr.GetPort()),
+				}
+			}
 		}
 	}
-	ipPortPair := utils.NetworkPeerID{
-		Address: address,
-		Port:    uint16(addr.GetPort()),
-	}
+
 	return ipPortPair.String()
 }
