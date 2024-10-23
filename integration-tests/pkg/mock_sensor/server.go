@@ -496,17 +496,18 @@ func (m *MockSensor) translateAddress(addr *sensorAPI.NetworkAddress) string {
 		return peerId.String()
 	}
 
-	// If there is no address data, IpNetwork should be set and represent
-	// a CIDR block or external IP address.
+	// If there is no address data, this is either the source address or
+	// IpNetwork should be set and represent a CIDR block or external IP address.
 	ipNetworkData := addr.GetIpNetwork()
 	if len(ipNetworkData) == 0 {
 		return peerId.String()
 	}
 
-	// If the prefix length is 32 this is a regular IP address
-	// and not a CIDR block
+	// If this is IPv4 and the prefix length is 32 or this is IPv6 and the prefix length
+	// is 128 this is a regular IP address and not a CIDR block
 	ipNetwork := utils.IPNetworkFromCIDRBytes(ipNetworkData)
-	if ipNetwork.PrefixLen() == byte(32) {
+	if (len(ipNetworkData) == 5 && ipNetwork.PrefixLen() == byte(32)) ||
+		(len(ipNetworkData) == 17 && ipNetwork.PrefixLen() == byte(128)) {
 		peerId.Address = ipNetwork.IP()
 	} else {
 		peerId.IPNetwork = ipNetwork
