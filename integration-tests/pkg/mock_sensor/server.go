@@ -32,8 +32,6 @@ const (
 // us to use any comparable type as the key)
 type ProcessMap map[types.ProcessInfo]interface{}
 type LineageMap map[types.ProcessLineage]interface{}
-
-// type ConnMap map[types.NetworkInfo]interface{}
 type EndpointMap map[types.EndpointInfo]interface{}
 
 type MockSensor struct {
@@ -48,8 +46,7 @@ type MockSensor struct {
 	processLineages map[string]LineageMap
 	processMutex    sync.Mutex
 
-	connections map[string][]types.NetworkInfo
-	//connections  map[string]ConnMap
+	connections  map[string][]types.NetworkInfo
 	endpoints    map[string]EndpointMap
 	networkMutex sync.Mutex
 
@@ -68,8 +65,7 @@ func NewMockSensor(test string) *MockSensor {
 		processes:       make(map[string]ProcessMap),
 		processLineages: make(map[string]LineageMap),
 		connections:     make(map[string][]types.NetworkInfo),
-		//connections:     make(map[string]ConnMap),
-		endpoints: make(map[string]EndpointMap),
+		endpoints:       make(map[string]EndpointMap),
 	}
 }
 
@@ -158,11 +154,6 @@ func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
 	defer m.networkMutex.Unlock()
 
 	if connections, ok := m.connections[containerID]; ok {
-		//keys := make([]types.NetworkInfo, 0, len(connections))
-		//for k := range connections {
-		//	keys = append(keys, k)
-		//}
-		//return keys
 		return connections
 	}
 	return make([]types.NetworkInfo, 0)
@@ -439,12 +430,6 @@ func (m *MockSensor) pushConnection(containerID string, connection *sensorAPI.Ne
 		CloseTimestamp: connection.GetCloseTimestamp().String(),
 	}
 
-	//if connections, ok := m.connections[containerID]; ok {
-	//	connections[conn] = true
-	//} else {
-	//	connections := ConnMap{conn: true}
-	//	m.connections[containerID] = connections
-	//}
 	if _, ok := m.connections[containerID]; ok {
 		m.connections[containerID] = append(m.connections[containerID], conn)
 	} else {
