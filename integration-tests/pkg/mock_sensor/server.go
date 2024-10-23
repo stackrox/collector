@@ -32,7 +32,8 @@ const (
 // us to use any comparable type as the key)
 type ProcessMap map[types.ProcessInfo]interface{}
 type LineageMap map[types.ProcessLineage]interface{}
-type ConnMap map[types.NetworkInfo]interface{}
+
+// type ConnMap map[types.NetworkInfo]interface{}
 type EndpointMap map[types.EndpointInfo]interface{}
 
 type MockSensor struct {
@@ -47,7 +48,8 @@ type MockSensor struct {
 	processLineages map[string]LineageMap
 	processMutex    sync.Mutex
 
-	connections  map[string]ConnMap
+	connections map[string][]types.NetworkInfo
+	//connections  map[string]ConnMap
 	endpoints    map[string]EndpointMap
 	networkMutex sync.Mutex
 
@@ -65,8 +67,9 @@ func NewMockSensor(test string) *MockSensor {
 		testName:        test,
 		processes:       make(map[string]ProcessMap),
 		processLineages: make(map[string]LineageMap),
-		connections:     make(map[string]ConnMap),
-		endpoints:       make(map[string]EndpointMap),
+		connections:     make(map[string][]types.NetworkInfo),
+		//connections:     make(map[string]ConnMap),
+		endpoints: make(map[string]EndpointMap),
 	}
 }
 
@@ -155,11 +158,12 @@ func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
 	defer m.networkMutex.Unlock()
 
 	if connections, ok := m.connections[containerID]; ok {
-		keys := make([]types.NetworkInfo, 0, len(connections))
-		for k := range connections {
-			keys = append(keys, k)
-		}
-		return keys
+		//keys := make([]types.NetworkInfo, 0, len(connections))
+		//for k := range connections {
+		//	keys = append(keys, k)
+		//}
+		//return keys
+		return connections
 	}
 	return make([]types.NetworkInfo, 0)
 }
@@ -171,8 +175,11 @@ func (m *MockSensor) HasConnection(containerID string, conn types.NetworkInfo) b
 	defer m.networkMutex.Unlock()
 
 	if conns, ok := m.connections[containerID]; ok {
-		_, exists := conns[conn]
-		return exists
+		for _, connection := range conns {
+			if connection.Equal(conn) {
+				return true
+			}
+		}
 	}
 
 	return false
@@ -271,7 +278,7 @@ func (m *MockSensor) Stop() {
 
 	m.processes = make(map[string]ProcessMap)
 	m.processLineages = make(map[string]LineageMap)
-	m.connections = make(map[string]ConnMap)
+	m.connections = make(map[string][]types.NetworkInfo)
 	m.endpoints = make(map[string]EndpointMap)
 
 	m.processChannel.Stop()
@@ -432,11 +439,16 @@ func (m *MockSensor) pushConnection(containerID string, connection *sensorAPI.Ne
 		CloseTimestamp: connection.GetCloseTimestamp().String(),
 	}
 
-	if connections, ok := m.connections[containerID]; ok {
-		connections[conn] = true
+	//if connections, ok := m.connections[containerID]; ok {
+	//	connections[conn] = true
+	//} else {
+	//	connections := ConnMap{conn: true}
+	//	m.connections[containerID] = connections
+	//}
+	if _, ok := m.connections[containerID]; ok {
+		m.connections[containerID] = append(m.connections[containerID], conn)
 	} else {
-		connections := ConnMap{conn: true}
-		m.connections[containerID] = connections
+		m.connections[containerID] = []types.NetworkInfo{conn}
 	}
 }
 
@@ -489,9 +501,29 @@ func (m *MockSensor) pushEndpoint(containerID string, endpoint *sensorAPI.Networ
 // translateAddress is a helper function for converting binary representations
 // of network addresses (in the signals) to usable forms for testing
 func (m *MockSensor) translateAddress(addr *sensorAPI.NetworkAddress) string {
-	ipPortPair := utils.NetworkPeerID{
-		Address: utils.IPFromBytes(addr.GetAddressData()),
-		Port:    uint16(addr.GetPort()),
+	peerId := utils.NetworkPeerID{Port: uint16(addr.GetPort())}
+	addressData := addr.GetAddressData()
+	if len(addressData) > 0 {
+		peerId.Address = utils.IPFromBytes(addressData)
+		return peerId.String()
 	}
-	return ipPortPair.String()
+
+	// If there is no address data, this is either the source address or
+	// IpNetwork should be set and represent a CIDR block or external IP address.
+	ipNetworkData := addr.GetIpNetwork()
+	if len(ipNetworkData) == 0 {
+		return peerId.String()
+	}
+
+	ipNetwork := utils.IPNetworkFromCIDRBytes(ipNetworkData)
+	numBytes := len(ipNetworkData)
+	prefixLen := ipNetwork.PrefixLen()
+	// If this is IPv4 and the prefix length is 32 or this is IPv6 and the prefix length
+	// is 128 this is a regular IP address and not a CIDR block
+	if (numBytes == 5 && prefixLen == byte(32)) || (numBytes == 17 && prefixLen == byte(128)) {
+		peerId.Address = ipNetwork.IP()
+	} else {
+		peerId.IPNetwork = ipNetwork
+	}
+	return peerId.String()
 }
