@@ -489,33 +489,27 @@ func (m *MockSensor) pushEndpoint(containerID string, endpoint *sensorAPI.Networ
 // translateAddress is a helper function for converting binary representations
 // of network addresses (in the signals) to usable forms for testing
 func (m *MockSensor) translateAddress(addr *sensorAPI.NetworkAddress) string {
-	address := utils.IPAddress{}
-	ipNetwork := utils.IPNetwork{}
-
+	peerId := utils.NetworkPeerID{Port: uint16(addr.GetPort())}
 	addressData := addr.GetAddressData()
 	if len(addressData) > 0 {
-		address = utils.IPFromBytes(addressData)
+		peerId.Address = utils.IPFromBytes(addressData)
+		return peerId.String()
+	}
+
+	// If there is no address data, IpNetwork should be set and represent
+	// a CIDR block or external IP address.
+	ipNetworkData := addr.GetIpNetwork()
+	if len(ipNetworkData) == 0 {
+		return peerId.String()
+	}
+
+	// If the prefix length is 32 this is a regular IP address
+	// and not a CIDR block
+	ipNetwork := utils.IPNetworkFromCIDRBytes(ipNetworkData)
+	if ipNetwork.PrefixLen() == byte(32) {
+		peerId.Address = ipNetwork.IP()
 	} else {
-		// If there is no address data IpNetwork should be set and represent
-		// a CIDR block or external IP address.
-		ipNetworkData := addr.GetIpNetwork()
-		if len(ipNetworkData) > 0 {
-			ipNetwork = utils.IPNetworkFromCIDRBytes(ipNetworkData)
-			// If the prefix length is 32 this is a regular IP address
-			// and not a CIDR block
-			if ipNetwork.PrefixLen() == byte(32) {
-				address = ipNetwork.IP()
-				ipNetwork = utils.IPNetwork{}
-			}
-		}
-
+		peerId.IPNetwork = ipNetwork
 	}
-
-	ipPortPair := utils.NetworkPeerID{
-		Address:   address,
-		IPNetwork: ipNetwork,
-		Port:      uint16(addr.GetPort()),
-	}
-
-	return ipPortPair.String()
+	return peerId.String()
 }
