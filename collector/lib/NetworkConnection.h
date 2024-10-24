@@ -137,6 +137,36 @@ class Address {
     }
   }
 
+  bool IsIPv4MappedIPv6() const {
+    if (family_ != Family::IPV6) {
+      return false;
+    }
+
+    const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data_.data());
+
+    // First 80 bits, 10 bytes, should be 0 if this is IPv4-Mapped IPv6
+    for (int i = 0; i < 10; i++) {
+      if (bytes[i] != 0) {
+        return false;
+      }
+    }
+
+    // Next 2 bytes should be 0xFF if this is IPv4-Mapped IPv6
+    if (bytes[10] != 0xFF || bytes[11] != 0xFF) {
+      return false;
+    }
+
+    return true;
+  }
+
+  Address ConvertToIPv4() const {
+    // Extract the last 32 bits of the IPv6 address, which is the IPv4 address part.
+    const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data_.data());
+
+    // Last 4 bytes of the IPv6 address hold the IPv4 address
+    return Address(a, b, c, d);
+  }
+
  private:
   friend std::ostream& operator<<(std::ostream& os, const Address& addr) {
     int af = (addr.family_ == Family::IPV4) ? AF_INET : AF_INET6;
