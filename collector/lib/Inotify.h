@@ -16,6 +16,7 @@
 
 namespace collector {
 
+/// Signal a system error prevented operations with inotify.
 class InotifyError : public std::exception {
  public:
   InotifyError(const std::string& error) : msg_(error) {}
@@ -27,14 +28,17 @@ class InotifyError : public std::exception {
   std::string msg_;
 };
 
+/// Reading an inotify event was not possible in the allocated time.
 class InotifyTimeout : public InotifyError {
  public:
   InotifyTimeout(const std::string& error) : InotifyError(error) {}
   InotifyTimeout(std::string&& error) : InotifyError(error) {}
 };
 
+/// Value returned when reading an inotify event is attempted
 using InotifyResult = std::variant<const struct inotify_event*, InotifyError, InotifyTimeout>;
 
+/// Helper enum, enabling `switch(InotifyResult.index())`
 enum InotifyResultVariants {
   INOTIFY_OK = 0,
   INOTIFY_ERROR,
@@ -47,6 +51,9 @@ static_assert(std::is_same_v<const inotify_event*, std::variant_alternative_t<IN
 static_assert(std::is_same_v<InotifyError, std::variant_alternative_t<INOTIFY_ERROR, InotifyResult>>);
 static_assert(std::is_same_v<InotifyTimeout, std::variant_alternative_t<INOTIFY_TIMEOUT, InotifyResult>>);
 
+/**
+ * Helper struct for tracking watch descriptor <-> path mappings
+ */
 struct Watcher {
   Watcher(int wd, std::filesystem::path path, int tag)
       : wd(wd), path(std::move(path)), tag(tag) {}
@@ -57,6 +64,9 @@ struct Watcher {
 };
 std::ostream& operator<<(std::ostream& os, const Watcher& w);
 
+/**
+ * Abstraction over the inotify subsystem.
+ */
 class Inotify {
  public:
   Inotify() : fd_(inotify_init()) {
@@ -82,16 +92,127 @@ class Inotify {
 
   using WatcherStore = std::vector<Watcher>;
   using WatcherIterator = WatcherStore::iterator;
+
+  /**
+   * Add an inotify watcher to the specified path.
+   *
+   * @param p A path to be monitored with inotify.
+   * @param flags The inotify flags to be used. See `man inotify` for
+   *              details.
+   * @param tag An integer that can be used for easily correlating a wd
+   *            to a path.
+   * @returns A watch descriptor as described in `man inotify_add_watch`
+   */
   int AddWatcher(const std::filesystem::path& p, uint32_t flags, int tag);
+
+  /**
+   * Convenience method for adding watchers to a file.
+   *
+   * @param p A path to be monitored with inotify.
+   * @param tag An integer that can be used for easily correlating a wd to
+   *            a path.
+   * @returns A watch descriptor as described in `man inotify_add_watch`
+   */
   int AddFileWatcher(const std::filesystem::path& p, int tag = 0);
+
+  /**
+   * Convenience method for adding watchers to a directory.
+   *
+   * @param p A path to be monitored with inotify.
+   * @param tag An integer that can be used for easily correlating a wd to
+   *            a path.
+   * @returns A watch descriptor as described in `man inotify_add_watch`
+   */
   int AddDirectoryWatcher(const std::filesystem::path& p, int tag = 0);
+
+  /**
+   * Remove a watch descriptor, stopping inotify from generating more
+   * events for it.
+   *
+   * @param wd The watch descriptor to be removed.
+   * @returns 0 on success, -1 otherwise.
+   */
   int RemoveWatcher(int wd);
+
+  /**
+   * Remove a watch descriptor associated to the given path, stopping
+   * inotify from generating more events for it.
+   *
+   * @param p The monitored path inotify should stop monitoring.
+   * @returns 0 on success, -1 otherwise.
+   */
   int RemoveWatcher(const std::filesystem::path& p);
+
+  /**
+   * Remove a watch descriptor associated to the given iterator,
+   * stopping inotify from generating more events for it.
+   *
+   * Generally, you will want to use one of the RemoveWatcher overloads
+   * that operate on a path or watch descriptor.
+   *
+   * @param it An iterator to the Watcher to be removed.
+   * @returns 0 on success, -1 otherwise.
+   */
   int RemoveWatcher(WatcherIterator it);
+
+  /**
+   * Look for a Watcher for the given path in the store.
+   *
+   * In order to check if the returned iterator is valid, callers must
+   * use the WatcherNotFound method with the value returned from this
+   * method.
+   *
+   * @param needle The path we want the Watcher for.
+   * @returns An iterator to the Watcher.
+   */
   WatcherIterator FindWatcher(const std::filesystem::path& needle);
+
+  /**
+   * Look for a Watcher for the given watch descriptor.
+   *
+   * Useful for searching for a Watcher from the inotify_event.wd
+   * field when processing an event.
+   *
+   * In order to check if the returned iterator is valid, callers must
+   * use the WatcherNotFound method with the value returned from this
+   * method.
+   *
+   * @param needle The path we want the Watcher for.
+   * @returns An iterator to the Watcher.
+   */
   WatcherIterator FindWatcher(int needle);
+
+  /**
+   * Validate if the given iterator is in the Watcher store.
+   *
+   * @param w An iterator, usually gotten by calling FindWatcher.
+   * @returns true if the given iterator is not in the store.
+   */
   bool WatcherNotFound(WatcherIterator w) { return w == watchers_.end(); }
+
+  /**
+   * Read events from the inotify subsystem.
+   *
+   * The events are read in bulk, but returned one at a time for the
+   * caller to process. Successive calls will either return another
+   * event that was read on a previous call or attempt to read more
+   * events. If no event is read after some time, InotifyTimeout will
+   * be returned instead, allowing the caller to do some additional
+   * processing before calling GetNext again.
+   *
+   * @returns One of three variants:
+   *          - inotify_event* when an event was successfully read.
+   *          - InotifyError when a system error prevented reading events.
+   *          - InotifyTimeout if everything is working as expected but
+   *            no events were read after some time.
+   */
   InotifyResult GetNext();
+
+  /**
+   * Translate an inotify_event->mask to a printable string.
+   *
+   * @returns A string in the format '<event_type> | <other_type>...'
+   */
   static std::string MaskToString(uint32_t mask);
 
  private:
@@ -122,6 +243,7 @@ class Inotify {
     return os;
   }
 
+  // Taken from <sys/inotify.h>
   static constexpr std::array<unsigned int, 17> BIT_MASKS{
       IN_ACCESS,
       IN_MODIFY,
