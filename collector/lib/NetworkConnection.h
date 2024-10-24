@@ -164,7 +164,7 @@ class Address {
     const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data_.data());
 
     // Last 4 bytes of the IPv6 address hold the IPv4 address
-    return Address(a, b, c, d);
+    return Address(bytes[12], bytes[13], bytes[14], bytes[15]);
   }
 
  private:
@@ -290,6 +290,16 @@ class IPNet {
       return bits_ > that.bits_;
     }
     return address_ > that.address_;
+  }
+
+  bool IsIPv4MappedIPv6() const {
+    return address_.IsIPv4MappedIPv6();
+  }
+
+  IPNet ConvertToIPv4() const {
+    Address ipv4Address = address_.ConvertToIPv4();
+    size_t bits = bits_ - 96;  // 96 = 128 - 32
+    return IPNet(ipv4Address, bits, is_addr_);
   }
 
  private:
