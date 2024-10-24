@@ -26,6 +26,7 @@ env:
   ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
   TRACE_SINSP_EVENTS: ${{ github.event_name == 'pull_request' }}
   ADDRESS_SANITIZER: ${{ contains(github.event.pull_request.labels.*.name, 'address-sanitizer') }}
+  USE_CCACHE: ${{ !contains(github.event.pull_request.labels.*.name, 'no-ccache') }}
 
 jobs:
   build-collector-image:
@@ -44,6 +45,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+
+      - name: Set up ccache
+        if: env.USE_CCACHE
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ matrix.arch }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -67,6 +74,7 @@ jobs:
           collector_tag: ${{ inputs.collector-tag }}
           debug_mode: ${{ github.event_name == 'pull_request' }}
           driver_version: ${DRIVER_VERSION}
+          use_ccache: ${{ env.USE_CCACHE }}
           EOF
 
       - name: Build images
@@ -123,6 +131,15 @@ jobs:
           vm-type: rhel-${{ matrix.arch }}
           job-tag: builder
 
+      - name: Set up ccache
+        if: env.USE_CCACHE
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.ccache
+          key: ccache-${{ matrix.arch }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ matrix.arch }}-
+
       - name: Create Build VMs
         run: |
           make -C "${{ github.workspace }}/ansible" create-build-vms
@@ -143,6 +160,7 @@ jobs:
           collector_image: ${{ inputs.collector-image }}
           collector_tag: ${{ inputs.collector-tag }}
           debug_mode: ${{ github.event_name == 'pull_request' }}
+          use_ccache: ${{ env.USE_CCACHE }}
           EOF
 
       - name: Build ${{ matrix.arch }} image
@@ -152,6 +170,7 @@ jobs:
             -i ansible/ci \
             -e arch='${{ matrix.arch }}' \
             -e build_hosts='job_id_${{ env.JOB_ID }}' \
+            -e github_workspace='${{ github.workspace }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-collector.yml
 
