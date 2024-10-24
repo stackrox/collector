@@ -10,6 +10,11 @@ import (
 const (
 	max_retries     = 5
 	retry_wait_time = 3 * time.Second
+
+	tickSeconds = time.Second
+	timeout     = 30 * time.Second
+
+	NoOutput = ""
 )
 
 type retryable = func() (string, error)
@@ -33,4 +38,26 @@ func RetryWithErrorCheck(ec errorchecker, f retryable) (output string, err error
 	}
 
 	return output, err
+}
+
+// Retry based on a ticker with timeout.
+//
+// Note that the caller is responsible for reporting outstanding errors in
+// ticker function
+func RetryWithTimeout(f retryable, timeoutMsg error) (
+	output string, err error) {
+	tick := time.Tick(tickSeconds)
+	timer := time.After(timeout)
+
+	for {
+		select {
+		case <-tick:
+			output, err := f()
+			if err == nil {
+				return output, nil
+			}
+		case <-timer:
+			return NoOutput, timeoutMsg
+		}
+	}
 }
