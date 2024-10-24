@@ -504,11 +504,11 @@ func (m *MockSensor) translateAddress(addr *sensorAPI.NetworkAddress) string {
 	}
 
 	ipNetwork := utils.IPNetworkFromCIDRBytes(ipNetworkData)
-	numBytes := len(ipNetworkData)
 	prefixLen := ipNetwork.PrefixLen()
 	// If this is IPv4 and the prefix length is 32 or this is IPv6 and the prefix length
 	// is 128 this is a regular IP address and not a CIDR block
-	if (numBytes == 5 && prefixLen == byte(32)) || (numBytes == 17 && prefixLen == byte(128)) {
+	if (ipNetwork.Family() == utils.IPv4 && prefixLen == byte(32)) ||
+		(ipNetwork.Family() == utils.IPv6 && prefixLen == byte(128)) {
 		peerId.Address = ipNetwork.IP()
 	} else {
 		peerId.IPNetwork = ipNetwork
