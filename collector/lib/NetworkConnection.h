@@ -339,6 +339,15 @@ class Endpoint {
     return port_ == 0 && network_.IsNull();
   }
 
+  bool IsIPv4MappedIPv6() const {
+    return network_.IsIPv4MappedIPv6();
+  }
+
+  Endpoint ConvertToIPv4() const {
+    IPNet network = network_.ConvertToIPv4();
+    return Endpoint(network, port_);
+  }
+
  private:
   friend std::ostream& operator<<(std::ostream& os, const Endpoint& ep) {
     // This is an individual IP address.
