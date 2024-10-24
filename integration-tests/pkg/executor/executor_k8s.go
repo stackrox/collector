@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/log"
@@ -117,6 +118,31 @@ func (e *K8sExecutor) RemovePod(podFilter ContainerFilter) (string, error) {
 	return "", err
 }
 
+func (e *K8sExecutor) WaitPodRemoved(podFilter ContainerFilter) error {
+	ctx := context.Background()
+	opts := metaV1.ListOptions{LabelSelector: "app=" + podFilter.Name}
+	w, err := e.clientset.CoreV1().Pods(podFilter.Namespace).Watch(ctx, opts)
+	if err != nil {
+		return err
+	}
+	defer w.Stop()
+
+	timer := time.After(1 * time.Minute)
+
+	for {
+		select {
+		case event := <-w.ResultChan():
+			if event.Type == watch.Deleted {
+				return nil
+			}
+		case <-ctx.Done():
+			return nil
+		case <-timer:
+			return fmt.Errorf("Timed out waiting for pod to be deleted: %+v", podFilter)
+		}
+	}
+}
+
 func (e *K8sExecutor) CreateNamespace(ns string) (*coreV1.Namespace, error) {
 	meta := metaV1.ObjectMeta{Name: ns}
 	return e.clientset.CoreV1().Namespaces().Create(context.Background(), &coreV1.Namespace{ObjectMeta: meta}, metaV1.CreateOptions{})
@@ -198,4 +224,16 @@ func (e *K8sExecutor) CreateNamespaceEventWatcher(testName, ns string) (watch.In
 	}(watcher, logFile)
 
 	return watcher, nil
+}
+
+func (e *K8sExecutor) CreateConfigMap(ns string, configMap *coreV1.ConfigMap) (*coreV1.ConfigMap, error) {
+	return e.ClientSet().CoreV1().ConfigMaps(ns).Create(context.Background(), configMap, metaV1.CreateOptions{})
+}
+
+func (e *K8sExecutor) UpdateConfigMap(ns string, configMap *coreV1.ConfigMap) (*coreV1.ConfigMap, error) {
+	return e.ClientSet().CoreV1().ConfigMaps(ns).Update(context.Background(), configMap, metaV1.UpdateOptions{})
+}
+
+func (e *K8sExecutor) RemoveConfigMap(ns, name string) error {
+	return e.ClientSet().CoreV1().ConfigMaps(ns).Delete(context.Background(), name, metaV1.DeleteOptions{})
 }
