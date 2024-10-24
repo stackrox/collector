@@ -407,6 +407,14 @@ class ContainerEndpoint {
 
   size_t Hash() const { return HashAll(container_, endpoint_, l4proto_); }
 
+  ContainerEndpoint ConvertToIPv4() const {
+    if (endpoint_.IsIPv4MappedIPv6()) {
+      Endpoint ep = endpoint_.ConvertToIPv4();
+      return ContainerEndpoint(container_, ep, l4proto_, originator_);
+    }
+    return std::move(*this);
+  }
+
  private:
   std::string container_;
   Endpoint endpoint_;
@@ -437,6 +445,31 @@ class Connection {
   }
 
   size_t Hash() const { return HashAll(container_, local_, remote_, flags_); }
+
+  Connection ConvertToIPv4() const {
+    bool localMapped = local_.IsIPv4MappedIPv6();
+    bool remoteMapped = remote_.IsIPv4MappedIPv6();
+
+    if (!localMapped && !remoteMapped) {
+      return std::move(*this);
+    }
+
+    Endpoint local;
+    if (localMapped) {
+      local = local_.ConvertToIPv4();
+    } else {
+      local = std::move(local_);
+    }
+
+    Endpoint remote;
+    if (localMapped) {
+      remote = remote_.ConvertToIPv4();
+    } else {
+      remote = std::move(remote_);
+    }
+
+    return Connection(container_, local, remote, l4proto(), is_server());
+  }
 
  private:
   std::string container_;

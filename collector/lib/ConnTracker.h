@@ -84,7 +84,9 @@ class CollectorStats;
 
 class ConnectionTracker {
  public:
+  void UpdateConnectionNoLock(const Connection& conn, const ConnStatus& status);
   void UpdateConnection(const Connection& conn, int64_t timestamp, bool added);
+  void UpdateEndpointNoLock(const ContainerEndpoint& endpoint, const ConnStatus& status);
   void AddConnection(const Connection& conn, int64_t timestamp) {
     UpdateConnection(conn, timestamp, true);
   }
