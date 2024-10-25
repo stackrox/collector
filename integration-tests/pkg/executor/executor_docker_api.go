@@ -136,10 +136,18 @@ func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConf
 		if err != nil {
 			// The client doesn't expose any specific error type in this
 			// case, but "no exec session" is a general error we will see
-			// when a container is not started yet.
-			prefix := "Error response from daemon: no exec session with ID"
-			if strings.HasPrefix(fmt.Sprint(err), prefix) {
-				return NoOutput, err
+			// when a container is not started yet. Unfortunately it might come
+			// in different variations, depending on the container runtime.
+			// Take into account all known examples.
+			prefixList := []string{
+				"Error response from daemon: no exec session with ID",
+				"Error response from daemon: No such exec instance",
+			}
+
+			for _, prefix := range prefixList {
+				if strings.HasPrefix(fmt.Sprint(err), prefix) {
+					return NoOutput, err
+				}
 			}
 
 			// If it's something outstanding, log it
