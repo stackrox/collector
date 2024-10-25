@@ -116,24 +116,4 @@ TEST(ExtractContainerIDFromCgroupTest, TestExtractContainerIDFromCgroup) {
   }
 }
 
-TEST(SanitizeUTF8Test, TestSanitizeUTF8_Invalid) {
-  std::string input(
-      "ab\x80"
-      "cd");
-  std::string expected_output("ab?cd");
-
-  auto output = SanitizedUTF8(input);
-
-  EXPECT_TRUE(output.has_value());
-  EXPECT_EQ(*output, expected_output);
-}
-
-TEST(SanitizeUTF8Test, TestSanitizeUTF8_Valid) {
-  std::string input("abcd");
-
-  auto output = SanitizedUTF8(input);
-
-  EXPECT_FALSE(output);
-}
-
 }  // namespace collector
