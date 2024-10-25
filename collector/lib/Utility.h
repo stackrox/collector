@@ -14,6 +14,8 @@
 #include <string_view>
 #include <utility>
 
+#include <google/protobuf/message.h>
+
 // forward declarations
 class sinsp_threadinfo;
 
@@ -108,6 +110,8 @@ ScopedLock<Mutex> Lock(Mutex& mutex) {
 #define ssizeof(x) static_cast<ssize_t>(sizeof(x))
 
 std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cgroup);
+
+void LogProtobufMessage(const google::protobuf::Message& msg);
 }  // namespace collector
 
 #endif  // _UTILITY_H_

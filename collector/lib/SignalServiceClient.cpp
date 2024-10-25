@@ -87,9 +87,7 @@ SignalHandler::Result SignalServiceClient::PushSignals(const SignalStreamMessage
 }
 
 SignalHandler::Result StdoutSignalServiceClient::PushSignals(const SignalStreamMessage& msg) {
-  std::string output;
-  google::protobuf::util::MessageToJsonString(msg, &output, google::protobuf::util::JsonPrintOptions{});
-  CLOG(DEBUG) << "GRPC: " << output;
+  LogProtobufMessage(msg);
   return SignalHandler::PROCESSED;
 }
 

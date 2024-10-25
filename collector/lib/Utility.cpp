@@ -1,3 +1,4 @@
+#include <google/protobuf/util/json_util.h>
 extern "C" {
 
 #include <errno.h>
@@ -229,5 +230,16 @@ std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cg
     return {};
   }
   return std::make_optional(container_id_part.substr(0, SHORT_CONTAINER_ID_LENGTH));
+}
+
+void LogProtobufMessage(const google::protobuf::Message& msg) {
+  using namespace google::protobuf::util;
+  std::string output;
+  absl::Status status = MessageToJsonString(msg, &output, JsonPrintOptions{});
+  if (status.ok()) {
+    CLOG(DEBUG) << "GRPC: " << output;
+  } else {
+    CLOG(DEBUG) << "MessageToJsonString failed: " << status;
+  }
 }
 }  // namespace collector
