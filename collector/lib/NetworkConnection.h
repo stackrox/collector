@@ -412,7 +412,7 @@ class ContainerEndpoint {
       Endpoint ep = endpoint_.ConvertToIPv4();
       return ContainerEndpoint(container_, ep, l4proto_, originator_);
     }
-    return std::move(*this);
+    return *this;
   }
 
  private:
@@ -451,21 +451,21 @@ class Connection {
     bool remoteMapped = remote_.IsIPv4MappedIPv6();
 
     if (!localMapped && !remoteMapped) {
-      return std::move(*this);
+      return *this;
     }
 
     Endpoint local;
     if (localMapped) {
       local = local_.ConvertToIPv4();
     } else {
-      local = std::move(local_);
+      local = local_;
     }
 
     Endpoint remote;
-    if (localMapped) {
+    if (remoteMapped) {
       remote = remote_.ConvertToIPv4();
     } else {
-      remote = std::move(remote_);
+      remote = remote_;
     }
 
     return Connection(container_, local, remote, l4proto(), is_server());
