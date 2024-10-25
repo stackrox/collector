@@ -70,10 +70,7 @@ void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTrac
 
 bool Service::InitKernel(const CollectorConfig& config) {
   if (!inspector_) {
-    // TODO: https://github.com/falcosecurity/libs/pull/2016
-    // Once that change is pulled, fix compilation here by removing the first
-    // 4 arguments.
-    inspector_.reset(new sinsp(false, "", "", "", true));
+    inspector_.reset(new sinsp(true));
 
     // peeking into arguments has a big overhead, so we prevent it from happening
     inspector_->set_snaplen(0);
