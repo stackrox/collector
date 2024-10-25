@@ -130,8 +130,8 @@ func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConf
 		return "", errors.Wrapf(err, "start %s", startConfig.Name)
 	}
 
-	RetryWithTimeout(func() (output string, err error) {
-		inspect, err := d.client.ContainerExecInspect(ctx, resp.ID)
+	_, err = RetryWithTimeout(func() (output string, err error) {
+		inspect, err := d.client.ContainerInspect(ctx, resp.ID)
 
 		if err != nil {
 			// The client doesn't expose any specific error type in this
@@ -147,13 +147,16 @@ func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConf
 			return NoOutput, err
 		}
 
-		if inspect.Running == true {
+		if inspect.State.Running {
 			return NoOutput, nil
 		} else {
 			return NoOutput, fmt.Errorf("Container %s is not running",
 				startConfig.Name)
 		}
 	}, fmt.Errorf("Container %s didn't start in time", startConfig.Name))
+	if err != nil {
+		return "", err
+	}
 
 	log.Info("start %s with %s (%s)\n",
 		startConfig.Name, startConfig.Image, common.ContainerShortID(resp.ID))
