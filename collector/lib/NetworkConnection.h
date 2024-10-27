@@ -52,7 +52,42 @@ class Address {
     std::memcpy(data_.data(), data.data(), Length(family));
   }
 
-  Address(Family family, const std::array<uint64_t, kU64MaxLen>& data) : data_(data), family_(family) {}
+  bool IsIPv4MappedIPv6(const Family& family, const std::array<uint64_t, kU64MaxLen>& data) const {
+    if (family != Family::IPV6) {
+      return false;
+    }
+
+    const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data.data());
+
+    // First 80 bits, 10 bytes, should be 0 if this is IPv4-Mapped IPv6
+    for (int i = 0; i < 10; i++) {
+      if (bytes[i] != 0) {
+        return false;
+      }
+    }
+
+    // Next 2 bytes should be 0xFF if this is IPv4-Mapped IPv6
+    if (bytes[10] != 0xFF || bytes[11] != 0xFF) {
+      return false;
+    }
+
+    return true;
+  }
+
+  Address(Family family, const std::array<uint64_t, kU64MaxLen>& data, bool convertIPv4MappedIPv6 = true) {
+    if (convertIPv4MappedIPv6 && IsIPv4MappedIPv6(family, data)) {
+      const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data.data());
+      uint32_t ipv4 = htonl(static_cast<uint32_t>(bytes[12]) << 24 |
+                            static_cast<uint32_t>(bytes[13]) << 16 |
+                            static_cast<uint32_t>(bytes[14]) << 8 |
+                            static_cast<uint32_t>(bytes[15]));
+      std::memcpy(data_.data(), &ipv4, sizeof(ipv4));
+      family_ = Family::IPV4;
+    } else {
+      family_ = family;
+      data_ = data;
+    }
+  }
 
   // Constructs an IPv4 address given a uint32_t containing the IPv4 address in *network* byte order.
   explicit Address(uint32_t ipv4) : data_({htonll(static_cast<uint64_t>(ntohl(ipv4)) << 32), 0}), family_(Family::IPV4) {}
