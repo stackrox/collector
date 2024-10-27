@@ -52,26 +52,38 @@ class Address {
     std::memcpy(data_.data(), data.data(), Length(family));
   }
 
+  // bool IsIPv4MappedIPv6(const Family& family, const std::array<uint64_t, kU64MaxLen>& data) const {
+  //   if (family != Family::IPV6) {
+  //     return false;
+  //   }
+
+  //  const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data.data());
+
+  //  // First 80 bits, 10 bytes, should be 0 if this is IPv4-Mapped IPv6
+  //  for (int i = 0; i < 10; i++) {
+  //    if (bytes[i] != 0) {
+  //      return false;
+  //    }
+  //  }
+
+  //  // Next 2 bytes should be 0xFF if this is IPv4-Mapped IPv6
+  //  if (bytes[10] != 0xFF || bytes[11] != 0xFF) {
+  //    return false;
+  //  }
+
+  //  return true;
+  //}
+
   bool IsIPv4MappedIPv6(const Family& family, const std::array<uint64_t, kU64MaxLen>& data) const {
     if (family != Family::IPV6) {
       return false;
     }
 
-    const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data.data());
-
-    // First 80 bits, 10 bytes, should be 0 if this is IPv4-Mapped IPv6
-    for (int i = 0; i < 10; i++) {
-      if (bytes[i] != 0) {
-        return false;
-      }
-    }
-
-    // Next 2 bytes should be 0xFF if this is IPv4-Mapped IPv6
-    if (bytes[10] != 0xFF || bytes[11] != 0xFF) {
-      return false;
-    }
-
-    return true;
+    // In IPv4-mapped IPv6 the first 80 bits are zeros and the next 16 bits are ones
+    // data[0] is 64 bits and therefore is all zeros. The next 16 bits which are the
+    // first 16 bits of data[1] need to be 0. The next 16 bits of data[1] need to be
+    // ones in order for the data to represent IPv4-mapped IPv6
+    return data[0] == 0 && (data[1] & 0xFFFFFFFF00000000ULL) == 0x0000FFFF00000000ULL;
   }
 
   Address(Family family, const std::array<uint64_t, kU64MaxLen>& data, bool convertIPv4MappedIPv6 = true) {
