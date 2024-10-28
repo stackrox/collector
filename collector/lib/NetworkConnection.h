@@ -110,6 +110,29 @@ class Address {
     std::memcpy(data_.data(), &ipv6[0], sizeof(data_));
   }
 
+  bool IsIPv4MappedIPv6(const uint32_t (&ipv6)[4]) const {
+    //// In IPv4-mapped IPv6 the first 80 bits are zeros and the next 16 bits are ones
+    //// data[0] is 64 bits and therefore is all zeros. The next 16 bits which are the
+    //// first 16 bits of data[1] need to be 0. The next 16 bits of data[1] need to be
+    //// ones in order for the data to represent IPv4-mapped IPv6
+    return ipv6[0] == 0 && ipv6[1] == 0 && ipv6[2] == 0x0000FFFF;
+  }
+
+  // uint32_t ConvertIPv6DataToIPv4Data(
+
+  //// Constructs an IPv6 address from 4 network-encoded uint32_ts, in network order (high to low)
+  ////explicit Address(const uint32_t (&ipv6)[4], bool convertIPv4MappedIPv6 = true) {
+  // explicit Address(const uint32_t (&ipv6)[4]) {
+  //   static_assert(sizeof(data_) == sizeof(ipv6));
+  //   if (IsIPv4MappedIPv6(ipv6)) {
+  //     family_(Family::IPV4);
+  //     //std::memcpy(data_.data(), &ipv6[0], sizeof(data_));
+  //   } else {
+  //     family_(Family::IPV6);
+  //     std::memcpy(data_.data(), &ipv6[0], sizeof(data_));
+  //   }
+  // }
+
   // Constructs an IPv6 address from 2 network-encoded uint64_ts, in network order (high, low).
   Address(uint64_t ipv6_high, uint64_t ipv6_low) : data_({ipv6_high, ipv6_low}), family_(Family::IPV6) {}
 
