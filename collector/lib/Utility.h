@@ -111,6 +111,12 @@ ScopedLock<Mutex> Lock(Mutex& mutex) {
 
 std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cgroup);
 
+// Replace any occurrence of an invalid UTF-8 sequence with the '?' character
+// Returns :
+//  - a new string with invalid characters replaced.
+//  - nullopt if there is no invalid character (the input string is valid).
+std::optional<std::string> SanitizedUTF8(std::string_view str);
+
 void LogProtobufMessage(const google::protobuf::Message& msg);
 }  // namespace collector
 

@@ -1,4 +1,3 @@
-#include <google/protobuf/util/json_util.h>
 extern "C" {
 
 #include <errno.h>
@@ -16,10 +15,11 @@ extern "C" {
 #include <uuid/uuid.h>
 }
 
-#include <fstream>
-#include <regex>
+#include <utf8_validity.h>
 
 #include <libsinsp/sinsp.h>
+
+#include <google/protobuf/util/json_util.h>
 
 #include "HostInfo.h"
 #include "Logging.h"
@@ -230,6 +230,26 @@ std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cg
     return {};
   }
   return std::make_optional(container_id_part.substr(0, SHORT_CONTAINER_ID_LENGTH));
+}
+
+std::optional<std::string> SanitizedUTF8(std::string_view str) {
+  size_t len = utf8_range::SpanStructurallyValid(str);
+  if (len == str.size()) {
+    // All str characters are valid UTF-8
+    return std::nullopt;
+  }
+
+  // Create a sanitized copy of the string by bulk copying it
+  // and replacing the invalid characters with ?
+  std::string output{str};
+  for (size_t i = len; i < output.size();) {
+    output.at(i) = '?';
+    str.remove_prefix(len + 1);
+    len = utf8_range::SpanStructurallyValid(str);
+    i += len + 1;
+  }
+
+  return output;
 }
 
 void LogProtobufMessage(const google::protobuf::Message& msg) {

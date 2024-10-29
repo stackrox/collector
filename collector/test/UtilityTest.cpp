@@ -116,4 +116,29 @@ TEST(ExtractContainerIDFromCgroupTest, TestExtractContainerIDFromCgroup) {
   }
 }
 
+TEST(SanitizeUTF8Test, TestSanitizeUTF8_Invalid) {
+  using test_case = std::pair<std::string, std::string>;
+  std::vector<test_case> tests = {
+      {"ab\200cd", "ab?cd"},
+      {"ab\200", "ab?"},
+      {"\200ab\200", "?ab?"},
+      {"\200\200ab\200", "??ab?"},
+  };
+
+  for (const auto& [input, expected] : tests) {
+    auto output = SanitizedUTF8(input);
+
+    EXPECT_TRUE(output.has_value());
+    EXPECT_EQ(*output, expected);
+  }
+}
+
+TEST(SanitizeUTF8Test, TestSanitizeUTF8_Valid) {
+  std::string input("abcd");
+
+  auto output = SanitizedUTF8(input);
+
+  EXPECT_FALSE(output);
+}
+
 }  // namespace collector
