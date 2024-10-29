@@ -97,6 +97,21 @@ func (s *MockSensor) checkIfConnectionsMatchExpected(t *testing.T, connections [
 	return false
 }
 
+// getConnectionsAndCompare gets the connections for a container, sorts them if order is set to true, and compares with a set of expected
+// connections. If asssertMismatch is true and the set of observed connections does not match the set of expected connections an assert is
+// triggered. If assertMismatch is not set then just return if the observed and expected connections match.
+func (s *MockSensor) getConnectionsAndCompare(t *testing.T, containerID string, order bool, assertMismatch bool, expected ...types.NetworkInfo) bool {
+	connections := s.Connections(containerID)
+	if order {
+		types.SortConnections(connections)
+	}
+	success := s.checkIfConnectionsMatchExpected(t, connections, expected)
+	if assertMismatch && !success {
+		return assert.ElementsMatch(t, expected, connections, "networking connections do not match")
+	}
+	return success
+}
+
 // CompareConnections compares a list of expected connections to the observed connections. This comparison is done at the beginning, when a new
 // connection arrives, and after a timeout period. The number of connections must match and it can be specified if the order of the connections
 // must match or not. The difference between this function and ExpectConnections is that ExpectConnections tolerates extra observed connections
@@ -105,28 +120,25 @@ func (s *MockSensor) CompareConnections(t *testing.T, containerID string, timeou
 	if order {
 		types.SortConnections(expected)
 	}
-	timer := time.NewTimer(timeout)
-	ticker := time.NewTicker(100 * time.Millisecond)
-	defer ticker.Stop()
+
+	success := s.getConnectionsAndCompare(t, containerID, order, false, expected...)
+	if success {
+		return true
+	}
+
+	timer := time.After(timeout)
 
 	for {
 		select {
-		case <-timer.C:
-			connections := s.Connections(containerID)
-			if order {
-				types.SortConnections(connections)
+		case <-timer:
+			return s.getConnectionsAndCompare(t, containerID, order, true, expected...)
+		case conn := <-s.LiveConnections():
+			if conn.GetContainerId() != containerID {
+				continue
 			}
-			return s.checkIfConnectionsMatchExpected(t, connections, expected)
-		case <-ticker.C:
-			connections := s.Connections(containerID)
-			if order {
-				types.SortConnections(connections)
-			}
-			success := s.checkIfConnectionsMatchExpected(t, connections, expected)
+			success := s.getConnectionsAndCompare(t, containerID, order, false, expected...)
 			if success {
 				return true
-			} else if len(connections) >= len(expected) {
-				return assert.ElementsMatch(t, expected, connections, "networking connections do not match")
 			}
 		}
 	}
@@ -135,13 +147,13 @@ func (s *MockSensor) CompareConnections(t *testing.T, containerID string, timeou
 // ExpectExactConnections requires that within a timeout period the networking connections involving containerID match a list of expected
 // netwoking connections.
 func (s *MockSensor) ExpectExactConnections(t *testing.T, containerID string, timeout time.Duration, expected ...types.NetworkInfo) bool {
-	return s.CompareConnections(t, containerID, timeout, true, expected...)
+	return s.CompareConnections(t, containerID, timeout, false, expected...)
 }
 
 // ExpectSameElementsConnections requires that within a timeout period the networking connections involving containerID match a list of expected
 // netwoking connections, but the order of those connections do not have to match.
 func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID string, timeout time.Duration, expected ...types.NetworkInfo) bool {
-	return s.CompareConnections(t, containerID, timeout, false, expected...)
+	return s.CompareConnections(t, containerID, timeout, true, expected...)
 }
 
 // ExpectEndpoints waits up to the timeout for the gRPC server to receive
