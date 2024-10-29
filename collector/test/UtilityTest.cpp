@@ -134,11 +134,15 @@ TEST(SanitizeUTF8Test, TestSanitizeUTF8_Invalid) {
 }
 
 TEST(SanitizeUTF8Test, TestSanitizeUTF8_Valid) {
-  std::string input("abcd");
+  std::vector<std::string> tests = {
+      {"This is an ASCII string"},
+      {"アップル"},
+  };
 
-  auto output = SanitizedUTF8(input);
-
-  EXPECT_FALSE(output);
+  for (const auto& input : tests) {
+    auto output = SanitizedUTF8(input);
+    EXPECT_FALSE(output.has_value());
+  }
 }
 
 }  // namespace collector
