@@ -14,7 +14,7 @@ metadata:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: collector
     pipelines.appstudio.openshift.io/type: build
-  name: collector-build
+  name: collector-on-push
   namespace: rh-acs-tenant
 
 spec:
