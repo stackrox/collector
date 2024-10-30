@@ -75,16 +75,21 @@ func (k *K8sConfigReloadTestSuite) TestCreateConfigurationAfterStart() {
 		},
 	}
 	k.createConfigMap(&configMap)
-	k.AssertExternalIps(true)
+	k.assertExternalIps(true)
 
 	log.Info("Checking external IPs is disabled")
 	configMap.Data["runtime_config.yaml"] = EXT_IP_DISABLE
 	k.updateConfigMap(&configMap)
-	k.AssertExternalIps(false)
+	k.assertExternalIps(false)
 
 	log.Info("Checking runtime configuration is not in use")
 	k.deleteConfigMap(CONFIG_MAP_NAME)
 	k.assertNoRuntimeConfig()
+
+	log.Info("Checking external IPs is enabled again")
+	configMap.Data["runtime_config.yaml"] = EXT_IP_ENABLE
+	k.createConfigMap(&configMap)
+	k.assertExternalIps(true)
 }
 
 func (k *K8sConfigReloadTestSuite) TestConfigurationReload() {
@@ -105,32 +110,31 @@ func (k *K8sConfigReloadTestSuite) TestConfigurationReload() {
 			"ROX_COLLECTOR_INTROSPECTION_ENABLE": "true",
 		},
 	})
-	k.AssertExternalIps(true)
+	k.assertExternalIps(true)
 
 	log.Info("Checking external IPs is disabled")
 	configMap.Data["runtime_config.yaml"] = EXT_IP_DISABLE
 	k.updateConfigMap(&configMap)
-	k.AssertExternalIps(false)
+	k.assertExternalIps(false)
 }
 
-func (k *K8sConfigReloadTestSuite) AssertExternalIps(enable bool) {
+func (k *K8sConfigReloadTestSuite) queryConfig() []byte {
+	log.Info("Querying: /state/config")
+	body, err := k.Collector().IntrospectionQuery("/state/config")
+	k.Require().NoError(err)
+	log.Info("Response: %q", body)
+	return body
+}
+
+func (k *K8sConfigReloadTestSuite) assertRepeated(condition func() bool) {
 	tick := time.Tick(10 * time.Second)
 	timer := time.After(3 * time.Minute)
 
 	for {
 		select {
 		case <-tick:
-			log.Info("Querying: /state/config")
-			body, err := k.Collector().IntrospectionQuery("/state/config")
-			k.Require().NoError(err)
-			log.Info("Response: %q", body)
-
-			var response ConfigQueryResponse
-			err = json.Unmarshal(body, &response)
-			k.Require().NoError(err)
-
-			if response.Networking.ExternalIps.Enable == enable {
-				// Test succeeded
+			if condition() {
+				// Condition has been met
 				return
 			}
 
@@ -138,28 +142,22 @@ func (k *K8sConfigReloadTestSuite) AssertExternalIps(enable bool) {
 			k.FailNow("Runtime configuration was not updated")
 		}
 	}
+}
+
+func (k *K8sConfigReloadTestSuite) assertExternalIps(enable bool) {
+	k.assertRepeated(func() bool {
+		body := k.queryConfig()
+		var response ConfigQueryResponse
+		err := json.Unmarshal(body, &response)
+		k.Require().NoError(err)
+
+		return response.Networking.ExternalIps.Enable == enable
+	})
 }
 
 func (k *K8sConfigReloadTestSuite) assertNoRuntimeConfig() {
-	tick := time.Tick(10 * time.Second)
-	timer := time.After(3 * time.Minute)
-
-	for {
-		select {
-		case <-tick:
-			log.Info("Querying: /state/config")
-			body, err := k.Collector().IntrospectionQuery("/state/config")
-			k.Require().NoError(err)
-			log.Info("Response: %q", body)
-
-			if strings.TrimSpace(string(body)) == "{}" {
-				// Test succeeded
-				return
-			}
-
-		case <-timer:
-			k.FailNow("Runtime configuration was not updated")
-		}
-	}
-
+	k.assertRepeated(func() bool {
+		body := k.queryConfig()
+		return strings.TrimSpace(string(body)) == "{}"
+	})
 }

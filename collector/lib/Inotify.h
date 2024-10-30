@@ -32,7 +32,7 @@ class InotifyError : public std::exception {
 class InotifyTimeout : public InotifyError {
  public:
   InotifyTimeout(const std::string& error) : InotifyError(error) {}
-  InotifyTimeout(std::string&& error) : InotifyError(error) {}
+  InotifyTimeout(std::string&& error = "'select' timedout") : InotifyError(error) {}
 };
 
 /// Value returned when reading an inotify event is attempted
@@ -177,7 +177,7 @@ class Inotify {
    * use the WatcherNotFound method with the value returned from this
    * method.
    *
-   * @param needle The path we want the Watcher for.
+   * @param needle The watch descriptor we want the Watcher for.
    * @returns An iterator to the Watcher.
    */
   WatcherIterator FindWatcher(int needle);
@@ -243,7 +243,7 @@ class Inotify {
     return os;
   }
 
-  // Taken from <sys/inotify.h>
+  // Iterable for event flags from <sys/inotify.h>
   static constexpr std::array<unsigned int, 17> BIT_MASKS{
       IN_ACCESS,
       IN_MODIFY,

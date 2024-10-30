@@ -102,7 +102,7 @@ InotifyResult Inotify::GetNext() {
   }
 
   if (retval == 0) {
-    return InotifyTimeout("'select' timedout");
+    return InotifyTimeout();
   }
 
   // Received event from inotify.

@@ -165,6 +165,15 @@ func (e *K8sExecutor) CreatePod(ns string, pod *coreV1.Pod) (*coreV1.Pod, error)
 	return e.clientset.CoreV1().Pods(ns).Create(context.Background(), pod, metaV1.CreateOptions{})
 }
 
+func (e *K8sExecutor) PodIP(ns, name string) (string, error) {
+	pod, err := e.clientset.CoreV1().Pods(ns).Get(context.Background(), name, metaV1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	return pod.Status.PodIP, nil
+}
+
 func (e *K8sExecutor) ClientSet() *kubernetes.Clientset {
 	return e.clientset
 }

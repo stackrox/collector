@@ -171,7 +171,8 @@ bool ConfigLoader::HandleConfigDirectoryEvent(const struct inotify_event* event)
       inotify_.AddFileWatcher(stdf::canonical(file_), LOADER_CONFIG_REALPATH);
     }
   } else if ((event->mask & (IN_DELETE | IN_MOVED_FROM)) != 0) {
-    inotify_.RemoveWatcher(event->wd);
+    auto w = inotify_.FindWatcher(file_);
+    inotify_.RemoveWatcher(w);
     config_.ResetRuntimeConfig();
   }
 

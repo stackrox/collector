@@ -213,13 +213,13 @@ func (k *K8sCollectorManager) ContainerID() string {
 
 func (k *K8sCollectorManager) IP() string {
 	if k.ip == "" {
-		pod, err := k.executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).Get(context.Background(), "collector", metaV1.GetOptions{})
+		ip, err := k.executor.PodIP(TEST_NAMESPACE, "collector")
 		if err != nil {
 			log.Error("Failed to get collector IP: %s", err)
 			return ""
 		}
 
-		k.ip = pod.Status.PodIP
+		k.ip = ip
 	}
 	return k.ip
 }
