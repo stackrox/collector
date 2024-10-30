@@ -34,6 +34,7 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
         tbb-devel \
         jq-devel \
         c-ares-devel \
+        patch \
         # for USDT support
         systemtap-sdt-devel && \
     /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
