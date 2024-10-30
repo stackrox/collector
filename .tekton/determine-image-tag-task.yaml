@@ -43,10 +43,13 @@ spec:
       .konflux/scripts/fail-build-if-git-is-dirty.sh
 
       # First, try take git tag if it's a tagged commit.
-      tag="$(git tag --points-at | sort --version-sort | head --lines=1)"
+      tag="$(git tag --points-at)"
       if [[ -z "$tag" ]]; then
         # If not, use make target's output.
         tag="$(make --quiet --no-print-directory tag)"
+      elif [[ "$(wc -l <<< "$tag")" -gt 1 ]]; then
+        >&2 echo -e "Error: the HEAD commit has multiple tags, don't know which one to choose:\n$tag"
+        exit 5
       fi
 
       echo -n "${tag}$(params.TAG_SUFFIX)" | tee "$(results.IMAGE_TAG.path)"
