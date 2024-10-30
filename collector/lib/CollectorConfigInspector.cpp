@@ -21,7 +21,7 @@ std::string CollectorConfigInspector::configToJson(bool& isError) {
 
   std::string jsonString;
   const auto& config = runtime_config.value();
-  google::protobuf::util::Status status = google::protobuf::util::MessageToJsonString(config, &jsonString);
+  absl::Status status = google::protobuf::util::MessageToJsonString(config, &jsonString);
 
   if (!status.ok()) {
     isError = true;

@@ -14,7 +14,7 @@ metadata:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: collector
     pipelines.appstudio.openshift.io/type: build
-  name: collector-build
+  name: collector-on-push
   namespace: rh-acs-tenant
 
 spec:
@@ -55,14 +55,7 @@ spec:
       secretName: '{{ git_auth_secret }}'
 
   taskRunSpecs:
-  - pipelineTaskName: clone-repository
-    stepSpecs:
-    - name: create-trusted-artifact
-      computeResources:
-        limits:
-          memory: 3Gi
-        requests:
-          memory: 3Gi
+
   # Only adjusting computeResources for amd64 build because
   # multi-arch builds happen off cluster
   - pipelineTaskName: build-container-amd64
@@ -75,6 +68,48 @@ spec:
           cpu: 4
         requests:
           cpu: 4
+    - name: use-trusted-artifact
+      # use-/create-trusted-artifact gets OOM-killed when a cluster is loaded. Bigger mem limits==request should help.
+      computeResources: &ta-resources
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
+
+  - pipelineTaskName: clone-repository
+    stepSpecs:
+    - name: create-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: determine-image-tag
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: prefetch-dependencies
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+    - name: create-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: build-container-s390x
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: build-container-ppc64le
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: build-container-arm64
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: build-source-image
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: sast-snyk-check
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
 
   timeouts:
     # The pipeline regularly takes >1h to finish.

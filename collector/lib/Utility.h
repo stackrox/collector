@@ -14,6 +14,8 @@
 #include <string_view>
 #include <utility>
 
+#include <google/protobuf/message.h>
+
 // forward declarations
 class sinsp_threadinfo;
 
@@ -113,7 +115,9 @@ std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cg
 // Returns :
 //  - a new string with invalid characters replaced.
 //  - nullopt if there is no invalid character (the input string is valid).
-std::optional<std::string> SanitizedUTF8(const std::string& str);
+std::optional<std::string> SanitizedUTF8(std::string_view str);
 
+void LogProtobufMessage(const google::protobuf::Message& msg);
 }  // namespace collector
+
 #endif  // _UTILITY_H_
