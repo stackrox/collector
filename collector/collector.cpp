@@ -11,6 +11,8 @@
 
 #include <sys/wait.h>
 
+#include "ConfigLoader.h"
+
 extern "C" {
 #include <assert.h>
 #include <cap-ng.h>
@@ -138,6 +140,9 @@ int main(int argc, char** argv) {
 
   CollectorConfig config;
   config.InitCollectorConfig(args);
+  if (!ConfigLoader::LoadConfiguration(config)) {
+    CLOG(FATAL) << "Unable to parse configuration file";
+  }
 
   setCoreDumpLimit(config.IsCoreDumpEnabled());
 

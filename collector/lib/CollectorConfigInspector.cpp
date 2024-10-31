@@ -13,6 +13,7 @@ CollectorConfigInspector::CollectorConfigInspector(const CollectorConfig& config
 }
 
 std::string CollectorConfigInspector::configToJson(bool& isError) {
+  auto lock = config_.ReadLock();
   const auto& runtime_config = config_.GetRuntimeConfig();
 
   if (!runtime_config.has_value()) {
@@ -26,7 +27,7 @@ std::string CollectorConfigInspector::configToJson(bool& isError) {
   if (!status.ok()) {
     isError = true;
     CLOG(WARNING) << "Failed to convert protobuf object to JSON: " << status.ToString();
-    return R"({"error": "Failed to convert protobuf object to JSON")";
+    return R"({"error": "Failed to convert protobuf object to JSON"})";
   }
 
   return jsonString;

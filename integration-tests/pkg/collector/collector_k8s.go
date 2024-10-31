@@ -9,8 +9,9 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
-	"golang.org/x/exp/maps"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 
+	"golang.org/x/exp/maps"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -30,6 +31,9 @@ type K8sCollectorManager struct {
 	testName string
 
 	eventWatcher watch.Interface
+
+	containerID string
+	ip          string
 }
 
 func NewK8sManager(e executor.K8sExecutor, name string) *K8sCollectorManager {
@@ -57,6 +61,15 @@ func NewK8sManager(e executor.K8sExecutor, name string) *K8sCollectorManager {
 		{Name: "var-rw", ReadOnly: false, MountPath: "/host/var", MountPropagation: &propagationHostToContainer},
 		{Name: "run-rw", ReadOnly: false, MountPath: "/host/run", MountPropagation: &propagationHostToContainer},
 		{Name: "tmp", ReadOnly: false, MountPath: "/tmp", MountPropagation: &propagationHostToContainer},
+		{Name: "collector-config", ReadOnly: true, MountPath: "/etc/stackrox"},
+	}
+
+	optional := true
+	configVolume := coreV1.ConfigMapVolumeSource{
+		LocalObjectReference: coreV1.LocalObjectReference{
+			Name: "collector-config",
+		},
+		Optional: &optional,
 	}
 
 	volumes := []coreV1.Volume{
@@ -67,7 +80,7 @@ func NewK8sManager(e executor.K8sExecutor, name string) *K8sCollectorManager {
 		{Name: "var-rw", VolumeSource: coreV1.VolumeSource{HostPath: &coreV1.HostPathVolumeSource{Path: "/var"}}},
 		{Name: "run-rw", VolumeSource: coreV1.VolumeSource{HostPath: &coreV1.HostPathVolumeSource{Path: "/run"}}},
 		{Name: "tmp", VolumeSource: coreV1.VolumeSource{HostPath: &coreV1.HostPathVolumeSource{Path: "/tmp"}}},
-		{Name: "module", VolumeSource: coreV1.VolumeSource{EmptyDir: &coreV1.EmptyDirVolumeSource{}}},
+		{Name: "collector-config", VolumeSource: coreV1.VolumeSource{ConfigMap: &configVolume}},
 	}
 
 	return &K8sCollectorManager{
@@ -166,7 +179,15 @@ func (k *K8sCollectorManager) TearDown() error {
 
 	k.stopNamespaceEventWatcher()
 
-	return k.executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).Delete(context.Background(), "collector", metaV1.DeleteOptions{})
+	err = k.executor.ClientSet().CoreV1().Pods(TEST_NAMESPACE).Delete(context.Background(), "collector", metaV1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+
+	return k.executor.WaitPodRemoved(executor.ContainerFilter{
+		Name:      "collector",
+		Namespace: TEST_NAMESPACE,
+	})
 }
 
 func (k *K8sCollectorManager) IsRunning() (bool, error) {
@@ -179,12 +200,28 @@ func (k *K8sCollectorManager) IsRunning() (bool, error) {
 }
 
 func (k *K8sCollectorManager) ContainerID() string {
-	cf := executor.ContainerFilter{
-		Name:      "collector",
-		Namespace: TEST_NAMESPACE,
-	}
+	if k.containerID == "" {
+		cf := executor.ContainerFilter{
+			Name:      "collector",
+			Namespace: TEST_NAMESPACE,
+		}
 
-	return k.executor.PodContainerID(cf)
+		k.containerID = k.executor.PodContainerID(cf)
+	}
+	return k.containerID
+}
+
+func (k *K8sCollectorManager) IP() string {
+	if k.ip == "" {
+		ip, err := k.executor.PodIP(TEST_NAMESPACE, "collector")
+		if err != nil {
+			log.Error("Failed to get collector IP: %s", err)
+			return ""
+		}
+
+		k.ip = ip
+	}
+	return k.ip
 }
 
 func (k *K8sCollectorManager) TestName() string {
