@@ -32,7 +32,6 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
         git \
         elfutils-libelf-devel \
         tbb-devel \
-        jq-devel \
         c-ares-devel \
         patch \
         # for USDT support
@@ -108,7 +107,6 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
     dnf -y --installroot=/mnt upgrade --nobest && \
     dnf -y --installroot=/mnt install --nobest \
       tbb \
-      jq \
       c-ares && \
     /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
     # We can do usual cleanup while we're here: remove packages that would trigger violations. \
