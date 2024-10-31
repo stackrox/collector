@@ -83,7 +83,6 @@ start-builder: builder teardown-builder
 	docker run -d \
 		--name $(COLLECTOR_BUILDER_NAME) \
 		--pull missing \
-		--platform ${PLATFORM} \
 		-v $(CURDIR):$(CURDIR) \
 		$(if $(LOCAL_SSH_PORT),-p $(LOCAL_SSH_PORT):22 )\
 		-w $(CURDIR) \
