@@ -6,6 +6,8 @@ NPROCS ?= $(shell nproc)
 DEV_SSH_SERVER_KEY ?= $(CURDIR)/.collector_dev_ssh_host_ed25519_key
 BUILD_BUILDER_IMAGE ?= false
 
+CCACHE_DIR?=$(CURDIR)/.ccache
+
 export COLLECTOR_VERSION := $(COLLECTOR_TAG)
 
 .PHONY: tag
@@ -25,6 +27,7 @@ container-dockerfile-dev:
 builder:
 ifneq ($(BUILD_BUILDER_IMAGE), false)
 	docker buildx build --load --platform ${PLATFORM} \
+		--build-arg USE_CCACHE="$(USE_CCACHE)" \
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
 		"$(CURDIR)/builder"
@@ -84,6 +87,7 @@ start-builder: builder teardown-builder
 		--name $(COLLECTOR_BUILDER_NAME) \
 		--pull missing \
 		--platform ${PLATFORM} \
+		-v $(CCACHE_DIR):/root/.ccache \
 		-v $(CURDIR):$(CURDIR) \
 		$(if $(LOCAL_SSH_PORT),-p $(LOCAL_SSH_PORT):22 )\
 		-w $(CURDIR) \

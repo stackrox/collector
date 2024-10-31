@@ -8,10 +8,14 @@
     COLLECTOR_TAG: "{{ collector_tag }}"
     DISABLE_PROFILING: "{{ disable_profiling }}"
     CMAKE_BUILD_TYPE: "{{ 'Debug' if debug_mode else 'Release' }}"
+    USE_CCACHE: "{{ use_ccache|bool|lower }}"
+    CCACHE_DIR: "{{ ansible_env.GITHUB_WORKSPACE | default(collector_root) }}/.ccache"
 
   vars:
     collector_root: "{{ ansible_env.HOME }}/collector"
     local_branch: local
+    ccache_dir: ".ccache"
+    ccache_archive: "docker.tar.gz"
 
   tasks:
     - debug: var=collector_root
@@ -24,8 +28,42 @@
         # than with commit hashes, prevents "reference is not a tree" errors
         version: "{{ local_branch }}"
         refspec: "+{{ collector_git_ref | replace('refs/', '') }}:{{ local_branch }}"
-        recursive: true
+        depth: 1
+        recursive: false
       when: arch == "s390x"
+
+    - name: Clone submodules
+      ansible.builtin.shell: |
+        git submodule update --init --depth 1
+      args:
+        chdir: "{{ collector_root }}"
+      when: arch == "s390x"
+
+    - name: Check if ccache exists
+      delegate_to: localhost
+      ansible.builtin.stat:
+        path: "{{ github_workspace }}/{{ ccache_dir }}/{{ ccache_archive }}"
+      register: ccache_check
+      when: use_ccache and arch == "s390x"
+
+    - name: Create cccache directory
+      ansible.builtin.file:
+        path: "{{ collector_root }}/{{ ccache_dir }}"
+        state: directory
+      when: use_ccache and arch == "s390x" and ccache_check.stat.exists
+
+    - name: Copy ccache
+      ansible.builtin.copy:
+        src: "{{ github_workspace }}/{{ ccache_dir }}/{{ ccache_archive }}"
+        dest: "{{ collector_root }}/"
+      when: use_ccache and arch == "s390x" and ccache_check.stat.exists
+
+    - name: Unarchive ccache
+      ansible.builtin.unarchive:
+        src: "{{ collector_root }}/{{ ccache_archive }}"
+        dest: "{{ collector_root }}/{{ ccache_dir }}"
+        remote_src: true
+      when: use_ccache and arch == "s390x" and ccache_check.stat.exists
 
     - name: Run the builder image
       community.general.make:
@@ -39,6 +77,20 @@
       register: build_result
       # ensure this action is printed
       tags: [print_action]
+
+    - name: Create ccache archive
+      ansible.builtin.shell: |
+        rm -f "{{ collector_root }}/{{ ccache_archive }}"
+        cd "{{ collector_root }}/{{ ccache_dir }}"
+        tar czf "{{ collector_root }}/{{ ccache_archive }}" .
+      when: use_ccache and arch == "s390x"
+
+    - name: Fetch ccache
+      ansible.builtin.fetch:
+        src: "{{ collector_root }}/{{ ccache_archive }}"
+        dest: "{{ github_workspace }}/{{ ccache_dir }}/"
+        flat: yes
+      when: use_ccache and arch == "s390x"
 
     - name: Retag collector image to arch specific
       community.docker.docker_image:

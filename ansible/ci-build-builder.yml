@@ -1,15 +1,20 @@
 ---
-- name: Build and push collector image
+- name: Build and push builder image
   hosts: "{{ build_hosts | default('all') }}"
 
   environment:
     BUILD_BUILDER_IMAGE: "true"
     COLLECTOR_BUILDER_TAG: "{{ collector_builder_tag }}"
     PLATFORM: "linux/{{ arch }}"
+    USE_CCACHE: "{{ use_ccache|bool|lower }}"
 
   vars:
     collector_root: "{{ ansible_env.HOME }}/collector"
     local_branch: local
+    ccache_dir: "builder/.ccache"
+    ccache_archive: "docker.tar.gz"
+    ccache_path: "{{ ccache_dir }}/{{ ccache_archive }}"
+    container_ccache_dir: "/root/.ccache"
 
   tasks:
     - name: Clone repository
@@ -21,13 +26,53 @@
         # than with commit hashes, prevents "reference is not a tree" errors
         version: "{{ local_branch }}"
         refspec: "+{{ collector_git_ref | replace('refs/', '') }}:{{ local_branch }}"
-        recursive: true
+        depth: 1
+        recursive: false
       when: arch == "s390x"
+
+    - name: Clone submodules
+      ansible.builtin.shell: |
+        git submodule update --init --depth 1
+      args:
+        chdir: "{{ collector_root }}"
+      when: arch == "s390x"
+
+    - name: Check if ccache exists
+      delegate_to: localhost
+      ansible.builtin.stat:
+        path: "{{ github_workspace }}/{{ ccache_path }}"
+      register: ccache_check
+      when: use_ccache and arch == "s390x"
+
+    - name: Copy ccache
+      ansible.builtin.copy:
+        src: "{{ github_workspace }}/{{ ccache_path }}"
+        dest: "{{ collector_root }}/{{ ccache_dir }}/"
+      when: use_ccache and arch == "s390x" and ccache_check.stat.exists
+
+    - name: Inject docker cache with ccache
+      ansible.builtin.shell:
+        cmd: ansible/scripts/inject_docker_cache.sh "{{ collector_root }}/{{ ccache_dir }}" "{{ container_ccache_dir }}"
+        chdir: "{{ collector_root }}"
+      when: use_ccache and arch == "s390x" and ccache_check.stat.exists
 
     - name: Build the collector builder image
       community.general.make:
         chdir: "{{ ansible_env.GITHUB_WORKSPACE | default(collector_root) }}"
         target: builder
+
+    - name: Extract ccache from docker cache
+      ansible.builtin.shell:
+        cmd: ansible/scripts/extract_docker_cache.sh "{{ collector_root }}/{{ ccache_dir }}" "{{ container_ccache_dir }}"
+        chdir: "{{ collector_root }}"
+      when: use_ccache and arch == "s390x"
+
+    - name: Fetch ccache
+      ansible.builtin.fetch:
+        src: "{{ collector_root }}/{{ ccache_path }}"
+        dest: "{{ github_workspace }}/{{ ccache_dir }}/"
+        flat: yes
+      when: use_ccache and arch == "s390x"
 
     - name: Retag collector builder image to arch specific
       community.docker.docker_image:

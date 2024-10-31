@@ -7,6 +7,11 @@ if [ -n "${WITH_RHEL_RPMS}" ]; then
     exit 0
 fi
 
+if [ "${USE_CCACHE}" = "true" ]; then
+    export CC="ccache gcc"
+    export CXX="ccache g++"
+fi
+
 git clone --branch "$TBB_VERSION" --depth 1 https://github.com/intel/tbb
 cd tbb
 cp LICENSE "${LICENSE_DIR}/tbb-${TBB_VERSION}"
