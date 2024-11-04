@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 
 export B64_VERSION=1.2.1
-export CARES_VERSION=1.16.0
+export CARES_VERSION=1.34.2
 export GOOGLETEST_REVISION=release-1.10.0
 export GRPC_REVISION=v1.67.0
-export JQ_VERSION=1.6
 export JSONCPP_REVISION=1.9.6
 export PROMETHEUS_CPP_REVISION=v0.9.0
 export PROTOBUF_VERSION=v28.3
