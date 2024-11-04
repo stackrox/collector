@@ -7,12 +7,17 @@ if [ -n "${WITH_RHEL_RPMS}" ]; then
     exit 0
 fi
 
-wget "https://github.com/c-ares/c-ares/releases/download/cares-${CARES_VERSION//./_}/c-ares-${CARES_VERSION}.tar.gz"
-tar -zxf "c-ares-${CARES_VERSION}.tar.gz"
-cd "c-ares-${CARES_VERSION}"
+cd third_party/c-ares
 cp LICENSE.md "${LICENSE_DIR}/c-ares-${CARES_VERSION}"
 
 mkdir cmake-build
 cd cmake-build
-cmake -DCMAKE_BUILD_TYPE=Release -DCARES_INSTALL=ON -DCMAKE_INSTALL_PREFIX=/usr/local -DCARES_SHARED=OFF -DCARES_STATIC=ON -DCARES_STATIC_PIC=ON ..
+cmake -DCMAKE_BUILD_TYPE=Release \
+    -DCARES_INSTALL=ON \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    -DCARES_SHARED=OFF \
+    -DCARES_STATIC=ON \
+    -DCARES_STATIC_PIC=ON \
+    -DCARES_BUILD_TOOLS=OFF \
+    ..
 cmake --build . --target install ${NPROCS:+-j ${NPROCS}}

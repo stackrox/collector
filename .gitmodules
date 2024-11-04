@@ -60,3 +60,7 @@
 	path = builder/third_party/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
 	branch = master
+[submodule "builder/third_party/c-ares"]
+	path = builder/third_party/c-ares
+	url = https://github.com/c-ares/c-ares.git
+	branch = main
