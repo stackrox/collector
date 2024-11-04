@@ -64,3 +64,7 @@
 	path = builder/third_party/c-ares
 	url = https://github.com/c-ares/c-ares.git
 	branch = main
+[submodule "builder/third_party/tbb"]
+	path = builder/third_party/tbb
+	url = https://github.com/oneapi-src/oneTBB.git
+	branch = master
