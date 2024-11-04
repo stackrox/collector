@@ -22,7 +22,6 @@ RUN dnf -y install --nobest --allowerasing \
         git \
         elfutils-libelf-devel \
         tbb-devel \
-        jq-devel \
         c-ares-devel \
         # for USDT support
         systemtap-sdt-devel && \
@@ -83,7 +82,6 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:73064ec359dcd71e5
 
 RUN microdnf -y install --nobest \
       tbb \
-      jq \
       c-ares && \
     microdnf -y clean all && \
     rpm --verbose -e --nodeps $(rpm -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*') && \
