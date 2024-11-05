@@ -1,6 +1,7 @@
 #ifndef COLLECTION_METHOD_H
 #define COLLECTION_METHOD_H
 
+#include <cstdint>
 #include <ostream>
 #include <string_view>
 

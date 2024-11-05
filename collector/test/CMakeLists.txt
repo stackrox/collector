@@ -1,4 +1,6 @@
 # Setup testing
+
+find_package(GTest CONFIG REQUIRED)
 enable_testing()
 
 # Unit Tests
@@ -8,12 +10,7 @@ foreach(test_file ${TEST_SRC_FILES})
     add_executable("${test_name}" "${test_file}")
 
     target_link_libraries(${test_name} collector_lib)
-
-    if(DEFINED ENV{WITH_RHEL_RPMS})
-        target_link_libraries(${test_name} gtest gtest_main gmock gmock_main)
-    else()
-        target_link_libraries(${test_name} libgtest.a libgtest_main.a libgmock.a libgmock_main.a)
-    endif()
+    target_link_libraries(${test_name} gtest gtest_main gmock gmock_main)
 
     add_test(${test_name} ${test_name})
 

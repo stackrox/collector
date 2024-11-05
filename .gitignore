@@ -13,6 +13,7 @@ kernel-modules/kobuild-tmp
 utilities/PerformanceTesting/TestResults
 cmake-build/
 cmake-build-*/
+build/
 
 # Mac OS hidden file
 .DS_Store
@@ -36,3 +37,7 @@ ansible/ci/inventory_ibmcloud.yml
 
 # Snyk
 .dccache
+
+# vcpkg
+vcpkg_installed/
+vcpkg-manifest-install.log

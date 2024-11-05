@@ -3,6 +3,9 @@ project(collector-bin)
 find_package(Threads)
 find_package(CURL REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(gRPC CONFIG REQUIRED)
+find_package(civetweb CONFIG REQUIRED)
+find_package(prometheus-cpp CONFIG REQUIRED)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall --std=c++17 -pthread -Wno-deprecated-declarations -fno-omit-frame-pointer -rdynamic")
@@ -47,15 +50,7 @@ include_directories(${FALCO_DIR}/driver)
 include_directories(${FALCO_DIR}/userspace)
 include_directories(${FALCO_DIR}/userspace/libscap)
 include_directories(${FALCO_DIR}/userspace/libsinsp)
-include_directories(${FALCO_DIR}/userspace/chisel)
-include_directories(${FALCO_DIR}/userspace/common)
-include_directories(${PROJECT_BINARY_DIR}/EXCLUDE_FROM_DEFAULT_BUILD/common)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-include_directories(/usr/local/include)
-include_directories(/usr/local/include/tbb)
-include_directories(/usr/local/include/jsoncpp)
-include_directories(/usr/local/include/civetweb)
-include_directories(/usr/local/include/prometheus)
 set(DRIVER_HEADERS ${FALCO_DIR}/driver/ppm_events_public.h ${FALCO_DIR}/driver/ppm_fillers.h)
 
 add_definitions(-DUSE_PROTO_ARENAS)
@@ -68,16 +63,12 @@ add_definitions(-DSCAP_SOCKET_ONLY_FD)
 # Filter out some cgroup subsys
 add_definitions("-DINTERESTING_SUBSYS=\"perf_event\", \"cpu\", \"cpuset\", \"memory\"")
 
-add_definitions(-DASSERT_TO_LOG)
-
 add_subdirectory(lib)
 
 add_executable(collector collector.cpp)
-target_link_libraries(collector_lib yaml-cpp)
 target_link_libraries(collector collector_lib)
 
-target_link_libraries(collector libprometheus-cpp-pull.a)
-target_link_libraries(collector libprometheus-cpp-core.a)
+target_link_libraries(collector prometheus-cpp::core prometheus-cpp::pull)
 
 add_executable(connscrape connscrape.cpp)
 target_link_libraries(connscrape collector_lib)
