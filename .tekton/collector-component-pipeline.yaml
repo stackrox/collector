@@ -127,6 +127,14 @@ spec:
   - name: git-auth
 
   tasks:
+  - name: echo-params
+    taskSpec:
+      steps:
+      - image: registry.access.redhat.com/ubi8/ubi-minimal:latest
+        script: |
+          echo "source branch: {{source_branch}}"
+          echo "target branch: {{target_branch}}"
+          echo "event type: {{event_type}}"
 
   - name: init
     params:
