@@ -9,6 +9,7 @@
 #include "NetworkConnectionInfoServiceComm.h"
 #include "ProcfsScraper.h"
 #include "ProtoAllocator.h"
+#include "RateLimit.h"
 #include "StoppableThread.h"
 
 namespace collector {
@@ -31,7 +32,8 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
         config_(config),
         comm_(comm),
         connections_total_reporter_(connections_total_reporter),
-        connections_rate_reporter_(connections_rate_reporter) {
+        connections_rate_reporter_(connections_rate_reporter),
+        connections_rate_limiter_(RateLimitCache(4096, 30, config.ScrapeInterval())) {
   }
 
   void Start();
@@ -73,6 +75,8 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   std::shared_ptr<CollectorConnectionStats<float>> connections_rate_reporter_;
   std::chrono::steady_clock::time_point connections_last_report_time_;     // time delta between the current reporting and the previous (rate computation)
   std::optional<ConnectionTracker::Stats> connections_rate_counter_last_;  // previous counter values (rate computation)
+
+  RateLimitCache connections_rate_limiter_;
   void ReportConnectionStats();
 };
 
