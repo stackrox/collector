@@ -13,7 +13,6 @@ kernel-modules/kobuild-tmp
 utilities/PerformanceTesting/TestResults
 cmake-build/
 cmake-build-*/
-build/
 
 # Mac OS hidden file
 .DS_Store
