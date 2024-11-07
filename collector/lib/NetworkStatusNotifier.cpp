@@ -330,8 +330,8 @@ void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<
       // know about.
       //
       if (!connections_rate_limiter_.Allow(delta_entry.first.container())) {
-        // CLOG_THROTTLED(INFO, std::chrono::seconds(5)) << "Rate limiting connections reported from container " << delta_entry.first.container();
-        // continue;
+        CLOG_THROTTLED(INFO, std::chrono::seconds(5)) << "Rate limiting connections reported from container " << delta_entry.first.container();
+        continue;
       }
     }
 
