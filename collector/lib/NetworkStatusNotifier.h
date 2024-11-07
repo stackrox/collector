@@ -33,7 +33,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
         comm_(comm),
         connections_total_reporter_(connections_total_reporter),
         connections_rate_reporter_(connections_rate_reporter),
-        connections_rate_limiter_(RateLimitCache(4096, 30, config.ScrapeInterval())) {
+        connections_rate_limiter_(RateLimitCache(config.PerContainerRateLimit(), config.PerContainerRateLimit(), config.ScrapeInterval())) {
   }
 
   void Start();

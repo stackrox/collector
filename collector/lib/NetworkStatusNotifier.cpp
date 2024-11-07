@@ -303,6 +303,11 @@ sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(c
 }
 
 void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<sensor::NetworkConnection>* updates, const ConnMap& delta) {
+  // Update the rate limiter with new bounds, in case the runtime
+  // configuration has been updated
+  connections_rate_limiter_.SetBurstSize(config_.PerContainerRateLimit());
+  connections_rate_limiter_.SetCapacity(config_.PerContainerRateLimit());
+
   for (const auto& delta_entry : delta) {
     auto* conn_proto = ConnToProto(delta_entry.first);
     if (!delta_entry.second.IsActive()) {
