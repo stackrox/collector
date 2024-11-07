@@ -10,7 +10,7 @@ foreach(test_file ${TEST_SRC_FILES})
     add_executable("${test_name}" "${test_file}")
 
     target_link_libraries(${test_name} collector_lib)
-    target_link_libraries(${test_name} gtest gtest_main gmock gmock_main)
+    target_link_libraries(${test_name} GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
 
     add_test(${test_name} ${test_name})
 

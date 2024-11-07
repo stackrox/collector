@@ -9,6 +9,7 @@
     "uthash",
     "valijson",
     "yaml-cpp",
-    "gperftools"
+    "gperftools",
+    "curl"
   ]
 }
