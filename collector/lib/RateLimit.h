@@ -20,14 +20,6 @@ class Limiter {
   bool AllowN(TokenBucket* b, int64_t n);
   int64_t Tokens(TokenBucket* b);
 
-  void SetBurstSize(int64_t burst_size) {
-    burst_size_ = burst_size;
-  }
-
-  void SetRefillTime(int64_t refill) {
-    refill_time_ = refill;
-  }
-
  private:
   void fill_bucket(TokenBucket* b);
   int64_t refill_count(TokenBucket* b);
@@ -42,18 +34,6 @@ class RateLimitCache {
   RateLimitCache(size_t capacity, int64_t burst_size, int64_t refill_time);
   void ResetRateLimitCache();
   bool Allow(std::string key);
-
-  void SetCapacity(size_t capacity) {
-    capacity_ = capacity;
-  }
-
-  void SetBurstSize(int64_t burst_size) {
-    limiter_->SetBurstSize(burst_size);
-  }
-
-  void SetRefillTime(int64_t refill) {
-    limiter_->SetRefillTime(refill);
-  }
 
  private:
   size_t capacity_;

@@ -10,6 +10,7 @@
 #include "CollectorConfig.h"
 #include "DuplexGRPC.h"
 #include "NetworkStatusNotifier.h"
+#include "RateLimit.h"
 #include "Utility.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -74,6 +75,14 @@ class MockCollectorConfig : public collector::CollectorConfig {
 
   void DisableAfterglow() {
     enable_afterglow_ = false;
+  }
+
+  void SetPerContainerRateLimit(int64_t limit) {
+    per_container_rate_limit_ = limit;
+  }
+
+  void SetScrapeInterval(int64_t interval) {
+    scrape_interval_ = interval;
   }
 };
 
@@ -181,6 +190,8 @@ class NetworkConnectionInfoMessageParser {
     }
   }
 };
+
+}  // namespace
 
 /* Simple validation that the service starts and sends at least one event */
 TEST(NetworkStatusNotifier, SimpleStartStop) {
@@ -337,6 +348,71 @@ TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
   net_status_notifier->Stop();
 }
 
-}  // namespace
+TEST(NetworkStatusNotifier, RateLimitedConnections) {
+  MockCollectorConfig config;
+  std::shared_ptr<MockConnScraper> conn_scraper = std::make_shared<MockConnScraper>();
+  auto conn_tracker = std::make_shared<ConnectionTracker>();
+  auto comm = std::make_shared<MockNetworkConnectionInfoServiceComm>();
+
+  // maximum of 2 connections per scrape interval
+  // if we throw four connections from the same container into the conn
+  // tracker delta, we expect only two to be returned
+  config.SetPerContainerRateLimit(2);
+  config.SetScrapeInterval(2);
+
+  NetworkStatusNotifier netStatusNotifier(conn_scraper, conn_tracker, comm, config);
+
+  Connection conn1("containerId", Endpoint(Address(10, 0, 1, 32), 1024), Endpoint(Address(192, 168, 0, 1), 1000), L4Proto::TCP, true);
+  Connection conn2("containerId", Endpoint(Address(10, 0, 1, 32), 1024), Endpoint(Address(192, 168, 0, 2), 1001), L4Proto::TCP, true);
+  Connection conn3("containerId", Endpoint(Address(10, 0, 1, 32), 1024), Endpoint(Address(192, 168, 0, 3), 1002), L4Proto::TCP, true);
+  Connection conn4("containerId", Endpoint(Address(10, 0, 1, 32), 1024), Endpoint(Address(192, 168, 0, 4), 1003), L4Proto::TCP, true);
+
+  Connection otherConn1("containerIdOther", Endpoint(Address(10, 10, 1, 32), 1024), Endpoint(Address(192, 168, 0, 1), 1000), L4Proto::TCP, true);
+  Connection otherConn2("containerIdOther", Endpoint(Address(10, 10, 1, 32), 1024), Endpoint(Address(192, 168, 0, 2), 1001), L4Proto::TCP, true);
+
+  // First delta, single container ID, should get rate limited down to two containers
+  ConnMap deltaSingle = {
+      {conn1, ConnStatus(1234, true)},
+      {conn2, ConnStatus(1234, true)},
+      {conn3, ConnStatus(1234, true)},
+      {conn4, ConnStatus(1234, true)},
+  };
+
+  // Second delta with two conns from two different containers - should not be
+  // rate limited
+  ConnMap deltaDuo = {
+      {conn1, ConnStatus(1234, true)},
+      {conn2, ConnStatus(1234, true)},
+      {otherConn1, ConnStatus(1234, true)},
+      {otherConn2, ConnStatus(1234, true)},
+  };
+
+  // final delta with two conns from containerID, along with two
+  // close events. All events should be included as none of the close
+  // events should be rate limited
+  ConnMap deltaClose = {
+      {conn1, ConnStatus(1234, true)},
+      {conn2, ConnStatus(1234, true)},
+      {conn3, ConnStatus(1234, false)},
+      {conn4, ConnStatus(12345, false)},
+  };
+
+  google::protobuf::RepeatedPtrField<sensor::NetworkConnection>
+      updatesSingle,
+      updatesDuo,
+      updatesClose;
+
+  netStatusNotifier.AddConnections(&updatesSingle, deltaSingle);
+
+  EXPECT_TRUE(updatesSingle.size() == 2);
+
+  netStatusNotifier.AddConnections(&updatesDuo, deltaDuo);
+
+  EXPECT_TRUE(updatesDuo.size() == 4);
+
+  netStatusNotifier.AddConnections(&updatesClose, deltaClose);
+
+  EXPECT_TRUE(updatesClose.size() == 4);
+}
 
 }  // namespace collector

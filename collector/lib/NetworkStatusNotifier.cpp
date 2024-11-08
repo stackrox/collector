@@ -1,7 +1,5 @@
 #include "NetworkStatusNotifier.h"
 
-#include <sstream>
-
 #include <google/protobuf/util/time_util.h>
 
 #include "CollectorStats.h"
@@ -10,6 +8,7 @@
 #include "Logging.h"
 #include "Profiler.h"
 #include "ProtoUtil.h"
+#include "RateLimit.h"
 #include "TimeUtil.h"
 #include "Utility.h"
 
@@ -303,10 +302,8 @@ sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(c
 }
 
 void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<sensor::NetworkConnection>* updates, const ConnMap& delta) {
-  // Update the rate limiter with new bounds, in case the runtime
-  // configuration has been updated
-  connections_rate_limiter_.SetBurstSize(config_.PerContainerRateLimit());
-  connections_rate_limiter_.SetCapacity(config_.PerContainerRateLimit());
+  auto per_container_limit = config_.PerContainerRateLimit();
+  RateLimitCache rate_limiter(per_container_limit, per_container_limit, config_.ScrapeInterval());
 
   for (const auto& delta_entry : delta) {
     auto* conn_proto = ConnToProto(delta_entry.first);
@@ -329,13 +326,11 @@ void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<
       // the case where we send a close event for a connection that it doesn't
       // know about.
       //
-      if (!connections_rate_limiter_.Allow(delta_entry.first.container())) {
+      if (!rate_limiter.Allow(delta_entry.first.container())) {
         CLOG_THROTTLED(INFO, std::chrono::seconds(5)) << "Rate limiting connections reported from container " << delta_entry.first.container();
         continue;
       }
     }
-
-    CLOG(DEBUG) << delta_entry.first;
 
     updates->AddAllocated(conn_proto);
   }
