@@ -303,7 +303,7 @@ sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(c
 
 void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<sensor::NetworkConnection>* updates, const ConnMap& delta) {
   auto per_container_limit = config_.PerContainerRateLimit();
-  RateLimitCache rate_limiter(per_container_limit, per_container_limit, config_.ScrapeInterval());
+  CountLimiter rate_limiter(per_container_limit);
 
   for (const auto& delta_entry : delta) {
     auto* conn_proto = ConnToProto(delta_entry.first);
