@@ -1,8 +1,6 @@
 #include "NetworkSignalHandler.h"
 
-#include <chrono>
 #include <optional>
-#include <sstream>
 
 #include <libsinsp/sinsp.h>
 
@@ -150,7 +148,6 @@ SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
     return SignalHandler::IGNORED;
   }
 
-  CLOG(DEBUG) << "Live event: " << result.value();
   conn_tracker_->UpdateConnection(*result, evt->get_ts() / 1000UL, modifier == Modifier::ADD);
   return SignalHandler::PROCESSED;
 }

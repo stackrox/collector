@@ -3,6 +3,8 @@
 
 #include <memory>
 
+#include <gtest/gtest_prod.h>
+
 #include "CollectorConfig.h"
 #include "CollectorStats.h"
 #include "ConnTracker.h"
@@ -32,14 +34,15 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
         config_(config),
         comm_(comm),
         connections_total_reporter_(connections_total_reporter),
-        connections_rate_reporter_(connections_rate_reporter),
-        connections_rate_limiter_(RateLimitCache(config.PerContainerRateLimit(), config.PerContainerRateLimit(), config.ScrapeInterval())) {
+        connections_rate_reporter_(connections_rate_reporter) {
   }
 
   void Start();
   void Stop();
 
  private:
+  FRIEND_TEST(NetworkStatusNotifier, RateLimitedConnections);
+
   sensor::NetworkConnectionInfoMessage* CreateInfoMessage(const ConnMap& conn_delta, const AdvertisedEndpointMap& cep_delta);
   void AddConnections(::google::protobuf::RepeatedPtrField<sensor::NetworkConnection>* updates, const ConnMap& delta);
   void AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const AdvertisedEndpointMap& delta);
@@ -75,8 +78,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   std::shared_ptr<CollectorConnectionStats<float>> connections_rate_reporter_;
   std::chrono::steady_clock::time_point connections_last_report_time_;     // time delta between the current reporting and the previous (rate computation)
   std::optional<ConnectionTracker::Stats> connections_rate_counter_last_;  // previous counter values (rate computation)
-
-  RateLimitCache connections_rate_limiter_;
+                                                                           //
   void ReportConnectionStats();
 };
 
