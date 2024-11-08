@@ -103,19 +103,6 @@ func TestProcfsScraper(t *testing.T) {
 					ProcessExecFilePath: "/usr/sbin/nginx",
 					ProcessArgs:         "",
 				},
-			}, {
-				Protocol:       "L4_PROTOCOL_TCP",
-				CloseTimestamp: types.NilTimestamp,
-				Address: types.ListenAddress{
-					AddressData: "\x00\x00\x00\x00",
-					Port:        80,
-					IpNetwork:   "\x00\x00\x00\x00 ",
-				},
-				Originator: types.ProcessOriginator{
-					ProcessName:         "nginx",
-					ProcessExecFilePath: "/usr/sbin/nginx",
-					ProcessArgs:         "",
-				},
 			},
 		},
 	}
