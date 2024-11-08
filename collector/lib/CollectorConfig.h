@@ -108,7 +108,7 @@ class CollectorConfig {
   }
 
   int64_t PerContainerRateLimit() const {
-    std::shared_lock<std::shared_mutex> lock(mutex_);
+    auto lock = ReadLock();
     if (runtime_config_.has_value()) {
       return runtime_config_.value()
           .networking()
