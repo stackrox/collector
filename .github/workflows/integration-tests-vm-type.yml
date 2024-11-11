@@ -99,7 +99,7 @@ jobs:
         if: |
            failure() && !inputs.run-benchmarks
         with:
-          paths: integration-tests/container-logs/**/integration-test-report.xml
+          paths: integration-tests/container-logs/**/integration-test-report-*.xml
 
       - name: Create Benchmark VMs
         if: inputs.run-benchmarks

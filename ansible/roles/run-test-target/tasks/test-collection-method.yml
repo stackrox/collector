@@ -136,7 +136,7 @@
     - name: Write integration test log
       copy:
         content: "{{ test_result.stdout }}"
-        dest: "{{ logs_root }}/integration-test.log"
+        dest: "{{ logs_root }}/integration-test-{{ vm_config }}.log"
       delegate_to: localhost
 
     - name: Get core dump file paths
@@ -160,7 +160,8 @@
         chdir: "{{ integration_tests_root }}"
         target: report
       environment:
-        LOG_FILE: "{{ logs_root }}/integration-test.log"
+        LOG_FILE: "{{ logs_root }}/integration-test-{{ vm_config }}.log"
+        JUNIT_FILE: "integration-test-report-{{ vm_config }}.xml"
       delegate_to: localhost
 
   # If this host is just for a certain collection method, skip running

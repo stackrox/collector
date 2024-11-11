@@ -106,17 +106,18 @@ benchmark: TestBenchmarkCollector
 baseline: TestBenchmarkBaseline
 
 LOG_FILE ?= integration-test.log
+JUNIT_FILE ?= integration-test-report.xml
 .PHONY: report
 report:
 	go install github.com/jstemmer/go-junit-report/v2@latest
 	@echo "+ $@"
-	@cat $(LOG_FILE) | go-junit-report > `dirname $(LOG_FILE)`/integration-test-report.xml
+	@cat $(LOG_FILE) | go-junit-report > `dirname $(LOG_FILE)`/$(JUNIT_FILE)
 	@echo
 	@echo "Test coverage summary:"
 	@grep "^coverage: " -A1 $(LOG_FILE) | grep -v -e '--' | paste -d " "  - -
 	@echo
 	@echo "Test pass/fail summary:"
-	@grep failures `dirname $(LOG_FILE)`/integration-test-report.xml | awk -vOFS="  " 'NF > 0 { $$1 = $$1 } 1'
+	@grep failures `dirname $(LOG_FILE)`/$(JUNIT_FILE) | awk -vOFS="  " 'NF > 0 { $$1 = $$1 } 1'
 	@echo
 	@echo "`grep 'FAIL  github.com/stackrox/collector' $(LOG_FILE) | wc -l` package(s) detected with compilation or test failures."
 	@-grep 'FAIL    github.com/stackrox/collector' $(LOG_FILE) || true
