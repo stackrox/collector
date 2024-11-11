@@ -60,18 +60,18 @@ class Queue {
     return data;
   }
 
-  std::shared_lock<std::shared_mutex> read_lock() {
+  std::shared_lock<std::shared_mutex> read_lock() const {
     return std::shared_lock(mx_);
   }
 
-  std::unique_lock<std::shared_mutex> write_lock() {
+  std::unique_lock<std::shared_mutex> write_lock() const {
     return std::unique_lock(mx_);
   }
 
  private:
   std::queue<T> inner_;
 
-  std::shared_mutex mx_;
+  mutable std::shared_mutex mx_;
 };
 
 template <class T>
@@ -81,7 +81,7 @@ class Producer {
 
   ~Producer() { Stop(); }
 
-  virtual T next();
+  virtual T next() = 0;
 
   void Start() {
     thread_.Start([this] { Run(); });
@@ -110,7 +110,7 @@ class Consumer {
 
   ~Consumer() { Stop(); }
 
-  virtual void handle(const T& event);
+  virtual void handle(const T& event) = 0;
 
   void Start() {
     thread_.Start([this] { Run(); });
@@ -140,7 +140,7 @@ class Transformer {
 
   ~Transformer() { Stop(); }
 
-  virtual std::optional<Out> transform(const In& event);
+  virtual std::optional<Out> transform(const In& event) = 0;
 
   void Start() {
     thread_.Start([this] { Run(); });
