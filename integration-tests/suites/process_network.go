@@ -2,6 +2,7 @@ package suites
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/common"
@@ -26,6 +27,10 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	s.RegisterCleanup("nginx", "nginx-curl")
 	s.StartContainerStats()
 	s.StartCollector(false, nil)
+
+	if strings.Contains(config.VMInfo().Config, "2404") {
+		s.FailNow("Testing failure on Ubuntu 24.04")
+	}
 
 	image_store := config.Images()
 
