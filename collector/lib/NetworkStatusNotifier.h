@@ -78,7 +78,6 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   std::shared_ptr<CollectorConnectionStats<float>> connections_rate_reporter_;
   std::chrono::steady_clock::time_point connections_last_report_time_;     // time delta between the current reporting and the previous (rate computation)
   std::optional<ConnectionTracker::Stats> connections_rate_counter_last_;  // previous counter values (rate computation)
-                                                                           //
   void ReportConnectionStats();
 };
 

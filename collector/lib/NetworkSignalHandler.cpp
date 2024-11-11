@@ -5,7 +5,6 @@
 #include <libsinsp/sinsp.h>
 
 #include "EventMap.h"
-#include "Logging.h"
 #include "system-inspector/EventExtractor.h"
 
 namespace collector {

@@ -370,37 +370,41 @@ TEST(NetworkStatusNotifier, RateLimitedConnections) {
   Connection otherConn1("containerIdOther", Endpoint(Address(10, 10, 1, 32), 1024), Endpoint(Address(192, 168, 0, 1), 1000), L4Proto::TCP, true);
   Connection otherConn2("containerIdOther", Endpoint(Address(10, 10, 1, 32), 1024), Endpoint(Address(192, 168, 0, 2), 1001), L4Proto::TCP, true);
 
+  ConnStatus statusActive = ConnStatus(1234, true);
+  ConnStatus statusClosed = ConnStatus(1234, false);
+
   // First delta, single container ID, should get rate limited down to two containers
   ConnMap deltaSingle = {
-      {conn1, ConnStatus(1234, true)},
-      {conn2, ConnStatus(1234, true)},
-      {conn3, ConnStatus(1234, true)},
-      {conn4, ConnStatus(1234, true)},
+      {conn1, statusActive},
+      {conn2, statusActive},
+      {conn3, statusActive},
+      {conn4, statusActive},
   };
 
   // Second delta with two conns from two different containers - should not be
   // rate limited
   ConnMap deltaDuo = {
-      {conn1, ConnStatus(1234, true)},
-      {conn2, ConnStatus(1234, true)},
-      {otherConn1, ConnStatus(1234, true)},
-      {otherConn2, ConnStatus(1234, true)},
+      {conn1, statusActive},
+      {conn2, statusActive},
+      {otherConn1, statusActive},
+      {otherConn2, statusActive},
   };
 
   // final delta with two conns from containerID, along with two
   // close events. All events should be included as none of the close
   // events should be rate limited
   ConnMap deltaClose = {
-      {conn1, ConnStatus(1234, true)},
-      {conn2, ConnStatus(1234, true)},
-      {conn3, ConnStatus(1234, false)},
-      {conn4, ConnStatus(12345, false)},
+      {conn1, statusActive},
+      {conn2, statusActive},
+      {conn3, statusClosed},
+      {conn4, statusClosed},
   };
 
-  google::protobuf::RepeatedPtrField<sensor::NetworkConnection>
-      updatesSingle,
-      updatesDuo,
-      updatesClose;
+  using ConnectionsField = google::protobuf::RepeatedPtrField<sensor::NetworkConnection>;
+
+  ConnectionsField updatesSingle;
+  ConnectionsField updatesDuo;
+  ConnectionsField updatesClose;
 
   netStatusNotifier.AddConnections(&updatesSingle, deltaSingle);
 
