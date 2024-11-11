@@ -90,6 +90,12 @@ Once compilation is done, unit tests can be executed with:
 ```bash
 ctest --test-dir cmake-build/vcpkg
 ```
+#### Troubleshooting
+
+##### Build fails with `Could not find toolchain file: /scripts/buildsystems/vcpkg.cmake`
+
+Make sure the VCPKG_ROOT environment variable is set, the path in the message
+should not be at /scripts.
 
 ## Run inside a container
 
