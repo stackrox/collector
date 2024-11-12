@@ -1,0 +1,15 @@
+{
+  "dependencies": [
+    "civetweb",
+    "grpc",
+    "gtest",
+    "jsoncpp",
+    "prometheus-cpp",
+    "tbb",
+    "uthash",
+    "valijson",
+    "yaml-cpp",
+    "gperftools",
+    "curl"
+  ]
+}

@@ -2,12 +2,18 @@
 
 ## Build locally
 
+### Cloning the repo
+
 To build Collector locally the first step is of course to fetch the repository
 with all the submodules:
 
 ```bash
 $ git clone --recurse-submodules https://github.com/stackrox/collector.git
 ```
+
+### Building the collector container
+
+This is the main and recommended method for building collector.
 
 Inside the project you can find the `Makefile` containing most of the targets
 needed for a quick start. To build an image with Collector use target `image`:
@@ -37,6 +43,59 @@ Or pipe output of the make target:
 ```bash
 $ make image 2>&1 | sed -e "s|/src|${PWD}/collector/|g"
 ```
+
+### Building locally with vcpkg
+
+Before you start, you will need to install the following packages on a fedora
+machine:
+
+```bash
+dnf install -y \
+    gcc \
+    clang \
+    make \
+    cmake \
+    zip \
+    unzip \
+    tar \
+    autoconf \
+    automake \
+    libtool \
+    kernel-devel \
+    perl \
+    libbpf-devel \
+    bpftool \
+    libcap-ng-devel \
+    libuuid-devel
+```
+
+In order to build and run collector locally, vcpkg can be used to handle
+compilation of dependencies. You can install vcpkg by following the steps in
+the following link:
+    https://learn.microsoft.com/en-us/vcpkg/get_started/get-started
+
+If running in fedora, vcpkg is available via dnf, but you'll also need to
+clone https://github.com/microsoft/vcpkg to the VCPKG_ROOT directory.
+
+Once vcpkg is setup, the following commands can be used to build collector
+from the root of this repository:
+
+```bash
+cmake --preset=vcpkg
+cmake --build cmake-build/vcpkg -j$(nproc)
+```
+
+Once compilation is done, unit tests can be executed with:
+
+```bash
+ctest --test-dir cmake-build/vcpkg
+```
+#### Troubleshooting
+
+##### Build fails with `Could not find toolchain file: /scripts/buildsystems/vcpkg.cmake`
+
+Make sure the VCPKG_ROOT environment variable is set, the path in the message
+should not be at /scripts.
 
 ## Run inside a container
 

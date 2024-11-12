@@ -36,3 +36,7 @@ ansible/ci/inventory_ibmcloud.yml
 
 # Snyk
 .dccache
+
+# vcpkg
+vcpkg_installed/
+vcpkg-manifest-install.log

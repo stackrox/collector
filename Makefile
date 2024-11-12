@@ -104,6 +104,8 @@ teardown-builder:
 .PHONY: clean
 clean:
 	rm -rf cmake-build*
+	rm -rf vcpkg_installed/
+	rm -f vcpkg-manifest-install.log
 	make -C collector clean
 	make -C integration-tests clean
 
