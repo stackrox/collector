@@ -30,9 +30,16 @@
       "**/*konflux*.Dockerfile",
     ],
   },
+  "git-submodules": {
+      "ignoreDeps": [
+          "falcosecurity-libs",
+          "collector/proto/third_party/stackrox",
+      ],
+  },
   "enabledManagers": [
     // Restrict Renovate focus on Konflux things since we rely on GitHub's dependabot for everything else.
     "tekton",
     "dockerfile",
+    "git-submodules",
   ],
 }
