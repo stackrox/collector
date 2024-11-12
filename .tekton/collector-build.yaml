@@ -8,8 +8,7 @@ metadata:
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
-    pipelinesascode.tekton.dev/on-cel-expression: |
-      (event == "push" && target_branch.matches("^(master|release-.*)$")) || event == "pull_request"
+    pipelinesascode.tekton.dev/on-cel-expression: target_branch == "master" && event in ["push", "pull_request"]
   labels:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: collector
