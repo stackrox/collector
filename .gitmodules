@@ -1,31 +1,31 @@
 [submodule "grpc"]
 	path = builder/third_party/grpc
 	url = https://github.com/grpc/grpc
-	branch = master
+	branch = v1.67.0
 [submodule "third_party/abseil-cpp"]
 	path = builder/third_party/abseil-cpp
 	url = https://github.com/abseil/abseil-cpp.git
-	branch = master
+	branch = 20240722.0
 [submodule "third_party/protobuf"]
 	path = builder/third_party/protobuf
 	url = https://github.com/protocolbuffers/protobuf.git
-	branch = main
+	branch = v28.3
 [submodule "third_party/prometheus-cpp"]
 	path = builder/third_party/prometheus-cpp
 	url = https://github.com/jupp0r/prometheus-cpp
-	branch = master
+	branch = v1.2.4
 [submodule "third_party/civetweb"]
 	path = builder/third_party/civetweb
 	url = https://github.com/civetweb/civetweb.git
-	branch = master
+	branch = v1.16
 [submodule "third_party/libb64"]
 	path = builder/third_party/libb64
 	url = https://github.com/libb64/libb64.git
-	branch = master
+	branch = v1.4.1
 [submodule "falcosecurity-libs"]
 	path = falcosecurity-libs
 	url = https://github.com/stackrox/falcosecurity-libs
-	branch = master
+	branch = 0.18.1-stackrox
 [submodule "collector/proto/third_party/stackrox"]
 	path = collector/proto/third_party/stackrox
 	url = https://github.com/stackrox/stackrox
@@ -33,38 +33,40 @@
 [submodule "third_party/googletest"]
 	path = builder/third_party/googletest
 	url = https://github.com/google/googletest.git
-	branch = main
+	branch = v1.15.2
 [submodule "third_party/valijson"]
 	path = builder/third_party/valijson
 	url = https://github.com/tristanpenman/valijson.git
-	branch = master
+	branch = v1.0.3
 [submodule "third_party/jsoncpp"]
 	path = builder/third_party/jsoncpp
 	url = https://github.com/open-source-parsers/jsoncpp.git
+	branch = 1.9.6
 [submodule "third_party/re2"]
 	path = builder/third_party/re2
 	url = https://github.com/google/re2.git
-	branch = main
+	branch = 2024-07-02
 [submodule "third_party/libbpf"]
 	path = builder/third_party/libbpf
 	url = https://github.com/libbpf/libbpf
-	branch = v1.3.0
+	branch = v1.3.4
 [submodule "builder/third_party/gperftools"]
 	path = builder/third_party/gperftools
 	url = https://github.com/gperftools/gperftools.git
-	branch = master
+	branch = gperftools-2.16
 [submodule "third_party/uthash"]
 	path = builder/third_party/uthash
 	url = https://github.com/troydhanson/uthash.git
+	branch = v1.9.8
 [submodule "builder/third_party/yaml-cpp"]
 	path = builder/third_party/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
-	branch = master
+	branch = 0.8.0
 [submodule "builder/third_party/c-ares"]
 	path = builder/third_party/c-ares
 	url = https://github.com/c-ares/c-ares.git
-	branch = main
+	branch = v1.34.2
 [submodule "builder/third_party/tbb"]
 	path = builder/third_party/tbb
 	url = https://github.com/oneapi-src/oneTBB.git
-	branch = master
+	branch = v2022.0.0
