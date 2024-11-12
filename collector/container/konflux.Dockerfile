@@ -63,6 +63,11 @@ ARG TRACE_SINSP_EVENTS=false
 
 WORKDIR ${BUILD_DIR}
 
+RUN cd ${SOURCES_DIR} && \
+	git submodule status && \
+	git status && \
+	git rev-parse HEAD
+
 RUN mkdir kernel-modules \
     && cp -a ${SOURCES_DIR}/builder builder \
     && ln -s builder/third_party third_party \

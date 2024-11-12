@@ -68,6 +68,12 @@ jobs:
         with:
           submodules: true
 
+      - name: Print repo status
+        run: |
+          git submodule status
+          git status
+          git rev-parse HEAD
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
