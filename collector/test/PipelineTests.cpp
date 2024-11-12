@@ -17,7 +17,7 @@ class IntProducer : public Producer<int> {
   int next() override {
     n_++;
     if (n_ > limit_) {
-      Stop();
+      return limit_;
     }
     return n_;
   }
@@ -54,7 +54,7 @@ class EvenIntFilter : public Filter<int> {
 };
 
 TEST(PipelineTests, TestBasic) {
-  std::shared_ptr<Queue<int>> queue;
+  std::shared_ptr<Queue<int>> queue = std::make_shared<Queue<int>>();
 
   std::vector<int> output;
 
