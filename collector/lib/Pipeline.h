@@ -39,22 +39,30 @@ class Queue {
 
   void push(const T& elem) {
     auto lock = write_lock();
-    return inner_.push(elem);
+    auto e = elem;
+    inner_.push(std::move(e));
+    state_changed_.notify_one();
   }
 
   void push(T&& elem) {
     auto lock = write_lock();
-    return inner_.push(elem);
+    inner_.push(elem);
+    state_changed_.notify_one();
   }
 
   template <class... Args>
   decltype(auto) emplace(Args&&... args) {
     auto lock = write_lock();
-    return inner_.emplace(std::forward<Args>(args)...);
+    decltype(auto) out = inner_.emplace(std::forward<Args>(args)...);
+    state_changed_.notify_one();
+    return out;
   }
 
   T pop() {
     auto lock = write_lock();
+    if (empty()) {
+      state_changed_.wait(lock, [this]() { return empty(); });
+    }
     T data = inner_.front();
     inner_.pop();
     return data;
@@ -72,6 +80,7 @@ class Queue {
   std::queue<T> inner_;
 
   mutable std::shared_mutex mx_;
+  mutable std::condition_variable_any state_changed_;
 };
 
 template <class T>
@@ -79,7 +88,11 @@ class Producer {
  public:
   Producer(std::shared_ptr<Queue<T>>& output) : output_(output) {}
 
-  ~Producer() { Stop(); }
+  ~Producer() {
+    if (thread_.running()) {
+      Stop();
+    }
+  }
 
   virtual T next() = 0;
 
@@ -108,7 +121,11 @@ class Consumer {
  public:
   Consumer(std::shared_ptr<Queue<T>>& input) : input_(input) {}
 
-  ~Consumer() { Stop(); }
+  ~Consumer() {
+    if (thread_.running()) {
+      Stop();
+    }
+  }
 
   virtual void handle(const T& event) = 0;
 
