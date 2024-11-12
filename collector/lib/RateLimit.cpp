@@ -64,7 +64,7 @@ void RateLimitCache::ResetRateLimitCache() {
 }
 
 bool RateLimitCache::Allow(std::string key) {
-  auto pair = cache_.emplace(std::make_pair(key, TokenBucket()));
+  auto pair = cache_.try_emplace(key);
   if (pair.second && cache_.size() > capacity_) {
     CLOG(INFO) << "Flushing rate limiting cache";
     cache_.clear();
@@ -81,7 +81,7 @@ CountLimiter::CountLimiter(int64_t count)
     : count_(count) {}
 
 bool CountLimiter::Allow(std::string key) {
-  auto pair = cache_.emplace(std::make_pair(key, TokenBucket()));
+  auto pair = cache_.try_emplace(key);
   auto& bucket = pair.first->second;
 
   bucket.tokens++;
