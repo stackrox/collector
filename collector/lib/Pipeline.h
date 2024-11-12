@@ -1,6 +1,8 @@
 #ifndef _COLLECTOR_PIPELINE_H
 #define _COLLECTOR_PIPELINE_H
 
+#include <chrono>
+#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -17,16 +19,6 @@ class Queue {
   Queue() {}
   ~Queue() {}
 
-  T front() {
-    auto lock = read_lock();
-    return inner_.front();
-  }
-
-  T back() {
-    auto lock = read_lock();
-    return inner_.back();
-  }
-
   bool empty() {
     auto lock = read_lock();
     return inner_.empty();
@@ -38,34 +30,36 @@ class Queue {
   }
 
   void push(const T& elem) {
-    auto lock = write_lock();
-    auto e = elem;
-    inner_.push(std::move(e));
+    {
+      auto lock = write_lock();
+      auto e = elem;
+      inner_.push(std::move(e));
+    }
     state_changed_.notify_one();
   }
 
   void push(T&& elem) {
-    auto lock = write_lock();
-    inner_.push(elem);
+    {
+      auto lock = write_lock();
+      inner_.push(elem);
+    }
     state_changed_.notify_one();
   }
 
-  template <class... Args>
-  decltype(auto) emplace(Args&&... args) {
+  std::optional<T> pop(std::chrono::milliseconds wait_max = std::chrono::milliseconds(10)) {
     auto lock = write_lock();
-    decltype(auto) out = inner_.emplace(std::forward<Args>(args)...);
-    state_changed_.notify_one();
-    return out;
-  }
+    if (inner_.empty()) {
+      auto pred = [this]() {
+        return !inner_.empty();
+      };
 
-  T pop() {
-    auto lock = write_lock();
-    if (empty()) {
-      state_changed_.wait(lock, [this]() { return empty(); });
+      if (!state_changed_.wait_for(lock, wait_max, pred)) {
+        return std::nullopt;
+      }
     }
     T data = inner_.front();
     inner_.pop();
-    return data;
+    return {data};
   }
 
   std::shared_lock<std::shared_mutex> read_lock() const {
@@ -94,7 +88,7 @@ class Producer {
     }
   }
 
-  virtual T next() = 0;
+  virtual std::optional<T> next() = 0;
 
   void Start() {
     thread_.Start([this] { Run(); });
@@ -107,7 +101,10 @@ class Producer {
   void Run() {
     while (!thread_.should_stop()) {
       auto event = next();
-      output_->push(event);
+      if (!event.has_value()) {
+        break;
+      }
+      output_->push(event.value());
     }
   }
 
@@ -140,7 +137,10 @@ class Consumer {
   void Run() {
     while (!thread_.should_stop()) {
       auto event = input_->pop();
-      handle(event);
+      if (!event.has_value()) {
+        continue;
+      }
+      handle(event.value());
     }
   }
 
@@ -170,7 +170,11 @@ class Transformer {
   void Run() {
     while (!thread_.should_stop()) {
       auto event = input_->pop();
-      auto transformed = transform(event);
+      if (!event.has_value()) {
+        continue;
+      }
+
+      auto transformed = transform(event.value());
       if (transformed.has_value()) {
         output_.push(transformed.value());
       }
