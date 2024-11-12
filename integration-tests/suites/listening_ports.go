@@ -57,11 +57,9 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 
 	s.serverURL = fmt.Sprintf("http://%s:%s", ip, port)
 
-	// Wait 5 seconds for the plop service to start
-	common.Sleep(5 * time.Second)
-
 	log.Info("Opening ports...")
-	s.openPort(8081)
+	// First query, we retry a few times until the flask app starts.
+	s.openPortWithRetry(8081, 30*time.Second)
 	s.openPort(9091)
 
 	common.Sleep(6 * time.Second)
@@ -144,10 +142,39 @@ func getProcessListeningOnPortsImage() string {
 	return config.Images().QaImageByKey("qa-plop")
 }
 
-func (s *ProcessListeningOnPortTestSuite) openPort(port uint16) {
+func (s *ProcessListeningOnPortTestSuite) openPortRaw(port uint16) (bool, error) {
 	res, err := http.Get(fmt.Sprintf("%s/open/%d", s.serverURL, port))
+	if err != nil {
+		return false, err
+	}
+	return res.StatusCode == 200, nil
+}
+
+func (s *ProcessListeningOnPortTestSuite) openPort(port uint16) {
+	res, err := s.openPortRaw(port)
 	s.Require().NoError(err)
-	s.Require().True(res.StatusCode == 200)
+	s.Require().True(res)
+}
+
+func (s *ProcessListeningOnPortTestSuite) openPortWithRetry(port uint16, timeout time.Duration) {
+	tick := time.Tick(1 * time.Second)
+	timer := time.After(timeout)
+	for {
+		select {
+		case <-tick:
+			success, err := s.openPortRaw(port)
+			if err != nil {
+				log.Info("Failed to open port: %s", err)
+				continue
+			}
+			if success {
+				return
+			}
+		case <-timer:
+			s.FailNow("Failed to open port 8081")
+		}
+	}
+
 }
 
 func (s *ProcessListeningOnPortTestSuite) closePort(port uint16) {
