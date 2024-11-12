@@ -1,5 +1,6 @@
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <ratio>
 #include <thread>
 #include <vector>
@@ -14,12 +15,12 @@ class IntProducer : public Producer<int> {
  public:
   IntProducer(std::shared_ptr<Queue<int>>& input, int limit) : Producer(input), limit_(limit) {}
 
-  int next() override {
+  std::optional<int> next() override {
     n_++;
     if (n_ > limit_) {
-      return limit_;
+      return std::nullopt;
     }
-    return n_;
+    return {n_};
   }
 
  private:
@@ -29,18 +30,14 @@ class IntProducer : public Producer<int> {
 
 class IntConsumer : public Consumer<int> {
  public:
-  IntConsumer(std::shared_ptr<Queue<int>>& input, std::vector<int> output) : Consumer(input), events_(output) {}
+  IntConsumer(std::shared_ptr<Queue<int>>& input, std::vector<int>& output) : Consumer(input), events_(output) {}
 
   void handle(const int& event) override {
     events_.push_back(event);
   }
 
-  std::vector<int>& Events() {
-    return events_;
-  }
-
  private:
-  std::vector<int> events_;
+  std::vector<int>& events_;
 };
 
 class EvenIntFilter : public Filter<int> {
