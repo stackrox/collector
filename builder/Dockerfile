@@ -45,6 +45,8 @@ RUN dnf -y update \
         bpftool \
         # for USDT support
         systemtap-sdt-devel \
+        rust \
+        cargo \
     && dnf clean all
 
 # Build dependencies from source

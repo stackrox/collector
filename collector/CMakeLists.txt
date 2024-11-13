@@ -7,6 +7,8 @@ find_package(gRPC CONFIG REQUIRED)
 find_package(civetweb CONFIG REQUIRED)
 find_package(prometheus-cpp CONFIG REQUIRED)
 
+find_package(Rust REQUIRED)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall --std=c++17 -pthread -Wno-deprecated-declarations -fno-omit-frame-pointer -rdynamic")
 
@@ -69,6 +71,8 @@ add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)
 
 target_link_libraries(collector prometheus-cpp::core prometheus-cpp::pull)
+
+target_include_directories(collector INTERFACE $<TARGET_PROPERTY:rust_test::rust_static_lib,INTERFACE_INCLUDE_DIRECTORIES>)
 
 add_executable(connscrape connscrape.cpp)
 target_link_libraries(connscrape collector_lib)
