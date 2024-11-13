@@ -1,9 +1,9 @@
 #[no_mangle]
 pub extern "C" fn external_add(left: u64, right: u64) -> u64 {
-    left + right
+    add(left, right)
 }
 
-pub fn add(left: u64, right: u64) -> u64 {
+fn add(left: u64, right: u64) -> u64 {
     left + right
 }
 
