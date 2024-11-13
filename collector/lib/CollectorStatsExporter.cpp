@@ -110,6 +110,13 @@ class CollectorTimerGauge {
 
 void CollectorStatsExporter::run() {
   capng_clear(CAPNG_SELECT_ALL);
+
+  capng_type_t cap_types = static_cast<capng_type_t>(CAPNG_EFFECTIVE |
+                                                     CAPNG_PERMITTED);
+  capng_updatev(CAPNG_ADD, cap_types,
+                // BPF is needed to read maps with stats
+                CAP_BPF, -1);
+
   if (capng_apply(CAPNG_SELECT_ALL) != 0) {
     CLOG(WARNING) << "Failed to drop capabilities: " << StrError();
   }
