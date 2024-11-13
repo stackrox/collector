@@ -8,6 +8,6 @@ microdnf install -y elfutils-libelf
 microdnf clean all
 # shellcheck disable=SC2046
 rpm --verbose -e --nodeps $(
-    rpm -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*'
+    rpm -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*' 'krb5-libs'
 )
 rm -rf /var/cache/yum
