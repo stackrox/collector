@@ -86,7 +86,6 @@ func (s *MockSensor) checkIfConnectionsMatchExpected(t *testing.T, connections [
 	}
 
 	if len(connections) == len(expected) {
-		types.SortConnections(connections)
 		for i := range expected {
 			if !expected[i].Equal(connections[i]) {
 				return assert.ElementsMatch(t, expected, connections, "networking connections do not match")
