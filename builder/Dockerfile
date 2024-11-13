@@ -45,6 +45,8 @@ RUN dnf -y update \
         which \
         # for USDT support
         systemtap-sdt-devel \
+        rust \
+        cargo \
     && dnf clean all
 
 # Build dependencies from source
