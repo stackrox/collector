@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
   CLOG(INFO) << "Collector Version: " << GetCollectorVersion();
   CLOG(INFO) << "OS: " << host_info.GetDistro();
   CLOG(INFO) << "Kernel Version: " << host_info.GetKernelVersion().GetRelease();
-  CLOG(INFO) << "From Rust: 1 + 2 = " << external_add(1, 2);
+  CLOG(INFO) << "From Rust: 1 + 2 = " << collector::rust::external_add(1, 2);
 
   initialChecks();
 

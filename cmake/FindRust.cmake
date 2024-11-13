@@ -267,6 +267,9 @@ function(add_rust_library)
     endif()
 
     file(GLOB_RECURSE LIB_SOURCES "${ARGS_SOURCE_DIRECTORY}/*.rs")
+    list(APPEND LIB_SOURCES
+            "${ARGS_SOURCE_DIRECTORY}/build.rs"
+            "${ARGS_SOURCE_DIRECTORY}/Cargo.toml")
 
     set(MY_CARGO_ARGS ${CARGO_ARGS})
     if(ARGS_PRECOMPILE_TESTS)
