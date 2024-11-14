@@ -96,26 +96,14 @@ func (s *MockSensor) checkIfConnectionsMatchExpected(t *testing.T, connections [
 	return false
 }
 
-// getConnectionsAndCompare gets the connections for a container, sorts them, and compares with a set of expected
-// connections. If asssertMismatch is true and the set of observed connections does not match the set of expected connections an assert is
-// triggered. If assertMismatch is not set then just return if the observed and expected connections match.
-func (s *MockSensor) getConnectionsAndCompare(t *testing.T, containerID string, assertMismatch bool, expected ...types.NetworkInfo) bool {
-	connections := s.Connections(containerID)
-	types.SortConnections(connections)
-	success := s.checkIfConnectionsMatchExpected(t, connections, expected)
-	if assertMismatch && !success {
-		return assert.ElementsMatch(t, expected, connections, "networking connections do not match")
-	}
-	return success
-}
-
 // ExpectSameElementsConnections compares a list of expected connections to the observed connections. This comparison is done at the beginning, when a new
 // connection arrives, and after a timeout period. The number of connections must match and the expected and observed connections must match, but the order
 // does not matter.
 func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID string, timeout time.Duration, expected ...types.NetworkInfo) bool {
 	types.SortConnections(expected)
 
-	success := s.getConnectionsAndCompare(t, containerID, false, expected...)
+	connections := s.SortedConnections(containerID)
+	success := s.checkIfConnectionsMatchExpected(t, connections, expected)
 	if success {
 		return true
 	}
@@ -125,12 +113,18 @@ func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID str
 	for {
 		select {
 		case <-timer:
-			return s.getConnectionsAndCompare(t, containerID, true, expected...)
+			connections := s.SortedConnections(containerID)
+			success := s.checkIfConnectionsMatchExpected(t, connections, expected)
+			if !success {
+				return assert.ElementsMatch(t, expected, connections, "networking connections do not match")
+			}
+			return success
 		case conn := <-s.LiveConnections():
 			if conn.GetContainerId() != containerID {
 				continue
 			}
-			success := s.getConnectionsAndCompare(t, containerID, false, expected...)
+			connections := s.SortedConnections(containerID)
+			success := s.checkIfConnectionsMatchExpected(t, connections, expected)
 			if success {
 				return true
 			}

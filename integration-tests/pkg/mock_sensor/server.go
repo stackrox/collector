@@ -160,6 +160,13 @@ func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
 	return make([]types.NetworkInfo, 0)
 }
 
+func (m *MockSensor) SortedConnections(containerID string) []types.NetworkInfo {
+	connections := m.Connections(containerID)
+	types.SortConnections(connections)
+
+	return connections
+}
+
 // HasConnection returns whether a given connection has been seen for a given
 // container ID
 func (m *MockSensor) HasConnection(containerID string, conn types.NetworkInfo) bool {
