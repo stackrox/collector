@@ -12,6 +12,7 @@ RUN dnf -y update \
         bison \
         ca-certificates \
         clang-17.0.6 \
+        llvm-17.0.6 \
         cmake \
         cracklib-dicts \
         diffutils \
@@ -42,7 +43,6 @@ RUN dnf -y update \
         valgrind \
         wget \
         which \
-        bpftool \
         # for USDT support
         systemtap-sdt-devel \
     && dnf clean all
