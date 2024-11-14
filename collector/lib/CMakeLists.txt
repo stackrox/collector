@@ -16,6 +16,7 @@ target_link_libraries(collector_lib civetweb::civetweb-cpp)
 target_link_libraries(collector_lib yaml-cpp::yaml-cpp)
 
 target_link_libraries(collector_lib rust_test::rust_static_lib)
+target_link_libraries(collector_lib host::rust_static_lib)
 
 target_link_libraries(collector_lib rox-proto)
 

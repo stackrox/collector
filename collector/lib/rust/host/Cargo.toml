@@ -1,0 +1,16 @@
+[package]
+name = "host"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cxx = "1.0"
+regex = "1.11.1"
+uname = "0.1.1"
+
+[lib]
+crate-type = ["staticlib"]
+name = "host"
+
+[build-dependencies]
+cxx-build = "1.0"
