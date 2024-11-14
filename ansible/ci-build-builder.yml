@@ -22,7 +22,7 @@
         version: "{{ local_branch }}"
         refspec: "+{{ collector_git_ref | replace('refs/', '') }}:{{ local_branch }}"
         recursive: true
-      when: arch == "s390x"
+      when: clone_repository
 
     - name: Build the collector builder image
       community.general.make:
