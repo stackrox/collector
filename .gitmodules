@@ -48,7 +48,7 @@
 [submodule "third_party/libbpf"]
 	path = builder/third_party/libbpf
 	url = https://github.com/libbpf/libbpf
-	branch = v1.3.0
+	branch = v1.3.4
 [submodule "builder/third_party/gperftools"]
 	path = builder/third_party/gperftools
 	url = https://github.com/gperftools/gperftools.git
@@ -68,3 +68,7 @@
 	path = builder/third_party/tbb
 	url = https://github.com/oneapi-src/oneTBB.git
 	branch = master
+[submodule "builder/third_party/bpftool"]
+	path = builder/third_party/bpftool
+	url = https://github.com/libbpf/bpftool
+	branch = v7.3.0
