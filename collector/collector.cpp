@@ -44,6 +44,7 @@ extern "C" {
 #include "Logging.h"
 #include "RustTest.h"
 #include "Utility.h"
+#include "host/src/lib.rs.h"
 
 static const int MAX_GRPC_CONNECTION_POLLS = 30;
 
