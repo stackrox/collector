@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -166,11 +167,9 @@ func (m *MockSensor) HasConnection(containerID string, conn types.NetworkInfo) b
 	defer m.networkMutex.Unlock()
 
 	if conns, ok := m.connections[containerID]; ok {
-		for _, connection := range conns {
-			if connection.Equal(conn) {
-				return true
-			}
-		}
+		return slices.ContainsFunc(conns, func(c types.NetworkInfo) bool {
+			return c.Equal(conn)
+		})
 	}
 
 	return false
