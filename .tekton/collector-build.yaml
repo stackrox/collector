@@ -9,7 +9,12 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     pipelinesascode.tekton.dev/on-cel-expression: |
-      (event == "push" && target_branch.matches("^(master|release-.*)$")) || event == "pull_request"
+      event == "pull_request" || (
+        event == "push" && (
+          source_branch == "master" ||
+          target_branch.startsWith("refs/tags/")
+        )
+      )
   labels:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: collector
