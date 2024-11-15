@@ -1,15 +1,16 @@
 use regex::Regex;
 use uname::uname;
 
+#[derive(Clone)]
 pub struct KernelVersion {
-    kernel: u64,
-    major: u64,
-    minor: u64,
-    build_id: u64,
+    pub kernel: u64,
+    pub major: u64,
+    pub minor: u64,
+    pub build_id: u64,
 
-    release: String,
-    version: String,
-    machine: String,
+    pub release: String,
+    pub version: String,
+    pub machine: String,
 }
 
 impl Default for KernelVersion {
@@ -35,34 +36,44 @@ impl KernelVersion {
         // .*                  -> matches the rest of the string
         let re = Regex::new(r"(^(\d+)\.(\d+)\.(\d+)(-(\d+))?.*)").unwrap();
 
-        match re.captures(release) {
-            Some(captures) => KernelVersion {
-                kernel: captures[1].parse::<u64>().unwrap(),
-                major: captures[2].parse::<u64>().unwrap(),
-                minor: captures[3].parse::<u64>().unwrap(),
-                build_id: if captures.len() > 4 {
-                    captures[4].parse::<u64>().unwrap()
-                } else {
-                    0
-                },
-                release: release.to_owned(),
-                version: version.to_owned(),
-                machine: machine.to_owned(),
-            },
-            None => Default::default(),
+        let Some(captures) = re.captures(release) else {
+            return Default::default();
+        };
+
+        let kernel = captures[1].parse::<u64>().unwrap();
+        let major = captures[2].parse::<u64>().unwrap();
+        let minor = captures[3].parse::<u64>().unwrap();
+
+        let build_id = if captures.len() > 4 {
+            captures[4].parse::<u64>().unwrap()
+        } else {
+            0
+        };
+
+        KernelVersion {
+            kernel,
+            major,
+            minor,
+            build_id,
+            release: release.to_owned(),
+            version: version.to_owned(),
+            machine: machine.to_owned(),
         }
     }
 
-    pub fn from_host() -> Box<KernelVersion> {
-        let kv = match uname() {
-            Ok(info) => KernelVersion::new(&info.release, &info.version, &info.machine),
+    pub fn from_host() -> KernelVersion {
+        match uname() {
+            Ok(uname::Info {
+                release,
+                version,
+                machine,
+                ..
+            }) => KernelVersion::new(&release, &version, &machine),
             _ => {
                 let release = std::env::var("KERNEL_VERSION").unwrap_or_default();
                 KernelVersion::new(&release, &"", &"")
             }
-        };
-
-        Box::new(kv)
+        }
     }
 
     pub fn has_ebpf_support(&self) -> bool {

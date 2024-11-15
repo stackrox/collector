@@ -25,5 +25,19 @@ mod ffi {
         fn os_id(&self) -> String;
         fn build_id(&self) -> String;
         fn distro(&self) -> String;
+        fn hostname(&self) -> String;
+        fn is_coreos(&self) -> bool;
+        fn is_docker_desktop(&self) -> bool;
+        fn is_ubuntu(&self) -> bool;
+        fn is_garden(&self) -> bool;
+        fn is_rhel76(&self) -> bool;
+        fn is_rhel86(&self) -> bool;
+        fn has_ebpf_support(&self) -> bool;
+        fn has_btf_symbols(&self) -> bool;
+        fn is_uefi(&self) -> bool;
+    }
+
+    extern "Rust" {
+        fn host_info() -> Box<HostInfo>;
     }
 }
