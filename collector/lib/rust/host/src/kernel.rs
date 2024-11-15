@@ -9,7 +9,10 @@ pub struct KernelVersion {
     pub build_id: u64,
 
     pub release: String,
+
+    #[allow(dead_code)]
     pub version: String,
+    #[allow(dead_code)]
     pub machine: String,
 }
 
@@ -71,7 +74,7 @@ impl KernelVersion {
             }) => KernelVersion::new(&release, &version, &machine),
             _ => {
                 let release = std::env::var("KERNEL_VERSION").unwrap_or_default();
-                KernelVersion::new(&release, &"", &"")
+                KernelVersion::new(&release, "", "")
             }
         }
     }

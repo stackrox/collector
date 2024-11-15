@@ -3,7 +3,7 @@ extern crate cbindgen;
 use std::env;
 use std::path::Path;
 
-fn main(){
+fn main() {
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let target_dir = env::var("BINDINGS_INCLUDE_DIRECTORY").unwrap_or("./include".to_string());
 

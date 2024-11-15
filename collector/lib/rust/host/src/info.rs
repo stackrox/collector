@@ -9,12 +9,15 @@ const MIN_RHEL_BUILD_ID: u64 = 957;
 // The values are taken from efi_secureboot_mode in include/linux/efi.h
 #[derive(Default)]
 pub enum SecureBootStatus {
+    #[allow(dead_code)]
     Enabled = 3,
+    #[allow(dead_code)]
     Disabled = 2,
 
     // Secure Boot seems to be disabled, but the boot loaded
     // does not provide enough information about it,
     // so it could be enabled without the kernel being aware.
+    #[allow(dead_code)]
     NotDetermined = 1,
 
     // No detection is performed yet
@@ -203,6 +206,7 @@ impl HostInfo {
         }
     }
 
+    #[allow(dead_code)]
     pub fn secure_boot_status(&self) -> SecureBootStatus {
         SecureBootStatus::Unset
     }
