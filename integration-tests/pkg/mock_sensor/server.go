@@ -155,7 +155,9 @@ func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
 	defer m.networkMutex.Unlock()
 
 	if connections, ok := m.connections[containerID]; ok {
-		return connections
+        conns := make([]types.NetworkInfo, len(connections))
+        copy(conns, connections)
+        return conns
 	}
 	return make([]types.NetworkInfo, 0)
 }
