@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/thoas/go-funk"
 
+	collectorAssert "github.com/stackrox/collector/integration-tests/pkg/assert"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 )
 
@@ -81,19 +82,21 @@ loop:
 
 // checkIfConnectionsMatchExpected compares a list of expected and observed connection match exactly.
 func (s *MockSensor) checkIfConnectionsMatchExpected(t *testing.T, connections []types.NetworkInfo, expected []types.NetworkInfo) bool {
+	equal := func(c1 types.NetworkInfo, c2 types.NetworkInfo) bool {
+		return c1.Equal(c2)
+	}
+	// If the number of observed connections is greater than the number of expected connections they will
+	// never be equal. Exit early.
 	if len(connections) > len(expected) {
-		return assert.ElementsMatch(t, expected, connections, "networking connections do not match")
+		assert.FailNow(t, collectorAssert.ListsToAssertMsg(expected, connections))
 	}
 
-	if len(connections) == len(expected) {
-		for i := range expected {
-			if !expected[i].Equal(connections[i]) {
-				return assert.ElementsMatch(t, expected, connections, "networking connections do not match")
-			}
-		}
-		return true
+	// If the number of observed connections equals the number of expected connections, but the elements are
+	// different, they will never be the same. Exit early
+	if len(connections) == len(expected) && !collectorAssert.ElementsMatchFunc(connections, expected, equal) {
+		assert.FailNow(t, collectorAssert.ListsToAssertMsg(expected, connections))
 	}
-	return false
+	return collectorAssert.ElementsMatchFunc(connections, expected, equal)
 }
 
 // ExpectSameElementsConnections compares a list of expected connections to the observed connections. This comparison is done at the beginning, when a new
