@@ -102,7 +102,7 @@ func (s *MockSensor) checkIfConnectionsMatchExpected(t *testing.T, connections [
 func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID string, timeout time.Duration, expected ...types.NetworkInfo) bool {
 	types.SortConnections(expected)
 
-	connections := s.SortedConnections(containerID)
+	connections := s.Connections(containerID)
 	if s.checkIfConnectionsMatchExpected(t, connections, expected) {
 		return true
 	}
@@ -112,7 +112,7 @@ func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID str
 	for {
 		select {
 		case <-timer:
-			connections := s.SortedConnections(containerID)
+			connections := s.Connections(containerID)
 			success := s.checkIfConnectionsMatchExpected(t, connections, expected)
 			if !success {
 				return assert.ElementsMatch(t, expected, connections, "networking connections do not match")
@@ -122,7 +122,7 @@ func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID str
 			if conn.GetContainerId() != containerID {
 				continue
 			}
-			connections := s.SortedConnections(containerID)
+			connections := s.Connections(containerID)
 			success := s.checkIfConnectionsMatchExpected(t, connections, expected)
 			if success {
 				return true

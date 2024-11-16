@@ -155,18 +155,12 @@ func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
 	defer m.networkMutex.Unlock()
 
 	if connections, ok := m.connections[containerID]; ok {
-        conns := make([]types.NetworkInfo, len(connections))
-        copy(conns, connections)
-        return conns
+		conns := make([]types.NetworkInfo, len(connections))
+		copy(conns, connections)
+		types.SortConnections(conns)
+		return conns
 	}
 	return make([]types.NetworkInfo, 0)
-}
-
-func (m *MockSensor) SortedConnections(containerID string) []types.NetworkInfo {
-	connections := m.Connections(containerID)
-	types.SortConnections(connections)
-
-	return connections
 }
 
 // HasConnection returns whether a given connection has been seen for a given
