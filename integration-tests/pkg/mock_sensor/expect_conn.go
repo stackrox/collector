@@ -2,7 +2,6 @@ package mock_sensor
 
 import (
 	"testing"
-
 	"time"
 
 	"github.com/stretchr/testify/assert"
