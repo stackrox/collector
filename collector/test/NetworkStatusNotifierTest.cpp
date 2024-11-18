@@ -80,10 +80,6 @@ class MockCollectorConfig : public collector::CollectorConfig {
   void SetPerContainerRateLimit(int64_t limit) {
     per_container_rate_limit_ = limit;
   }
-
-  void SetScrapeInterval(int64_t interval) {
-    scrape_interval_ = interval;
-  }
 };
 
 class MockConnScraper : public IConnScraper {
@@ -358,7 +354,6 @@ TEST(NetworkStatusNotifier, RateLimitedConnections) {
   // if we throw four connections from the same container into the conn
   // tracker delta, we expect only two to be returned
   config.SetPerContainerRateLimit(2);
-  config.SetScrapeInterval(2);
 
   NetworkStatusNotifier netStatusNotifier(conn_scraper, conn_tracker, comm, config);
 
