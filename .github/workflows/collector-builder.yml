@@ -23,7 +23,8 @@ jobs:
     name: Determine if builder image needs to be built
     runs-on: ubuntu-24.04
     outputs:
-      build-image: ${{ steps.changed.outputs.builder-changed }}
+      build-image: ${{ steps.check-builder.outputs.build-image }}
+      build-multiarch: ${{ steps.build-multiarch.outputs.build-multiarch }}
       collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag }}
 
     steps:
@@ -52,6 +53,60 @@ jobs:
           echo "COLLECTOR_BUILDER_TAG=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_ENV"
           echo "collector-builder-tag=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
 
+      - name: Check if the builder image should be built
+        id: check-builder
+        run: |
+          function build_builder() {
+            echo "build-image=$1" >> "$GITHUB_OUTPUT"
+            exit 0
+          }
+
+          if [[ "${{ steps.changed.outputs.builder-changed }}" == "true" ]]; then
+            build_builder "true"
+          fi
+
+          if [[ "${GITHUB_EVENT_NAME}" == "schedule" ]]; then
+            build_builder "true"
+          fi
+
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            if [[ "${GITHUB_REF_TYPE}" == "tag" || "${GITHUB_REF_NAME}" == release-* ]]; then
+              build_builder "true"
+            fi
+
+            build_builder "false"
+          fi
+
+          # If we got here, we are on a PR event
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'build-builder-image') }}" == "true" ]]; then
+            build_builder "true"
+          fi
+
+          build_builder "false"
+
+      - name: Specify if multiarch image should be built
+        id: build-multiarch
+        run: |
+          function run_multiarch() {
+            echo "build-multiarch=$1" >> "$GITHUB_OUTPUT"
+            exit 0
+          }
+
+          if [[ "${{ steps.check-builder.outputs.build-image }}" == "false" ]]; then
+            run_multiarch "false"
+          fi
+
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            # PRs only run multiarch on demand
+            if [[ "${{ contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') }}" == "true" ]]; then
+              run_multiarch "true"
+            fi
+            run_multiarch "false"
+          fi
+
+          # Events that are not on PRs always run multiarch
+          run_multiarch "true"
+
   build-builder-image:
     name: Build the builder image
     runs-on: ubuntu-24.04
@@ -59,13 +114,7 @@ jobs:
     timeout-minutes: 480
     needs:
     - builder-needs-rebuilding
-    if: |
-      needs.builder-needs-rebuilding.outputs.build-image == 'true' ||
-      (github.event_name == 'push' && (
-        github.ref_type == 'tag' || startsWith(github.ref_name, 'release-')
-      )) ||
-      contains(github.event.pull_request.labels.*.name, 'build-builder-image') ||
-      github.event_name == 'schedule'
+    if: needs.builder-needs-rebuilding.outputs.build-image == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -118,14 +167,7 @@ jobs:
     timeout-minutes: 480
     needs:
     -  builder-needs-rebuilding
-    if: |
-      needs.builder-needs-rebuilding.outputs.build-image == 'true' || (
-        github.event_name == 'push' && (
-        github.ref_type == 'tag' || startsWith(github.ref_name, 'release-')
-      )) || (
-        contains(github.event.pull_request.labels.*.name, 'build-builder-image') &&
-        contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
-      ) || github.event_name == 'schedule'
+    if: needs.builder-needs-rebuilding.outputs.build-multiarch == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -206,11 +248,7 @@ jobs:
     - build-builder-image-remote-vm
     name: Create Multiarch manifest
     runs-on: ubuntu-24.04
-    if: |
-      github.event_name != 'pull_request' || (
-        needs.builder-needs-rebuilding.outputs.collector-builder-tag != 'master' &&
-        contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
-      )
+    if : needs.builder-needs-rebuilding.outputs.build-multiarch == 'true'
     env:
       COLLECTOR_BUILDER_TAG: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}
       ARCHS: amd64 ppc64le s390x arm64
@@ -250,10 +288,7 @@ jobs:
     - build-builder-image
     name: Retag x86 builder image
     runs-on: ubuntu-24.04
-    if: |
-      github.event_name == 'pull_request' &&
-      needs.builder-needs-rebuilding.outputs.collector-builder-tag != 'master' &&
-      !contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+    if : needs.builder-needs-rebuilding.outputs.build-multiarch == 'false'
     env:
       COLLECTOR_BUILDER_TAG: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}
     steps:
