@@ -63,13 +63,6 @@
         push: true
         source: local
 
-    - name: Push slim to quay.io/stackrox-io
-      community.docker.docker_image:
-        name: "{{ collector_image }}-{{ arch }}"
-        repository: "{{ collector_image }}-{{ arch }}-slim"
-        push: true
-        source: local
-
     - name: Push base to quay.io/stackrox-io
       community.docker.docker_image:
         name: "{{ collector_image }}-{{ arch }}"
@@ -97,13 +90,6 @@
         push: true
         source: local
 
-    - name: Push slim to quay.io/rhacs-eng
-      community.docker.docker_image:
-        name: "{{ rhacs_eng_image }}-{{ arch }}"
-        repository: "{{ rhacs_eng_image }}-{{ arch }}-slim"
-        push: true
-        source: local
-
     - name: Push base to quay.io/rhacs-eng
       community.docker.docker_image:
         name: "{{ rhacs_eng_image }}-{{ arch }}"
@@ -123,11 +109,9 @@
         msg:
         - "Pushed the following images:"
         - "  {{ collector_image }}-{{ arch }}"
-        - "  {{ collector_image }}-{{ arch }}-slim"
         - "  {{ collector_image }}-{{ arch }}-base"
         - "  {{ collector_image }}-{{ arch }}-latest"
         - "  {{ rhacs_eng_image }}-{{ arch }}"
-        - "  {{ rhacs_eng_image }}-{{ arch }}-slim"
         - "  {{ rhacs_eng_image }}-{{ arch }}-base"
         - "  {{ rhacs_eng_image }}-{{ arch }}-latest"
       tags: [print_action]

@@ -51,9 +51,8 @@ quay.io.
 
 ### Collector image
 
-The `ci-build-collector.yml` playbook is meant to be used by CI, it handles the
-build process for the slim collector image, as well as retagging and pushing
-of these images to quay.io.
+The `ci-build-collector.yml` playbook is meant to be used by CI, it handles
+retagging and pushing of Collector images to quay.io.
 
 #### Environment variables used by the playbook
 
