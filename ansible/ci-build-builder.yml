@@ -28,6 +28,8 @@
       community.general.make:
         chdir: "{{ ansible_env.GITHUB_WORKSPACE | default(collector_root) }}"
         target: builder
+      environment:
+        BUILDAH_FORMAT: 'docker'
 
     - name: Retag and push to stackrox-io
       ansible.builtin.include_role:
