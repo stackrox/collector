@@ -3,12 +3,15 @@
 
 #include <memory>
 
+#include <gtest/gtest_prod.h>
+
 #include "CollectorConfig.h"
 #include "CollectorStats.h"
 #include "ConnTracker.h"
 #include "NetworkConnectionInfoServiceComm.h"
 #include "ProcfsScraper.h"
 #include "ProtoAllocator.h"
+#include "RateLimit.h"
 #include "StoppableThread.h"
 
 namespace collector {
@@ -38,6 +41,8 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   void Stop();
 
  private:
+  FRIEND_TEST(NetworkStatusNotifier, RateLimitedConnections);
+
   sensor::NetworkConnectionInfoMessage* CreateInfoMessage(const ConnMap& conn_delta, const AdvertisedEndpointMap& cep_delta);
   void AddConnections(::google::protobuf::RepeatedPtrField<sensor::NetworkConnection>* updates, const ConnMap& delta);
   void AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const AdvertisedEndpointMap& delta);

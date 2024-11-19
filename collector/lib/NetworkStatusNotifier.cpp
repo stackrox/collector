@@ -5,8 +5,10 @@
 #include "CollectorStats.h"
 #include "DuplexGRPC.h"
 #include "GRPCUtil.h"
+#include "Logging.h"
 #include "Profiler.h"
 #include "ProtoUtil.h"
+#include "RateLimit.h"
 #include "TimeUtil.h"
 #include "Utility.h"
 
@@ -300,12 +302,37 @@ sensor::NetworkConnectionInfoMessage* NetworkStatusNotifier::CreateInfoMessage(c
 }
 
 void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<sensor::NetworkConnection>* updates, const ConnMap& delta) {
+  int64_t per_container_limit = config_.PerContainerRateLimit();
+  CountLimiter rate_limiter(per_container_limit);
+
   for (const auto& delta_entry : delta) {
     auto* conn_proto = ConnToProto(delta_entry.first);
     if (!delta_entry.second.IsActive()) {
       *conn_proto->mutable_close_timestamp() = google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(
           delta_entry.second.LastActiveTime());
+    } else {
+      //
+      // We want to rate limit connections per container, even after afterglow
+      // has been (optionally) applied. Afterglow does not guard against a high
+      // number of unique connections, which has a higher likelihood when
+      // external IPs are enabled.
+      //
+      // We do the rate limiting here, at the last moment, for efficiency reasons:
+      // we don't want to rate limit based on connections that may already be dropped
+      // by afterglow.
+      //
+      // We explicitly do not rate limit close events to avoid creation of
+      // zombie connections that have been reported to Sensor. Sensor can handle
+      // the case where we send a close event for a connection that it doesn't
+      // know about.
+      //
+      if (!rate_limiter.Allow(delta_entry.first.container())) {
+        CLOG_THROTTLED(INFO, std::chrono::seconds(5)) << "Rate limiting connections reported from container " << delta_entry.first.container();
+        COUNTER_INC(CollectorStats::net_conn_rate_limited);
+        continue;
+      }
     }
+
     updates->AddAllocated(conn_proto);
   }
 }

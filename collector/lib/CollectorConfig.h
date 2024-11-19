@@ -107,6 +107,16 @@ class CollectorConfig {
     return enable_external_ips_;
   }
 
+  int64_t PerContainerRateLimit() const {
+    auto lock = ReadLock();
+    if (runtime_config_.has_value()) {
+      return runtime_config_.value()
+          .networking()
+          .per_container_rate_limit();
+    }
+    return per_container_rate_limit_;
+  }
+
   std::string GetRuntimeConfigStr() {
     auto lock = ReadLock();
     if (runtime_config_.has_value()) {
@@ -196,6 +206,7 @@ class CollectorConfig {
   std::vector<double> connection_stats_quantiles_;
   double connection_stats_error_;
   unsigned int connection_stats_window_;
+  int64_t per_container_rate_limit_ = 1024;
 
   // URL to the GRPC server
   std::optional<std::string> grpc_server_;

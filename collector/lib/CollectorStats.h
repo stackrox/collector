@@ -21,6 +21,7 @@
   X(net_conn_updates)                       \
   X(net_conn_deltas)                        \
   X(net_conn_inactive)                      \
+  X(net_conn_rate_limited)                  \
   X(net_cep_updates)                        \
   X(net_cep_deltas)                         \
   X(net_cep_inactive)                       \

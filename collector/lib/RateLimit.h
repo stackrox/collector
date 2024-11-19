@@ -13,9 +13,9 @@ struct TokenBucket {
   int64_t last_time;  // amount of time since the bucket last updated in microseconds
 };
 
-class Limiter {
+class TimeLimiter {
  public:
-  Limiter(int64_t burst_size, int64_t refill_time);
+  TimeLimiter(int64_t burst_size, int64_t refill_time);
   bool Allow(TokenBucket* b);
   bool AllowN(TokenBucket* b, int64_t n);
   int64_t Tokens(TokenBucket* b);
@@ -37,7 +37,19 @@ class RateLimitCache {
 
  private:
   size_t capacity_;
-  std::unique_ptr<Limiter> limiter_;
+  std::unique_ptr<TimeLimiter> limiter_;
+  std::unordered_map<std::string, TokenBucket> cache_;
+};
+
+class CountLimiter {
+ public:
+  CountLimiter();
+  CountLimiter(int64_t count);
+
+  bool Allow(std::string key);
+
+ private:
+  int64_t count_;
   std::unordered_map<std::string, TokenBucket> cache_;
 };
 }  // namespace collector
