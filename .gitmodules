@@ -64,3 +64,7 @@
 	path = builder/third_party/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
 	branch = master
+[submodule "builder/third_party/bpftool"]
+	path = builder/third_party/bpftool
+	url = https://github.com/libbpf/bpftool
+	branch = v7.3.0
