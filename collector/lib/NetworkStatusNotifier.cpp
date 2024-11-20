@@ -345,7 +345,7 @@ void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<
   }
 
   for (const auto& [id, events] : rate_limited_containers) {
-    CLOG(INFO) << "Rate limited " << events << " connections from container " << id << "(limit: " << per_container_limit << ")";
+    CLOG(INFO) << "Rate limited " << events << " connections from container " << id << " (limit: " << per_container_limit << ")";
   }
 
   CLOG(DEBUG) << "Processed " << delta.size() << " events; sending " << added_events;
