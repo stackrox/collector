@@ -72,11 +72,18 @@ bool ConfigLoader::LoadConfiguration(CollectorConfig& config, const YAML::Node& 
   }
 
   bool enable_external_ips = external_ips_node["enable"].as<bool>(false);
+  int64_t per_container_rate_limit = networking["per_container_rate_limit"].as<int64_t>(1024);
+
   sensor::CollectorConfig runtime_config;
   runtime_config
       .mutable_networking()
       ->mutable_external_ips()
       ->set_enable(enable_external_ips);
+
+  runtime_config
+      .mutable_networking()
+      ->set_per_container_rate_limit(per_container_rate_limit);
+
   config.SetRuntimeConfig(std::move(runtime_config));
 
   CLOG(DEBUG) << "Runtime configuration:\n"

@@ -305,7 +305,16 @@ void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<
   int64_t per_container_limit = config_.PerContainerRateLimit();
   CountLimiter rate_limiter(per_container_limit);
 
+  CLOG(DEBUG) << "Per container rate limit: " << per_container_limit;
+
+  UnorderedMap<std::string, int> rate_limited_containers;
+
+  int64_t total_events = 0;
+  int64_t added_events = 0;
+
   for (const auto& delta_entry : delta) {
+    total_events++;
+
     auto* conn_proto = ConnToProto(delta_entry.first);
     if (!delta_entry.second.IsActive()) {
       *conn_proto->mutable_close_timestamp() = google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(
@@ -326,15 +335,27 @@ void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<
       // the case where we send a close event for a connection that it doesn't
       // know about.
       //
-      if (!rate_limiter.Allow(delta_entry.first.container())) {
-        CLOG_THROTTLED(INFO, std::chrono::seconds(5)) << "Rate limiting connections reported from container " << delta_entry.first.container();
+      std::string container = delta_entry.first.container();
+      if (!rate_limiter.Allow(container)) {
+        // [] operator will default construct the map element
+        // if it does not exist
+        rate_limited_containers[container]++;
         COUNTER_INC(CollectorStats::net_conn_rate_limited);
         continue;
       }
     }
 
+    added_events++;
     updates->AddAllocated(conn_proto);
   }
+
+  if (rate_limited_containers.size() != 0) {
+    for (auto container : rate_limited_containers) {
+      CLOG(INFO) << "Rate limited " << container.second << " connections from container " << container.first;
+    }
+  }
+
+  CLOG(DEBUG) << "Processed " << total_events << " events; sending " << added_events;
 }
 
 void NetworkStatusNotifier::AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const AdvertisedEndpointMap& delta) {
