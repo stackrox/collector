@@ -305,16 +305,11 @@ void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<
   int64_t per_container_limit = config_.PerContainerRateLimit();
   CountLimiter rate_limiter(per_container_limit);
 
-  CLOG(DEBUG) << "Per container rate limit: " << per_container_limit;
+  UnorderedMap<std::string_view, int> rate_limited_containers;
 
-  UnorderedMap<std::string, int> rate_limited_containers;
-
-  int64_t total_events = 0;
   int64_t added_events = 0;
 
   for (const auto& delta_entry : delta) {
-    total_events++;
-
     auto* conn_proto = ConnToProto(delta_entry.first);
     if (!delta_entry.second.IsActive()) {
       *conn_proto->mutable_close_timestamp() = google::protobuf::util::TimeUtil::MicrosecondsToTimestamp(
@@ -335,11 +330,11 @@ void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<
       // the case where we send a close event for a connection that it doesn't
       // know about.
       //
-      std::string container = delta_entry.first.container();
+      const std::string& container = delta_entry.first.container();
       if (!rate_limiter.Allow(container)) {
         // [] operator will default construct the map element
         // if it does not exist
-        rate_limited_containers[container]++;
+        rate_limited_containers[std::string_view(container)]++;
         COUNTER_INC(CollectorStats::net_conn_rate_limited);
         continue;
       }
@@ -349,13 +344,11 @@ void NetworkStatusNotifier::AddConnections(::google::protobuf::RepeatedPtrField<
     updates->AddAllocated(conn_proto);
   }
 
-  if (rate_limited_containers.size() != 0) {
-    for (auto container : rate_limited_containers) {
-      CLOG(INFO) << "Rate limited " << container.second << " connections from container " << container.first;
-    }
+  for (const auto& [id, events] : rate_limited_containers) {
+    CLOG(INFO) << "Rate limited " << events << " connections from container " << id << "(limit: " << per_container_limit << ")";
   }
 
-  CLOG(DEBUG) << "Processed " << total_events << " events; sending " << added_events;
+  CLOG(DEBUG) << "Processed " << delta.size() << " events; sending " << added_events;
 }
 
 void NetworkStatusNotifier::AddContainerEndpoints(::google::protobuf::RepeatedPtrField<sensor::NetworkEndpoint>* updates, const AdvertisedEndpointMap& delta) {

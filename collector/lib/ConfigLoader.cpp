@@ -59,29 +59,27 @@ bool ConfigLoader::LoadConfiguration(CollectorConfig& config, const YAML::Node& 
     CLOG(ERROR) << "Unable to read config from " << config_file;
     return false;
   }
-  YAML::Node networking = node["networking"];
-  if (!networking) {
+  YAML::Node networking_node = node["networking"];
+  if (!networking_node) {
     CLOG(DEBUG) << "No networking in " << config_file;
     return true;
   }
 
-  YAML::Node external_ips_node = networking["externalIps"];
+  YAML::Node external_ips_node = networking_node["externalIps"];
   if (!external_ips_node) {
     CLOG(DEBUG) << "No external IPs in " << config_file;
     return true;
   }
 
   bool enable_external_ips = external_ips_node["enable"].as<bool>(false);
-  int64_t per_container_rate_limit = networking["per_container_rate_limit"].as<int64_t>(1024);
+  int64_t per_container_rate_limit = networking_node["per_container_rate_limit"].as<int64_t>(1024);
 
   sensor::CollectorConfig runtime_config;
-  runtime_config
-      .mutable_networking()
+  auto* networking = runtime_config.mutable_networking();
+  networking
       ->mutable_external_ips()
       ->set_enable(enable_external_ips);
-
-  runtime_config
-      .mutable_networking()
+  networking
       ->set_per_container_rate_limit(per_container_rate_limit);
 
   config.SetRuntimeConfig(std::move(runtime_config));
