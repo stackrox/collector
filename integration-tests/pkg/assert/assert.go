@@ -36,7 +36,7 @@ func AssertElementsMatchFunc[N any](t *testing.T, expected []N, actual []N, equa
 	match := ElementsMatchFunc(expected, actual, equal)
 	if !match {
 		assertMsg := ListsToAssertMsg(expected, actual)
-		assert.True(t, match, assertMsg)
+		assert.Fail(t, assertMsg)
 	}
 	return match
 }
