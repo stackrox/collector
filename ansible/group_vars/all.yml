@@ -100,6 +100,7 @@ virtual_machines:
       # See https://github.com/stackrox/collector/issues/1141 for details.
       #- sles-12
       - sles-15
+    container_engine: podman
 
   sles-arm64:
     project: suse-cloud
@@ -107,6 +108,7 @@ virtual_machines:
     machine_type: t2a-standard-2
     families:
       - sles-15-arm64
+    container_engine: podman
 
   ubuntu-os:
     project: ubuntu-os-cloud

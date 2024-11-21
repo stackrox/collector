@@ -16,6 +16,7 @@
     is_coreos: "{{ vm_config.find('coreos') != -1 }}"
     is_ubuntu: "{{ vm_config.find('ubuntu') != -1 }}"
     is_flatcar: "{{ vm_config.find('flatcar') != -1 }}"
+    is_sles: "{{ vm_config.find('sles') != -1 }}"
 
 # Wait for SSH to be available on the remote host
 # This is agnostic of whether or not ansible is available at that end.
@@ -48,6 +49,10 @@
 - name: Ubuntu Provisioning
   include_tasks: "ubuntu.yml"
   when: is_ubuntu|bool
+
+- name: SLES Provisioning
+  include_tasks: sles.yml
+  when: is_sles|bool
 
 - name: Docker specific setup
   include_tasks: "docker.yml"
