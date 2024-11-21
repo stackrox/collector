@@ -125,8 +125,7 @@ func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID str
 				continue
 			}
 			connections := s.Connections(containerID)
-			success := s.checkIfConnectionsMatchExpected(t, connections, expected)
-			if success {
+			if s.checkIfConnectionsMatchExpected(t, connections, expected) {
 				return true
 			}
 		}
