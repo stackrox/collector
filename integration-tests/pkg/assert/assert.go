@@ -25,12 +25,10 @@ func ElementsMatchFunc[N any](expected []N, actual []N, equal func(a, b N) bool)
 
 func ListsToAssertMsg[N any](expected []N, actual []N) string {
 	var expectedBuf, actualBuf bytes.Buffer
-	spew.Fdump(&expectedBuf, expected)
-	spew.Fdump(&actualBuf, actual)
 	return fmt.Sprintf(
 		"Expected elements:\n%s\n\nActual elements:\n%s\n",
-		expectedBuf.String(),
-		actualBuf.String(),
+		spew.Sdump(expected),
+		spew.Sdump(actual),
 	)
 }
 
