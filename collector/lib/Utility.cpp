@@ -160,8 +160,8 @@ const char* GetSNIHostname() {
 }
 
 std::string GetHostname() {
-  HostInfo& info = HostInfo::Instance();
-  return info.GetHostname();
+  auto host = collector::rust::host_info();
+  return std::string(host->hostname());
 }
 
 std::vector<std::string> SplitStringView(const std::string_view sv, char delim) {

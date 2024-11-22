@@ -72,8 +72,6 @@ target_link_libraries(collector collector_lib)
 
 target_link_libraries(collector prometheus-cpp::core prometheus-cpp::pull)
 
-target_include_directories(collector INTERFACE $<TARGET_PROPERTY:rust_test::rust_static_lib,INTERFACE_INCLUDE_DIRECTORIES>)
-
 add_executable(connscrape connscrape.cpp)
 target_link_libraries(connscrape collector_lib)
 

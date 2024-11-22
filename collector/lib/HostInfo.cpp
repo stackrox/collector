@@ -29,6 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <linux/bpf.h>
 
 #include "Logging.h"
+#include "host/src/lib.rs.h"
 
 namespace collector {
 

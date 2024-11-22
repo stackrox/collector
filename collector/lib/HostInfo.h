@@ -35,6 +35,8 @@ extern "C" {
 #include "FileSystem.h"
 #include "Logging.h"
 #include "Utility.h"
+#include "host/src/lib.rs.h"
+#include "rust/cxx.h"
 
 namespace collector {
 
@@ -92,7 +94,7 @@ struct KernelVersion {
       release = kernel_version_env;
     }
 
-    struct utsname uts_buffer {};
+    struct utsname uts_buffer{};
     if (uname(&uts_buffer) == 0) {
       if (release.empty()) {
         release = uts_buffer.release;
