@@ -1,8 +1,6 @@
 package assert
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -24,7 +22,6 @@ func ElementsMatchFunc[N any](expected []N, actual []N, equal func(a, b N) bool)
 }
 
 func ListsToAssertMsg[N any](expected []N, actual []N) string {
-	var expectedBuf, actualBuf bytes.Buffer
 	return fmt.Sprintf(
 		"Expected elements:\n%s\n\nActual elements:\n%s\n",
 		spew.Sdump(expected),
