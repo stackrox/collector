@@ -257,7 +257,7 @@ endfunction()
 
 function(add_rust_library)
     set(options)
-    set(oneValueArgs TARGET SOURCE_DIRECTORY BINARY_DIRECTORY PRECOMPILE_TESTS INCLUDE_DIRECTORY)
+    set(oneValueArgs TARGET SOURCE_DIRECTORY BINARY_DIRECTORY PRECOMPILE_TESTS INCLUDE_DIRECTORY BYPRODUCTS)
     cmake_parse_arguments(ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     if(WIN32)
@@ -287,6 +287,7 @@ function(add_rust_library)
             COMMAND ${CMAKE_COMMAND} -E make_directory "${ARGS_BINARY_DIRECTORY}/${RUST_COMPILER_TARGET}/${CARGO_BUILD_TYPE}"
             COMMAND lipo ARGS -create ${ARGS_BINARY_DIRECTORY}/x86_64-apple-darwin/${CARGO_BUILD_TYPE}/lib${ARGS_TARGET}.a ${ARGS_BINARY_DIRECTORY}/aarch64-apple-darwin/${CARGO_BUILD_TYPE}/lib${ARGS_TARGET}.a -output "${OUTPUT}"
             WORKING_DIRECTORY "${ARGS_SOURCE_DIRECTORY}"
+            BYPRODUCTS ${ARGS_BYPRODUCTS}
             DEPENDS ${LIB_SOURCES}
             COMMENT "Building ${ARGS_TARGET} in ${ARGS_BINARY_DIRECTORY} with:  ${cargo_EXECUTABLE} ${MY_CARGO_ARGS_STRING}")
     else()
@@ -295,6 +296,7 @@ function(add_rust_library)
             COMMAND ${CMAKE_COMMAND} -E env "CARGO_CMD=build" "BINDINGS_INCLUDE_DIRECTORY=${ARGS_INCLUDE_DIRECTORY}" "CARGO_TARGET_DIR=${ARGS_BINARY_DIRECTORY}" "MAINTAINER_MODE=${MAINTAINER_MODE}" "RUSTFLAGS=\"${RUSTFLAGS}\"" ${cargo_EXECUTABLE} ARGS ${MY_CARGO_ARGS}
             WORKING_DIRECTORY "${ARGS_SOURCE_DIRECTORY}"
             DEPENDS ${LIB_SOURCES}
+            BYPRODUCTS ${ARGS_BYPRODUCTS}
             COMMENT "Building ${ARGS_TARGET} in ${ARGS_BINARY_DIRECTORY} with:  ${cargo_EXECUTABLE} ${MY_CARGO_ARGS_STRING}")
     endif()
 

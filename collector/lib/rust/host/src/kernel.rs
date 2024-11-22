@@ -37,7 +37,7 @@ impl KernelVersion {
         // (\d+)\.(\d+)\.(\d+) -> match and capture kernel, major, minor versions
         // (-(\d+))?           -> optionally match hyphen followed by build id number
         // .*                  -> matches the rest of the string
-        let re = Regex::new(r"(^(\d+)\.(\d+)\.(\d+)(-(\d+))?.*)").unwrap();
+        let re = Regex::new(r"^(\d+)\.(\d+)\.(\d+)(-(\d+))?.*").unwrap();
 
         let Some(captures) = re.captures(release) else {
             return Default::default();
@@ -47,8 +47,8 @@ impl KernelVersion {
         let major = captures[2].parse::<u64>().unwrap();
         let minor = captures[3].parse::<u64>().unwrap();
 
-        let build_id = if captures.len() > 4 {
-            captures[4].parse::<u64>().unwrap()
+        let build_id = if captures.len() > 5 {
+            captures[5].parse::<u64>().unwrap()
         } else {
             0
         };
