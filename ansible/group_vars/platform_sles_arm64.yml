@@ -1,0 +1,6 @@
+---
+
+# SLES does not have SELinux by default, but usually
+# with podman we expect to set it to permissive for our
+# tests, so disable here.
+needs_selinux_permissive: false
