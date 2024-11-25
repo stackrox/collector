@@ -85,7 +85,7 @@ loop:
 func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID string, timeout time.Duration, expected ...types.NetworkInfo) bool {
 	types.SortConnections(expected)
 
-	equal := func(c1 types.NetworkInfo, c2 types.NetworkInfo) bool {
+	equal := func(c1, c2 types.NetworkInfo) bool {
 		return c1.Equal(c2)
 	}
 
