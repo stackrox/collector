@@ -3,7 +3,8 @@ use log::{debug, info, warn};
 use std::io::Error;
 
 use libbpf_rs::libbpf_sys::{
-    libbpf_num_possible_cpus, libbpf_probe_bpf_prog_type, BPF_PROG_TYPE_TRACING,
+    libbpf_num_possible_cpus, libbpf_probe_bpf_map_type, libbpf_probe_bpf_prog_type,
+    BPF_MAP_TYPE_RINGBUF, BPF_PROG_TYPE_TRACING,
 };
 
 use crate::KernelVersion;
@@ -236,7 +237,20 @@ impl HostInfo {
     }
 
     pub fn has_bpf_ringbuf_support(&self) -> bool {
-        false
+        let res = unsafe { libbpf_probe_bpf_map_type(BPF_MAP_TYPE_RINGBUF, std::ptr::null()) };
+
+        if res == 0 {
+            info!(
+                "BPF ringbuffer map type is not available (errno = {:?})",
+                Error::last_os_error()
+            );
+        }
+
+        if res < 0 {
+            warn!("Unable to check for the BPF ringbuffer availability. Assuming it is available.");
+        }
+
+        res != 0
     }
 }
 
