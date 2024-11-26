@@ -1,7 +1,7 @@
 use regex::Regex;
 use uname::uname;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct KernelVersion {
     pub kernel: u64,
     pub major: u64,
@@ -9,25 +9,8 @@ pub struct KernelVersion {
     pub build_id: u64,
 
     pub release: String,
-
-    #[allow(dead_code)]
     pub version: String,
-    #[allow(dead_code)]
     pub machine: String,
-}
-
-impl Default for KernelVersion {
-    fn default() -> Self {
-        KernelVersion {
-            kernel: 0,
-            major: 0,
-            minor: 0,
-            build_id: 0,
-            release: "".to_string(),
-            version: "".to_string(),
-            machine: "".to_string(),
-        }
-    }
 }
 
 impl KernelVersion {
@@ -43,12 +26,12 @@ impl KernelVersion {
             return Default::default();
         };
 
-        let kernel = captures[1].parse::<u64>().unwrap();
-        let major = captures[2].parse::<u64>().unwrap();
-        let minor = captures[3].parse::<u64>().unwrap();
+        let kernel = captures[1].parse::<u64>().unwrap_or_default();
+        let major = captures[2].parse::<u64>().unwrap_or_default();
+        let minor = captures[3].parse::<u64>().unwrap_or_default();
 
         let build_id = if captures.len() > 5 {
-            captures[5].parse::<u64>().unwrap()
+            captures[5].parse::<u64>().unwrap_or_default()
         } else {
             0
         };
@@ -89,5 +72,97 @@ impl KernelVersion {
 
     pub fn short_release(&self) -> String {
         format!("{}.{}.{}", self.kernel, self.major, self.minor)
+    }
+
+    pub fn kernel(&self) -> u64 {
+        self.kernel
+    }
+
+    pub fn major(&self) -> u64 {
+        self.major
+    }
+
+    pub fn minor(&self) -> u64 {
+        self.minor
+    }
+
+    pub fn build_id(&self) -> u64 {
+        self.build_id
+    }
+
+    pub fn release(&self) -> String {
+        self.release.clone()
+    }
+
+    pub fn version(&self) -> String {
+        self.version.clone()
+    }
+
+    pub fn machine(&self) -> String {
+        self.machine.clone()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_has_ebpf_support() {
+        let mut v = KernelVersion {
+            kernel: 3,
+            major: 13,
+            ..Default::default()
+        };
+        assert!(!v.has_ebpf_support());
+
+        v.kernel = 4;
+        assert!(!v.has_ebpf_support());
+
+        v.kernel = 5;
+        assert!(v.has_ebpf_support());
+    }
+
+    #[test]
+    fn test_has_secure_boot_param() {
+        let mut v = KernelVersion {
+            kernel: 3,
+            major: 10,
+            ..Default::default()
+        };
+        assert!(!v.has_secure_boot_param());
+
+        v.kernel = 4;
+        assert!(!v.has_secure_boot_param());
+
+        v.kernel = 5;
+        assert!(v.has_secure_boot_param());
+    }
+
+    #[test]
+    fn test_short_release() {
+        let v = KernelVersion {
+            kernel: 9,
+            major: 10,
+            minor: 11,
+            ..Default::default()
+        };
+
+        assert_eq!("9.10.11", v.short_release());
+    }
+
+    #[test]
+    fn test_kernel_version_construction() {
+        let v = KernelVersion::new("3.10.0-957.10.1.el7.x86_64", "", "");
+        assert_eq!(3, v.kernel);
+        assert_eq!(10, v.major);
+        assert_eq!(0, v.minor);
+        assert_eq!(957, v.build_id);
+
+        let v = KernelVersion::new("not.a.version-invalid.10.1.el7.x86_64", "", "");
+        assert_eq!(0, v.kernel);
+        assert_eq!(0, v.major);
+        assert_eq!(0, v.minor);
+        assert_eq!(0, v.build_id);
     }
 }

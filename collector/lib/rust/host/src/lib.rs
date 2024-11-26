@@ -1,4 +1,7 @@
 extern crate cxx;
+extern crate libbpf_rs;
+extern crate libc;
+extern crate log;
 extern crate regex;
 extern crate uname;
 
@@ -15,6 +18,13 @@ mod ffi {
         fn has_ebpf_support(&self) -> bool;
         fn has_secure_boot_param(&self) -> bool;
         fn short_release(&self) -> String;
+        fn kernel(&self) -> u64;
+        fn major(&self) -> u64;
+        fn minor(&self) -> u64;
+        fn build_id(&self) -> u64;
+        fn release(&self) -> String;
+        fn version(&self) -> String;
+        fn machine(&self) -> String;
     }
 
     extern "Rust" {
@@ -35,6 +45,9 @@ mod ffi {
         fn has_ebpf_support(&self) -> bool;
         fn has_btf_symbols(&self) -> bool;
         fn is_uefi(&self) -> bool;
+        fn num_possible_cpu(&self) -> i64;
+        fn has_bpf_tracing_support(&self) -> bool;
+        fn has_bpf_ringbuf_support(&self) -> bool;
     }
 
     extern "Rust" {
