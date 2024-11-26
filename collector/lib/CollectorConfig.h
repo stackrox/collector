@@ -35,6 +35,7 @@ class CollectorConfig {
       "accept4",
       "chdir",
       "clone",
+      "clone3",
       "close",
       "connect",
       "execve",
