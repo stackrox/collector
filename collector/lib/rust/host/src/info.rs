@@ -1,3 +1,11 @@
+use log::{debug, info, warn};
+
+use std::io::Error;
+
+use libbpf_rs::libbpf_sys::{
+    libbpf_num_possible_cpus, libbpf_probe_bpf_prog_type, BPF_PROG_TYPE_TRACING,
+};
+
 use crate::KernelVersion;
 
 use std::fs::File;
@@ -25,6 +33,7 @@ pub enum SecureBootStatus {
     Unset = 0,
 }
 
+#[derive(Default)]
 pub struct HostInfo {
     os: String,
     build: String,
@@ -151,46 +160,38 @@ impl HostInfo {
         // TODO: not sure I like the layout of this, perhaps it needs a revisit
         let locations = vec![
             // try canonical vmlinux BTF through sysfs first
-            ("/sys/kernel/btf/vmlinux".to_string(), false),
+            PathBuf::from("/sys/kernel/btf/vmlinux"),
             // fall back to trying to find vmlinux on disk otherwise
-            (format!("/boot/vmlinux-{}", self.kernel.release), false),
-            (
-                format!(
-                    "/lib/modules/{}/vmlinux-{}",
-                    self.kernel.release, self.kernel.release
-                ),
-                false,
-            ),
-            (
-                format!("/lib/modules/{}/build/vmlinux", self.kernel.release),
-                false,
-            ),
-            (
-                format!("/usr/lib/modules/{}/kernel/vmlinux", self.kernel.release),
-                true,
-            ),
-            (
-                format!("/usr/lib/debug/boot/vmlinux-{}", self.kernel.release),
-                true,
-            ),
-            (
-                format!("/usr/lib/debug/boot/vmlinux-{}.debug", self.kernel.release),
-                true,
-            ),
-            (
-                format!("/usr/lib/debug/lib/modules/{}/vmlinux", self.kernel.release),
-                true,
-            ),
+            PathBuf::from(format!("/boot/vmlinux-{}", self.kernel.release)),
+            PathBuf::from(format!(
+                "/lib/modules/{}/vmlinux-{}",
+                self.kernel.release, self.kernel.release
+            )),
+            PathBuf::from(format!(
+                "/lib/modules/{}/build/vmlinux",
+                self.kernel.release
+            )),
+            host_path(format!(
+                "/usr/lib/modules/{}/kernel/vmlinux",
+                self.kernel.release
+            )),
+            host_path(format!(
+                "/usr/lib/debug/boot/vmlinux-{}",
+                self.kernel.release
+            )),
+            host_path(format!(
+                "/usr/lib/debug/boot/vmlinux-{}.debug",
+                self.kernel.release
+            )),
+            host_path(format!(
+                "/usr/lib/debug/lib/modules/{}/vmlinux",
+                self.kernel.release
+            )),
         ];
 
         for location in locations {
-            let path = if location.1 {
-                host_path(location.0)
-            } else {
-                PathBuf::from(location.0)
-            };
-
-            if path.exists() {
+            if location.exists() {
+                debug!("BTF symbols found in {:?}", location);
                 return true;
             }
         }
@@ -210,6 +211,33 @@ impl HostInfo {
     pub fn secure_boot_status(&self) -> SecureBootStatus {
         SecureBootStatus::Unset
     }
+
+    pub fn num_possible_cpu(&self) -> i64 {
+        (unsafe { libbpf_num_possible_cpus() }) as i64
+    }
+
+    pub fn has_bpf_tracing_support(&self) -> bool {
+        let res = unsafe { libbpf_probe_bpf_prog_type(BPF_PROG_TYPE_TRACING, std::ptr::null()) };
+
+        if res == 0 {
+            info!(
+                "BPF tracepoint program type is not supported (errno = {:?})",
+                Error::last_os_error()
+            );
+        }
+
+        if res < 0 {
+            warn!(
+                "Unable to check for the BPF tracepoint program support. Assuming it is available"
+            );
+        }
+
+        res != 0
+    }
+
+    pub fn has_bpf_ringbuf_support(&self) -> bool {
+        false
+    }
 }
 
 /// Constructs a path joined from the host root (usually /host)
@@ -221,4 +249,55 @@ fn host_path<P: Into<PathBuf>>(path: P) -> PathBuf {
 /// FFI-compatible constructor for HostInfo objects
 pub fn host_info() -> Box<HostInfo> {
     Box::new(HostInfo::new())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_rhel76() {
+        let mut host = HostInfo {
+            kernel: KernelVersion::new("3.10.0-957.10.1.el7.x86_64", "", ""),
+            os: "rhel".to_string(),
+            ..Default::default()
+        };
+
+        assert!(
+            host.is_rhel76(),
+            "3.10.0-957.10.1.el7.x86_64 should be RHEL 7.6"
+        );
+
+        host.kernel = KernelVersion::new("4.11.0-18.10.1.el8.x86_64", "", "");
+
+        assert!(
+            !host.is_rhel76(),
+            "4.11.0-18.10.1.el8.x86_64 shouldn't be RHEL 7.6"
+        );
+    }
+
+    #[test]
+    fn test_cos_identification() {
+        assert!(
+            HostInfo {
+                os: "cos".to_string(),
+                build: "123".to_string(),
+                ..Default::default()
+            }
+            .is_cos(),
+            "COS should be identified"
+        );
+    }
+
+    #[test]
+    fn test_ubuntu_identification() {
+        assert!(
+            HostInfo {
+                os: "ubuntu".to_string(),
+                ..Default::default()
+            }
+            .is_ubuntu(),
+            "Ubuntu should be identified"
+        );
+    }
 }

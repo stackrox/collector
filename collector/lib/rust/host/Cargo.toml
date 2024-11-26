@@ -5,6 +5,9 @@ edition = "2021"
 
 [dependencies]
 cxx = "1.0"
+libbpf-rs = "0.24.8"
+libc = "0.2.164"
+log = "0.4.22"
 regex = "1.11.1"
 uname = "0.1.1"
 
