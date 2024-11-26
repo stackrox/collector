@@ -122,6 +122,7 @@ following is an example of the contents
 networking:
   externalIps:
     enable: true
+  perContainerRateLimit: 1234
 ```
 
 Alternatively, if collector is used as a part of Stackrox, the configuration can be set
@@ -138,6 +139,7 @@ data:
     networking:
       externalIps:
         enable: true
+      perContainerRateLimit: 1234
 ```
 
 The file path can be set using the `ROX_COLLECTOR_CONFIG_PATH` environment variable.
