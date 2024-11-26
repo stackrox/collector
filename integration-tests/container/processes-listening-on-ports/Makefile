@@ -1,4 +1,4 @@
-BASE_PAT = .
+BASE_PATH = .
 include ../Makefile-constants.mk
 
 .DEFAULT_GOAL = all
