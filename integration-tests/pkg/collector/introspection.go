@@ -8,8 +8,8 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/log"
 )
 
-func (k *K8sCollectorManager) IntrospectionQuery(endpoint string) ([]byte, error) {
-	uri := fmt.Sprintf("http://%s:8080%s", k.IP(), endpoint)
+func IntrospectionQuery(collectorIP string, endpoint string) ([]byte, error) {
+	uri := fmt.Sprintf("http://%s:8080%s", collectorIP, endpoint)
 	resp, err := http.Get(uri)
 	if err != nil {
 		return nil, err

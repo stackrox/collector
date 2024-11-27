@@ -529,3 +529,7 @@ func TestUdpNetworkFlow(t *testing.T) {
 	}
 	suite.Run(t, new(suites.UdpNetworkFlow))
 }
+
+func TestRuntimeConfigFile(t *testing.T) {
+	suite.Run(t, new(suites.RuntimeConfigFileTestSuite))
+}
