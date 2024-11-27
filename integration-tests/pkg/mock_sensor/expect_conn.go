@@ -2,12 +2,12 @@ package mock_sensor
 
 import (
 	"testing"
-
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/thoas/go-funk"
 
+	collectorAssert "github.com/stackrox/collector/integration-tests/pkg/assert"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 )
 
@@ -33,7 +33,7 @@ loop:
 		case <-timer:
 			// we know they don't match at this point, but by using
 			// ElementsMatch we get much better logging about the differences
-			return assert.ElementsMatch(t, expected, s.Connections(containerID), "timed out waiting for networks")
+			return assert.ElementsMatch(t, expected, s.Connections(containerID), "timed out waiting for network connections")
 		case network := <-s.LiveConnections():
 			if network.GetContainerId() != containerID {
 				continue loop
@@ -72,9 +72,42 @@ loop:
 			if conn.GetContainerId() != containerID {
 				continue loop
 			}
-
 			if len(s.Connections(containerID)) == n {
 				return s.Connections(containerID)
+			}
+		}
+	}
+}
+
+// ExpectSameElementsConnections compares a list of expected connections to the observed connections. This comparison is done at the beginning, when a new
+// connection arrives, and after a timeout period. The number of connections must match and the expected and observed connections must match, but the order
+// does not matter.
+func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID string, timeout time.Duration, expected ...types.NetworkInfo) bool {
+	types.SortConnections(expected)
+
+	equal := func(c1, c2 types.NetworkInfo) bool {
+		return c1.Equal(c2)
+	}
+
+	connections := s.Connections(containerID)
+	if collectorAssert.ElementsMatchFunc(connections, expected, equal) {
+		return true
+	}
+
+	timer := time.After(timeout)
+
+	for {
+		select {
+		case <-timer:
+			connections := s.Connections(containerID)
+			return collectorAssert.AssertElementsMatchFunc(t, connections, expected, equal)
+		case conn := <-s.LiveConnections():
+			if conn.GetContainerId() != containerID {
+				continue
+			}
+			connections := s.Connections(containerID)
+			if collectorAssert.ElementsMatchFunc(connections, expected, equal) {
+				return true
 			}
 		}
 	}
