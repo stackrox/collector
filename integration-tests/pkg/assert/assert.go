@@ -1,7 +1,6 @@
 package assert
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -60,7 +59,6 @@ func AssertRepeated(t *testing.T, tickTime time.Duration, timeout time.Duration,
 	}
 }
 
->>>>>>> 66ca3aa0 (X-Smart-Squash: Squashed 41 commits:)
 func ElementsMatchFunc[N any](expected []N, actual []N, equal func(a, b N) bool) bool {
 	if len(expected) != len(actual) {
 		return false
