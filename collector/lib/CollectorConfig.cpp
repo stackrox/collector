@@ -58,6 +58,8 @@ BoolEnvVar use_podman_ce("ROX_COLLECTOR_CE_USE_PODMAN", false);
 
 BoolEnvVar enable_introspection("ROX_COLLECTOR_INTROSPECTION_ENABLE", false);
 
+BoolEnvVar disable_process_arguments("ROX_COLLECTOR_NO_PROCESS_ARGUMENTS", false);
+
 }  // namespace
 
 constexpr bool CollectorConfig::kTurnOffScrape;
@@ -87,6 +89,7 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   use_docker_ce_ = use_docker_ce.value();
   use_podman_ce_ = use_podman_ce.value();
   enable_introspection_ = enable_introspection.value();
+  disable_process_arguments_ = disable_process_arguments.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.push_back(syscall);

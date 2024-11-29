@@ -7,6 +7,7 @@
 #include "internalapi/sensor/signal_iservice.pb.h"
 #include "storage/process_indicator.pb.h"
 
+#include "CollectorConfig.h"
 #include "CollectorStats.h"
 #include "ContainerMetadata.h"
 #include "EventNames.h"
@@ -25,7 +26,7 @@ namespace collector {
 
 class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
  public:
-  ProcessSignalFormatter(sinsp* inspector);
+  ProcessSignalFormatter(sinsp* inspector, const CollectorConfig& config);
   ~ProcessSignalFormatter();
 
   using Signal = v1::Signal;
@@ -52,6 +53,8 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
   const EventNames& event_names_;
   std::unique_ptr<system_inspector::EventExtractor> event_extractor_;
   ContainerMetadata container_metadata_;
+
+  CollectorConfig config_;
 };
 
 }  // namespace collector
