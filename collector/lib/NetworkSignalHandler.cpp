@@ -23,6 +23,7 @@ EventMap<Modifier> modifiers = {
         {"shutdown<", Modifier::REMOVE},
         {"connect<", Modifier::ADD},
         {"accept<", Modifier::ADD},
+        {"accept4<", Modifier::ADD},
         {"getsockopt<", Modifier::ADD},
         {"sendto<", Modifier::ADD},
         {"sendto>", Modifier::ADD},
@@ -152,13 +153,16 @@ SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {
 }
 
 std::vector<std::string> NetworkSignalHandler::GetRelevantEvents() {
+  std::vector<std::string> base_events = {
+      "close<",
+      "shutdown<",
+      "connect<",
+      "accept<",
+      "accept4<",
+      "getsockopt<"};
+
   if (track_send_recv_) {
-    return {
-        "close<",
-        "shutdown<",
-        "connect<",
-        "accept<",
-        "getsockopt<",
+    std::vector<std::string> extra = {
         "sendto<",
         "sendto>",
         "sendmsg<",
@@ -173,8 +177,10 @@ std::vector<std::string> NetworkSignalHandler::GetRelevantEvents() {
         "recvmsg<",
         "recvmsg>",
     };
+
+    base_events.insert(base_events.end(), extra.begin(), extra.end());
   }
-  return {"close<", "shutdown<", "connect<", "accept<", "getsockopt<"};
+  return base_events;
 }
 
 bool NetworkSignalHandler::Stop() {
