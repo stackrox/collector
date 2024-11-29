@@ -162,7 +162,11 @@ std::vector<std::string> NetworkSignalHandler::GetRelevantEvents() {
       "getsockopt<"};
 
   if (track_send_recv_) {
-    std::vector<std::string> extra = {
+    // disable clang-format here because it will massively
+    // indent the initializer list.
+    //
+    // clang-format off
+    base_events.insert(base_events.end(), {
         "sendto<",
         "sendto>",
         "sendmsg<",
@@ -175,10 +179,9 @@ std::vector<std::string> NetworkSignalHandler::GetRelevantEvents() {
         "recvmmsg<",
         "recvmmsg>",
         "recvmsg<",
-        "recvmsg>",
-    };
-
-    base_events.insert(base_events.end(), extra.begin(), extra.end());
+        "recvmsg>"
+    });
+    // clang-format on
   }
   return base_events;
 }
