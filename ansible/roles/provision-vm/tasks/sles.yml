@@ -1,5 +1,8 @@
 ---
 
+- name: Register VM
+  command: registercloudguest --force-new
+
 - name: Install podman
   community.general.zypper:
     name: podman
