@@ -73,6 +73,7 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
       rebuild-qa-containers: ${{ needs.init.outputs.rebuild-qa-containers == 'true' }}
+      is-konflux: true
     secrets: inherit
 
   run-konflux-tests:
