@@ -90,7 +90,7 @@ func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID str
 	}
 
 	connections := s.Connections(containerID)
-	if collectorAssert.ElementsMatchFunc(connections, expected, equal) {
+	if collectorAssert.ElementsMatchFunc(expected, connections, equal) {
 		return true
 	}
 
@@ -100,13 +100,13 @@ func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID str
 		select {
 		case <-timer:
 			connections := s.Connections(containerID)
-			return collectorAssert.AssertElementsMatchFunc(t, connections, expected, equal)
+			return collectorAssert.AssertElementsMatchFunc(t, expected, connections, equal)
 		case conn := <-s.LiveConnections():
 			if conn.GetContainerId() != containerID {
 				continue
 			}
 			connections := s.Connections(containerID)
-			if collectorAssert.ElementsMatchFunc(connections, expected, equal) {
+			if collectorAssert.ElementsMatchFunc(expected, connections, equal) {
 				return true
 			}
 		}
