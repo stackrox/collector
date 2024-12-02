@@ -15,10 +15,14 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 )
 
+var (
+	runtimeConfigErrorMsg = "Runtime configuration was not updated"
+)
+
 func AssertExternalIps(t *testing.T, enable bool, collectorIP string) {
 	tickTime := 1 * time.Second
 	timeout := 3 * time.Minute
-	AssertRepeated(t, tickTime, timeout, func() bool {
+	AssertRepeated(t, tickTime, timeout, runtimeConfigErrorMsg, func() bool {
 		body, err := collector.IntrospectionQuery(collectorIP, "/state/config")
 		assert.NoError(t, err)
 		var response types.RuntimeConfig
@@ -32,14 +36,14 @@ func AssertExternalIps(t *testing.T, enable bool, collectorIP string) {
 func AssertNoRuntimeConfig(t *testing.T, collectorIP string) {
 	tickTime := 1 * time.Second
 	timeout := 3 * time.Minute
-	AssertRepeated(t, tickTime, timeout, func() bool {
+	AssertRepeated(t, tickTime, timeout, runtimeConfigErrorMsg, func() bool {
 		body, err := collector.IntrospectionQuery(collectorIP, "/state/config")
 		assert.NoError(t, err)
 		return strings.TrimSpace(string(body)) == "{}"
 	})
 }
 
-func AssertRepeated(t *testing.T, tickTime time.Duration, timeout time.Duration, condition func() bool) {
+func AssertRepeated(t *testing.T, tickTime time.Duration, timeout time.Duration, msg string, condition func() bool) {
 	tick := time.NewTicker(tickTime)
 	timer := time.After(timeout)
 
@@ -52,8 +56,7 @@ func AssertRepeated(t *testing.T, tickTime time.Duration, timeout time.Duration,
 			}
 
 		case <-timer:
-			// TODO: This message should be passed in rather than hard coded here
-			log.Error("Timeout reached: Runtime configuration was not updated")
+			log.Error("Timeout reached: " + msg)
 			t.FailNow()
 		}
 	}
