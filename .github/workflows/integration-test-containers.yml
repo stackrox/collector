@@ -16,6 +16,10 @@ on:
         type: boolean
         required: true
         description: Whether the QA containers should be rebuilt
+      is-konflux:
+        type: boolean
+        default: false
+        description: The current workflow is tied to konflux
     outputs:
       collector-tests-tag:
         description: The tag used for the integration test image
@@ -75,11 +79,11 @@ jobs:
 
       - name: Create Ansible Vars (inc. Secrets)
         run: |
-          {
-            echo "---"
-            echo "rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}"
-            echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
-          } > ${{ github.workspace }}/ansible/secrets.yml
+          cat << EOF > ${{ github.workspace }}/ansible/secrets.yml
+          ---
+          rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          EOF
 
           if [[ "${RUNNER_DEBUG}" == "1" ]]; then
             echo "ANSIBLE_STDOUT_CALLBACK=debug" >> "${GITHUB_ENV}"
@@ -98,11 +102,31 @@ jobs:
           echo "COLLECTOR_TESTS_TAG=${COLLECTOR_TESTS_TAG}" >> "$GITHUB_ENV"
           echo "collector-tests-tag=${COLLECTOR_TESTS_TAG}" >> "$GITHUB_OUTPUT"
 
+      - name: Check if multiarch is needed
+        run: |
+          BUILD_MULTI_ARCH="false"
+
+          if [[ "${GITHUB_EVENT_NAME}" != "pull_request" ]]; then
+            BUILD_MULTI_ARCH="true"
+          fi
+
+          if [[ "${{ inputs.is-konflux }}" == "true" ]]; then
+            BUILD_MULTI_ARCH="true"
+          fi
+
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') }}" == "true" ]]; then
+            BUILD_MULTI_ARCH="true"
+          fi
+
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps') }}" == "true" ]]; then
+            BUILD_MULTI_ARCH="true"
+          fi
+
+          echo "BUILD_MULTI_ARCH=${BUILD_MULTI_ARCH}" >> "$GITHUB_ENV"
+
       - name: Build images
         run: |
           ansible-galaxy install -r ansible/requirements.yml
-
-          BUILD_MULTI_ARCH="${{ contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') || contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps') || github.event_name == 'push' || github.event_name == 'schedule' }}"
 
           # build_multi_arch passed in as json to ensure boolean type
           ansible-playbook \
