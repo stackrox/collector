@@ -2,8 +2,8 @@ package suites
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/assert"
@@ -61,25 +61,19 @@ type RuntimeConfigFileTestSuite struct {
 	ClientContainer string
 }
 
-func (s *RuntimeConfigFileTestSuite) createDirectory(dir string) {
-	cmd := "mkdir " + dir
-	s.execShellCommand(cmd)
-}
-
-func (s *RuntimeConfigFileTestSuite) deleteFile(file string) {
-	cmd := "rm " + file
-	s.execShellCommand(cmd)
-}
-
 func (s *RuntimeConfigFileTestSuite) setRuntimeConfig(runtimeConfigFile string, configStr string) {
 	cmd := "echo '" + configStr + "' > " + runtimeConfigFile
 	s.execShellCommand(cmd)
 }
 
 func (s *RuntimeConfigFileTestSuite) setExternalIpsEnable(runtimeConfigFile string, enable bool) {
-	configStr := `networking:
-  externalIps:
-    enable: ` + strconv.FormatBool(enable)
+	var runtimeConfig types.RuntimeConfig
+	runtimeConfig.Networking.ExternalIps.Enable = enable
+
+	yamlBytes, err := yaml.Marshal(runtimeConfig)
+	s.Require().NoError(err)
+
+	configStr := string(yamlBytes)
 	s.setRuntimeConfig(runtimeConfigFile, configStr)
 }
 

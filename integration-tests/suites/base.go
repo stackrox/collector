@@ -458,6 +458,16 @@ func (s *IntegrationTestSuiteBase) execShellCommand(command string) error {
 	return err
 }
 
+func (s *IntegrationTestSuiteBase) createDirectory(dir string) {
+	cmd := "mkdir " + dir
+	s.execShellCommand(cmd)
+}
+
+func (s *IntegrationTestSuiteBase) deleteFile(file string) {
+	cmd := "rm " + file
+	s.execShellCommand(cmd)
+}
+
 func (s *IntegrationTestSuiteBase) waitForFileToBeDeleted(file string) error {
 	timer := time.After(10 * time.Second)
 	ticker := time.NewTicker(time.Second)
