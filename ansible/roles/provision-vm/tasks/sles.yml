@@ -2,6 +2,10 @@
 
 - name: Register VM
   command: registercloudguest --force-new
+  register: register_result
+  until: register_result is not failed
+  retries: 5
+  delay: 10
 
 - name: Install podman
   community.general.zypper:
