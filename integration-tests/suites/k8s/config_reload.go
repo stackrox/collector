@@ -119,8 +119,8 @@ func (k *K8sConfigReloadTestSuite) TestConfigurationReload() {
 }
 
 func (k *K8sConfigReloadTestSuite) queryConfig() []byte {
-	log.Info("Querying: /state/config")
-	body, err := k.Collector().IntrospectionQuery("/state/config")
+	log.Info("Querying: /state/runtime-config")
+	body, err := k.Collector().IntrospectionQuery("/state/runtime-config")
 	k.Require().NoError(err)
 	log.Info("Response: %q", body)
 	return body
