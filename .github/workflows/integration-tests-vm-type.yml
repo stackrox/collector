@@ -86,6 +86,11 @@ jobs:
         run: |
           make -C "${{ github.workspace }}/ansible" create-ci-vms
 
+      - name: Set log level
+        if: ${{ runner.debug == '1' }}
+        run: |
+          echo "COLLECTOR_LOG_LEVEL=trace" >> "$GITHUB_ENV"
+
       - name: Run Tests
         if: ${{ ! inputs.run-benchmarks }}
         run: |
