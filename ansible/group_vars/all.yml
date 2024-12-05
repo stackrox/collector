@@ -85,6 +85,26 @@ virtual_machines:
               - "{{ lookup('file', gcp_ssh_key_file + '.pub', errors='ignore') }}"
     container_engine: podman
 
+  rhcos-arm:
+    project: rhcos-cloud
+    images:
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.17 aarch64.images.gcp.name') }}"
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.16 aarch64.images.gcp.name') }}"
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.15 aarch64.images.gcp.name') }}"
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.14 aarch64.images.gcp.name') }}"
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.12 aarch64.images.gcp.name') }}"
+    machine_type: t2a-standard-2
+    username: core
+    ignition:
+      ignition:
+        version: 3.2.0
+      passwd:
+        users:
+          - name: core
+            sshAuthorizedKeys:
+              - "{{ lookup('file', gcp_ssh_key_file + '.pub', errors='ignore') }}"
+    container_engine: podman
+
   cos:
     project: cos-cloud
     families:

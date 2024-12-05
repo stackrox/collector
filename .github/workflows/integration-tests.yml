@@ -104,6 +104,7 @@ jobs:
           - ubuntu-arm
           - sles-arm64
           - fcarm
+          - rhcos-arm
 
     with:
       vm_type: ${{ matrix.vm_type }}
