@@ -603,7 +603,7 @@ $ curl "http://<collector>:8080/state/network/connection?container=c6f030bc4b42&
 }
 ```
 
-### Config endpoint
+### Runtime config endpoint
 The runtime configuration can be obtained using
-$ curl "http://<collector>:8080/state/config"
+$ curl "http://<collector>:8080/state/runtime-config"
 

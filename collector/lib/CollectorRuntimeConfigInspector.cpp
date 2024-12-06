@@ -1,4 +1,4 @@
-#include "CollectorConfigInspector.h"
+#include "CollectorRuntimeConfigInspector.h"
 
 #include <Logging.h>
 #include <string>
@@ -7,7 +7,7 @@
 
 namespace collector {
 
-const std::string CollectorConfigInspector::kBaseRoute = "/state/config";
+const std::string CollectorConfigInspector::kBaseRoute = "/state/runtime-config";
 
 CollectorConfigInspector::CollectorConfigInspector(const CollectorConfig& config) : config_(config) {
 }
