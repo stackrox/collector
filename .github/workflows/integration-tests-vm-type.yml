@@ -87,12 +87,21 @@ jobs:
           make -C "${{ github.workspace }}/ansible" create-ci-vms
 
       - name: Run Tests
-        if: ${{ ! inputs.run-benchmarks }}
+        if: ${{ ! inputs.run-benchmarks && runner.debug != '1' }}
         run: |
           make -C "${{ github.workspace }}/ansible" integration-tests
         env:
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Run Tests (debug)
+        if: ${{ ! inputs.run-benchmarks && runner.debug == '1' }}
+        run: |
+          make -C "${{ github.workspace }}/ansible" integration-tests
+        env:
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          COLLECTOR_LOG_LEVEL: trace
 
       - name: Test summary
         uses: test-summary/action@v2
