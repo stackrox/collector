@@ -432,8 +432,8 @@ func (m *MockSensor) pushConnection(containerID string, connection *sensorAPI.Ne
 		CloseTimestamp: connection.GetCloseTimestamp().String(),
 	}
 
-	if _, ok := m.connections[containerID]; ok {
-		m.connections[containerID] = append(m.connections[containerID], conn)
+	if c, ok := m.connections[containerID]; ok {
+		m.connections[containerID] = append(c, conn)
 	} else {
 		m.connections[containerID] = []types.NetworkInfo{conn}
 	}

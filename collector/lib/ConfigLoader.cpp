@@ -55,12 +55,13 @@ bool ConfigLoader::LoadConfiguration(CollectorConfig& config) {
 bool ConfigLoader::LoadConfiguration(CollectorConfig& config, const YAML::Node& node) {
   const auto& config_file = CONFIG_FILE.value();
 
-  if (node.IsNull() || !node.IsDefined()) {
+  if (node.IsNull() || !node.IsDefined() || !node.IsMap()) {
     CLOG(ERROR) << "Unable to read config from " << config_file;
     return false;
   }
+
   YAML::Node networking_node = node["networking"];
-  if (!networking_node) {
+  if (!networking_node || networking_node.IsNull()) {
     CLOG(DEBUG) << "No networking in " << config_file;
     return true;
   }
