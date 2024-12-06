@@ -2,7 +2,6 @@ package suites
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"path/filepath"
 	"time"
 
@@ -66,15 +65,19 @@ func (s *RuntimeConfigFileTestSuite) setRuntimeConfig(runtimeConfigFile string, 
 	s.execShellCommand(cmd)
 }
 
-func (s *RuntimeConfigFileTestSuite) setExternalIpsEnable(runtimeConfigFile string, enable bool) {
+func (s *RuntimeConfigFileTestSuite) getRuntimeConfigEnabledStr(enabled bool) string {
 	var runtimeConfig types.RuntimeConfig
-	runtimeConfig.Networking.ExternalIps.Enable = enable
+	runtimeConfig.Networking.ExternalIps.Enable = enabled
 
-	yamlBytes, err := yaml.Marshal(runtimeConfig)
+	configStr, err := runtimeConfig.GetRuntimeConfigStr()
 	s.Require().NoError(err)
 
-	configStr := string(yamlBytes)
-	s.setRuntimeConfig(runtimeConfigFile, configStr)
+	return configStr
+}
+
+func (s *RuntimeConfigFileTestSuite) setExternalIpsEnabled(runtimeConfigFile string, enabled bool) {
+	runtimeConfigStr := s.getRuntimeConfigEnabledStr(enabled)
+	s.setRuntimeConfig(runtimeConfigFile, runtimeConfigStr)
 }
 
 // Launches collector and creates the directory for runtime configuration.
@@ -123,7 +126,7 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileEnable() {
 	// External IPs enabled.
 	// Normalized connection must be reported as inactive
 	// Unnormalized connection will now be reported.
-	s.setExternalIpsEnable(runtimeConfigFile, true)
+	s.setExternalIpsEnabled(runtimeConfigFile, true)
 	assert.AssertExternalIps(s.T(), true, collectorIP)
 	expectedConnections = append(expectedConnections, activeUnnormalizedConnection, inactiveNormalizedConnection)
 	connectionSuccess = s.Sensor().ExpectSameElementsConnections(s.T(), s.ClientContainer, 10*time.Second, expectedConnections...)
@@ -138,7 +141,7 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileEnable() {
 	s.Require().True(connectionSuccess)
 
 	// Back to having external IPs enabled.
-	s.setExternalIpsEnable(runtimeConfigFile, true)
+	s.setExternalIpsEnabled(runtimeConfigFile, true)
 	assert.AssertExternalIps(s.T(), true, collectorIP)
 	expectedConnections = append(expectedConnections, activeUnnormalizedConnection, inactiveNormalizedConnection)
 	connectionSuccess = s.Sensor().ExpectSameElementsConnections(s.T(), s.ClientContainer, 10*time.Second, expectedConnections...)
@@ -156,7 +159,7 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileDisable() {
 
 	// The runtime config file is created, but external IPs is disables.
 	// There is no change in the state, so there are no changes to the connections
-	s.setExternalIpsEnable(runtimeConfigFile, false)
+	s.setExternalIpsEnabled(runtimeConfigFile, false)
 	assert.AssertExternalIps(s.T(), false, collectorIP)
 	common.Sleep(3 * time.Second) // Sleep so that collector has a chance to report connections
 	connectionSuccess = s.Sensor().ExpectSameElementsConnections(s.T(), s.ClientContainer, 10*time.Second, expectedConnections...)

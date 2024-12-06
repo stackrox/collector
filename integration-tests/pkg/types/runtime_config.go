@@ -1,5 +1,9 @@
 package types
 
+import (
+	"gopkg.in/yaml.v3"
+)
+
 type RuntimeConfig struct {
 	Networking struct {
 		ExternalIps struct {
@@ -10,4 +14,14 @@ type RuntimeConfig struct {
 
 func (n *RuntimeConfig) Equal(other RuntimeConfig) bool {
 	return n.Networking.ExternalIps.Enable == other.Networking.ExternalIps.Enable
+}
+
+func (s *RuntimeConfig) GetRuntimeConfigStr() (string, error) {
+	yamlBytes, err := yaml.Marshal(s)
+
+	if err != nil {
+		return "", err
+	}
+
+	return string(yamlBytes), err
 }

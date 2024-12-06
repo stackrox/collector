@@ -459,13 +459,19 @@ func (s *IntegrationTestSuiteBase) execShellCommand(command string) error {
 }
 
 func (s *IntegrationTestSuiteBase) createDirectory(dir string) {
-	cmd := "mkdir " + dir
-	s.execShellCommand(cmd)
+	if _, err := os.Stat(dir); err == nil {
+		return
+	}
+	err := os.Mkdir(dir, os.ModePerm)
+	s.Require().NoError(err)
 }
 
 func (s *IntegrationTestSuiteBase) deleteFile(file string) {
-	cmd := "rm " + file
-	s.execShellCommand(cmd)
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return
+	}
+	err := os.Remove(file)
+	s.Require().NoError(err)
 }
 
 func (s *IntegrationTestSuiteBase) waitForFileToBeDeleted(file string) error {
