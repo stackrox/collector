@@ -1,0 +1,20 @@
+---
+- name: Retag image to arch specific
+  containers.podman.podman_tag:
+    image: "{{ original_image }}"
+    target_names:
+      - "{{ target_image }}"
+
+- name: Untag original image to prevent issues with multiarch
+  containers.podman.podman_image:
+    name: "{{ original_image }}"
+    state: absent
+  when: untag_original
+
+- name: Push target image
+  containers.podman.podman_image:
+    name: "{{ target_image }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+    pull: false
+    push: true
