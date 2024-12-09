@@ -66,14 +66,22 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigInvalid) {
   }
 }
 
-TEST(CollectorConfigTest, TestYamlConfigToConfigEmpty) {
-  YAML::Node yamlNode = YAML::Load("");
-  CollectorConfig config;
-  ASSERT_FALSE(ConfigLoader::LoadConfiguration(config, yamlNode));
+TEST(CollectorConfigTest, TestYamlConfigToConfigEmptyOrMalformed) {
+  std::vector<std::string> tests = {
+      R"(
+                  asdf
+               )",
+      R"()"};
 
-  auto runtime_config = config.GetRuntimeConfig();
+  for (const auto& yamlStr : tests) {
+    YAML::Node yamlNode = YAML::Load(yamlStr);
+    CollectorConfig config;
+    ASSERT_FALSE(ConfigLoader::LoadConfiguration(config, yamlNode));
 
-  EXPECT_FALSE(runtime_config.has_value());
+    auto runtime_config = config.GetRuntimeConfig();
+
+    EXPECT_FALSE(runtime_config.has_value());
+  }
 }
 
 TEST(CollectorConfigTest, TestPerContainerRateLimit) {

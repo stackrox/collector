@@ -63,7 +63,7 @@ func (k *K8sNamespaceTestSuite) TestK8sNamespace() {
 	for _, tt := range k.tests {
 		endpoint := fmt.Sprintf("/state/containers/%s", tt.containerID)
 		log.Info("Querying: %s", endpoint)
-		raw, err := k.Collector().IntrospectionQuery(endpoint)
+		raw, err := collector.IntrospectionQuery(k.Collector().IP(), endpoint)
 		k.Require().NoError(err)
 		log.Info("Response: %s", raw)
 
