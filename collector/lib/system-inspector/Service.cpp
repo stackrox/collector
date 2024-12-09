@@ -144,7 +144,6 @@ sinsp_evt* Service::GetNext() {
     return nullptr;
   }
 
-#ifdef TRACE_SINSP_EVENTS
   // Do not allow to change sinsp events tracing at runtime, as the output
   // could contain some sensitive information and it's not worth risking
   // misconfiguration.
@@ -156,7 +155,6 @@ sinsp_evt* Service::GetNext() {
     default_formatter_->tostring(event, output);
     CLOG(TRACE) << output;
   }
-#endif
 
   if (event->get_category() & EC_INTERNAL) {
     return nullptr;
