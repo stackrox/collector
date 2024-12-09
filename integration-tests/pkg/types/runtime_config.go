@@ -17,7 +17,7 @@ func (n *RuntimeConfig) Equal(other RuntimeConfig) bool {
 }
 
 func (n *RuntimeConfig) GetRuntimeConfigStr() (string, error) {
-	yamlBytes, err := yaml.Marshal(s)
+	yamlBytes, err := yaml.Marshal(n)
 
 	if err != nil {
 		return "", err
