@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <cinttypes>
+#include <cstdio>
 #include <cstring>
 #include <fcntl.h>
 #include <string_view>
@@ -607,6 +608,22 @@ std::optional<std::string_view> ExtractContainerID(std::string_view cgroup_line)
   std::string_view cgroup_path = cgroup_line.substr(start + 1);
 
   return ExtractContainerIDFromCgroup(cgroup_path);
+}
+
+std::optional<char> ExtractProcessState(std::string_view line) {
+  size_t last_parenthese;
+
+  if ((last_parenthese = line.rfind(") ")) == line.npos) {
+    return {};
+  }
+
+  line.remove_prefix(last_parenthese + 2);
+
+  if (line.empty()) {
+    return {};
+  }
+
+  return line[0];
 }
 
 bool ConnScraper::Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
