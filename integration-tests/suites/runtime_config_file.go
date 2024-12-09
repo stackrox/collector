@@ -2,6 +2,7 @@ package suites
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -61,8 +62,8 @@ type RuntimeConfigFileTestSuite struct {
 }
 
 func (s *RuntimeConfigFileTestSuite) setRuntimeConfig(runtimeConfigFile string, configStr string) {
-	cmd := "echo '" + configStr + "' > " + runtimeConfigFile
-	s.execShellCommand(cmd)
+	err := os.WriteFile(runtimeConfigFile, []byte(configStr), 0666)
+	s.Require().NoError(err)
 }
 
 func (s *RuntimeConfigFileTestSuite) getRuntimeConfigEnabledStr(enabled bool) string {
