@@ -104,15 +104,18 @@ func (s *RuntimeConfigFileTestSuite) SetupTest() {
 	}
 
 	s.createDirectory(runtimeConfigDir)
-	s.deleteFile(runtimeConfigFile)
 	s.StartCollector(false, &collectorOptions)
 }
 
-func (s *RuntimeConfigFileTestSuite) AfterTest() {
+func (s *RuntimeConfigFileTestSuite) AfterTest(suiteName, testName string) {
 	s.StopCollector()
 	s.cleanupContainers("external-connection")
 	s.WritePerfResults()
 	s.deleteFile(runtimeConfigFile)
+}
+
+func (s *RuntimeConfigFileTestSuite) TearDownSuite() {
+	s.deleteDirectory(runtimeConfigDir)
 }
 
 func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileEnable() {
