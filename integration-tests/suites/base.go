@@ -466,6 +466,16 @@ func (s *IntegrationTestSuiteBase) createDirectory(dir string) {
 	s.Require().NoError(err)
 }
 
+func (s *IntegrationTestSuiteBase) deleteDirectory(dir string) {
+	_, err := os.Stat(dir)
+	if os.IsNotExist(err) {
+		return
+	}
+
+	err = os.RemoveAll(dir)
+	s.Require().NoError(err)
+}
+
 func (s *IntegrationTestSuiteBase) deleteFile(file string) {
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return
