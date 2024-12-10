@@ -8,6 +8,23 @@ BUILD_BUILDER_IMAGE ?= false
 
 export COLLECTOR_VERSION := $(COLLECTOR_TAG)
 
+PODMAN =
+# docker --version might not contain any traces of podman in the latest
+# version, search for more output
+ifneq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
+	PODMAN = yes
+endif
+ifneq (,$(findstring Podman,$(shell docker version 2>/dev/null)))
+	PODMAN = yes
+endif
+
+ifdef PODMAN
+# Disable selinux for local podman builds.
+BUILDER_OPTS=--security-opt label=disable
+else
+BUILDER_OPTS=
+endif
+
 .PHONY: tag
 tag:
 	@echo "$(COLLECTOR_TAG)"
@@ -84,6 +101,7 @@ endif
 .PHONY: start-builder
 start-builder: builder teardown-builder
 	docker run -d \
+		$(BUILDER_OPTS) \
 		--name $(COLLECTOR_BUILDER_NAME) \
 		--pull never \
 		--platform ${PLATFORM} \
