@@ -25,7 +25,7 @@ $ make image
 
 This target will build necessary submodules (gRPC dependencies, Falco
 libraries), prepare a builder image, compile Collector using it, and wrap
-everything into a slim image with Collector binary inside.
+everything into an image with the Collector binary inside.
 
 *NOTE*: Using an intermediate image for compilation means that file paths are
 going to be different between your local project directory and the image. For
