@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <cinttypes>
+#include <cstdio>
 #include <cstring>
 #include <fcntl.h>
 #include <string_view>
@@ -141,6 +142,26 @@ bool GetSocketINodes(int dirfd, uint64_t pid, UnorderedSet<SocketInfo>* sock_ino
   }
 
   return true;
+}
+
+// IsZombieProcess fetches the current state of the process pointed to by dirfd, and
+// - returns true, if the process state is 'Z'
+// - returns false otherwise
+bool IsZombieProcess(int dirfd) {
+  FileHandle stat_file(FDHandle(openat(dirfd, "stat", O_RDONLY)), "r");
+  if (!stat_file.valid()) {
+    return false;
+  }
+
+  char linebuf[512];
+
+  if (fgets(linebuf, sizeof(linebuf), stat_file.get()) == nullptr) {
+    return false;
+  }
+
+  auto state = ExtractProcessState(linebuf);
+
+  return state && *state == 'Z';
 }
 
 // GetContainerID retrieves the container ID of the process represented by dirfd. The container ID is extracted from
@@ -491,6 +512,10 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
       continue;
     }
 
+    if (IsZombieProcess(dirfd)) {
+      continue;
+    }
+
     auto container_id = GetContainerID(dirfd);
     if (!container_id) {
       continue;
@@ -498,7 +523,6 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
 
     uint64_t netns_inode;
     if (!GetNetworkNamespace(dirfd, &netns_inode)) {
-      // TODO ROX-13962: Improve logging to indicate when a process is defunct.
       COUNTER_INC(CollectorStats::procfs_could_not_get_network_namespace);
       CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not determine network namespace: " << StrError();
       continue;
@@ -607,6 +631,22 @@ std::optional<std::string_view> ExtractContainerID(std::string_view cgroup_line)
   std::string_view cgroup_path = cgroup_line.substr(start + 1);
 
   return ExtractContainerIDFromCgroup(cgroup_path);
+}
+
+std::optional<char> ExtractProcessState(std::string_view line) {
+  size_t last_parenthese;
+
+  if ((last_parenthese = line.rfind(") ")) == line.npos) {
+    return {};
+  }
+
+  line.remove_prefix(last_parenthese + 2);
+
+  if (line.empty()) {
+    return {};
+  }
+
+  return line[0];
 }
 
 bool ConnScraper::Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) {
