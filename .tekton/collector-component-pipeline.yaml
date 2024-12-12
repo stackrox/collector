@@ -187,7 +187,15 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     taskRef:
-      name: determine-image-tag
+      params:
+      - name: name
+        value: determine-image-tag
+      - name: bundle
+        # TODO(ROX-27350): switch to latest tag after tasks PR is pushed.
+        value: quay.io/rhacs-eng/konflux-tasks:pr-3@sha256:525310fe3f58a673d743712ab94362153492f0f4dea404a64f18e68767e8c941
+      - name: kind
+        value: task
+      resolver: bundles
 
   - name: prefetch-dependencies
     params:
