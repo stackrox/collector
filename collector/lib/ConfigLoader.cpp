@@ -1,5 +1,9 @@
 #include "ConfigLoader.h"
 
+#include <google/protobuf/util/json_util.h>
+
+#include <internalapi/sensor/collector.pb.h>
+
 #include "EnvVar.h"
 #include "Logging.h"
 
@@ -52,41 +56,50 @@ bool ConfigLoader::LoadConfiguration(CollectorConfig& config) {
   return LoadConfiguration(config, node);
 }
 
-bool ConfigLoader::LoadConfiguration(CollectorConfig& config, const YAML::Node& node) {
-  const auto& config_file = CONFIG_FILE.value();
+Json::Value yamlNodeToJson(const YAML::Node& yamlNode) {
+  Json::Value jsonValue;
 
-  if (node.IsNull() || !node.IsDefined() || !node.IsMap()) {
-    CLOG(ERROR) << "Unable to read config from " << config_file;
+  switch (yamlNode.Type()) {
+    case YAML::NodeType::Null:
+      jsonValue = Json::Value::null;
+      break;
+    case YAML::NodeType::Scalar:
+      jsonValue = yamlNode.as<std::string>();
+      break;
+    case YAML::NodeType::Sequence:
+      for (std::size_t i = 0; i < yamlNode.size(); ++i) {
+        jsonValue.append(yamlNodeToJson(yamlNode[i]));
+      }
+      break;
+    case YAML::NodeType::Map:
+      for (const auto& pair : yamlNode) {
+        jsonValue[pair.first.as<std::string>()] = yamlNodeToJson(pair.second);
+      }
+      break;
+    case YAML::NodeType::Undefined:
+    default:
+      break;
+  }
+
+  return jsonValue;
+}
+
+bool ConfigLoader::LoadConfiguration(CollectorConfig& config, const YAML::Node& node) {
+  const auto jsonConfig = yamlNodeToJson(node);
+  Json::StreamWriterBuilder writer;
+  std::string jsonStr = Json::writeString(writer, jsonConfig);
+
+  sensor::CollectorConfig runtimeConfig;
+  google::protobuf::util::JsonParseOptions parseOptions;
+  parseOptions.ignore_unknown_fields = true;
+  auto status = google::protobuf::util::JsonStringToMessage(jsonStr, &runtimeConfig, parseOptions);
+  if (!status.ok()) {
+    CLOG(ERROR) << "Failed to parse config: " << status.ToString();
     return false;
   }
 
-  YAML::Node networking_node = node["networking"];
-  if (!networking_node || networking_node.IsNull()) {
-    CLOG(DEBUG) << "No networking in " << config_file;
-    return true;
-  }
+  config.SetRuntimeConfig(runtimeConfig);
 
-  YAML::Node external_ips_node = networking_node["externalIps"];
-  if (!external_ips_node) {
-    CLOG(DEBUG) << "No external IPs in " << config_file;
-    return true;
-  }
-
-  bool enable_external_ips = external_ips_node["enable"].as<bool>(false);
-  int64_t per_container_rate_limit = networking_node["perContainerRateLimit"].as<int64_t>(1024);
-
-  sensor::CollectorConfig runtime_config;
-  auto* networking = runtime_config.mutable_networking();
-  networking
-      ->mutable_external_ips()
-      ->set_enable(enable_external_ips);
-  networking
-      ->set_per_container_rate_limit(per_container_rate_limit);
-
-  config.SetRuntimeConfig(std::move(runtime_config));
-
-  CLOG(DEBUG) << "Runtime configuration:\n"
-              << config.GetRuntimeConfigStr();
   return true;
 }
 
