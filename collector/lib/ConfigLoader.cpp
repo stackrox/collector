@@ -85,6 +85,11 @@ Json::Value yamlNodeToJson(const YAML::Node& yamlNode) {
 }
 
 bool ConfigLoader::LoadConfiguration(CollectorConfig& config, const YAML::Node& node) {
+  // We do multiple conversions here. First convert to JSON, then a JSON string, and then
+  // to the runtime config object. There are more direct ways to do the conversion.
+  // However, those methods make it difficult to handle the different data types.
+  // Here yamlNodeToJson converts everything to strings and JsonStringToMessage then
+  // correctly converts everything to the correct data type.
   const auto jsonConfig = yamlNodeToJson(node);
   Json::StreamWriterBuilder writer;
   std::string jsonStr = Json::writeString(writer, jsonConfig);
@@ -99,6 +104,9 @@ bool ConfigLoader::LoadConfiguration(CollectorConfig& config, const YAML::Node& 
   }
 
   config.SetRuntimeConfig(runtimeConfig);
+  config.RuntimeConfigHeuristics();
+  CLOG(INFO) << "Runtime configuration:\n"
+             << config.GetRuntimeConfigStr();
 
   return true;
 }

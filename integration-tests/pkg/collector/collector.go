@@ -18,6 +18,7 @@ type Manager interface {
 	IsRunning() (bool, error)
 	ContainerID() string
 	TestName() string
+	SetTestName(string)
 }
 
 func New(e executor.Executor, name string) Manager {
