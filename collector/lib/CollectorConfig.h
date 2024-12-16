@@ -108,6 +108,16 @@ class CollectorConfig {
     return enable_external_ips_;
   }
 
+  void RuntimeConfigHeuristics() {
+    auto lock = WriteLock();
+    if (runtime_config_.has_value()) {
+      auto* networking = runtime_config_.value().mutable_networking();
+      if (networking->per_container_rate_limit() == 0) {
+        networking->set_per_container_rate_limit(1024);
+      }
+    }
+  }
+
   int64_t PerContainerRateLimit() const {
     auto lock = ReadLock();
     if (runtime_config_.has_value()) {
@@ -118,7 +128,7 @@ class CollectorConfig {
     return per_container_rate_limit_;
   }
 
-  std::string GetRuntimeConfigStr() {
+  std::string GetRuntimeConfigStr() const {
     auto lock = ReadLock();
     if (runtime_config_.has_value()) {
       const auto& cfg = runtime_config_.value();
