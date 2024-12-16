@@ -11,7 +11,7 @@ extern "C" {
 #include <memory>
 
 #include "CivetServer.h"
-#include "CollectorConfigInspector.h"
+#include "CollectorRuntimeConfigInspector.h"
 #include "CollectorStatsExporter.h"
 #include "ConnTracker.h"
 #include "Containers.h"

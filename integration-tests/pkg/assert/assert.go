@@ -23,7 +23,7 @@ func AssertExternalIps(t *testing.T, enabled bool, collectorIP string) {
 	tickTime := 1 * time.Second
 	timeout := 3 * time.Minute
 	AssertRepeated(t, tickTime, timeout, runtimeConfigErrorMsg, func() bool {
-		body, err := collector.IntrospectionQuery(collectorIP, "/state/config")
+		body, err := collector.IntrospectionQuery(collectorIP, "/state/runtime-config")
 		assert.NoError(t, err)
 		var response types.RuntimeConfig
 		err = json.Unmarshal(body, &response)
@@ -37,7 +37,7 @@ func AssertNoRuntimeConfig(t *testing.T, collectorIP string) {
 	tickTime := 1 * time.Second
 	timeout := 3 * time.Minute
 	AssertRepeated(t, tickTime, timeout, runtimeConfigErrorMsg, func() bool {
-		body, err := collector.IntrospectionQuery(collectorIP, "/state/config")
+		body, err := collector.IntrospectionQuery(collectorIP, "/state/runtime-config")
 		assert.NoError(t, err)
 		return strings.TrimSpace(string(body)) == "{}"
 	})
