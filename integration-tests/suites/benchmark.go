@@ -12,6 +12,7 @@ import (
 
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/executor"
 )
 
 type BenchmarkBaselineTestSuite struct {
@@ -25,8 +26,8 @@ type BenchmarkCollectorTestSuite struct {
 
 type BenchmarkTestSuiteBase struct {
 	IntegrationTestSuiteBase
-	perfContainers []string
-	loadContainers []string
+	perfContainers []executor.ContainerID
+	loadContainers []executor.ContainerID
 }
 
 func (b *BenchmarkTestSuiteBase) StartPerfTools() {
@@ -148,7 +149,7 @@ func (s *BenchmarkCollectorTestSuite) SetupSuite() {
 	s.StartCollector(false, nil)
 }
 
-func (s *BenchmarkTestSuiteBase) SpinBerserker(workload string) (string, error) {
+func (s *BenchmarkTestSuiteBase) SpinBerserker(workload string) (executor.ContainerID, error) {
 	benchmarkImage := config.Images().QaImageByKey("performance-berserker")
 	err := s.Executor().PullImage(benchmarkImage)
 	if err != nil {

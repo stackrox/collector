@@ -175,7 +175,7 @@ func (s *IntegrationTestSuiteBase) RegisterCleanup(containers ...string) {
 
 		// StopCollector is safe when collector isn't running, but the container must exist.
 		// This will ensure that logs are still written even when test setup fails
-		exists, _ := s.Executor().ContainerExists(executor.ContainerFilter{Name: "collector"})
+		exists, _ := s.Executor().ContainerExists(executor.ContainerFilter{Id: executor.ContainerID("collector")})
 		if exists {
 			s.StopCollector()
 		}
@@ -311,7 +311,7 @@ func (s *IntegrationTestSuiteBase) AssertProcessInfoEqual(expected, actual types
 //   - filter -- description of the desired status
 func (s *IntegrationTestSuiteBase) waitForContainerStatus(
 	containerName string,
-	containerID string,
+	containerID executor.ContainerID,
 	tickSeconds time.Duration,
 	timeoutThreshold time.Duration,
 	filter string) (bool, error) {
@@ -354,9 +354,9 @@ func (s *IntegrationTestSuiteBase) waitForContainerStatus(
 // certain.
 func (s *IntegrationTestSuiteBase) findContainerHealthCheck(
 	containerName string,
-	containerID string) (bool, error) {
+	containerID executor.ContainerID) (bool, error) {
 
-	healthcheck, err := s.Executor().GetContainerHealthCheck(containerName)
+	healthcheck, err := s.Executor().GetContainerHealthCheck(containerID)
 	if err != nil {
 		return false, err
 	}
@@ -372,7 +372,7 @@ func (s *IntegrationTestSuiteBase) findContainerHealthCheck(
 
 func (s *IntegrationTestSuiteBase) waitForContainerToBecomeHealthy(
 	containerName string,
-	containerID string,
+	containerID executor.ContainerID,
 	tickSeconds time.Duration,
 	timeoutThreshold time.Duration) (bool, error) {
 
@@ -382,7 +382,7 @@ func (s *IntegrationTestSuiteBase) waitForContainerToBecomeHealthy(
 
 func (s *IntegrationTestSuiteBase) waitForContainerToExit(
 	containerName string,
-	containerID string,
+	containerID executor.ContainerID,
 	tickSeconds time.Duration,
 	timeoutThreshold time.Duration) (bool, error) {
 
@@ -391,49 +391,49 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(
 }
 
 func (s *IntegrationTestSuiteBase) execContainer(containerName string, command []string) (string, error) {
-	return s.Executor().ExecContainer(containerName, command)
+	return s.Executor().ExecContainer(executor.ContainerID(containerName), command)
 }
 
 func (s *IntegrationTestSuiteBase) execContainerShellScript(containerName string, shell string, script string, args ...string) (string, error) {
 	cmd := []string{shell, "-s"}
 	cmd = append(cmd, args...)
 
-	return s.Executor().ExecContainer(containerName, cmd)
+	return s.Executor().ExecContainer(executor.ContainerID(containerName), cmd)
 }
 
-func (s *IntegrationTestSuiteBase) cleanupContainers(containers ...string) {
+func (s *IntegrationTestSuiteBase) cleanupContainers(containers ...executor.ContainerID) {
 	for _, container := range containers {
-		exists, _ := s.Executor().ContainerExists(executor.ContainerFilter{Name: container})
+		exists, _ := s.Executor().ContainerExists(executor.ContainerFilter{Id: container})
 		if exists {
 			s.Executor().KillContainer(container)
 			s.Executor().CaptureLogs(s.T().Name(), container)
-			s.Executor().RemoveContainer(executor.ContainerFilter{Name: container})
+			s.Executor().RemoveContainer(executor.ContainerFilter{Id: container})
 		}
 	}
 }
 
-func (s *IntegrationTestSuiteBase) stopContainers(containers ...string) {
+func (s *IntegrationTestSuiteBase) stopContainers(containers ...executor.ContainerID) {
 	for _, container := range containers {
 		s.Executor().StopContainer(container)
 	}
 }
 
-func (s *IntegrationTestSuiteBase) removeContainers(containers ...string) {
+func (s *IntegrationTestSuiteBase) removeContainers(containers ...executor.ContainerID) {
 	for _, container := range containers {
-		s.Executor().RemoveContainer(executor.ContainerFilter{Name: container})
+		s.Executor().RemoveContainer(executor.ContainerFilter{Id: container})
 	}
 }
 
-func (s *IntegrationTestSuiteBase) containerLogs(containerName string) (executor.ContainerLogs, error) {
-	return s.Executor().GetContainerLogs(containerName)
+func (s *IntegrationTestSuiteBase) containerLogs(container executor.ContainerID) (executor.ContainerLogs, error) {
+	return s.Executor().GetContainerLogs(container)
 }
 
-func (s *IntegrationTestSuiteBase) getIPAddress(containerName string) (string, error) {
-	return s.Executor().GetContainerIP(containerName)
+func (s *IntegrationTestSuiteBase) getIPAddress(container executor.ContainerID) (string, error) {
+	return s.Executor().GetContainerIP(container)
 }
 
-func (s *IntegrationTestSuiteBase) getPort(containerName string) (string, error) {
-	return s.Executor().GetContainerPort(containerName)
+func (s *IntegrationTestSuiteBase) getPort(container executor.ContainerID) (string, error) {
+	return s.Executor().GetContainerPort(container)
 }
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {

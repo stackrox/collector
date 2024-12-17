@@ -6,8 +6,23 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 )
 
+// ContainerID is an identifier for a container. It can
+// be a container name *OR* a hex ID
+type ContainerID string
+
+// Long returns the whole containerID as a string
+func (c ContainerID) Long() string {
+	return string(c)
+}
+
+// Short returns the first twelve character of a containerID
+// to match the shortened IDs returned by docker.
+func (c ContainerID) Short() string {
+	return string(c)[:12]
+}
+
 type ContainerFilter struct {
-	Name      string
+	Id        ContainerID
 	Namespace string
 }
 
@@ -32,20 +47,20 @@ func (l *ContainerLogs) GetSingleLog() string {
 
 type Executor interface {
 	PullImage(image string) error
-	IsContainerRunning(container string) (bool, error)
+	IsContainerRunning(container ContainerID) (bool, error)
 	ContainerExists(filter ContainerFilter) (bool, error)
 	ExitCode(filter ContainerFilter) (int, error)
-	ExecContainer(containerName string, command []string) (string, error)
-	KillContainer(name string) (string, error)
+	ExecContainer(container ContainerID, command []string) (string, error)
+	KillContainer(container ContainerID) (string, error)
 	RemoveContainer(filter ContainerFilter) (string, error)
-	StopContainer(name string) (string, error)
-	StartContainer(config config.ContainerStartConfig) (string, error)
-	GetContainerHealthCheck(containerID string) (string, error)
-	GetContainerIP(containerID string) (string, error)
-	GetContainerLogs(containerID string) (ContainerLogs, error)
-	CaptureLogs(testName, containerName string) (string, error)
-	GetContainerPort(containerID string) (string, error)
-	IsContainerFoundFiltered(containerID, filter string) (bool, error)
+	StopContainer(container ContainerID) (string, error)
+	StartContainer(config config.ContainerStartConfig) (ContainerID, error)
+	GetContainerHealthCheck(container ContainerID) (string, error)
+	GetContainerIP(container ContainerID) (string, error)
+	GetContainerLogs(container ContainerID) (ContainerLogs, error)
+	CaptureLogs(testName string, container ContainerID) (string, error)
+	GetContainerPort(container ContainerID) (string, error)
+	IsContainerFoundFiltered(container ContainerID, filter string) (bool, error)
 }
 
 type CommandBuilder interface {
