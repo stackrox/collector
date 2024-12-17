@@ -29,8 +29,8 @@ bool SignalServiceClient::EstablishGRPCStreamSingle() {
   // stream writer
   context_ = MakeUnique<grpc::ClientContext>();
   writer_ = DuplexClient::CreateWithReadsIgnored(&SignalService::Stub::AsyncPushSignals, channel_, context_.get());
-  if (!writer_->WaitUntilStarted(std::chrono::seconds(30))) {
-    CLOG(ERROR) << "Signal stream not ready after 30 seconds. Retrying ...";
+  if (!writer_->WaitUntilStarted(std::chrono::seconds(config_.GRPCWaitTime()))) {
+    CLOG(ERROR) << "Signal stream not ready after " << config_.GRPCWaitTime() << " seconds. Retrying ...";
     CLOG(ERROR) << "Error message: " << writer_->FinishNow().error_message();
     writer_.reset();
     return true;
