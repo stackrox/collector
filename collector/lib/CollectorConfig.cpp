@@ -82,6 +82,8 @@ PathEnvVar tls_client_cert_path("ROX_COLLECTOR_TLS_CLIENT_CERT");
 PathEnvVar tls_client_key_path("ROX_COLLECTOR_TLS_CLIENT_KEY");
 
 BoolEnvVar disable_process_arguments("ROX_COLLECTOR_NO_PROCESS_ARGUMENTS", false);
+
+IntEnvVar grpc_wait_time("ROX_COLLECTOR_GRPC_WAIT_TIME", 30);
 }  // namespace
 
 constexpr bool CollectorConfig::kTurnOffScrape;
@@ -113,6 +115,7 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   enable_introspection_ = enable_introspection.value();
   track_send_recv_ = track_send_recv.value();
   disable_process_arguments_ = disable_process_arguments.value();
+  grpc_wait_time_ = grpc_wait_time.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.emplace_back(syscall);

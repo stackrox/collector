@@ -147,6 +147,7 @@ class CollectorConfig {
   unsigned int GetSinspTotalBufferSize() const { return sinsp_total_buffer_size_; }
   unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
   bool DisableProcessArguments() const { return disable_process_arguments_; }
+  int GRPCWaitTime() const { return grpc_wait_time_; }
 
   static std::pair<option::ArgStatus, std::string> CheckConfiguration(const char* config, Json::Value* root);
 
@@ -207,6 +208,7 @@ class CollectorConfig {
   double connection_stats_error_;
   unsigned int connection_stats_window_;
   int64_t per_container_rate_limit_ = 1024;
+  int grpc_wait_time_;
 
   // URL to the GRPC server
   std::optional<std::string> grpc_server_;
