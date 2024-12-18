@@ -1,0 +1,8 @@
+---
+- name: Tag an push image with docker
+  ansible.builtin.include_tasks: docker.yml
+  when: runtime_command == 'docker'
+
+- name: Tag an push image with podman
+  ansible.builtin.include_tasks: podman.yml
+  when: runtime_command == 'podman'
