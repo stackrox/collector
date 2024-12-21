@@ -16,7 +16,7 @@ type Manager interface {
 	Launch() error
 	TearDown() error
 	IsRunning() (bool, error)
-	ContainerID() string
+	ContainerID() executor.ContainerID
 	TestName() string
 }
 
