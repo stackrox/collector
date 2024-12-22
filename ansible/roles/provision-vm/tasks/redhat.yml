@@ -32,6 +32,7 @@
     name:
       - git
       - make
+      - python3-requests
 
 - name: Add docker repos
   ansible.builtin.shell: |
