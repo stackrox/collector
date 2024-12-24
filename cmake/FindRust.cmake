@@ -300,7 +300,9 @@ function(add_rust_library)
             COMMENT "Building ${ARGS_TARGET} in ${ARGS_BINARY_DIRECTORY} with:  ${cargo_EXECUTABLE} ${MY_CARGO_ARGS_STRING}")
     endif()
 
-    file(MAKE_DIRECTORY "${ARGS_INCLUDE_DIRECTORY}")
+    if (ARGS_INCLUDE_DIRECTORY MATCHES "^$")
+        file(MAKE_DIRECTORY "${ARGS_INCLUDE_DIRECTORY}")
+    endif()
 
     # Create a target from the build output
     add_custom_target(${ARGS_TARGET}_target
