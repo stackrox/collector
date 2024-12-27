@@ -1,1 +1,3 @@
 *.skel.rs
+*.o
+*.o.tmp

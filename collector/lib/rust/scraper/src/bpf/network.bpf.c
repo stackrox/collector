@@ -13,6 +13,8 @@ struct bpf_iter__tcp {
   uid_t uid;
 } __attribute__((preserve_access_index));
 
+char _license[] SEC("license") = "GPL";
+
 static int hlist_unhashed_lockless(const struct hlist_node* h) {
   return !(h->pprev);
 }
@@ -208,14 +210,14 @@ int dump_tcp4(struct bpf_iter__tcp* ctx) {
   }
 
   seq_num = ctx->meta->seq_num;
-  if (seq_num == 0) {
-    BPF_SEQ_PRINTF(seq,
-                   "  sl  "
-                   "local_address "
-                   "rem_address   "
-                   "st tx_queue rx_queue tr tm->when retrnsmt"
-                   "   uid  timeout inode\n");
-  }
+  // if (seq_num == 0) {
+  //   BPF_SEQ_PRINTF(seq,
+  //                  "  sl  "
+  //                  "local_address "
+  //                  "rem_address   "
+  //                  "st tx_queue rx_queue tr tm->when retrnsmt"
+  //                  "   uid  timeout inode\n");
+  // }
 
   if (sk_common->skc_family != AF_INET) {
     return 0;

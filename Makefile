@@ -126,6 +126,7 @@ clean:
 	rm -f vcpkg-manifest-install.log
 	make -C collector clean
 	make -C integration-tests clean
+	cargo clean
 
 .PHONY: shfmt-check
 shfmt-check:

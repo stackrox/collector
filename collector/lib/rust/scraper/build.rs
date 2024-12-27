@@ -4,23 +4,21 @@ use std::path::PathBuf;
 use std::{env, fs};
 
 fn make_skeleton(src: PathBuf) {
-    let src_path = src.clone();
+    let src_file = src.file_name().unwrap();
 
-    let mut dst_path: PathBuf = src.clone();
+    let mut dst_path: PathBuf = PathBuf::from(src_file);
     dst_path.set_extension("skel.rs");
 
-    let base = PathBuf::from(
-        env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR must be set in build script"),
-    );
+    let base = PathBuf::from(env::var_os("OUT_DIR").expect("OUT_DIR must be set in build script"));
 
-    let out = base.join("src").join("bpf").join(&dst_path);
+    let out = base.join(&dst_path);
 
-    let mut obj_path: PathBuf = src.clone();
+    let mut obj_path: PathBuf = out.clone();
     obj_path.set_extension("o");
-    obj_path = base.join("src").join("bpf").join(&obj_path);
+    obj_path = base.join(&obj_path);
 
     SkeletonBuilder::new()
-        .source(&src_path)
+        .source(&src)
         .clang_args([
             "-I",
             vmlinux::include_path_root()
@@ -31,9 +29,6 @@ fn make_skeleton(src: PathBuf) {
         .obj(&obj_path)
         .build_and_generate(&out)
         .unwrap();
-
-    let display = src_path.display();
-    println!("cargo:rerun-if-changed={display}");
 }
 
 fn main() -> io::Result<()> {
@@ -49,7 +44,8 @@ fn main() -> io::Result<()> {
 
         if let Some(ext) = path.extension() {
             if ext == "c" {
-                make_skeleton(path);
+                make_skeleton(path.clone());
+                println!("cargo:rerun-if-changed={}", path.display());
             }
         }
     }

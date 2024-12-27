@@ -9,6 +9,7 @@ name = "scraper"
 
 [dependencies]
 anyhow = "1.0.95"
+arrayvec = "0.7.6"
 clap = { version = "4.5.23", features = ["derive"] }
 clap_derive = "4.5.18"
 libbpf-rs = "=0.25.0-beta.1"
