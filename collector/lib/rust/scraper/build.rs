@@ -3,6 +3,19 @@ use std::io;
 use std::path::PathBuf;
 use std::{env, fs};
 
+fn make_bindings() {
+    let bindings = bindgen::Builder::default()
+        .header("src/bpf/common/bindings.h")
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+        .generate()
+        .expect("failed to generate bindings");
+
+    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+    bindings
+        .write_to_file(out_path.join("bindings.rs"))
+        .expect("failed to write bindings");
+}
+
 fn make_skeleton(src: PathBuf) {
     let src_file = src.file_name().unwrap();
 
@@ -49,6 +62,8 @@ fn main() -> io::Result<()> {
             }
         }
     }
+
+    make_bindings();
 
     Ok(())
 }

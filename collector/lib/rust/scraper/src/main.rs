@@ -12,13 +12,17 @@ mod tasks {
     include!(concat!(env!("OUT_DIR"), "/tasks.bpf.skel.rs"));
 }
 
+mod bpf;
+mod common;
 mod network;
+
 use tasks::*;
 
 #[derive(Debug, ValueEnum, Clone)]
 enum Probe {
     Process,
     Network,
+    Bpf,
 }
 
 #[derive(Parser, Debug)]
@@ -36,6 +40,17 @@ fn do_network(debug: bool) -> Result<()> {
 
     for line in network {
         println!("{:?}", line);
+    }
+
+    Ok(())
+}
+
+fn do_bpf(debug: bool) -> Result<()> {
+    let mut bpf = bpf::BPFScraper::new(debug);
+    bpf.start().unwrap();
+
+    for line in bpf.into_iter() {
+        println!("{} ({})", line.name(), line.attached());
     }
 
     Ok(())
@@ -70,5 +85,6 @@ fn main() -> Result<()> {
     match args.probe {
         Probe::Process => do_process(debug),
         Probe::Network => do_network(debug),
+        Probe::Bpf => do_bpf(debug),
     }
 }

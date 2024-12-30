@@ -1,12 +1,14 @@
+pub mod bpf;
+pub mod common;
 pub mod network;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+#[cxx::bridge(namespace = "collector::rust")]
+mod ffi {
+    extern "Rust" {
+        fn get_bpf_programs() -> Vec<::common::bpf::bpf_prog_result>;
     }
+}
+
+pub fn get_bpf_programs() -> Vec<common::bpf::bpf_prog_result> {
+    vec![]
 }
