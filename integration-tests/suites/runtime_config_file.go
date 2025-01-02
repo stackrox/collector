@@ -66,18 +66,9 @@ func (s *RuntimeConfigFileTestSuite) setRuntimeConfig(runtimeConfigFile string, 
 	s.Require().NoError(err)
 }
 
-func (s *RuntimeConfigFileTestSuite) getRuntimeConfigEnabledStr(enabled string) string {
-	var runtimeConfig types.RuntimeConfig
-	runtimeConfig.Networking.ExternalIps.Enabled = enabled
-
-	configStr, err := runtimeConfig.GetRuntimeConfigStr()
-	s.Require().NoError(err)
-
-	return configStr
-}
-
 func (s *RuntimeConfigFileTestSuite) setExternalIpsEnabled(runtimeConfigFile string, enabled string) {
-	runtimeConfigStr := s.getRuntimeConfigEnabledStr(enabled)
+	runtimeConfigStr, err := types.GetRuntimeConfigEnabledStr(enabled)
+	s.Require().NoError(err)
 	s.setRuntimeConfig(runtimeConfigFile, runtimeConfigStr)
 }
 
