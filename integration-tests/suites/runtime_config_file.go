@@ -66,9 +66,9 @@ func (s *RuntimeConfigFileTestSuite) setRuntimeConfig(runtimeConfigFile string, 
 	s.Require().NoError(err)
 }
 
-func (s *RuntimeConfigFileTestSuite) getRuntimeConfigEnabledStr(enabled bool) string {
+func (s *RuntimeConfigFileTestSuite) getRuntimeConfigEnabledStr(enabled string) string {
 	var runtimeConfig types.RuntimeConfig
-	runtimeConfig.Networking.ExternalIps.Enable = enabled
+	runtimeConfig.Networking.ExternalIps.Enabled = enabled
 
 	configStr, err := runtimeConfig.GetRuntimeConfigStr()
 	s.Require().NoError(err)
@@ -76,7 +76,7 @@ func (s *RuntimeConfigFileTestSuite) getRuntimeConfigEnabledStr(enabled bool) st
 	return configStr
 }
 
-func (s *RuntimeConfigFileTestSuite) setExternalIpsEnabled(runtimeConfigFile string, enabled bool) {
+func (s *RuntimeConfigFileTestSuite) setExternalIpsEnabled(runtimeConfigFile string, enabled string) {
 	runtimeConfigStr := s.getRuntimeConfigEnabledStr(enabled)
 	s.setRuntimeConfig(runtimeConfigFile, runtimeConfigStr)
 }
@@ -130,8 +130,8 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileEnable() {
 	// External IPs enabled.
 	// Normalized connection must be reported as inactive
 	// Unnormalized connection will now be reported.
-	s.setExternalIpsEnabled(runtimeConfigFile, true)
-	assert.AssertExternalIps(s.T(), true, collectorIP)
+	s.setExternalIpsEnabled(runtimeConfigFile, "ENABLED")
+	assert.AssertExternalIps(s.T(), "ENABLED", collectorIP)
 	expectedConnections = append(expectedConnections, activeUnnormalizedConnection, inactiveNormalizedConnection)
 	connectionSuccess = s.Sensor().ExpectSameElementsConnections(s.T(), s.ClientContainer, 10*time.Second, expectedConnections...)
 	s.Require().True(connectionSuccess)
@@ -145,8 +145,8 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileEnable() {
 	s.Require().True(connectionSuccess)
 
 	// Back to having external IPs enabled.
-	s.setExternalIpsEnabled(runtimeConfigFile, true)
-	assert.AssertExternalIps(s.T(), true, collectorIP)
+	s.setExternalIpsEnabled(runtimeConfigFile, "ENABLED")
+	assert.AssertExternalIps(s.T(), "ENABLED", collectorIP)
 	expectedConnections = append(expectedConnections, activeUnnormalizedConnection, inactiveNormalizedConnection)
 	connectionSuccess = s.Sensor().ExpectSameElementsConnections(s.T(), s.ClientContainer, 10*time.Second, expectedConnections...)
 	s.Require().True(connectionSuccess)
@@ -163,8 +163,8 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileDisable() {
 
 	// The runtime config file is created, but external IPs is disables.
 	// There is no change in the state, so there are no changes to the connections
-	s.setExternalIpsEnabled(runtimeConfigFile, false)
-	assert.AssertExternalIps(s.T(), false, collectorIP)
+	s.setExternalIpsEnabled(runtimeConfigFile, "DISABLED")
+	assert.AssertExternalIps(s.T(), "DISABLED", collectorIP)
 	common.Sleep(3 * time.Second) // Sleep so that collector has a chance to report connections
 	connectionSuccess = s.Sensor().ExpectSameElementsConnections(s.T(), s.ClientContainer, 10*time.Second, expectedConnections...)
 	s.Require().True(connectionSuccess)
@@ -189,7 +189,7 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileInvalid() {
 	// Testing an invalid configuration. There should not be a change in the configuration or reported connections
 	invalidConfig := "asdf"
 	s.setRuntimeConfig(runtimeConfigFile, invalidConfig)
-	assert.AssertExternalIps(s.T(), false, collectorIP)
+	assert.AssertNoRuntimeConfig(s.T(), collectorIP)
 	common.Sleep(3 * time.Second) // Sleep so that collector has a chance to report connections
 	connectionSuccess = s.Sensor().ExpectSameElementsConnections(s.T(), s.ClientContainer, 10*time.Second, expectedConnections...)
 	s.Require().True(connectionSuccess)

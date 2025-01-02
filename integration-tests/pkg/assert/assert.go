@@ -19,7 +19,7 @@ var (
 	runtimeConfigErrorMsg = "Runtime configuration was not updated"
 )
 
-func AssertExternalIps(t *testing.T, enabled bool, collectorIP string) {
+func AssertExternalIps(t *testing.T, enabled string, collectorIP string) {
 	tickTime := 1 * time.Second
 	timeout := 3 * time.Minute
 	AssertRepeated(t, tickTime, timeout, runtimeConfigErrorMsg, func() bool {
@@ -29,7 +29,7 @@ func AssertExternalIps(t *testing.T, enabled bool, collectorIP string) {
 		err = json.Unmarshal(body, &response)
 		assert.NoError(t, err)
 
-		return response.Networking.ExternalIps.Enable == enabled
+		return response.Networking.ExternalIps.Enabled == enabled
 	})
 }
 
