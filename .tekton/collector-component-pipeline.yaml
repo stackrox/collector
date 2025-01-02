@@ -187,7 +187,7 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     - name: SOURCE_BRANCH
-      value: {{source_branch}}
+      value: '{{source_branch}}'
     taskRef:
       params:
       - name: name
