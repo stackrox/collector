@@ -16,6 +16,7 @@ set(ROX_PROTO_FILES
     internalapi/sensor/signal_iservice.proto
     storage/network_flow.proto
     storage/process_indicator.proto
+    storage/bpf.proto
 )
 
 add_library(rox-proto ${ROX_PROTO_FILES})
