@@ -4,26 +4,23 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/assert"
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/log"
+	"github.com/stackrox/collector/integration-tests/pkg/types"
 
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	EXT_IP_ENABLE = `
-networking:
-  externalIps:
-    enable: ENABLED
-`
-
-	EXT_IP_DISABLE = `
-networking:
-  externalIps:
-    enable: DISABLED
-`
+var (
+	EXT_IP_ENABLE  string
+	EXT_IP_DISABLE string
 
 	CONFIG_MAP_NAME = "collector-config"
 )
+
+func init() {
+	EXT_IP_ENABLE, _ = types.GetRuntimeConfigEnabledStr("ENABLED")
+	EXT_IP_DISABLE, _ = types.GetRuntimeConfigEnabledStr("DISABLED")
+}
 
 type K8sConfigReloadTestSuite struct {
 	K8sTestSuiteBase

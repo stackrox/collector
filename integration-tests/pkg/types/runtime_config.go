@@ -25,3 +25,10 @@ func (n *RuntimeConfig) GetRuntimeConfigStr() (string, error) {
 
 	return string(yamlBytes), err
 }
+
+func GetRuntimeConfigEnabledStr(enabled string) (string, error) {
+	var runtimeConfig RuntimeConfig
+	runtimeConfig.Networking.ExternalIps.Enabled = enabled
+
+	return runtimeConfig.GetRuntimeConfigStr()
+}
