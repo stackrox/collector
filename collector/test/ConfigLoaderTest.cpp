@@ -8,13 +8,13 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
       {R"(
                   networking:
                     externalIps:
-                      enable: true
+                      enabled: ENABLED
                )",
        true},
       {R"(
                   networking:
                     externalIps:
-                      enable: false
+                      enabled: DISABLED
                )",
        false},
       {R"(
@@ -36,7 +36,7 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
     bool enabled = runtime_config.value()
                        .networking()
                        .external_ips()
-                       .enable();
+                       .enabled() == sensor::ExternalIpsEnabled::ENABLED;
     EXPECT_EQ(enabled, expected);
     EXPECT_EQ(config.EnableExternalIPs(), expected);
   }
@@ -50,8 +50,8 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigEmptyOrMalformed) {
       R"(
                   networking:
                     externalIps:
-                      enable: false
-                    perContainerRateLimit: invalid
+                      enabled: DISABLED
+                    maxConnectionsPerMinute: invalid
                )",
       R"()"};
 
@@ -71,15 +71,15 @@ TEST(CollectorConfigTest, TestPerContainerRateLimit) {
       {R"(
                   networking:
                     externalIps:
-                      enable: false
-                    perContainerRateLimit: 1234
+                      enabled: DISABLED
+                    maxConnectionsPerMinute: 1234
                )",
        1234},
       {R"(
                   networking:
                     externalIps:
-                      enable: false
-                    perContainerRateLimit: 1337
+                      enabled: DISABLED
+                    maxConnectionsPerMinute: 1337
                )",
        1337},
   };
@@ -95,7 +95,7 @@ TEST(CollectorConfigTest, TestPerContainerRateLimit) {
 
     int rate = runtime_config.value()
                    .networking()
-                   .per_container_rate_limit();
+                   .max_connections_per_minute();
     EXPECT_EQ(rate, expected);
     EXPECT_EQ(config.PerContainerRateLimit(), expected);
   }

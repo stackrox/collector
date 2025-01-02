@@ -78,7 +78,7 @@ class MockCollectorConfig : public collector::CollectorConfig {
   }
 
   void SetPerContainerRateLimit(int64_t limit) {
-    per_container_rate_limit_ = limit;
+    max_connections_per_minute_ = limit;
   }
 };
 
