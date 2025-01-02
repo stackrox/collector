@@ -97,6 +97,7 @@ bool ConfigLoader::LoadConfiguration(CollectorConfig& config, const YAML::Node& 
   sensor::CollectorConfig runtimeConfig;
   google::protobuf::util::JsonParseOptions parseOptions;
   parseOptions.ignore_unknown_fields = true;
+  parseOptions.case_insensitive_enum_parsing = true;
   auto status = google::protobuf::util::JsonStringToMessage(jsonStr, &runtimeConfig, parseOptions);
   if (!status.ok()) {
     CLOG(ERROR) << "Failed to parse config: " << status.ToString();
