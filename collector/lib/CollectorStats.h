@@ -41,6 +41,7 @@
   X(procfs_could_not_get_socket_inodes)     \
   X(procfs_could_not_read_exe)              \
   X(procfs_could_not_read_cmdline)          \
+  X(procfs_zombie_process)                  \
   X(event_timestamp_distant_past)           \
   X(event_timestamp_future)
 

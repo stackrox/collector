@@ -144,10 +144,9 @@ bool GetSocketINodes(int dirfd, uint64_t pid, UnorderedSet<SocketInfo>* sock_ino
   return true;
 }
 
-// IsZombieProcess fetches the current state of the process pointed to by dirfd, and
-// - returns true, if the process state is 'Z'
-// - returns false otherwise
-bool IsZombieProcess(int dirfd) {
+// Fetches the current state of the process pointed to by dirfd
+// returns nulopt in case of error
+std::optional<char> ReadProcessState(int dirfd) {
   FileHandle stat_file(FDHandle(openat(dirfd, "stat", O_RDONLY)), "r");
   if (!stat_file.valid()) {
     return false;
@@ -159,9 +158,7 @@ bool IsZombieProcess(int dirfd) {
     return false;
   }
 
-  auto state = ExtractProcessState(linebuf);
-
-  return state && *state == 'Z';
+  return ExtractProcessState(linebuf);
 }
 
 // GetContainerID retrieves the container ID of the process represented by dirfd. The container ID is extracted from
@@ -512,7 +509,9 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
       continue;
     }
 
-    if (IsZombieProcess(dirfd)) {
+    auto process_state = ReadProcessState(dirfd);
+    if (process_state && *process_state == 'Z') {
+      COUNTER_INC(CollectorStats::procfs_zombie_process);
       continue;
     }
 
