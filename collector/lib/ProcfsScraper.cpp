@@ -523,7 +523,10 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
     uint64_t netns_inode;
     if (!GetNetworkNamespace(dirfd, &netns_inode)) {
       COUNTER_INC(CollectorStats::procfs_could_not_get_network_namespace);
-      CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not determine network namespace: " << StrError();
+      CLOG(TRACE) << "Could not determine network namespace: " << StrError();
+      if (process_state) {
+        CLOG(TRACE) << "Process state: " << *process_state;
+      }
       continue;
     }
 
@@ -532,7 +535,10 @@ bool ReadContainerConnections(const char* proc_path, std::shared_ptr<ProcessStor
 
     if (!GetSocketINodes(dirfd, pid, &container_ns_sockets)) {
       COUNTER_INC(CollectorStats::procfs_could_not_get_socket_inodes);
-      CLOG_THROTTLED(ERROR, std::chrono::seconds(10)) << "Could not obtain socket inodes: " << StrError();
+      CLOG(TRACE) << "Could not obtain socket inodes: " << StrError();
+      if (process_state) {
+        CLOG(TRACE) << "Process state: " << *process_state;
+      }
       continue;
     }
 
