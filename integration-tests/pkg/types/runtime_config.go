@@ -7,13 +7,13 @@ import (
 type RuntimeConfig struct {
 	Networking struct {
 		ExternalIps struct {
-			Enable bool `yaml:"enable"`
+			Enabled string `yaml:"enabled"`
 		} `yaml:"externalIps"`
 	} `yaml:"networking"`
 }
 
 func (n *RuntimeConfig) Equal(other RuntimeConfig) bool {
-	return n.Networking.ExternalIps.Enable == other.Networking.ExternalIps.Enable
+	return n.Networking.ExternalIps.Enabled == other.Networking.ExternalIps.Enabled
 }
 
 func (n *RuntimeConfig) GetRuntimeConfigStr() (string, error) {
