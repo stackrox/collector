@@ -13,13 +13,13 @@ const (
 	EXT_IP_ENABLE = `
 networking:
   externalIps:
-    enable: true
+    enable: ENABLED
 `
 
 	EXT_IP_DISABLE = `
 networking:
   externalIps:
-    enable: false
+    enable: DISABLED
 `
 
 	CONFIG_MAP_NAME = "collector-config"
@@ -64,12 +64,12 @@ func (k *K8sConfigReloadTestSuite) TestCreateConfigurationAfterStart() {
 		},
 	}
 	k.createConfigMap(&configMap)
-	assert.AssertExternalIps(k.T(), true, k.Collector().IP())
+	assert.AssertExternalIps(k.T(), "ENABLED", k.Collector().IP())
 
 	log.Info("Checking external IPs is disabled")
 	configMap.Data["runtime_config.yaml"] = EXT_IP_DISABLE
 	k.updateConfigMap(&configMap)
-	assert.AssertExternalIps(k.T(), false, k.Collector().IP())
+	assert.AssertExternalIps(k.T(), "DISABLED", k.Collector().IP())
 
 	log.Info("Checking runtime configuration is not in use")
 	k.deleteConfigMap(CONFIG_MAP_NAME)
@@ -78,7 +78,7 @@ func (k *K8sConfigReloadTestSuite) TestCreateConfigurationAfterStart() {
 	log.Info("Checking external IPs is enabled again")
 	configMap.Data["runtime_config.yaml"] = EXT_IP_ENABLE
 	k.createConfigMap(&configMap)
-	assert.AssertExternalIps(k.T(), true, k.Collector().IP())
+	assert.AssertExternalIps(k.T(), "ENABLED", k.Collector().IP())
 }
 
 func (k *K8sConfigReloadTestSuite) TestConfigurationReload() {
@@ -104,5 +104,5 @@ func (k *K8sConfigReloadTestSuite) TestConfigurationReload() {
 	log.Info("Checking external IPs is disabled")
 	configMap.Data["runtime_config.yaml"] = EXT_IP_DISABLE
 	k.updateConfigMap(&configMap)
-	assert.AssertExternalIps(k.T(), false, k.Collector().IP())
+	assert.AssertExternalIps(k.T(), "DISABLED", k.Collector().IP())
 }
