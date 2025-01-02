@@ -130,7 +130,7 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileEnable() {
 	// External IPs enabled.
 	// Normalized connection must be reported as inactive
 	// Unnormalized connection will now be reported.
-	s.setExternalIpsEnabled(runtimeConfigFile, "ENABLED")
+	s.setExternalIpsEnabled(runtimeConfigFile, "enabled")
 	assert.AssertExternalIps(s.T(), "ENABLED", collectorIP)
 	expectedConnections = append(expectedConnections, activeUnnormalizedConnection, inactiveNormalizedConnection)
 	connectionSuccess = s.Sensor().ExpectSameElementsConnections(s.T(), s.ClientContainer, 10*time.Second, expectedConnections...)
