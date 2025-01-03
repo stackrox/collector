@@ -1,10 +1,14 @@
+find_package(BpfObject REQUIRED)
+
+add_subdirectory(sources)
+
 file(GLOB COLLECTOR_LIB_SRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/system-inspector/*.cpp
 )
 
 add_library(collector_lib ${DRIVER_HEADERS} ${COLLECTOR_LIB_SRC_FILES})
-add_dependencies(collector_lib sinsp)
+add_dependencies(collector_lib sinsp collector_scrapers)
 target_link_libraries(collector_lib sinsp)
 target_link_libraries(collector_lib stdc++fs) # This is needed for GCC-8 to link against the filesystem library
 target_link_libraries(collector_lib cap-ng)
@@ -14,6 +18,7 @@ target_link_libraries(collector_lib civetweb::civetweb-cpp)
 target_link_libraries(collector_lib yaml-cpp::yaml-cpp)
 
 target_link_libraries(collector_lib rox-proto)
+target_link_libraries(collector_lib collector_scrapers)
 
 if(NOT DISABLE_PROFILING)
     find_library(GPERFTOOLS_PROFILER profiler)

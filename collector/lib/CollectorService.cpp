@@ -119,6 +119,8 @@ void CollectorService::RunForever() {
     server.addHandler(collector_config_inspector->kBaseRoute, collector_config_inspector.get());
   }
 
+  bpf_programs_.Load();
+
   system_inspector_.Init(config_, conn_tracker);
   system_inspector_.Start();
 
