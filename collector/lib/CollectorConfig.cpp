@@ -450,7 +450,8 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << ", collect_connection_status:" << c.CollectConnectionStatus()
          << ", enable_detailed_metrics:" << c.EnableDetailedMetrics()
          << ", enable_external_ips:" << c.EnableExternalIPs()
-         << ", track_send_recv:" << c.TrackingSendRecv();
+         << ", track_send_recv:" << c.TrackingSendRecv()
+         << ", enable_introspection:" << c.IsIntrospectionEnabled();
 }
 
 // Returns size of ring buffers to be allocated.
