@@ -194,7 +194,7 @@ spec:
         value: determine-image-tag
       - name: bundle
         # TODO(ROX-27384): use latest
-        value: quay.io/rhacs-eng/konflux-tasks:pr-16@sha256:37a8a582a14e6b6e712eac58b9563870635c04bc5d687cac1020207854cabdb6
+        value: quay.io/rhacs-eng/konflux-tasks:pr-16@sha256:b516710a1c332aecbd9b1e3962482de16192c993fea8a6b7462d413a064dab94
       - name: kind
         value: task
       resolver: bundles
