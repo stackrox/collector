@@ -179,12 +179,15 @@ spec:
       value: $(params.output-tag-suffix)
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    - name: SOURCE_BRANCH
+      value: '{{source_branch}}'
     taskRef:
       params:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:886e1482c717078d11ba7c5d6fc4e8013e3740b4d1282ebe5534db62c9f19428
+        # TODO(ROX-27384): use latest
+        value: quay.io/rhacs-eng/konflux-tasks:pr-16@sha256:b516710a1c332aecbd9b1e3962482de16192c993fea8a6b7462d413a064dab94
       - name: kind
         value: task
       resolver: bundles
