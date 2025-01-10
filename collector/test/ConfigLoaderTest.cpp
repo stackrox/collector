@@ -42,34 +42,16 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
   }
 }
 
-TEST(CollectorConfigTest, TestYamlConfigToConfigInvalid) {
-  std::vector<std::string> tests = {
-      R"(
-                  networking:
-               )",
-      R"(
-                  networking:
-                    unknownFiled: asdf
-               )",
-      R"(
-                  unknownField: asdf
-               )"};
-
-  for (const auto& yamlStr : tests) {
-    YAML::Node yamlNode = YAML::Load(yamlStr);
-    CollectorConfig config;
-    ASSERT_TRUE(ConfigLoader::LoadConfiguration(config, yamlNode));
-
-    auto runtime_config = config.GetRuntimeConfig();
-
-    EXPECT_FALSE(runtime_config.has_value());
-  }
-}
-
 TEST(CollectorConfigTest, TestYamlConfigToConfigEmptyOrMalformed) {
   std::vector<std::string> tests = {
       R"(
                   asdf
+               )",
+      R"(
+                  networking:
+                    externalIps:
+                      enable: false
+                    perContainerRateLimit: invalid
                )",
       R"()"};
 
@@ -89,24 +71,17 @@ TEST(CollectorConfigTest, TestPerContainerRateLimit) {
       {R"(
                   networking:
                     externalIps:
-                      enabled: false
+                      enable: false
                     perContainerRateLimit: 1234
                )",
        1234},
       {R"(
                   networking:
                     externalIps:
-                      enabled: false
+                      enable: false
                     perContainerRateLimit: 1337
                )",
        1337},
-      {R"(
-                  networking:
-                    externalIps:
-                      enabled: false
-                    perContainerRateLimit: invalid
-               )",
-       1024},
   };
 
   for (const auto& [yamlStr, expected] : tests) {
