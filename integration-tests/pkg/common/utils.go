@@ -15,12 +15,6 @@ import (
 	"k8s.io/utils/strings/slices"
 )
 
-// containerShortID returns the first twelve character of a containerID
-// to match the shortened IDs returned by docker.
-func ContainerShortID(containerID string) string {
-	return containerID[0:12]
-}
-
 // quoteArgs will add quotes around any arguments require it for the shell.
 func QuoteArgs(args []string) []string {
 	quotedArgs := []string{}
