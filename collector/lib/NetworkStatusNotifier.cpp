@@ -150,7 +150,8 @@ void NetworkStatusNotifier::Stop() {
 
 void NetworkStatusNotifier::WaitUntilWriterStarted(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time_seconds) {
   if (!writer->WaitUntilStarted(std::chrono::seconds(wait_time_seconds))) {
-    CLOG(ERROR) << "Failed to establish network connection info stream.";
+    CLOG(ERROR) << "Unable to establish network connection info stream.";
+    CLOG(FATAL) << "Failed to communicate with Sensor.";
     return;
   }
 
@@ -218,7 +219,7 @@ bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
 }
 
 void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
-  WaitUntilWriterStarted(writer, 10);
+  WaitUntilWriterStarted(writer, config_.GRPCWaitTime());
 
   ConnMap old_conn_state;
   AdvertisedEndpointMap old_cep_state;
