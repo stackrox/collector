@@ -100,3 +100,5 @@ set(MODERN_BPF_DEBUG_MODE ${BPF_DEBUG_MODE} CACHE BOOL "Enable BPF debug prints"
 set(MODERN_BPF_EXCLUDE_PROGS "^(openat2|ppoll|setsockopt|io_uring_setup|nanosleep)$" CACHE STRING "Set of syscalls to exclude from modern bpf engine " FORCE)
 
 add_subdirectory(${FALCO_DIR} falco)
+
+add_subdirectory(standalone)
