@@ -77,7 +77,7 @@ class MockCollectorConfig : public collector::CollectorConfig {
     enable_afterglow_ = false;
   }
 
-  void SetPerContainerRateLimit(int64_t limit) {
+  void SetMaxConnectionsPerMinute(int64_t limit) {
     max_connections_per_minute_ = limit;
   }
 };
@@ -353,7 +353,9 @@ TEST(NetworkStatusNotifier, RateLimitedConnections) {
   // maximum of 2 connections per scrape interval
   // if we throw four connections from the same container into the conn
   // tracker delta, we expect only two to be returned
-  config.SetPerContainerRateLimit(2);
+  // The scrape interval is 30 seconds so max_connections_per_minute_
+  // should be 4 to make per_container_rate_limit 2
+  config.SetMaxConnectionsPerMinute(4);
 
   NetworkStatusNotifier netStatusNotifier(conn_scraper, conn_tracker, comm, config);
 

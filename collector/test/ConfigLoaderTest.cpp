@@ -84,7 +84,7 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigEmptyOrMalformed) {
   }
 }
 
-TEST(CollectorConfigTest, TestPerContainerRateLimit) {
+TEST(CollectorConfigTest, TestMaxConnectionsPerMinute) {
   std::vector<std::pair<std::string, int>> tests = {
       {R"(
                   networking:
@@ -122,7 +122,7 @@ TEST(CollectorConfigTest, TestPerContainerRateLimit) {
                    .networking()
                    .max_connections_per_minute();
     EXPECT_EQ(rate, expected);
-    EXPECT_EQ(config.PerContainerRateLimit(), expected);
+    EXPECT_EQ(config.MaxConnectionsPerMinute(), expected);
   }
 }
 }  // namespace collector
