@@ -71,12 +71,6 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigEmptyOrMalformed) {
       R"(
                   asdf
                )",
-      R"(
-                  networking:
-                    externalIps:
-                      enabled: DISABLED
-                    maxConnectionsPerMinute: invalid
-               )",
       R"()"};
 
   for (const auto& yamlStr : tests) {
@@ -109,8 +103,8 @@ TEST(CollectorConfigTest, TestPerContainerRateLimit) {
       {R"(
                   networking:
                     externalIps:
-                      enabled: false
-                    perContainerRateLimit: invalid
+                      enabled: DISABLED
+                    maxConnectionsPerMinute: invalid
                )",
        1024},
   };
