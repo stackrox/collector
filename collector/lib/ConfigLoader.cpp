@@ -74,8 +74,7 @@ bool ConfigLoader::LoadConfiguration(CollectorConfig& config, const YAML::Node& 
 
   sensor::ExternalIpsEnabled enable_external_ips;
   const std::string enabled_value = external_ips_node["enabled"] ? external_ips_node["enabled"].as<std::string>() : "";
-  std::string enabled_value_lower = enabled_value;
-  std::transform(enabled_value_lower.begin(), enabled_value_lower.end(), enabled_value_lower.begin(), ::tolower);
+  std::transform(enabled_value.begin(), enabled_value.end(), enabled_value.begin(), std::tolower);
 
   if (enabled_value_lower == "enabled") {
     enable_external_ips = sensor::ExternalIpsEnabled::ENABLED;
