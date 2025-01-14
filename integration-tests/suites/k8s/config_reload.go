@@ -17,19 +17,28 @@ var (
 	CONFIG_MAP_NAME = "collector-config"
 )
 
+func init() {
+	var err error
+	var runtimeConfig types.RuntimeConfig
+	runtimeConfig.Networking.ExternalIps.Enabled = "ENABLED"
+
+	EXT_IP_ENABLE, err = runtimeConfig.GetRuntimeConfigStr()
+	if err != nil {
+		panic(err)
+	}
+
+	runtimeConfig.Networking.ExternalIps.Enabled = "DISABLED"
+	EXT_IP_DISABLE, err = runtimeConfig.GetRuntimeConfigStr()
+	if err != nil {
+		panic(err)
+	}
+}
+
 type K8sConfigReloadTestSuite struct {
 	K8sTestSuiteBase
 }
 
 func (k *K8sConfigReloadTestSuite) SetupSuite() {
-	var err error
-
-	EXT_IP_ENABLE, err = types.GetRuntimeConfigEnabledStr("ENABLED")
-	k.Require().NoError(err, "Failed to get runtime config for ENABLED")
-
-	EXT_IP_DISABLE, err = types.GetRuntimeConfigEnabledStr("DISABLED")
-	k.Require().NoError(err, "Failed to get runtime config for DISABLED")
-
 	k.T().Cleanup(func() {
 		k.Sensor().Stop()
 		k.teardownTargetNamespace()
