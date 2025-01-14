@@ -74,17 +74,18 @@ bool ConfigLoader::LoadConfiguration(CollectorConfig& config, const YAML::Node& 
 
   sensor::ExternalIpsEnabled enable_external_ips;
   const std::string enabled_value = external_ips_node["enabled"] ? external_ips_node["enabled"].as<std::string>() : "";
-  std::transform(enabled_value.begin(), enabled_value.end(), enabled_value.begin(), std::tolower);
+  std::string enabled_value_lower = enabled_value;
+  std::transform(enabled_value_lower.begin(), enabled_value_lower.end(), enabled_value_lower.begin(), ::tolower);
 
   if (enabled_value_lower == "enabled") {
     enable_external_ips = sensor::ExternalIpsEnabled::ENABLED;
   } else if (enabled_value_lower == "disabled") {
     enable_external_ips = sensor::ExternalIpsEnabled::DISABLED;
   } else {
-    CLOG(ERROR) << "Unknown value for for networking.externalIps.enabled. Setting it to DISABLED";
+    CLOG(WARNING) << "Unknown value for for networking.externalIps.enabled. Setting it to DISABLED";
     enable_external_ips = sensor::ExternalIpsEnabled::DISABLED;
   }
-  int64_t max_connections_per_minute = networking_node["maxConnectionsPerMinute"].as<int64_t>(1024);
+  int64_t max_connections_per_minute = networking_node["maxConnectionsPerMinute"].as<int64_t>(CollectorConfig::kMaxConnectionsPerMinute);
 
   sensor::CollectorConfig runtime_config;
   auto* networking = runtime_config.mutable_networking();

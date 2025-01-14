@@ -17,16 +17,19 @@ var (
 	CONFIG_MAP_NAME = "collector-config"
 )
 
-func init() {
-	EXT_IP_ENABLE, _ = types.GetRuntimeConfigEnabledStr("ENABLED")
-	EXT_IP_DISABLE, _ = types.GetRuntimeConfigEnabledStr("DISABLED")
-}
-
 type K8sConfigReloadTestSuite struct {
 	K8sTestSuiteBase
 }
 
 func (k *K8sConfigReloadTestSuite) SetupSuite() {
+	var err error
+
+	EXT_IP_ENABLE, err = types.GetRuntimeConfigEnabledStr("ENABLED")
+	k.Require().NoError(err, "Failed to get runtime config for ENABLED")
+
+	EXT_IP_DISABLE, err = types.GetRuntimeConfigEnabledStr("DISABLED")
+	k.Require().NoError(err, "Failed to get runtime config for DISABLED")
+
 	k.T().Cleanup(func() {
 		k.Sensor().Stop()
 		k.teardownTargetNamespace()

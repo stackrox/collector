@@ -106,7 +106,7 @@ TEST(CollectorConfigTest, TestMaxConnectionsPerMinute) {
                       enabled: DISABLED
                     maxConnectionsPerMinute: invalid
                )",
-       1024},
+       2048},
   };
 
   for (const auto& [yamlStr, expected] : tests) {

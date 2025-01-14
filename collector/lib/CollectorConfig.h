@@ -29,6 +29,7 @@ class CollectorConfig {
  public:
   static constexpr bool kTurnOffScrape = false;
   static constexpr int kScrapeInterval = 30;
+  static constexpr int64_t kMaxConnectionsPerMinute = 2048;
   static constexpr CollectionMethod kCollectionMethod = CollectionMethod::CORE_BPF;
   static constexpr const char* kSyscalls[] = {
       "accept",
@@ -113,20 +114,9 @@ class CollectorConfig {
     if (runtime_config_.has_value()) {
       auto* networking = runtime_config_.value().mutable_networking();
       if (networking->max_connections_per_minute() == 0) {
-        networking->set_max_connections_per_minute(1024);
+        networking->set_max_connections_per_minute(kMaxConnectionsPerMinute);
       }
     }
-  }
-
-  int64_t PerContainerRateLimit() const {
-    auto lock = ReadLock();
-    int64_t max_connections_per_minute = max_connections_per_minute_;
-    if (runtime_config_.has_value()) {
-      max_connections_per_minute = runtime_config_.value()
-                                       .networking()
-                                       .max_connections_per_minute();
-    }
-    return int64_t(float(max_connections_per_minute) * float(scrape_interval_) / 60.0 + 0.5);
   }
 
   int64_t MaxConnectionsPerMinute() const {
@@ -137,6 +127,11 @@ class CollectorConfig {
           .max_connections_per_minute();
     }
     return max_connections_per_minute_;
+  }
+
+  int64_t PerContainerRateLimit() const {
+    int64_t max_connections_per_minute = MaxConnectionsPerMinute();
+    return int64_t(float(max_connections_per_minute) * float(scrape_interval_) / 60.0 + 0.5);
   }
 
   std::string GetRuntimeConfigStr() {
@@ -228,7 +223,7 @@ class CollectorConfig {
   std::vector<double> connection_stats_quantiles_;
   double connection_stats_error_;
   unsigned int connection_stats_window_;
-  int64_t max_connections_per_minute_ = 2048;
+  int64_t max_connections_per_minute_ = kMaxConnectionsPerMinute;
 
   // URL to the GRPC server
   std::optional<std::string> grpc_server_;
