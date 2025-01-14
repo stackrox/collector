@@ -131,7 +131,8 @@ class CollectorConfig {
 
   int64_t PerContainerRateLimit() const {
     int64_t max_connections_per_minute = MaxConnectionsPerMinute();
-    return int64_t(float(max_connections_per_minute) * float(scrape_interval_) / 60.0 + 0.5);
+    // Converts from max connections per minute to connections per scrape interval.
+    return int64_t(std::round(float(max_connections_per_minute) * float(scrape_interval_) / 60.0));
   }
 
   std::string GetRuntimeConfigStr() {
