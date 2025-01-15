@@ -73,13 +73,12 @@ bool ConfigLoader::LoadConfiguration(CollectorConfig& config, const YAML::Node& 
   }
 
   sensor::ExternalIpsEnabled enable_external_ips;
-  const std::string enabled_value = external_ips_node["enabled"] ? external_ips_node["enabled"].as<std::string>() : "";
-  std::string enabled_value_lower = enabled_value;
-  std::transform(enabled_value_lower.begin(), enabled_value_lower.end(), enabled_value_lower.begin(), ::tolower);
+  std::string enabled_value = external_ips_node["enabled"] ? external_ips_node["enabled"].as<std::string>() : "";
+  std::transform(enabled_value.begin(), enabled_value.end(), enabled_value.begin(), ::tolower);
 
-  if (enabled_value_lower == "enabled") {
+  if (enabled_value == "enabled") {
     enable_external_ips = sensor::ExternalIpsEnabled::ENABLED;
-  } else if (enabled_value_lower == "disabled") {
+  } else if (enabled_value == "disabled") {
     enable_external_ips = sensor::ExternalIpsEnabled::DISABLED;
   } else {
     CLOG(WARNING) << "Unknown value for for networking.externalIps.enabled. Setting it to DISABLED";
