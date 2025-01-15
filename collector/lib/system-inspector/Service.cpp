@@ -52,7 +52,7 @@ void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTrac
   }
 
   if (config.grpc_channel) {
-    signal_client_.reset(new SignalServiceClient(std::move(config.grpc_channel)));
+    signal_client_.reset(new SignalServiceClient(std::move(config.grpc_channel), config));
   } else {
     signal_client_.reset(new StdoutSignalServiceClient());
   }
