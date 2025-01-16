@@ -29,6 +29,7 @@ class CollectorConfig {
  public:
   static constexpr bool kTurnOffScrape = false;
   static constexpr int kScrapeInterval = 30;
+  static constexpr int64_t kMaxConnectionsPerMinute = 2048;
   static constexpr CollectionMethod kCollectionMethod = CollectionMethod::CORE_BPF;
   static constexpr const char* kSyscalls[] = {
       "accept",
@@ -101,21 +102,37 @@ class CollectorConfig {
     auto lock = ReadLock();
     if (runtime_config_.has_value()) {
       return runtime_config_.value()
-          .networking()
-          .external_ips()
-          .enable();
+                 .networking()
+                 .external_ips()
+                 .enabled() == sensor::ExternalIpsEnabled::ENABLED;
     }
     return enable_external_ips_;
   }
 
-  int64_t PerContainerRateLimit() const {
+  void RuntimeConfigHeuristics() {
+    auto lock = WriteLock();
+    if (runtime_config_.has_value()) {
+      auto* networking = runtime_config_.value().mutable_networking();
+      if (networking->max_connections_per_minute() == 0) {
+        networking->set_max_connections_per_minute(kMaxConnectionsPerMinute);
+      }
+    }
+  }
+
+  int64_t MaxConnectionsPerMinute() const {
     auto lock = ReadLock();
     if (runtime_config_.has_value()) {
       return runtime_config_.value()
           .networking()
-          .per_container_rate_limit();
+          .max_connections_per_minute();
     }
-    return per_container_rate_limit_;
+    return max_connections_per_minute_;
+  }
+
+  int64_t PerContainerRateLimit() const {
+    int64_t max_connections_per_minute = MaxConnectionsPerMinute();
+    // Converts from max connections per minute to connections per scrape interval.
+    return int64_t(std::round(float(max_connections_per_minute) * float(scrape_interval_) / 60.0));
   }
 
   std::string GetRuntimeConfigStr() {
@@ -207,7 +224,7 @@ class CollectorConfig {
   std::vector<double> connection_stats_quantiles_;
   double connection_stats_error_;
   unsigned int connection_stats_window_;
-  int64_t per_container_rate_limit_ = 1024;
+  int64_t max_connections_per_minute_ = kMaxConnectionsPerMinute;
 
   // URL to the GRPC server
   std::optional<std::string> grpc_server_;

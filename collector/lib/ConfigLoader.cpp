@@ -72,16 +72,27 @@ bool ConfigLoader::LoadConfiguration(CollectorConfig& config, const YAML::Node& 
     return true;
   }
 
-  bool enable_external_ips = external_ips_node["enable"].as<bool>(false);
-  int64_t per_container_rate_limit = networking_node["perContainerRateLimit"].as<int64_t>(1024);
+  sensor::ExternalIpsEnabled enable_external_ips;
+  std::string enabled_value = external_ips_node["enabled"] ? external_ips_node["enabled"].as<std::string>() : "";
+  std::transform(enabled_value.begin(), enabled_value.end(), enabled_value.begin(), ::tolower);
+
+  if (enabled_value == "enabled") {
+    enable_external_ips = sensor::ExternalIpsEnabled::ENABLED;
+  } else if (enabled_value == "disabled") {
+    enable_external_ips = sensor::ExternalIpsEnabled::DISABLED;
+  } else {
+    CLOG(WARNING) << "Unknown value for for networking.externalIps.enabled. Setting it to DISABLED";
+    enable_external_ips = sensor::ExternalIpsEnabled::DISABLED;
+  }
+  int64_t max_connections_per_minute = networking_node["maxConnectionsPerMinute"].as<int64_t>(CollectorConfig::kMaxConnectionsPerMinute);
 
   sensor::CollectorConfig runtime_config;
   auto* networking = runtime_config.mutable_networking();
   networking
       ->mutable_external_ips()
-      ->set_enable(enable_external_ips);
+      ->set_enabled(enable_external_ips);
   networking
-      ->set_per_container_rate_limit(per_container_rate_limit);
+      ->set_max_connections_per_minute(max_connections_per_minute);
 
   config.SetRuntimeConfig(std::move(runtime_config));
 

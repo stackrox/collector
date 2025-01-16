@@ -22,7 +22,9 @@ std::string CollectorConfigInspector::configToJson(bool& isError) {
 
   std::string jsonString;
   const auto& config = runtime_config.value();
-  absl::Status status = google::protobuf::util::MessageToJsonString(config, &jsonString);
+  google::protobuf::util::JsonPrintOptions options;
+  options.always_print_fields_with_no_presence = true;
+  absl::Status status = google::protobuf::util::MessageToJsonString(config, &jsonString, options);
 
   if (!status.ok()) {
     isError = true;

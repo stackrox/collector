@@ -134,7 +134,7 @@ TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
   auto* networking_config = runtime_config.mutable_networking();
   auto* external_ips_config = networking_config->mutable_external_ips();
 
-  external_ips_config->set_enable(false);
+  external_ips_config->set_enabled(sensor::ExternalIpsEnabled::DISABLED);
 
   config.SetRuntimeConfig(runtime_config);
 
@@ -142,7 +142,7 @@ TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
 
   config.MockSetEnableExternalIPs(false);
 
-  external_ips_config->set_enable(true);
+  external_ips_config->set_enabled(sensor::ExternalIpsEnabled::ENABLED);
   config.SetRuntimeConfig(runtime_config);
 
   EXPECT_TRUE(config.EnableExternalIPs());

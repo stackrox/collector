@@ -114,15 +114,14 @@ seconds. The default value is 30 seconds.
 ### File mount or ConfigMap
 
 The external IPs feature can be enabled or disabled using a file or ConfigMap. This is an optional
-method and does not have to be used. This file overwites the ENABLE_EXTERNAL_IPS feature flag.
-When using collector by itself a file can be mounted to it at /etc/stackrox/runtime_config.yaml. The
-following is an example of the contents
+method and does not have to be used. When using collector by itself a file can be mounted to it at
+/etc/stackrox/runtime_config.yaml. The following is an example of the contents
 
 ```
 networking:
   externalIps:
-    enable: true
-  perContainerRateLimit: 1234
+    enabled: ENABLED
+  maxConnectionsPerMinute: 1234
 ```
 
 Alternatively, if collector is used as a part of Stackrox, the configuration can be set
@@ -138,8 +137,8 @@ data:
   runtime_config.yaml: |
     networking:
       externalIps:
-        enable: true
-      perContainerRateLimit: 1234
+        enabled: ENABLED
+      maxConnectionsPerMinute: 1234
 ```
 
 The file path can be set using the `ROX_COLLECTOR_CONFIG_PATH` environment variable.
