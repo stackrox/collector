@@ -38,7 +38,7 @@ spec:
   - name: hermetic
     value: "true"
   - name: prefetch-input
-    value: '{"type": "rpm", "path": "."}'
+    value: '{"type": "rpm", "path": ".konflux/scripts/rpm-prefetching"}'
   - name: clone-depth
     value: '0'
   - name: clone-fetch-tags
