@@ -11,7 +11,7 @@ RUN dnf -y install --nobest \
         unzip \
         clang \
         llvm \
-        cmake \
+        cmake-3.18.2-9.el8 \
         gcc-c++ \
         openssl-devel \
         ncurses-devel \

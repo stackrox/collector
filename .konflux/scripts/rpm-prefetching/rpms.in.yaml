@@ -1,10 +1,11 @@
 packages:
+  # Builder
   - make
   - wget
   - unzip
   - clang
   - llvm
-  - cmake
+  - cmake-3.18.2-9.el8
   - gcc-c++
   - openssl-devel
   - ncurses-devel
@@ -18,8 +19,9 @@ packages:
   - tbb-devel
   - c-ares-devel
   - patch
-  # for USDT support
+  ## for USDT support
   - systemtap-sdt-devel
+  # App
   - tbb
   - c-ares
 contentOrigin:
