@@ -39,34 +39,34 @@ arches:
     name: clang-resource-filesystem
     evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
     sourcerpm: clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/cmake-3.26.5-2.el8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/cmake-3.18.2-9.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 12405864
-    checksum: sha256:cfe6ef128341e7fe74512028f82edc9cfa0cfe9b486cfb48e4cf4a997e98d375
+    size: 8995568
+    checksum: sha256:3d4e95e00d6c69f6d5a81b5ffd972e2900b5067c36cc416353179452ff150576
     name: cmake
-    evr: 3.26.5-2.el8
-    sourcerpm: cmake-3.26.5-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/cmake-data-3.26.5-2.el8.noarch.rpm
+    evr: 3.18.2-9.el8
+    sourcerpm: cmake-3.18.2-9.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/cmake-data-3.18.2-9.el8.noarch.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 1996464
-    checksum: sha256:c62da3f90f9f40b3511419ffdc7db46b210d6c8eb1570be788cd5d3aa7061cad
+    size: 1710828
+    checksum: sha256:4dd4164e12705f2308ae416aad788e8768db878a9ca69651ed0ccf6d9dfe5d3b
     name: cmake-data
-    evr: 3.26.5-2.el8
-    sourcerpm: cmake-3.26.5-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/cmake-filesystem-3.26.5-2.el8.aarch64.rpm
+    evr: 3.18.2-9.el8
+    sourcerpm: cmake-3.18.2-9.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/cmake-filesystem-3.18.2-9.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 46068
-    checksum: sha256:2da8d378b338e49b819fc3d9577a846043d1208a63faeecc1b93228124afdefc
+    size: 45180
+    checksum: sha256:be700408fc9197aa33d3d0ec184e1a0d89d66ccfd5c6a7efb405fdabd565bc10
     name: cmake-filesystem
-    evr: 3.26.5-2.el8
-    sourcerpm: cmake-3.26.5-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/cmake-rpm-macros-3.26.5-2.el8.noarch.rpm
+    evr: 3.18.2-9.el8
+    sourcerpm: cmake-3.18.2-9.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/cmake-rpm-macros-3.18.2-9.el8.noarch.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 45164
-    checksum: sha256:2a91c1cf84fefb94dbc444edd37a5c9649544a2707db1e727244b60e9a8e3d61
+    size: 44612
+    checksum: sha256:2643101eb4c34fa9ece0ac56888477cf091f03e6bceef81712d6114fba3614b5
     name: cmake-rpm-macros
-    evr: 3.26.5-2.el8
-    sourcerpm: cmake-3.26.5-2.el8.src.rpm
+    evr: 3.18.2-9.el8
+    sourcerpm: cmake-3.18.2-9.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/compiler-rt-18.1.8-1.module+el8.10.0+22061+3612b2ba.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 2926572
@@ -1076,34 +1076,34 @@ arches:
     name: clang-resource-filesystem
     evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
     sourcerpm: clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/cmake-3.26.5-2.el8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/cmake-3.18.2-9.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 14001872
-    checksum: sha256:eca1b9f18988901675b44648e1e4c251a583788adf3735b57c448357831d6ef1
+    size: 10062764
+    checksum: sha256:02d76a0e639388f236133c37993e8b0089f5e9d6561c180f6c9fac1891e9a39e
     name: cmake
-    evr: 3.26.5-2.el8
-    sourcerpm: cmake-3.26.5-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/cmake-data-3.26.5-2.el8.noarch.rpm
+    evr: 3.18.2-9.el8
+    sourcerpm: cmake-3.18.2-9.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/cmake-data-3.18.2-9.el8.noarch.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 1996464
-    checksum: sha256:c62da3f90f9f40b3511419ffdc7db46b210d6c8eb1570be788cd5d3aa7061cad
+    size: 1710828
+    checksum: sha256:4dd4164e12705f2308ae416aad788e8768db878a9ca69651ed0ccf6d9dfe5d3b
     name: cmake-data
-    evr: 3.26.5-2.el8
-    sourcerpm: cmake-3.26.5-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/cmake-filesystem-3.26.5-2.el8.ppc64le.rpm
+    evr: 3.18.2-9.el8
+    sourcerpm: cmake-3.18.2-9.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/cmake-filesystem-3.18.2-9.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 46088
-    checksum: sha256:b86fafbae968e96093c7de99fbc1aba1f6ef02b8fc44287675499924d375f1b9
+    size: 45200
+    checksum: sha256:f8b9d54540772b248719e3b12f290402c02122f80be71e8934030fb5ec469a3f
     name: cmake-filesystem
-    evr: 3.26.5-2.el8
-    sourcerpm: cmake-3.26.5-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/cmake-rpm-macros-3.26.5-2.el8.noarch.rpm
+    evr: 3.18.2-9.el8
+    sourcerpm: cmake-3.18.2-9.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/cmake-rpm-macros-3.18.2-9.el8.noarch.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 45164
-    checksum: sha256:2a91c1cf84fefb94dbc444edd37a5c9649544a2707db1e727244b60e9a8e3d61
+    size: 44612
+    checksum: sha256:2643101eb4c34fa9ece0ac56888477cf091f03e6bceef81712d6114fba3614b5
     name: cmake-rpm-macros
-    evr: 3.26.5-2.el8
-    sourcerpm: cmake-3.26.5-2.el8.src.rpm
+    evr: 3.18.2-9.el8
+    sourcerpm: cmake-3.18.2-9.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/compiler-rt-18.1.8-1.module+el8.10.0+22061+3612b2ba.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 2366004
@@ -2113,34 +2113,34 @@ arches:
     name: clang-resource-filesystem
     evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
     sourcerpm: clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/cmake-3.26.5-2.el8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/cmake-3.18.2-9.el8.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 12463484
-    checksum: sha256:a6b91465d006f6a85ab5c24b51375a4f64946e92bd94535a5436366afad2f967
+    size: 8991356
+    checksum: sha256:557a48690df4b2aaa11320f5b9d5ef0fcc190a36431675af09fa3408596ad0a2
     name: cmake
-    evr: 3.26.5-2.el8
-    sourcerpm: cmake-3.26.5-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/cmake-data-3.26.5-2.el8.noarch.rpm
+    evr: 3.18.2-9.el8
+    sourcerpm: cmake-3.18.2-9.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/cmake-data-3.18.2-9.el8.noarch.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 1996464
-    checksum: sha256:c62da3f90f9f40b3511419ffdc7db46b210d6c8eb1570be788cd5d3aa7061cad
+    size: 1710828
+    checksum: sha256:4dd4164e12705f2308ae416aad788e8768db878a9ca69651ed0ccf6d9dfe5d3b
     name: cmake-data
-    evr: 3.26.5-2.el8
-    sourcerpm: cmake-3.26.5-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/cmake-filesystem-3.26.5-2.el8.s390x.rpm
+    evr: 3.18.2-9.el8
+    sourcerpm: cmake-3.18.2-9.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/cmake-filesystem-3.18.2-9.el8.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 46080
-    checksum: sha256:974959aa73db5fd4eff7c959f7559d0d5222dea7f4a69cd67c21fa82874713d9
+    size: 45204
+    checksum: sha256:fa3938f7ffab3c95883ae7c955a95cabd64fd56ba1450b0e580019d2e2a162e1
     name: cmake-filesystem
-    evr: 3.26.5-2.el8
-    sourcerpm: cmake-3.26.5-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/cmake-rpm-macros-3.26.5-2.el8.noarch.rpm
+    evr: 3.18.2-9.el8
+    sourcerpm: cmake-3.18.2-9.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/cmake-rpm-macros-3.18.2-9.el8.noarch.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 45164
-    checksum: sha256:2a91c1cf84fefb94dbc444edd37a5c9649544a2707db1e727244b60e9a8e3d61
+    size: 44612
+    checksum: sha256:2643101eb4c34fa9ece0ac56888477cf091f03e6bceef81712d6114fba3614b5
     name: cmake-rpm-macros
-    evr: 3.26.5-2.el8
-    sourcerpm: cmake-3.26.5-2.el8.src.rpm
+    evr: 3.18.2-9.el8
+    sourcerpm: cmake-3.18.2-9.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/compiler-rt-18.1.8-1.module+el8.10.0+22061+3612b2ba.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 2461548
@@ -3150,34 +3150,34 @@ arches:
     name: clang-resource-filesystem
     evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
     sourcerpm: clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/cmake-3.26.5-2.el8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/cmake-3.18.2-9.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 14287692
-    checksum: sha256:e8bfb0581591a9e307484f038c87548f069c4016f957c1ad62da33e00ccb3dbd
+    size: 10263300
+    checksum: sha256:3e18073dc89acbe0ba43a7b1cb8a8078f45c1262f5e1a9145161f2f65b277ffe
     name: cmake
-    evr: 3.26.5-2.el8
-    sourcerpm: cmake-3.26.5-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/cmake-data-3.26.5-2.el8.noarch.rpm
+    evr: 3.18.2-9.el8
+    sourcerpm: cmake-3.18.2-9.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/cmake-data-3.18.2-9.el8.noarch.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 1996464
-    checksum: sha256:c62da3f90f9f40b3511419ffdc7db46b210d6c8eb1570be788cd5d3aa7061cad
+    size: 1710828
+    checksum: sha256:4dd4164e12705f2308ae416aad788e8768db878a9ca69651ed0ccf6d9dfe5d3b
     name: cmake-data
-    evr: 3.26.5-2.el8
-    sourcerpm: cmake-3.26.5-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/cmake-filesystem-3.26.5-2.el8.x86_64.rpm
+    evr: 3.18.2-9.el8
+    sourcerpm: cmake-3.18.2-9.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/cmake-filesystem-3.18.2-9.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 46092
-    checksum: sha256:28f482d269d99c25ec8320c6d358fb138c00c704315d55d7dee575d6548145b4
+    size: 45224
+    checksum: sha256:21c6c63a1f483194171ccb07822baa2eb4591cf1930bd13cf6df54235e636113
     name: cmake-filesystem
-    evr: 3.26.5-2.el8
-    sourcerpm: cmake-3.26.5-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/cmake-rpm-macros-3.26.5-2.el8.noarch.rpm
+    evr: 3.18.2-9.el8
+    sourcerpm: cmake-3.18.2-9.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/cmake-rpm-macros-3.18.2-9.el8.noarch.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 45164
-    checksum: sha256:2a91c1cf84fefb94dbc444edd37a5c9649544a2707db1e727244b60e9a8e3d61
+    size: 44612
+    checksum: sha256:2643101eb4c34fa9ece0ac56888477cf091f03e6bceef81712d6114fba3614b5
     name: cmake-rpm-macros
-    evr: 3.26.5-2.el8
-    sourcerpm: cmake-3.26.5-2.el8.src.rpm
+    evr: 3.18.2-9.el8
+    sourcerpm: cmake-3.18.2-9.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/compiler-rt-18.1.8-1.module+el8.10.0+22061+3612b2ba.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 3566768
