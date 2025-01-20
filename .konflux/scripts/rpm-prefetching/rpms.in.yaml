@@ -25,7 +25,7 @@ packages:
 contentOrigin:
   repofiles: ["redhat.repo"]
 context:
-  image: registry.access.redhat.com/ubi9:latest
+  image: registry.access.redhat.com/ubi8:latest
 arches:
   - aarch64
   - ppc64le
