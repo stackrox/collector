@@ -1,0 +1,33 @@
+packages:
+  - make
+  - wget
+  - unzip
+  - clang
+  - llvm
+  - cmake
+  - gcc-c++
+  - openssl-devel
+  - ncurses-devel
+  - curl-devel
+  - libuuid-devel
+  - libcap-ng-devel
+  - autoconf
+  - libtool
+  - git
+  - elfutils-libelf-devel
+  - tbb-devel
+  - c-ares-devel
+  - patch
+  # for USDT support
+  - systemtap-sdt-devel
+  - tbb
+  - c-ares
+contentOrigin:
+  repofiles: ["redhat.repo"]
+context:
+  image: registry.access.redhat.com/ubi9:latest
+arches:
+  - aarch64
+  - ppc64le
+  - s390x
+  - x86_64

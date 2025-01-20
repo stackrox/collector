@@ -35,12 +35,10 @@ spec:
     value: '{{revision}}'
   - name: rebuild
     value: 'true'
-  # TODO(ROX-20234): Enable hermetic builds
-  # - name: hermetic
-  #   value: "true"
-  # No language dependencies are required for collector image.
+  - name: hermetic
+    value: "true"
   - name: prefetch-input
-    value: ''
+    value: '{"type": "rpm", "path": "."}'
   - name: clone-depth
     value: '0'
   - name: clone-fetch-tags
