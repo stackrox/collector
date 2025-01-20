@@ -2,10 +2,7 @@
 
 set -e
 
-CXXFLAGS=""
-if [ -f /etc/redhat-release ]; then
-    CXXFLAGS="-Wno-error=class-memaccess -Wno-ignored-qualifiers -Wno-stringop-truncation -Wno-cast-function-type"
-fi
+export CXXFLAGS="-Wno-error=class-memaccess -Wno-ignored-qualifiers -Wno-stringop-truncation -Wno-cast-function-type -Wno-attributes"
 
 cd third_party/grpc
 
@@ -33,5 +30,5 @@ cmake \
     -DCMAKE_CXX_STANDARD=17 \
     ../..
 
-make ${NPROCS:+-j ${NPROCS}} CXXFLAGS="${CXXFLAGS}"
+make ${NPROCS:+-j ${NPROCS}}
 make install
