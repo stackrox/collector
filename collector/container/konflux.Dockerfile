@@ -3,7 +3,7 @@ ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
 
 # Builder
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-FROM registry.access.redhat.com/ubi9/ubi:latest AS builder
+FROM registry.access.redhat.com/ubi8/ubi:latest AS builder
 
 RUN dnf -y install --nobest \
         make \
@@ -79,15 +79,14 @@ RUN cmake --build "${CMAKE_BUILD_DIR}" --target all -- -j "${NPROCS:-4}"
 RUN ctest --no-tests=error -V --test-dir "${CMAKE_BUILD_DIR}"
 RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
-FROM registry.access.redhat.com/ubi9/ubi:latest
+FROM registry.access.redhat.com/ubi8/ubi:latest
 
 RUN dnf -y install --nobest \
       tbb \
       c-ares && \
     # We can do usual cleanup while we're here: remove packages that would trigger violations. \
     dnf -y clean all && \
-    rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*') && \
-    rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
+    rpm --verbose -e --nodeps $(rpm -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*')
 
 ARG COLLECTOR_TAG
 
@@ -128,4 +127,4 @@ ENTRYPOINT ["collector"]
 LABEL \
     com.redhat.component="rhacs-collector-container" \
     io.k8s.display-name="collector" \
-    name="rhacs-collector-rhel9"
+    name="rhacs-collector-rhel8"
