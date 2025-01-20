@@ -199,6 +199,10 @@ spec:
       value: $(params.output-image-repo):konflux-$(params.revision).prefetch
     - name: ociArtifactExpiresAfter
       value: $(params.oci-artifact-expires-after)
+    - name: dev-package-managers
+      value: "true"
+    - name: ACTIVATION_KEY
+      value: subscription-manager-activation-key-prod
     taskRef:
       params:
       - name: name
