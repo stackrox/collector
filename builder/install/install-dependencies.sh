@@ -7,7 +7,7 @@ export LICENSE_DIR="/THIRD_PARTY_NOTICES"
 mkdir -p "${LICENSE_DIR}"
 
 export NPROCS
-NPROCS="$(nproc)"
+NPROCS="${NPROCS:-$(nproc)}"
 
 # shellcheck source=SCRIPTDIR/versions.sh
 source builder/install/versions.sh
