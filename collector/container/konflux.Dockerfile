@@ -78,11 +78,11 @@ RUN ./builder/install/install-dependencies.sh && \
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
-RUN dnf -y install --nobest \
+RUN microdnf -y install --nobest \
       tbb \
       c-ares && \
     # We can do usual cleanup while we're here: remove packages that would trigger violations. \
-    dnf -y clean all && \
+    microdnf -y clean all && \
     rpm --verbose -e --nodeps $(rpm -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*')
 
 ARG COLLECTOR_TAG
