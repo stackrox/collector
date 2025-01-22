@@ -241,8 +241,6 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: ACTIVATION_KEY
-      value: subscription-manager-activation-key-prod
     taskRef:
       params:
       - name: name
@@ -282,8 +280,6 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: ACTIVATION_KEY
-      value: subscription-manager-activation-key-prod
     - name: PLATFORM
       value: linux/s390x
     taskRef:
@@ -326,8 +322,6 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: ACTIVATION_KEY
-      value: subscription-manager-activation-key-prod
     - name: PLATFORM
       value: linux/ppc64le
     taskRef:
@@ -370,8 +364,6 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: ACTIVATION_KEY
-      value: subscription-manager-activation-key-prod
     - name: PLATFORM
       value: linux/arm64
     taskRef:
