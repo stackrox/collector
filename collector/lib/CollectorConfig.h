@@ -16,6 +16,7 @@
 
 #include "CollectionMethod.h"
 #include "HostConfig.h"
+#include "Logging.h"
 #include "NetworkConnection.h"
 #include "TlsConfig.h"
 #include "json/value.h"
@@ -146,6 +147,7 @@ class CollectorConfig {
 
   void ResetRuntimeConfig() {
     auto lock = WriteLock();
+    CLOG(INFO) << "Resetting runtime configuration";
     runtime_config_.reset();
   }
 

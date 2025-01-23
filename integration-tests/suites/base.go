@@ -128,6 +128,9 @@ func (s *IntegrationTestSuiteBase) StopCollector() {
 func (s *IntegrationTestSuiteBase) Collector() collector.Manager {
 	if s.collector == nil {
 		s.collector = collector.New(s.Executor(), s.T().Name())
+	} else if s.collector.GetTestName() != s.T().Name() {
+		// Otherwise the test name does not get set when subsequent tests are run
+		s.collector.SetTestName(s.T().Name())
 	}
 	return s.collector
 }

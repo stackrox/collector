@@ -96,8 +96,8 @@ bool ConfigLoader::LoadConfiguration(CollectorConfig& config, const YAML::Node& 
 
   config.SetRuntimeConfig(std::move(runtime_config));
 
-  CLOG(DEBUG) << "Runtime configuration:\n"
-              << config.GetRuntimeConfigStr();
+  CLOG(INFO) << "Runtime configuration:\n"
+             << config.GetRuntimeConfigStr();
   return true;
 }
 
