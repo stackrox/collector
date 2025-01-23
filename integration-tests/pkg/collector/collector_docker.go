@@ -192,3 +192,7 @@ func (c *DockerCollectorManager) TestName() string {
 func (c *DockerCollectorManager) SetTestName(testName string) {
 	c.testName = testName
 }
+
+func (c *DockerCollectorManager) GetTestName() string {
+	return c.testName
+}
