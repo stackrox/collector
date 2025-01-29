@@ -83,7 +83,8 @@ RUN microdnf -y install --nobest \
       c-ares && \
     # We can do usual cleanup while we're here: remove packages that would trigger violations. \
     microdnf -y clean all && \
-    rpm --verbose -e --nodeps $(rpm -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*')
+    rpm --verbose -e --nodeps $(rpm -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*') && \
+    rm -rf /var/cache/dnf /var/cache/yum
 
 ARG COLLECTOR_TAG
 
