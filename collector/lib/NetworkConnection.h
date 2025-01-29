@@ -52,7 +52,54 @@ class Address {
     std::memcpy(data_.data(), data.data(), Length(family));
   }
 
-  Address(Family family, const std::array<uint64_t, kU64MaxLen>& data) : data_(data), family_(family) {}
+  // bool IsIPv4MappedIPv6(const Family& family, const std::array<uint64_t, kU64MaxLen>& data) const {
+  //   if (family != Family::IPV6) {
+  //     return false;
+  //   }
+
+  //  const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data.data());
+
+  //  // First 80 bits, 10 bytes, should be 0 if this is IPv4-Mapped IPv6
+  //  for (int i = 0; i < 10; i++) {
+  //    if (bytes[i] != 0) {
+  //      return false;
+  //    }
+  //  }
+
+  //  // Next 2 bytes should be 0xFF if this is IPv4-Mapped IPv6
+  //  if (bytes[10] != 0xFF || bytes[11] != 0xFF) {
+  //    return false;
+  //  }
+
+  //  return true;
+  //}
+
+  bool IsIPv4MappedIPv6(const Family& family, const std::array<uint64_t, kU64MaxLen>& data) const {
+    if (family != Family::IPV6) {
+      return false;
+    }
+
+    // In IPv4-mapped IPv6 the first 80 bits are zeros and the next 16 bits are ones
+    // data[0] is 64 bits and therefore is all zeros. The next 16 bits which are the
+    // first 16 bits of data[1] need to be 0. The next 16 bits of data[1] need to be
+    // ones in order for the data to represent IPv4-mapped IPv6
+    return data[0] == 0 && (data[1] & 0xFFFFFFFF00000000ULL) == 0x0000FFFF00000000ULL;
+  }
+
+  Address(Family family, const std::array<uint64_t, kU64MaxLen>& data, bool convertIPv4MappedIPv6 = true) {
+    if (convertIPv4MappedIPv6 && IsIPv4MappedIPv6(family, data)) {
+      const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data.data());
+      uint32_t ipv4 = htonl(static_cast<uint32_t>(bytes[12]) << 24 |
+                            static_cast<uint32_t>(bytes[13]) << 16 |
+                            static_cast<uint32_t>(bytes[14]) << 8 |
+                            static_cast<uint32_t>(bytes[15]));
+      std::memcpy(data_.data(), &ipv4, sizeof(ipv4));
+      family_ = Family::IPV4;
+    } else {
+      family_ = family;
+      data_ = data;
+    }
+  }
 
   // Constructs an IPv4 address given a uint32_t containing the IPv4 address in *network* byte order.
   explicit Address(uint32_t ipv4) : data_({htonll(static_cast<uint64_t>(ntohl(ipv4)) << 32), 0}), family_(Family::IPV4) {}
@@ -62,6 +109,29 @@ class Address {
     static_assert(sizeof(data_) == sizeof(ipv6));
     std::memcpy(data_.data(), &ipv6[0], sizeof(data_));
   }
+
+  bool IsIPv4MappedIPv6(const uint32_t (&ipv6)[4]) const {
+    //// In IPv4-mapped IPv6 the first 80 bits are zeros and the next 16 bits are ones
+    //// data[0] is 64 bits and therefore is all zeros. The next 16 bits which are the
+    //// first 16 bits of data[1] need to be 0. The next 16 bits of data[1] need to be
+    //// ones in order for the data to represent IPv4-mapped IPv6
+    return ipv6[0] == 0 && ipv6[1] == 0 && ipv6[2] == 0x0000FFFF;
+  }
+
+  // uint32_t ConvertIPv6DataToIPv4Data(
+
+  //// Constructs an IPv6 address from 4 network-encoded uint32_ts, in network order (high to low)
+  ////explicit Address(const uint32_t (&ipv6)[4], bool convertIPv4MappedIPv6 = true) {
+  // explicit Address(const uint32_t (&ipv6)[4]) {
+  //   static_assert(sizeof(data_) == sizeof(ipv6));
+  //   if (IsIPv4MappedIPv6(ipv6)) {
+  //     family_(Family::IPV4);
+  //     //std::memcpy(data_.data(), &ipv6[0], sizeof(data_));
+  //   } else {
+  //     family_(Family::IPV6);
+  //     std::memcpy(data_.data(), &ipv6[0], sizeof(data_));
+  //   }
+  // }
 
   // Constructs an IPv6 address from 2 network-encoded uint64_ts, in network order (high, low).
   Address(uint64_t ipv6_high, uint64_t ipv6_low) : data_({ipv6_high, ipv6_low}), family_(Family::IPV6) {}
@@ -135,6 +205,36 @@ class Address {
       default:
         return 0;
     }
+  }
+
+  bool IsIPv4MappedIPv6() const {
+    if (family_ != Family::IPV6) {
+      return false;
+    }
+
+    const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data_.data());
+
+    // First 80 bits, 10 bytes, should be 0 if this is IPv4-Mapped IPv6
+    for (int i = 0; i < 10; i++) {
+      if (bytes[i] != 0) {
+        return false;
+      }
+    }
+
+    // Next 2 bytes should be 0xFF if this is IPv4-Mapped IPv6
+    if (bytes[10] != 0xFF || bytes[11] != 0xFF) {
+      return false;
+    }
+
+    return true;
+  }
+
+  Address ConvertToIPv4() const {
+    // Extract the last 32 bits of the IPv6 address, which is the IPv4 address part.
+    const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data_.data());
+
+    // Last 4 bytes of the IPv6 address hold the IPv4 address
+    return Address(bytes[12], bytes[13], bytes[14], bytes[15]);
   }
 
  private:
@@ -262,6 +362,16 @@ class IPNet {
     return address_ > that.address_;
   }
 
+  bool IsIPv4MappedIPv6() const {
+    return address_.IsIPv4MappedIPv6();
+  }
+
+  IPNet ConvertToIPv4() const {
+    Address ipv4Address = address_.ConvertToIPv4();
+    size_t bits = bits_ - 96;  // 96 = 128 - 32
+    return IPNet(ipv4Address, bits, is_addr_);
+  }
+
  private:
   friend std::ostream& operator<<(std::ostream& os, const IPNet& net) {
     return os << net.address_ << "/" << net.bits_;
@@ -297,6 +407,15 @@ class Endpoint {
 
   bool IsNull() const {
     return port_ == 0 && network_.IsNull();
+  }
+
+  bool IsIPv4MappedIPv6() const {
+    return network_.IsIPv4MappedIPv6();
+  }
+
+  Endpoint ConvertToIPv4() const {
+    IPNet network = network_.ConvertToIPv4();
+    return Endpoint(network, port_);
   }
 
  private:
@@ -358,6 +477,14 @@ class ContainerEndpoint {
 
   size_t Hash() const { return HashAll(container_, endpoint_, l4proto_); }
 
+  ContainerEndpoint ConvertToIPv4() const {
+    if (endpoint_.IsIPv4MappedIPv6()) {
+      Endpoint ep = endpoint_.ConvertToIPv4();
+      return ContainerEndpoint(container_, ep, l4proto_, originator_);
+    }
+    return *this;
+  }
+
  private:
   std::string container_;
   Endpoint endpoint_;
@@ -388,6 +515,31 @@ class Connection {
   }
 
   size_t Hash() const { return HashAll(container_, local_, remote_, flags_); }
+
+  Connection ConvertToIPv4() const {
+    bool localMapped = local_.IsIPv4MappedIPv6();
+    bool remoteMapped = remote_.IsIPv4MappedIPv6();
+
+    if (!localMapped && !remoteMapped) {
+      return *this;
+    }
+
+    Endpoint local;
+    if (localMapped) {
+      local = local_.ConvertToIPv4();
+    } else {
+      local = local_;
+    }
+
+    Endpoint remote;
+    if (remoteMapped) {
+      remote = remote_.ConvertToIPv4();
+    } else {
+      remote = remote_;
+    }
+
+    return Connection(container_, local, remote, l4proto(), is_server());
+  }
 
  private:
   std::string container_;
