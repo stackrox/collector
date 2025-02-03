@@ -13,7 +13,7 @@ import (
 )
 
 type NamespaceTest struct {
-	containerID       string
+	containerID       executor.ContainerID
 	expectecNamespace string
 }
 
@@ -85,7 +85,7 @@ func (k *K8sNamespaceTestSuite) TestK8sNamespace() {
 	}
 }
 
-func (k *K8sNamespaceTestSuite) launchNginxPod() string {
+func (k *K8sNamespaceTestSuite) launchNginxPod() executor.ContainerID {
 	pod := &coreV1.Pod{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "nginx",
@@ -106,7 +106,7 @@ func (k *K8sNamespaceTestSuite) launchNginxPod() string {
 
 	// Wait for nginx pod to start up
 	pf := executor.ContainerFilter{
-		Name:      "nginx",
+		Id:        executor.ContainerID("nginx"),
 		Namespace: NAMESPACE,
 	}
 
@@ -120,7 +120,7 @@ func (k *K8sNamespaceTestSuite) launchNginxPod() string {
 
 func (k *K8sNamespaceTestSuite) teardownNginxPod() {
 	nginxPodFilter := executor.ContainerFilter{
-		Name:      "nginx",
+		Id:        executor.ContainerID("nginx"),
 		Namespace: NAMESPACE,
 	}
 	exists, _ := k.Executor().PodExists(nginxPodFilter)
