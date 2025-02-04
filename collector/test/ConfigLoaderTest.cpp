@@ -12,7 +12,7 @@
 namespace collector {
 using namespace google::protobuf::util;
 
-std::string ErrorsToString(const ParserErrors& errors) {
+std::string ErrorsToString(const std::vector<ParserError>& errors) {
   std::stringstream ss;
   for (size_t i = 0; i < errors.size(); i++) {
     ss << i << ": " << errors.at(i).What() << std::endl;
@@ -168,7 +168,7 @@ TEST(TestParserYaml, ParserErrors) {
             - TYPE2
     )";
 
-  const ParserErrors expected = {
+  const std::vector<ParserError> expected = {
       "\"/test.yml\": yaml-cpp: error at line 2, column 18: bad conversion",
       "\"/test.yml\": yaml-cpp: error at line 3, column 19: bad conversion",
       "\"/test.yml\": Attempting to parse non-scalar field as scalar",
