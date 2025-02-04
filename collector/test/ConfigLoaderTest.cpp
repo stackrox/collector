@@ -63,9 +63,9 @@ TEST(TestParserYaml, Parsing) {
                 - 1
                 - 2
                 - 3
-            fieldEnum: TYPE2
+            fieldEnum: type2
             fieldRepeatedEnum:
-                - TYPE1
+                - type1
                 - TYPE2
         )",
        all_fields},
