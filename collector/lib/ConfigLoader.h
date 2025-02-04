@@ -6,6 +6,8 @@
 #include <gtest/gtest_prod.h>
 #include <yaml-cpp/yaml.h>
 
+#include "internalapi/sensor/collector.pb.h"
+
 #include "CollectorConfig.h"
 #include "Inotify.h"
 #include "StoppableThread.h"
@@ -117,6 +119,8 @@ class ConfigLoader {
   FRIEND_TEST(CollectorConfigTest, TestYamlConfigToConfigInvalid);
   FRIEND_TEST(CollectorConfigTest, TestYamlConfigToConfigEmptyOrMalformed);
   FRIEND_TEST(CollectorConfigTest, TestMaxConnectionsPerMinute);
+
+  static sensor::CollectorConfig NewRuntimeConfig();
 
   /**
    * Wait for inotify events on a configuration file and reload it

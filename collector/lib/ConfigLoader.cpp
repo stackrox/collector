@@ -457,7 +457,7 @@ void ConfigLoader::Stop() {
 }
 
 ConfigLoader::Result ConfigLoader::LoadConfiguration(const std::optional<const YAML::Node>& node) {
-  sensor::CollectorConfig runtime_config;
+  sensor::CollectorConfig runtime_config = NewRuntimeConfig();
   ParserResult errors;
 
   if (!node.has_value()) {
@@ -482,6 +482,15 @@ ConfigLoader::Result ConfigLoader::LoadConfiguration(const std::optional<const Y
   CLOG(DEBUG) << "Runtime configuration:\n"
               << config_.GetRuntimeConfigStr();
   return SUCCESS;
+}
+
+sensor::CollectorConfig ConfigLoader::NewRuntimeConfig() {
+  sensor::CollectorConfig runtime_config;
+
+  // Set default values that are different from the protobuf defaults
+  runtime_config.mutable_networking()->set_max_connections_per_minute(CollectorConfig::kMaxConnectionsPerMinute);
+
+  return runtime_config;
 }
 
 void ConfigLoader::WatchFile() {
