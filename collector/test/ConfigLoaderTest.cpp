@@ -231,7 +231,7 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
   for (const auto& [yamlStr, expected] : tests) {
     YAML::Node yamlNode = YAML::Load(yamlStr);
     CollectorConfig config;
-    ASSERT_TRUE(ConfigLoader(config).LoadConfiguration(yamlNode)) << "Input: " << yamlStr;
+    ASSERT_EQ(ConfigLoader(config).LoadConfiguration(yamlNode), ConfigLoader::SUCCESS) << "Input: " << yamlStr;
 
     auto runtime_config = config.GetRuntimeConfig();
 
@@ -259,7 +259,7 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigInvalid) {
   for (const auto& yamlStr : tests) {
     YAML::Node yamlNode = YAML::Load(yamlStr);
     CollectorConfig config;
-    ASSERT_FALSE(ConfigLoader(config).LoadConfiguration(yamlNode)) << "Input: " << yamlStr;
+    ASSERT_EQ(ConfigLoader(config).LoadConfiguration(yamlNode), ConfigLoader::PARSE_ERROR) << "Input: " << yamlStr;
 
     auto runtime_config = config.GetRuntimeConfig();
 
@@ -277,7 +277,7 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigEmptyOrMalformed) {
   for (const auto& yamlStr : tests) {
     YAML::Node yamlNode = YAML::Load(yamlStr);
     CollectorConfig config;
-    ASSERT_FALSE(ConfigLoader(config).LoadConfiguration(yamlNode));
+    ASSERT_EQ(ConfigLoader(config).LoadConfiguration(yamlNode), ConfigLoader::PARSE_ERROR);
 
     auto runtime_config = config.GetRuntimeConfig();
 
@@ -290,6 +290,7 @@ TEST(CollectorConfigTest, TestMaxConnectionsPerMinute) {
     std::string input;
     int value;
     bool valid;
+    ConfigLoader::Result parse_result;
   };
 
   std::vector<TestCase> tests = {
@@ -299,27 +300,27 @@ TEST(CollectorConfigTest, TestMaxConnectionsPerMinute) {
                       enabled: DISABLED
                     maxConnectionsPerMinute: 1234
                )",
-       1234, true},
+       1234, true, ConfigLoader::SUCCESS},
       {R"(
                   networking:
                     externalIps:
                       enabled: DISABLED
                     maxConnectionsPerMinute: 1337
                )",
-       1337, true},
+       1337, true, ConfigLoader::SUCCESS},
       {R"(
                   networking:
                     externalIps:
                       enabled: DISABLED
                     maxConnectionsPerMinute: invalid
                )",
-       2048, false},
+       2048, false, ConfigLoader::PARSE_ERROR},
   };
 
-  for (const auto& [yamlStr, expected, valid] : tests) {
+  for (const auto& [yamlStr, expected, valid, parse_result] : tests) {
     YAML::Node yamlNode = YAML::Load(yamlStr);
     CollectorConfig config;
-    ASSERT_EQ(ConfigLoader(config).LoadConfiguration(yamlNode), valid);
+    ASSERT_EQ(ConfigLoader(config).LoadConfiguration(yamlNode), parse_result);
 
     auto runtime_config = config.GetRuntimeConfig();
 
