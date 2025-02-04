@@ -1,5 +1,7 @@
 #include "ConfigLoader.h"
 
+#include <algorithm>
+
 #include <google/protobuf/descriptor.h>
 
 #include "internalapi/sensor/collector.pb.h"
@@ -121,12 +123,15 @@ ParserResult ParserYaml::ParseArrayEnum(google::protobuf::Message* msg, const YA
 
   const EnumDescriptor* desc = field->enum_type();
   for (const auto& n : node) {
-    auto v = TryConvert<std::string_view>(n);
+    auto v = TryConvert<std::string>(n);
     if (IsError(v)) {
       errors.emplace_back(std::get<ParserError>(v));
       continue;
     }
-    const auto enum_name = std::get<std::string_view>(v);
+    auto enum_name = std::get<std::string>(v);
+    std::transform(enum_name.begin(), enum_name.end(), enum_name.begin(), [](char c) {
+      return std::toupper(c);
+    });
 
     const EnumValueDescriptor* value = desc->FindValueByName(enum_name);
     if (value == nullptr) {
@@ -331,7 +336,12 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
       std::cerr << "Unsupported type BYTES" << std::endl;
       break;
     case FieldDescriptor::TYPE_ENUM: {
-      const auto enum_name = node[*name].as<std::string_view>();
+      auto enum_name = node[*name].as<std::string>();
+
+      // We assume enum definitions use UPPER_CASE nomenclature, so
+      std::transform(enum_name.begin(), enum_name.end(), enum_name.begin(), [](char c) {
+        return std::toupper(c);
+      });
 
       const EnumDescriptor* descriptor = field->enum_type();
       const EnumValueDescriptor* value = descriptor->FindValueByName(enum_name);
