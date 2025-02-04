@@ -479,6 +479,8 @@ ConfigLoader::Result ConfigLoader::LoadConfiguration(const std::optional<const Y
   }
 
   config_.SetRuntimeConfig(std::move(runtime_config));
+  CLOG(DEBUG) << "Runtime configuration:\n"
+              << config_.GetRuntimeConfigStr();
   return SUCCESS;
 }
 
