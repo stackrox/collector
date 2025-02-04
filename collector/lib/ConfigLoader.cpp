@@ -39,7 +39,15 @@ std::string NodeTypeToString(YAML::NodeType::value type) {
 namespace stdf = std::filesystem;
 
 ParserResult ParserYaml::Parse(google::protobuf::Message* msg) {
-  YAML::Node node = YAML::LoadFile(file_);
+  YAML::Node node;
+  try {
+    node = YAML::LoadFile(file_);
+  } catch (const YAML::BadFile& e) {
+    return {{WrapError(e)}};
+  } catch (const YAML::ParserException& e) {
+    return {{WrapError(e)}};
+  }
+
   return Parse(msg, node);
 }
 
@@ -448,35 +456,30 @@ void ConfigLoader::Stop() {
   CLOG(INFO) << "No longer watching configuration file: " << parser_.GetFile().string();
 }
 
-bool ConfigLoader::LoadConfiguration() {
+ConfigLoader::Result ConfigLoader::LoadConfiguration(const std::optional<const YAML::Node>& node) {
   sensor::CollectorConfig runtime_config;
-  auto errors = parser_.Parse(&runtime_config);
+  ParserResult errors;
+
+  if (!node.has_value()) {
+    if (!stdf::exists(parser_.GetFile())) {
+      return FILE_NOT_FOUND;
+    }
+    errors = parser_.Parse(&runtime_config);
+
+  } else {
+    errors = parser_.Parse(&runtime_config, *node);
+  }
 
   if (errors) {
     CLOG(ERROR) << "Failed to parse " << parser_.GetFile();
     for (const auto& err : *errors) {
       CLOG(ERROR) << err;
     }
-    return false;
+    return PARSE_ERROR;
   }
 
   config_.SetRuntimeConfig(std::move(runtime_config));
-  return true;
-}
-
-bool ConfigLoader::LoadConfiguration(const YAML::Node& node) {
-  sensor::CollectorConfig runtime_config;
-  auto errors = parser_.Parse(&runtime_config, node);
-  if (errors) {
-    CLOG(ERROR) << "Failed to parse " << parser_.GetFile();
-    for (const auto& err : *errors) {
-      CLOG(ERROR) << err;
-    }
-    return false;
-  }
-
-  config_.SetRuntimeConfig(std::move(runtime_config));
-  return true;
+  return SUCCESS;
 }
 
 void ConfigLoader::WatchFile() {

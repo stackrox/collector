@@ -1,6 +1,8 @@
 #ifndef _CONFIG_LOADER_H_
 #define _CONFIG_LOADER_H_
 
+#include <optional>
+
 #include <gtest/gtest_prod.h>
 #include <yaml-cpp/yaml.h>
 
@@ -94,28 +96,28 @@ class ConfigLoader {
   void Start();
   void Stop();
 
+  enum Result : uint8_t {
+    SUCCESS = 0,
+    PARSE_ERROR,
+    FILE_NOT_FOUND,
+  };
+
   /**
    * Load a configuration file into the supplied CollectorConfig object.
    *
+   * Alternatively, a YAML::Node can be supplied to load the
+   * configuration from it. This is mostly meant for testing pusposes.
+   *
+   * @param node a YAML::Node to be used as configuration
    * @returns true if configuration loading was successful.
    */
-  bool LoadConfiguration();
+  Result LoadConfiguration(const std::optional<const YAML::Node>& node = std::nullopt);
 
  private:
   FRIEND_TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple);
   FRIEND_TEST(CollectorConfigTest, TestYamlConfigToConfigInvalid);
   FRIEND_TEST(CollectorConfigTest, TestYamlConfigToConfigEmptyOrMalformed);
   FRIEND_TEST(CollectorConfigTest, TestMaxConnectionsPerMinute);
-
-  /**
-   * Load configuration from a YAML string.
-   *
-   * This method is meant to be used for testing only.
-   *
-   * @param node a YAML::Node with the new configuration to be used.
-   * @returns true if configuration loading was successful.
-   */
-  bool LoadConfiguration(const YAML::Node& node);
 
   /**
    * Wait for inotify events on a configuration file and reload it
