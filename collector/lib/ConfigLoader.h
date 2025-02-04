@@ -21,8 +21,8 @@ class ParserError {
   ParserError& operator=(ParserError&&) noexcept = default;
   ~ParserError() = default;
 
-  ParserError(const char* msg) { msg_ += msg; }
-  ParserError(const std::string& msg) { msg_ += msg; }
+  ParserError(const char* msg) : msg_(msg) {}
+  ParserError(std::string msg) : msg_(std::move(msg)) {}
 
   const std::string& What() const { return msg_; }
 
@@ -45,8 +45,7 @@ class ParserError {
   std::string msg_;
 };
 
-using ParserErrors = std::vector<ParserError>;
-using ParserResult = std::optional<ParserErrors>;
+using ParserResult = std::optional<std::vector<ParserError>>;
 
 class ParserYaml {
  public:
