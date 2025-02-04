@@ -32,3 +32,8 @@ foreach(test_file ${TEST_SRC_FILES})
         add_test(NAME memcheck_${test_name} COMMAND valgrind -q --leak-check=full --trace-children=yes $<TARGET_FILE:${test_name}>)
     endif()
 endforeach()
+
+if (ADDRESS_SANITIZER)
+    # This test has a false positive when running under asan
+    set_property(TEST "ConfigLoaderTest" PROPERTY ENVIRONMENT "ASAN_OPTIONS=detect_container_overflow=0")
+endif()

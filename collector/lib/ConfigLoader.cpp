@@ -58,7 +58,7 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
     return {{"Invalid configuration"}};
   }
 
-  ParserErrors errors;
+  std::vector<ParserError> errors;
 
   const Descriptor* descriptor = msg->GetDescriptor();
   for (int i = 0; i < descriptor->field_count(); i++) {
@@ -85,7 +85,7 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
 template <typename T>
 ParserResult ParserYaml::ParseArrayInner(google::protobuf::Message* msg, const YAML::Node& node,
                                          const google::protobuf::FieldDescriptor* field) {
-  ParserErrors errors;
+  std::vector<ParserError> errors;
   auto f = msg->GetReflection()->GetMutableRepeatedFieldRef<T>(msg, field);
   f.Clear();
   for (const auto& n : node) {
@@ -115,7 +115,7 @@ ParserResult ParserYaml::ParseArrayEnum(google::protobuf::Message* msg, const YA
     name = name_ptr.get();
   }
 
-  ParserErrors errors;
+  std::vector<ParserError> errors;
   auto f = msg->GetReflection()->GetMutableRepeatedFieldRef<int32>(msg, field);
   f.Clear();
 
@@ -149,7 +149,7 @@ ParserResult ParserYaml::FindUnkownFields(const google::protobuf::Message& msg, 
   using namespace google::protobuf;
 
   const auto* descriptor = msg.GetDescriptor();
-  ParserErrors errors;
+  std::vector<ParserError> errors;
 
   for (YAML::const_iterator it = node.begin(); it != node.end(); it++) {
     auto name = it->first.as<std::string>();
@@ -227,7 +227,7 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
           << NodeTypeToString(type);
       return {{err}};
     }
-    ParserErrors errors;
+    std::vector<ParserError> errors;
     const Reflection* reflection = msg->GetReflection();
 
     Message* m = reflection->MutableMessage(msg, field);
