@@ -164,17 +164,17 @@ ParserResult ParserYaml::FindUnkownFields(const google::protobuf::Message& msg, 
 
     const FieldDescriptor* field = descriptor->FindFieldByName(name);
     if (field == nullptr) {
-      std::stringstream ss;
-      ss << "Unknown field '" << name << "'";
-      errors.emplace_back(ss.str());
+      ParserError err;
+      err << "Unknown field '" << name << "'";
+      errors.emplace_back(err);
       continue;
     }
 
     if (it->second.IsMap()) {
       if (field->type() != FieldDescriptor::TYPE_MESSAGE) {
-        std::stringstream ss;
-        ss << file_ << ": Invalid type '" << NodeTypeToString(it->second.Type()) << "' for field " << it->first.as<std::string_view>() << ", expected '" << field->type_name() << "'";
-        errors.emplace_back(ss.str());
+        ParserError err;
+        err << file_ << ": Invalid type '" << NodeTypeToString(it->second.Type()) << "' for field " << it->first.as<std::string_view>() << ", expected '" << field->type_name() << "'";
+        errors.emplace_back(err);
         continue;
       }
 
@@ -393,17 +393,17 @@ ParserResult ParserYaml::ParseArray(google::protobuf::Message* msg, const YAML::
       return {{"Unsupport repeated type MESSAGE"}};
     } break;
     default: {
-      std::stringstream ss;
-      ss << "Unknown type " << field->type_name();
-      return {{ss.str()}};
+      ParserError err;
+      err << "Unknown type " << field->type_name();
+      return {{err}};
     }
   }
 }
 
 ParserError ParserYaml::WrapError(const std::exception& e) {
-  std::stringstream ss;
-  ss << file_ << ": " << e.what();
-  return ss.str();
+  ParserError err;
+  err << file_ << ": " << e.what();
+  return err;
 }
 
 template <typename T>
