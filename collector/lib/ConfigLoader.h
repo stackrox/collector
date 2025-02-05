@@ -58,7 +58,7 @@ class ParserYaml {
    * to this parser.
    *
    * @param msg The protobuf message to be populated.
-   * @return an optional vector of parser errors.
+   * @returns an optional vector of parser errors.
    */
   ParserResult Parse(google::protobuf::Message* msg);
 
@@ -67,7 +67,7 @@ class ParserYaml {
    *
    * @param msg The protobuf message to be populated.
    * @param node A YAML::Node used to populate the message.
-   * @return an optional vector of parser errors.
+   * @returns an optional vector of parser errors.
    */
   ParserResult Parse(google::protobuf::Message* msg, const YAML::Node& node);
 
@@ -81,7 +81,7 @@ class ParserYaml {
    * @param msg The protobuf message to be populated.
    * @param node A YAML::Node used to populate the message.
    * @param field The descriptor for the field being parsed.
-   * @return an optional vector of parser errors.
+   * @returns an optional vector of parser errors.
    */
   ParserResult Parse(google::protobuf::Message* msg, const YAML::Node& node,
                      const google::protobuf::FieldDescriptor* field);
@@ -92,7 +92,7 @@ class ParserYaml {
    * @param msg The protobuf message to be populated.
    * @param node A YAML::Node used to populate the message.
    * @param field The descriptor for the field being parsed.
-   * @return an optional vector of parser errors.
+   * @returns an optional vector of parser errors.
    */
   ParserResult ParseArray(google::protobuf::Message* msg, const YAML::Node& node,
                           const google::protobuf::FieldDescriptor* field);
@@ -103,7 +103,7 @@ class ParserYaml {
    * @param msg The protobuf message to be populated.
    * @param node A YAML::Node used to populate the message.
    * @param field The descriptor for the field being parsed.
-   * @return an optional vector of parser errors.
+   * @returns an optional vector of parser errors.
    */
   template <typename T>
   ParserResult ParseArrayInner(google::protobuf::Message* msg, const YAML::Node& node,
@@ -115,7 +115,7 @@ class ParserYaml {
    * @param msg The protobuf message to be populated.
    * @param node A YAML::Node used to populate the message.
    * @param field The descriptor for the field being parsed.
-   * @return an optional vector of parser errors.
+   * @returns an optional vector of parser errors.
    */
   ParserResult ParseArrayEnum(google::protobuf::Message* msg, const YAML::Node& node,
                               const google::protobuf::FieldDescriptor* field);
@@ -126,7 +126,7 @@ class ParserYaml {
    *
    * @param msg The protobuf message used for validation.
    * @param node The YAML::Node to be walked.
-   * @return an optional vector of parser errors.
+   * @returns an optional vector of parser errors.
    */
   ParserResult FindUnkownFields(const google::protobuf::Message& msg, const YAML::Node& node);
 
@@ -137,7 +137,7 @@ class ParserYaml {
    * thrown.
    *
    * @param node A YAML::Node to be read.
-   * @return Either the read value or a parser error.
+   * @returns Either the read value or a parser error.
    */
   template <typename T>
   std::variant<T, ParserError> TryConvert(const YAML::Node& node);
@@ -146,7 +146,7 @@ class ParserYaml {
    * Check if the result of TryConvert is an error.
    *
    * @param res The output from a call to TryConvert
-   * @return true if a parsing error occurred, false otherwise.
+   * @returns true if a parsing error occurred, false otherwise.
    */
   template <typename T>
   static bool IsError(const std::variant<T, ParserError>& res) {
