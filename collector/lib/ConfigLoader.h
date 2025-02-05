@@ -53,31 +53,106 @@ class ParserYaml {
  public:
   ParserYaml(std::filesystem::path file, bool read_camelcase = true) : file_(std::move(file)), read_camelcase_(read_camelcase) {}
 
+  /**
+   * Populate a protobuf message from the configuration file assigned
+   * to this parser.
+   *
+   * @param msg The protobuf message to be populated.
+   * @return an optional vector of parser errors.
+   */
   ParserResult Parse(google::protobuf::Message* msg);
+
+  /**
+   * Populate a protobuf message from a provided YAML::Node.
+   *
+   * @param msg The protobuf message to be populated.
+   * @param node A YAML::Node used to populate the message.
+   * @return an optional vector of parser errors.
+   */
   ParserResult Parse(google::protobuf::Message* msg, const YAML::Node& node);
 
   const std::filesystem::path& GetFile() { return file_; }
 
  private:
+  /**
+   * Inner method that will parse the provided field into the protobuf
+   * message from the corresponding values in the YAML::Node.
+   *
+   * @param msg The protobuf message to be populated.
+   * @param node A YAML::Node used to populate the message.
+   * @param field The descriptor for the field being parsed.
+   * @return an optional vector of parser errors.
+   */
   ParserResult Parse(google::protobuf::Message* msg, const YAML::Node& node,
                      const google::protobuf::FieldDescriptor* field);
+
+  /**
+   * Populate a repeated protobuf message from an array.
+   *
+   * @param msg The protobuf message to be populated.
+   * @param node A YAML::Node used to populate the message.
+   * @param field The descriptor for the field being parsed.
+   * @return an optional vector of parser errors.
+   */
   ParserResult ParseArray(google::protobuf::Message* msg, const YAML::Node& node,
                           const google::protobuf::FieldDescriptor* field);
+
+  /**
+   * Populate a repeated protobuf message from an array.
+   *
+   * @param msg The protobuf message to be populated.
+   * @param node A YAML::Node used to populate the message.
+   * @param field The descriptor for the field being parsed.
+   * @return an optional vector of parser errors.
+   */
   template <typename T>
   ParserResult ParseArrayInner(google::protobuf::Message* msg, const YAML::Node& node,
                                const google::protobuf::FieldDescriptor* field);
+
+  /**
+   * Populate a repeated enum field from an array.
+   *
+   * @param msg The protobuf message to be populated.
+   * @param node A YAML::Node used to populate the message.
+   * @param field The descriptor for the field being parsed.
+   * @return an optional vector of parser errors.
+   */
   ParserResult ParseArrayEnum(google::protobuf::Message* msg, const YAML::Node& node,
                               const google::protobuf::FieldDescriptor* field);
+
+  /**
+   * Go through all nodes in the configuration and notify of any
+   * elements that have no corresponding field in the protobuf message.
+   *
+   * @param msg The protobuf message used for validation.
+   * @param node The YAML::Node to be walked.
+   * @return an optional vector of parser errors.
+   */
   ParserResult FindUnkownFields(const google::protobuf::Message& msg, const YAML::Node& node);
 
   ParserError WrapError(const std::exception& e);
 
+  /**
+   * Read a value from a YAML::Node, preventing exceptions from being
+   * thrown.
+   *
+   * @param node A YAML::Node to be read.
+   * @return Either the read value or a parser error.
+   */
   template <typename T>
   std::variant<T, ParserError> TryConvert(const YAML::Node& node);
+
+  /**
+   * Check if the result of TryConvert is an error.
+   *
+   * @param res The output from a call to TryConvert
+   * @return true if a parsing error occurred, false otherwise.
+   */
   template <typename T>
   static bool IsError(const std::variant<T, ParserError>& res) {
     return std::holds_alternative<ParserError>(res);
   }
+
   static std::string SnakeCaseToCamel(const std::string& s);
   static std::string CamelCaseToSnake(const std::string& s);
 
@@ -120,6 +195,11 @@ class ConfigLoader {
   FRIEND_TEST(CollectorConfigTest, TestYamlConfigToConfigEmptyOrMalformed);
   FRIEND_TEST(CollectorConfigTest, TestMaxConnectionsPerMinute);
 
+  /**
+   * Create a new runtime configuration object with correct defaults.
+   *
+   * @returns The new runtime configuration object.
+   */
   static sensor::CollectorConfig NewRuntimeConfig();
 
   /**
