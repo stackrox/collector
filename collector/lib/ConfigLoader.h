@@ -120,6 +120,8 @@ class ParserYaml {
   ParserResult ParseArrayEnum(google::protobuf::Message* msg, const YAML::Node& node,
                               const google::protobuf::FieldDescriptor* field);
 
+  ParserResult ParseScalar(google::protobuf::Message* msg, const YAML::Node& node,
+                           const google::protobuf::FieldDescriptor* field, const std::string& name);
   /**
    * Go through all nodes in the configuration and notify of any
    * elements that have no corresponding field in the protobuf message.

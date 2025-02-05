@@ -232,11 +232,9 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
           << NodeTypeToString(type);
       return {{err}};
     }
+
     std::vector<ParserError> errors;
-    const Reflection* reflection = msg->GetReflection();
-
-    Message* m = reflection->MutableMessage(msg, field);
-
+    Message* m = msg->GetReflection()->MutableMessage(msg, field);
     const Descriptor* descriptor = m->GetDescriptor();
     for (int i = 0; i < descriptor->field_count(); i++) {
       const FieldDescriptor* f = descriptor->field(i);
@@ -259,9 +257,15 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
     return {{err}};
   }
 
+  return ParseScalar(msg, node[*name], field, *name);
+}
+
+ParserResult ParserYaml::ParseScalar(google::protobuf::Message* msg, const YAML::Node& node, const google::protobuf::FieldDescriptor* field, const std::string& name) {
+  using namespace google::protobuf;
+
   switch (field->type()) {
     case FieldDescriptor::TYPE_DOUBLE: {
-      auto value = TryConvert<double>(node[*name]);
+      auto value = TryConvert<double>(node);
       if (IsError(value)) {
         return {{std::get<ParserError>(value)}};
       }
@@ -269,7 +273,7 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
       msg->GetReflection()->SetDouble(msg, field, std::get<double>(value));
     } break;
     case FieldDescriptor::TYPE_FLOAT: {
-      auto value = TryConvert<float>(node[*name]);
+      auto value = TryConvert<float>(node);
       if (IsError(value)) {
         return {{std::get<ParserError>(value)}};
       }
@@ -278,7 +282,7 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
     } break;
     case FieldDescriptor::TYPE_SFIXED64:
     case FieldDescriptor::TYPE_INT64: {
-      auto value = TryConvert<int64_t>(node[*name]);
+      auto value = TryConvert<int64_t>(node);
       if (IsError(value)) {
         return {{std::get<ParserError>(value)}};
       }
@@ -288,7 +292,7 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
     case FieldDescriptor::TYPE_SINT64:
     case FieldDescriptor::TYPE_FIXED64:
     case FieldDescriptor::TYPE_UINT64: {
-      auto value = TryConvert<uint64_t>(node[*name]);
+      auto value = TryConvert<uint64_t>(node);
       if (IsError(value)) {
         return {{std::get<ParserError>(value)}};
       }
@@ -297,7 +301,7 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
     } break;
     case FieldDescriptor::TYPE_FIXED32:
     case FieldDescriptor::TYPE_UINT32: {
-      auto value = TryConvert<uint32_t>(node[*name]);
+      auto value = TryConvert<uint32_t>(node);
       if (IsError(value)) {
         return {{std::get<ParserError>(value)}};
       }
@@ -307,7 +311,7 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
     case FieldDescriptor::TYPE_SINT32:
     case FieldDescriptor::TYPE_SFIXED32:
     case FieldDescriptor::TYPE_INT32: {
-      auto value = TryConvert<int32_t>(node[*name]);
+      auto value = TryConvert<int32_t>(node);
       if (IsError(value)) {
         return {{std::get<ParserError>(value)}};
       }
@@ -315,7 +319,7 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
       msg->GetReflection()->SetInt32(msg, field, std::get<int32_t>(value));
     } break;
     case FieldDescriptor::TYPE_BOOL: {
-      auto value = TryConvert<bool>(node[*name]);
+      auto value = TryConvert<bool>(node);
       if (IsError(value)) {
         return {{std::get<ParserError>(value)}};
       }
@@ -324,7 +328,7 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
 
     } break;
     case FieldDescriptor::TYPE_STRING: {
-      auto value = TryConvert<std::string>(node[*name]);
+      auto value = TryConvert<std::string>(node);
       if (IsError(value)) {
         return {{std::get<ParserError>(value)}};
       }
@@ -332,11 +336,13 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
       msg->GetReflection()->SetString(msg, field, std::get<std::string>(value));
 
     } break;
-    case FieldDescriptor::TYPE_BYTES:
-      std::cerr << "Unsupported type BYTES" << std::endl;
-      break;
+    case FieldDescriptor::TYPE_BYTES: {
+      ParserError err;
+      err << "Unexpected type BYTES";
+      return {{err}};
+    }
     case FieldDescriptor::TYPE_ENUM: {
-      auto enum_name = node[*name].as<std::string>();
+      auto enum_name = node.as<std::string>();
 
       // We assume enum definitions use UPPER_CASE nomenclature, so
       std::transform(enum_name.begin(), enum_name.end(), enum_name.begin(), [](char c) {
@@ -347,7 +353,7 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
       const EnumValueDescriptor* value = descriptor->FindValueByName(enum_name);
       if (value == nullptr) {
         ParserError err;
-        err << file_ << ": Invalid enum value '" << enum_name << "' for field " << *name;
+        err << file_ << ": Invalid enum value '" << enum_name << "' for field " << name;
         return {{err}};
       }
       msg->GetReflection()->SetEnumValue(msg, field, value->number());
