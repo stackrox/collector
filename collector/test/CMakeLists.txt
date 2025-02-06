@@ -1,7 +1,6 @@
 # Setup testing
 
 find_package(GTest CONFIG REQUIRED)
-enable_testing()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
