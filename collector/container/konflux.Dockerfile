@@ -88,7 +88,7 @@ RUN if [[ "$(uname -m)" == "x86_64" ]];   \
            -DCOLLECTOR_VERSION="${COLLECTOR_TAG}" \
            -DTRACE_SINSP_EVENTS="${TRACE_SINSP_EVENTS}"
 RUN cmake --build "${CMAKE_BUILD_DIR}" --target all -- -j "${NPROCS:-4}"
-RUN ctest --no-tests=error -V --test-dir "${CMAKE_BUILD_DIR}"
+RUN cd "${CMAKE_BUILD_DIR}" && ctest --no-tests=error -V
 RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 
