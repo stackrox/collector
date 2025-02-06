@@ -140,12 +140,8 @@ int main(int argc, char** argv) {
 
   CollectorConfig config;
   config.InitCollectorConfig(args);
-  switch (ConfigLoader(config).LoadConfiguration()) {
-    case collector::ConfigLoader::SUCCESS:
-    case collector::ConfigLoader::FILE_NOT_FOUND:
-      break;
-    case collector::ConfigLoader::PARSE_ERROR:
-      CLOG(FATAL) << "Unable to parse configuration file";
+  if (ConfigLoader(config).LoadConfiguration() == collector::ConfigLoader::PARSE_ERROR) {
+    CLOG(FATAL) << "Unable to parse configuration file";
   }
 
   setCoreDumpLimit(config.IsCoreDumpEnabled());
