@@ -14,7 +14,7 @@ namespace collector {
 namespace {
 const PathEnvVar CONFIG_FILE("ROX_COLLECTOR_CONFIG_PATH", "/etc/stackrox/runtime_config.yaml");
 
-enum PathTags {
+enum PathTags : uint8_t {
   LOADER_PARENT_PATH = 1,
   LOADER_CONFIG_FILE,
   LOADER_CONFIG_REALPATH,
