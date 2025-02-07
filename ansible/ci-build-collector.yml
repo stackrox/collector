@@ -63,20 +63,6 @@
         push: true
         source: local
 
-    - name: Push base to quay.io/stackrox-io
-      community.docker.docker_image:
-        name: "{{ collector_image }}-{{ arch }}"
-        repository: "{{ collector_image }}-{{ arch }}-base"
-        push: true
-        source: local
-
-    - name: Push latest to quay.io/stackrox-io
-      community.docker.docker_image:
-        name: "{{ collector_image }}-{{ arch }}"
-        repository: "{{ collector_image }}-{{ arch }}-latest"
-        push: true
-        source: local
-
     - name: Login to quay.io
       community.docker.docker_login:
         registry_url: quay.io
@@ -90,30 +76,12 @@
         push: true
         source: local
 
-    - name: Push base to quay.io/rhacs-eng
-      community.docker.docker_image:
-        name: "{{ rhacs_eng_image }}-{{ arch }}"
-        repository: "{{ rhacs_eng_image }}-{{ arch }}-base"
-        push: true
-        source: local
-
-    - name: Push latest to quay.io/rhacs-eng
-      community.docker.docker_image:
-        name: "{{ rhacs_eng_image }}-{{ arch }}"
-        repository: "{{ rhacs_eng_image }}-{{ arch }}-latest"
-        push: true
-        source: local
-
     - name: Print images pushed
       debug:
         msg:
         - "Pushed the following images:"
         - "  {{ collector_image }}-{{ arch }}"
-        - "  {{ collector_image }}-{{ arch }}-base"
-        - "  {{ collector_image }}-{{ arch }}-latest"
         - "  {{ rhacs_eng_image }}-{{ arch }}"
-        - "  {{ rhacs_eng_image }}-{{ arch }}-base"
-        - "  {{ rhacs_eng_image }}-{{ arch }}-latest"
       tags: [print_action]
 
     - name: Logout of quay.io
