@@ -157,6 +157,9 @@ func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
 	if connections, ok := m.connections[containerID]; ok {
 		conns := make([]types.NetworkInfo, len(connections))
 		copy(conns, connections)
+
+		// Ignore all in-flight connections
+		conns = types.GetActiveConnections(conns)
 		types.SortConnections(conns)
 		return conns
 	}
