@@ -56,3 +56,21 @@ func (n *NetworkInfo) Less(other NetworkInfo) bool {
 func SortConnections(connections []NetworkInfo) {
 	sort.Slice(connections, func(i, j int) bool { return connections[i].Less(connections[j]) })
 }
+
+// GetActiveConnections - return only active out of the pool of all observed
+// connections.
+//
+// If we observe an "in-flight" connection without a closed timestamp,
+// sometimes it makes sense to ignore it as we will get it later with full
+// information.
+func GetActiveConnections(connections []NetworkInfo) []NetworkInfo {
+	result := []NetworkInfo{}
+
+	for _, c := range connections {
+		if c.IsActive() {
+			result = append(result, c)
+		}
+	}
+
+	return result
+}
