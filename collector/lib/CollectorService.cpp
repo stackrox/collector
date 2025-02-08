@@ -158,6 +158,10 @@ bool CollectorService::WaitForGRPCServer() {
 }
 
 bool SetupKernelDriver(CollectorService& collector, const CollectorConfig& config) {
+  if (config.GetCollectionMethod() == CollectionMethod::PROCFS_ONLY) {
+    return true;
+  }
+
   auto& startup_diagnostics = StartupDiagnostics::GetInstance();
   std::string cm_name(CollectionMethodName(config.GetCollectionMethod()));
 

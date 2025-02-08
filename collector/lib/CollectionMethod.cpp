@@ -18,6 +18,8 @@ const char* CollectionMethodName(CollectionMethod method) {
       return "ebpf";
     case CollectionMethod::CORE_BPF:
       return "core_bpf";
+    case CollectionMethod::PROCFS_ONLY:
+      return "procfs_only";
     default:
       CLOG(WARNING) << "Unexpected CollectionMethod: " << static_cast<uint8_t>(method);
       return "unknown";
