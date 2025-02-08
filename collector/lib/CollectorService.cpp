@@ -119,13 +119,17 @@ void CollectorService::RunForever() {
     server.addHandler(collector_config_inspector->kBaseRoute, collector_config_inspector.get());
   }
 
-  system_inspector_.Init(config_, conn_tracker);
-  system_inspector_.Start();
+  if (config_.GetCollectionMethod() != CollectionMethod::PROCFS_ONLY) {
+    system_inspector_.Init(config_, conn_tracker);
+    system_inspector_.Start();
+  }
 
   ControlValue cv;
   while ((cv = control_->load(std::memory_order_relaxed)) != STOP_COLLECTOR) {
-    system_inspector_.Run(*control_);
-    CLOG(DEBUG) << "Interrupted collector!";
+    if (config_.GetCollectionMethod() != CollectionMethod::PROCFS_ONLY) {
+      system_inspector_.Run(*control_);
+      CLOG(DEBUG) << "Interrupted collector!";
+    }
   }
 
   int signal = signum_.load();
@@ -144,7 +148,9 @@ void CollectorService::RunForever() {
   exporter.stop();
   server.close();
 
-  system_inspector_.CleanUp();
+  if (config_.GetCollectionMethod() != CollectionMethod::PROCFS_ONLY) {
+    system_inspector_.CleanUp();
+  }
 }
 
 bool CollectorService::InitKernel() {

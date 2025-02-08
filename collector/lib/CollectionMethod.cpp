@@ -40,6 +40,10 @@ CollectionMethod ParseCollectionMethod(std::string_view method) {
     return CollectionMethod::CORE_BPF;
   }
 
+  if (cm == "procfs_only") {
+    return CollectionMethod::PROCFS_ONLY;
+  }
+
   CLOG(WARNING) << "Invalid collection-method (" << cm << "), using CO-RE BPF";
   return CollectionMethod::CORE_BPF;
 }
