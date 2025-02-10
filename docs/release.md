@@ -1,5 +1,13 @@
 # Release Process
 
+
+### Considerations
+
+- All tags created during a release should *not* be annotated. The ref to an
+  annotated tag (e.g. `refs/tags/tagname`) does not refer to the tagged commit,
+  instead referring to a non-commit object representing the annoation. This can
+  cause complications in CI builds on remote VMs.
+
 **Create the collector image release branch**
 
 1. Navigate to the local stackrox/collector git repository directory on the master branch and ensure the local checked out version is up to date.
@@ -41,7 +49,7 @@ export COLLECTOR_RELEASE=3.8
 6. Tag and push the release.
 
 ```sh
-git tag -a "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
+git tag "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
 git push origin "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
 ```
 
@@ -50,7 +58,7 @@ git push origin "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
 ```sh
 git submodule update --init falcosecurity-libs
 cd falcosecurity-libs
-git tag -a "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
+git tag "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
 git push origin "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
 ```
 
@@ -70,7 +78,7 @@ git checkout release-"${COLLECTOR_RELEASE}"
 4. Tag and push the patch
 
 ```sh
-git tag -a "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
+git tag "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
 git push --follow-tags
 ```
 
