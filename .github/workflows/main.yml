@@ -89,7 +89,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          ctest -V --test-dir cmake-build
+          ctest --no-tests=error -V --test-dir cmake-build
 
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml

@@ -20,7 +20,7 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
         unzip \
         clang \
         llvm \
-        cmake-3.18.2-9.el8 \
+        cmake \
         gcc-c++ \
         openssl-devel \
         ncurses-devel \
@@ -73,23 +73,26 @@ RUN mkdir kernel-modules \
 # WITH_RHEL_RPMS controls for dependency installation, ie if they were already installed as RPMs.
 ENV WITH_RHEL_RPMS=true
 
+# The following RUN commands are separated in order to make it easier
+# to debug when a step fails.
+RUN ./builder/install/install-dependencies.sh
+
 # Build with gperftools (DISABLE_PROFILING=OFF) only for supported
 # architectures, at the moment x86_64 only
-RUN ./builder/install/install-dependencies.sh && \
-    if [[ "$(uname -m)" == "x86_64" ]];   \
+RUN if [[ "$(uname -m)" == "x86_64" ]];   \
         then DISABLE_PROFILING="OFF";   \
         else DISABLE_PROFILING="ON";    \
     fi ; \
-    cmake -S ${SRC_ROOT_DIR} -B ${CMAKE_BUILD_DIR} \
-           -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
-           -DDISABLE_PROFILING=${DISABLE_PROFILING} \
-           -DUSE_VALGRIND=${USE_VALGRIND} \
-           -DADDRESS_SANITIZER=${ADDRESS_SANITIZER} \
-           -DCOLLECTOR_VERSION=${COLLECTOR_TAG} \
-           -DTRACE_SINSP_EVENTS=${TRACE_SINSP_EVENTS} && \
-    cmake --build ${CMAKE_BUILD_DIR} --target all -- -j "${NPROCS:-4}" && \
-    ctest -V --test-dir ${CMAKE_BUILD_DIR} && \
-    strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
+    cmake -S "${SRC_ROOT_DIR}" -B "${CMAKE_BUILD_DIR}" \
+           -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}" \
+           -DDISABLE_PROFILING="${DISABLE_PROFILING}" \
+           -DUSE_VALGRIND="${USE_VALGRIND}" \
+           -DADDRESS_SANITIZER="${ADDRESS_SANITIZER}" \
+           -DCOLLECTOR_VERSION="${COLLECTOR_TAG}" \
+           -DTRACE_SINSP_EVENTS="${TRACE_SINSP_EVENTS}"
+RUN cmake --build "${CMAKE_BUILD_DIR}" --target all -- -j "${NPROCS:-4}"
+RUN ctest --no-tests=error -V --test-dir "${CMAKE_BUILD_DIR}"
+RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
