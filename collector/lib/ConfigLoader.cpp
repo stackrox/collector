@@ -109,14 +109,6 @@ ParserResult ParserYaml::ParseArrayEnum(google::protobuf::Message* msg, const YA
                                         const google::protobuf::FieldDescriptor* field) {
   using namespace google::protobuf;
 
-  std::unique_ptr<std::string> name_ptr = nullptr;
-  const std::string* name = &field->name();
-
-  if (read_camelcase_) {
-    name_ptr = std::make_unique<std::string>(SnakeCaseToCamel(*name));
-    name = name_ptr.get();
-  }
-
   std::vector<ParserError> errors;
   auto f = msg->GetReflection()->GetMutableRepeatedFieldRef<int32>(msg, field);
   f.Clear();
@@ -136,7 +128,7 @@ ParserResult ParserYaml::ParseArrayEnum(google::protobuf::Message* msg, const YA
     const EnumValueDescriptor* value = desc->FindValueByName(enum_name);
     if (value == nullptr) {
       ParserError err;
-      err << file_ << ": Invalid enum value '" << enum_name << "' for field " << *name;
+      err << file_ << ": Invalid enum value '" << enum_name << "' for field " << (read_camelcase_ ? SnakeCaseToCamel(field->name()) : field->name());
       errors.emplace_back(err);
       continue;
     }
@@ -197,11 +189,11 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
                                const google::protobuf::FieldDescriptor* field) {
   using namespace google::protobuf;
 
-  std::unique_ptr<std::string> name_ptr = nullptr;
+  std::string camel;
   const std::string* name = &field->name();
   if (read_camelcase_) {
-    name_ptr = std::make_unique<std::string>(SnakeCaseToCamel(*name));
-    name = name_ptr.get();
+    camel = SnakeCaseToCamel(*name);
+    name = &camel;
   }
 
   if (!node[*name]) {
@@ -379,25 +371,35 @@ ParserResult ParserYaml::ParseArray(google::protobuf::Message* msg, const YAML::
   switch (field->cpp_type()) {
     case FieldDescriptor::CPPTYPE_INT32:
       return ParseArrayInner<int32>(msg, node, field);
+
     case FieldDescriptor::CPPTYPE_UINT32:
       return ParseArrayInner<uint32_t>(msg, node, field);
-    case google::protobuf::FieldDescriptor::CPPTYPE_INT64:
+
+    case FieldDescriptor::CPPTYPE_INT64:
       return ParseArrayInner<int64_t>(msg, node, field);
-    case google::protobuf::FieldDescriptor::CPPTYPE_UINT64:
+
+    case FieldDescriptor::CPPTYPE_UINT64:
       return ParseArrayInner<uint64_t>(msg, node, field);
-    case google::protobuf::FieldDescriptor::CPPTYPE_DOUBLE:
+
+    case FieldDescriptor::CPPTYPE_DOUBLE:
       return ParseArrayInner<double>(msg, node, field);
-    case google::protobuf::FieldDescriptor::CPPTYPE_FLOAT:
+
+    case FieldDescriptor::CPPTYPE_FLOAT:
       return ParseArrayInner<float>(msg, node, field);
-    case google::protobuf::FieldDescriptor::CPPTYPE_BOOL:
+
+    case FieldDescriptor::CPPTYPE_BOOL:
       return ParseArrayInner<bool>(msg, node, field);
-    case google::protobuf::FieldDescriptor::CPPTYPE_ENUM:
+
+    case FieldDescriptor::CPPTYPE_ENUM:
       return ParseArrayEnum(msg, node, field);
-    case google::protobuf::FieldDescriptor::CPPTYPE_STRING:
+
+    case FieldDescriptor::CPPTYPE_STRING:
       return ParseArrayInner<std::string>(msg, node, field);
-    case google::protobuf::FieldDescriptor::CPPTYPE_MESSAGE: {
+
+    case FieldDescriptor::CPPTYPE_MESSAGE: {
       return {{"Unsupport repeated type MESSAGE"}};
     } break;
+
     default: {
       ParserError err;
       err << "Unknown type " << field->type_name();
@@ -495,8 +497,8 @@ ConfigLoader::Result ConfigLoader::LoadConfiguration(const std::optional<const Y
   }
 
   config_.SetRuntimeConfig(std::move(runtime_config));
-  CLOG(DEBUG) << "Runtime configuration:\n"
-              << config_.GetRuntimeConfigStr();
+  CLOG(INFO) << "Runtime configuration:\n"
+             << config_.GetRuntimeConfigStr();
   return SUCCESS;
 }
 
