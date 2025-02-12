@@ -27,11 +27,6 @@
         recursive: true
       when: arch == "s390x"
 
-    - name: Run the builder image
-      community.general.make:
-        chdir: "{{ ansible_env.GITHUB_WORKSPACE | default(collector_root) }}"
-        target: start-builder
-
     - name: Build the collector image
       community.general.make:
         chdir: "{{ ansible_env.GITHUB_WORKSPACE | default(collector_root) }}"
