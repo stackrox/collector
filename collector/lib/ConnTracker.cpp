@@ -40,10 +40,20 @@ bool ContainsPrivateNetwork(Address::Family family, NRadixTree tree) {
   return tree.IsAnyIPNetSubset(family, private_networks_tree) || private_networks_tree.IsAnyIPNetSubset(family, tree);
 }
 
+void ConnectionTracker::UpdateConnectionNoLock(const Connection& conn, const ConnStatus& status) {
+  Connection ipv4Conn = conn.ConvertToIPv4();
+  EmplaceOrUpdateNoLock(ipv4Conn, status);
+}
+
 void ConnectionTracker::UpdateConnection(const Connection& conn, int64_t timestamp, bool added) {
   WITH_LOCK(mutex_) {
     EmplaceOrUpdateNoLock(conn, ConnStatus(timestamp, added));
   }
+}
+
+void ConnectionTracker::UpdateEndpointNoLock(const ContainerEndpoint& endpoint, const ConnStatus& status) {
+  ContainerEndpoint ipv4Endpoint = endpoint.ConvertToIPv4();
+  EmplaceOrUpdateNoLock(ipv4Endpoint, status);
 }
 
 void ConnectionTracker::Update(
@@ -63,7 +73,7 @@ void ConnectionTracker::Update(
 
     // Insert (or mark as active) all current connections and listen endpoints.
     for (const auto& curr_conn : all_conns) {
-      EmplaceOrUpdateNoLock(curr_conn, new_status);
+      UpdateConnectionNoLock(curr_conn, new_status);
     }
     for (const auto& curr_endpoint : all_listen_endpoints) {
       EmplaceOrUpdateNoLock(curr_endpoint, new_status);
