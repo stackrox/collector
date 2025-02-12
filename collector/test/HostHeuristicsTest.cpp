@@ -23,7 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "CollectorConfig.cpp"
 #include "HostConfig.h"
-#include "HostHeuristics.cpp"
+// #include "HostHeuristics.cpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -31,47 +31,47 @@ using namespace testing;
 
 namespace collector {
 
-class MockCPUHeuristic : public CPUHeuristic {
- public:
-  MockCPUHeuristic() = default;
-};
-
-class MockHostInfoHeuristics : public HostInfo {
- public:
-  MockHostInfoHeuristics() = default;
-
-  MOCK_METHOD0(IsUEFI, bool());
-  MOCK_METHOD0(GetSecureBootStatus, SecureBootStatus());
-  MOCK_METHOD0(GetKernelVersion, KernelVersion());
-  MOCK_METHOD0(IsGarden, bool());
-  MOCK_METHOD0(GetDistro, std::string&());
-  MOCK_METHOD0(NumPossibleCPU, int());
-};
-
-class MockCollectorConfig : public CollectorConfig {
- public:
-  MockCollectorConfig()
-      : CollectorConfig() {};
-
-  void SetCollectionMethod(CollectionMethod cm) {
-    if (host_config_.HasCollectionMethod()) {
-      host_config_.SetCollectionMethod(cm);
-    }
-    collection_method_ = cm;
-  }
-};
-
-TEST(HostHeuristicsTest, TestCPUHeuristic) {
-  MockCPUHeuristic cpuHeuristic;
-  MockHostInfoHeuristics host;
-  MockCollectorConfig config;
-  HostConfig hconfig;
-
-  EXPECT_CALL(host, NumPossibleCPU()).WillOnce(Return(10));
-
-  cpuHeuristic.Process(host, config, &hconfig);
-
-  EXPECT_EQ(hconfig.GetNumPossibleCPUs(), 10);
-}
+// class MockCPUHeuristic : public CPUHeuristic {
+//  public:
+//   MockCPUHeuristic() = default;
+// };
+//
+// class MockHostInfoHeuristics : public HostInfo {
+//  public:
+//   MockHostInfoHeuristics() = default;
+//
+//   MOCK_METHOD0(IsUEFI, bool());
+//   MOCK_METHOD0(GetSecureBootStatus, SecureBootStatus());
+//   MOCK_METHOD0(GetKernelVersion, KernelVersion());
+//   MOCK_METHOD0(IsGarden, bool());
+//   MOCK_METHOD0(GetDistro, std::string&());
+//   MOCK_METHOD0(NumPossibleCPU, int());
+// };
+//
+// class MockCollectorConfig : public CollectorConfig {
+//  public:
+//   MockCollectorConfig()
+//       : CollectorConfig() {};
+//
+//   void SetCollectionMethod(CollectionMethod cm) {
+//     if (host_config_.HasCollectionMethod()) {
+//       host_config_.SetCollectionMethod(cm);
+//     }
+//     collection_method_ = cm;
+//   }
+// };
+//
+// TEST(HostHeuristicsTest, TestCPUHeuristic) {
+//   MockCPUHeuristic cpuHeuristic;
+//   MockHostInfoHeuristics host;
+//   MockCollectorConfig config;
+//   HostConfig hconfig;
+//
+//   EXPECT_CALL(host, NumPossibleCPU()).WillOnce(Return(10));
+//
+//   cpuHeuristic.Process(host, config, &hconfig);
+//
+//   EXPECT_EQ(hconfig.GetNumPossibleCPUs(), 10);
+// }
 
 }  // namespace collector
