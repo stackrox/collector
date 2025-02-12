@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/executor"
 	"github.com/stackrox/collector/integration-tests/pkg/log"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 	"github.com/stretchr/testify/assert"
@@ -16,7 +17,7 @@ import (
 type Container struct {
 	Name              string
 	Cmd               string
-	ContainerID       string
+	ContainerID       executor.ContainerID
 	IP                string
 	ExpectedNetwork   []types.NetworkInfo
 	ExpectedEndpoints []types.EndpointInfo
@@ -51,23 +52,23 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	serverName := s.Server.Name
 	clientName := s.Client.Name
 
-	longContainerID, err := s.Executor().StartContainer(
+	containerID, err := s.Executor().StartContainer(
 		config.ContainerStartConfig{Name: serverName,
 			Entrypoint: []string{"/bin/sh"},
 			Image:      socatImage,
 			Command:    []string{"-c", "/bin/sleep 300"},
 		})
 	s.Require().NoError(err)
-	s.Server.ContainerID = common.ContainerShortID(longContainerID)
+	s.Server.ContainerID = containerID
 
-	longContainerID, err = s.Executor().StartContainer(
+	containerID, err = s.Executor().StartContainer(
 		config.ContainerStartConfig{Name: clientName,
 			Entrypoint: []string{"/bin/sh"},
 			Image:      socatImage,
 			Command:    []string{"-c", "/bin/sleep 300"},
 		})
 	s.Require().NoError(err)
-	s.Client.ContainerID = common.ContainerShortID(longContainerID)
+	s.Client.ContainerID = containerID
 
 	s.Server.IP, err = s.getIPAddress(serverName)
 	s.Require().NoError(err)
@@ -88,7 +89,7 @@ func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 
 func (s *ConnectionsAndEndpointsTestSuite) TearDownSuite() {
 	s.StopCollector()
-	s.cleanupContainers(s.Server.Name, s.Client.Name)
+	s.cleanupContainers(s.Server.ContainerID, s.Client.ContainerID)
 	s.WritePerfResults()
 }
 

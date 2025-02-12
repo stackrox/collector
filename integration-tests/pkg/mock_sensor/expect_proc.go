@@ -8,21 +8,22 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/thoas/go-funk"
 
+	"github.com/stackrox/collector/integration-tests/pkg/executor"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 )
 
-func (s *MockSensor) ExpectProcessesN(t *testing.T, containerID string, timeout time.Duration, n int) []types.ProcessInfo {
+func (s *MockSensor) ExpectProcessesN(t *testing.T, containerID executor.ContainerID, timeout time.Duration, n int) []types.ProcessInfo {
 	return s.waitProcessesN(func() {
 		assert.FailNowf(t, "timed out", "found %d processes (expected %d)", len(s.Processes(containerID)), n)
 	}, containerID, timeout, n, 0, func() {})
 }
 
-func (s *MockSensor) WaitProcessesN(containerID string, timeout time.Duration, n int, tickFn func()) bool {
+func (s *MockSensor) WaitProcessesN(containerID executor.ContainerID, timeout time.Duration, n int, tickFn func()) bool {
 	return len(s.waitProcessesN(func() {}, containerID, timeout, n, 0, tickFn)) >= n
 }
 
 func (s *MockSensor) ExpectProcesses(
-	t *testing.T, containerID string, timeout time.Duration, expected ...types.ProcessInfo) bool {
+	t *testing.T, containerID executor.ContainerID, timeout time.Duration, expected ...types.ProcessInfo) bool {
 
 	// might have already seen some of the events
 	to_find := funk.Filter(expected, func(x types.ProcessInfo) bool {
@@ -42,7 +43,7 @@ loop:
 		case <-timer:
 			return assert.ElementsMatch(t, expected, s.Processes(containerID), "Not all processes received")
 		case process := <-s.LiveProcesses():
-			if process.GetContainerId() != containerID {
+			if process.GetContainerId() != containerID.Short() {
 				continue loop
 			}
 
@@ -66,7 +67,7 @@ loop:
 	}
 }
 
-func (s *MockSensor) ExpectLineages(t *testing.T, containerID string, timeout time.Duration, processName string, expected ...types.ProcessLineage) bool {
+func (s *MockSensor) ExpectLineages(t *testing.T, containerID executor.ContainerID, timeout time.Duration, processName string, expected ...types.ProcessLineage) bool {
 	to_find := funk.Filter(expected, func(x types.ProcessLineage) bool {
 		return s.HasLineage(containerID, x)
 	}).([]types.ProcessLineage)
@@ -110,7 +111,7 @@ func (s *MockSensor) ExpectLineages(t *testing.T, containerID string, timeout ti
 //     of processes
 func (s *MockSensor) waitProcessesN(
 	timeoutFn func(),
-	containerID string,
+	containerID executor.ContainerID,
 	timeout time.Duration,
 	n int,
 	tickSeconds time.Duration,
@@ -136,7 +137,7 @@ loop:
 			timeoutFn()
 			return make([]types.ProcessInfo, 0)
 		case proc := <-s.LiveProcesses():
-			if proc.GetContainerId() != containerID {
+			if proc.GetContainerId() != containerID.Short() {
 				continue loop
 			}
 

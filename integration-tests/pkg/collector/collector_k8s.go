@@ -32,7 +32,7 @@ type K8sCollectorManager struct {
 
 	eventWatcher watch.Interface
 
-	containerID string
+	containerID executor.ContainerID
 	ip          string
 }
 
@@ -165,7 +165,7 @@ func (k *K8sCollectorManager) TearDown() error {
 
 	if !isRunning {
 		exitCode, err := k.executor.ExitCode(executor.ContainerFilter{
-			Name:      "collector",
+			Id:        executor.ContainerID("collector"),
 			Namespace: TEST_NAMESPACE,
 		})
 		if err != nil {
@@ -185,7 +185,7 @@ func (k *K8sCollectorManager) TearDown() error {
 	}
 
 	return k.executor.WaitPodRemoved(executor.ContainerFilter{
-		Name:      "collector",
+		Id:        executor.ContainerID("collector"),
 		Namespace: TEST_NAMESPACE,
 	})
 }
@@ -199,10 +199,10 @@ func (k *K8sCollectorManager) IsRunning() (bool, error) {
 	return *pod.Status.ContainerStatuses[0].Started, nil
 }
 
-func (k *K8sCollectorManager) ContainerID() string {
+func (k *K8sCollectorManager) ContainerID() executor.ContainerID {
 	if k.containerID == "" {
 		cf := executor.ContainerFilter{
-			Name:      "collector",
+			Id:        executor.ContainerID("collector"),
 			Namespace: TEST_NAMESPACE,
 		}
 

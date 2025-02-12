@@ -18,6 +18,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 
 	"github.com/stackrox/collector/integration-tests/pkg/common"
+	"github.com/stackrox/collector/integration-tests/pkg/executor"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 )
 
@@ -78,11 +79,11 @@ func (m *MockSensor) LiveProcesses() <-chan *storage.ProcessSignal {
 
 // Processes returns a list of all processes that have been receieved for
 // a given container ID
-func (m *MockSensor) Processes(containerID string) []types.ProcessInfo {
+func (m *MockSensor) Processes(containerID executor.ContainerID) []types.ProcessInfo {
 	m.processMutex.Lock()
 	defer m.processMutex.Unlock()
 
-	if processes, ok := m.processes[containerID]; ok {
+	if processes, ok := m.processes[containerID.Short()]; ok {
 		keys := make([]types.ProcessInfo, 0, len(processes))
 		for k := range processes {
 			keys = append(keys, k)
@@ -94,11 +95,11 @@ func (m *MockSensor) Processes(containerID string) []types.ProcessInfo {
 
 // HasProcess returns whether a given process has been seen for a given
 // container ID.
-func (m *MockSensor) HasProcess(containerID string, process types.ProcessInfo) bool {
+func (m *MockSensor) HasProcess(containerID executor.ContainerID, process types.ProcessInfo) bool {
 	m.processMutex.Lock()
 	defer m.processMutex.Unlock()
 
-	if processes, ok := m.processes[containerID]; ok {
+	if processes, ok := m.processes[containerID.Short()]; ok {
 		_, exists := processes[process]
 		return exists
 	}
@@ -114,11 +115,11 @@ func (m *MockSensor) LiveLineages() <-chan *storage.ProcessSignal_LineageInfo {
 
 // ProcessLineages returns a list of all processes that have been received for
 // a given container ID
-func (m *MockSensor) ProcessLineages(containerID string) []types.ProcessLineage {
+func (m *MockSensor) ProcessLineages(containerID executor.ContainerID) []types.ProcessLineage {
 	m.processMutex.Lock()
 	defer m.processMutex.Unlock()
 
-	if lineages, ok := m.processLineages[containerID]; ok {
+	if lineages, ok := m.processLineages[containerID.Short()]; ok {
 		keys := make([]types.ProcessLineage, 0, len(lineages))
 		for k := range lineages {
 			keys = append(keys, k)
@@ -130,11 +131,11 @@ func (m *MockSensor) ProcessLineages(containerID string) []types.ProcessLineage 
 
 // HasLineage returns whether a given process lineage has been seen for a given
 // container ID
-func (m *MockSensor) HasLineage(containerID string, lineage types.ProcessLineage) bool {
+func (m *MockSensor) HasLineage(containerID executor.ContainerID, lineage types.ProcessLineage) bool {
 	m.processMutex.Lock()
 	defer m.processMutex.Unlock()
 
-	if lineages, ok := m.processLineages[containerID]; ok {
+	if lineages, ok := m.processLineages[containerID.Short()]; ok {
 		_, exists := lineages[lineage]
 		return exists
 	}
@@ -150,11 +151,11 @@ func (m *MockSensor) LiveConnections() <-chan *sensorAPI.NetworkConnection {
 
 // Connections returns a list of all connections that have been received for
 // a given container ID
-func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
+func (m *MockSensor) Connections(containerID executor.ContainerID) []types.NetworkInfo {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
-	if connections, ok := m.connections[containerID]; ok {
+	if connections, ok := m.connections[containerID.Short()]; ok {
 		conns := make([]types.NetworkInfo, len(connections))
 		copy(conns, connections)
 		types.SortConnections(conns)
@@ -165,11 +166,11 @@ func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
 
 // HasConnection returns whether a given connection has been seen for a given
 // container ID
-func (m *MockSensor) HasConnection(containerID string, conn types.NetworkInfo) bool {
+func (m *MockSensor) HasConnection(containerID executor.ContainerID, conn types.NetworkInfo) bool {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
-	if conns, ok := m.connections[containerID]; ok {
+	if conns, ok := m.connections[containerID.Short()]; ok {
 		return slices.ContainsFunc(conns, func(c types.NetworkInfo) bool {
 			return c.Equal(conn)
 		})
@@ -186,11 +187,11 @@ func (m *MockSensor) LiveEndpoints() <-chan *sensorAPI.NetworkEndpoint {
 
 // Endpoints returns a list of all endpoints that have been received for
 // a given container ID
-func (m *MockSensor) Endpoints(containerID string) []types.EndpointInfo {
+func (m *MockSensor) Endpoints(containerID executor.ContainerID) []types.EndpointInfo {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
-	if endpoints, ok := m.endpoints[containerID]; ok {
+	if endpoints, ok := m.endpoints[containerID.Short()]; ok {
 		keys := make([]types.EndpointInfo, 0, len(endpoints))
 		for k := range endpoints {
 			keys = append(keys, k)
@@ -202,11 +203,11 @@ func (m *MockSensor) Endpoints(containerID string) []types.EndpointInfo {
 
 // HasEndpoint returns whether a given endpoint has been seen for a given
 // container ID
-func (m *MockSensor) HasEndpoint(containerID string, endpoint types.EndpointInfo) bool {
+func (m *MockSensor) HasEndpoint(containerID executor.ContainerID, endpoint types.EndpointInfo) bool {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
-	if endpoints, ok := m.endpoints[containerID]; ok {
+	if endpoints, ok := m.endpoints[containerID.Short()]; ok {
 		for ep := range endpoints {
 			if ep.Equal(endpoint) {
 				return true
