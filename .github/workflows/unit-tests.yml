@@ -18,23 +18,16 @@ jobs:
       fail-fast: false
       matrix:
         config-args:
-        - -DADDRESS_SANITIZER=ON
-        - -DUSE_VALGRIND=ON
+        - -DADDRESS_SANITIZER=ON -DCMAKE_BUILD_TYPE=Debug
+        - -DUSE_VALGRIND=ON -DCMAKE_BUILD_TYPE=Debug
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
 
-      - name: Build collector
-        run: |
-          cmake -S . -B cmake-build \
-            ${{ matrix.config-args }} \
-            -DCMAKE_BUILD_TYPE=Debug
-          cmake --build cmake-build "-j$(nproc)"
-
-      - name: Run unit tests
-        run: |
-          ctest --no-tests=error -V --test-dir cmake-build
+      - uses: ./.github/actions/run-unit-tests
+        with:
+          cmake-flags: ${{ matrix.config-args }}
 
   coverage:
     runs-on: ubuntu-24.04
@@ -45,27 +38,28 @@ jobs:
         with:
           submodules: true
 
-      - name: Build collector
-        run: |
-          cmake -S . -B cmake-build \
-            -DCOVERAGE=ON \
-            -DCMAKE_BUILD_TYPE=Debug
-          cmake --build cmake-build "-j$(nproc)"
-
-      - name: Run unit tests
-        run: |
-          ctest --no-tests=error -V --test-dir cmake-build
+      - uses: ./.github/actions/run-unit-tests
+        with:
+          cmake-flags: -DCOVERAGE=ON -DCMAKE_BUILD_TYPE=Debug
 
       - name: Generate coverage report
         run: |
           dnf install -y python-pip
           pip install gcovr
-          gcovr --html-details /tmp/html-report/ --xml /tmp/xml-report/
+          gcovr \
+            --xml /tmp/xml-report/ \
+            --filter collector/lib/
 
-      - name: Store reports
-        uses: actions/upload-artifact@v4
+      - uses: codecov/test-results-action@v1
         with:
-          name: codecov
-          path: |
-            /tmp/html-report
-            /tmp/xml-report
+          files: /tmp/junit.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: collector-unit-tests
+          disable_search: true
+
+      - uses: codecov/codecov-action@v5
+        with:
+          files: /tmp/xml-report/cobertura.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: collector-unit-tests
+          disable_search: true
