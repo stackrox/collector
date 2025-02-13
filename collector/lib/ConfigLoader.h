@@ -47,7 +47,7 @@ class ParserError {
   std::string msg_;
 };
 
-using ParserResult = std::optional<std::vector<ParserError>>;
+using ParserResult = std::vector<ParserError>;
 
 class ParserYaml {
  public:

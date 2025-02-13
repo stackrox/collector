@@ -187,14 +187,14 @@ TEST(TestParserYaml, ParserErrors) {
   };
 
   auto errors = parser.Parse(&cfg, YAML::Load(input));
-  ASSERT_TRUE(errors);
-  ASSERT_EQ(errors->size(), expected.size()) << "#### parsed:" << std::endl
-                                             << ErrorsToString(*errors) << std::endl
-                                             << "#### expected" << std::endl
-                                             << ErrorsToString(expected);
+  ASSERT_FALSE(errors.empty());
+  ASSERT_EQ(errors.size(), expected.size()) << "#### parsed:" << std::endl
+                                            << ErrorsToString(errors) << std::endl
+                                            << "#### expected" << std::endl
+                                            << ErrorsToString(expected);
 
   for (unsigned int i = 0; i < expected.size(); i++) {
-    ASSERT_EQ(errors->at(i), expected.at(i));
+    ASSERT_EQ(errors.at(i), expected.at(i));
   }
 }
 

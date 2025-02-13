@@ -67,15 +67,11 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
     const FieldDescriptor* field = descriptor->field(i);
 
     auto err = Parse(msg, node, field);
-    if (err) {
-      errors.insert(errors.end(), err->begin(), err->end());
-    }
+    errors.insert(errors.end(), err.begin(), err.end());
   }
 
   auto res = FindUnkownFields(*msg, node);
-  if (res) {
-    errors.insert(errors.end(), res->begin(), res->end());
-  }
+  errors.insert(errors.end(), res.begin(), res.end());
 
   if (!errors.empty()) {
     return errors;
@@ -173,9 +169,7 @@ ParserResult ParserYaml::FindUnkownFields(const google::protobuf::Message& msg, 
       const auto* reflection = msg.GetReflection();
       auto res = FindUnkownFields(reflection->GetMessage(msg, field), it->second);
 
-      if (res) {
-        errors.insert(errors.end(), res->begin(), res->end());
-      }
+      errors.insert(errors.end(), res.begin(), res.end());
     }
   }
 
@@ -232,9 +226,7 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
       const FieldDescriptor* f = descriptor->field(i);
 
       auto err = Parse(m, node[*name], f);
-      if (err) {
-        errors.insert(errors.end(), err->begin(), err->end());
-      }
+      errors.insert(errors.end(), err.begin(), err.end());
     }
 
     if (!errors.empty()) {
@@ -488,9 +480,9 @@ ConfigLoader::Result ConfigLoader::LoadConfiguration(const std::optional<const Y
     errors = parser_.Parse(&runtime_config, *node);
   }
 
-  if (errors) {
+  if (!errors.empty()) {
     CLOG(ERROR) << "Failed to parse " << parser_.GetFile();
-    for (const auto& err : *errors) {
+    for (const auto& err : errors) {
       CLOG(ERROR) << err;
     }
     return PARSE_ERROR;
