@@ -1,0 +1,71 @@
+name: Run unit tests
+
+on:
+  workflow_call:
+    inputs:
+      collector-builder-tag:
+        type: string
+        required: true
+        description: |
+          The builder tag to use in the build
+
+jobs:
+  memory-checked:
+    runs-on: ubuntu-24.04
+    container:
+      image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config-args:
+        - -DADDRESS_SANITIZER=ON
+        - -DUSE_VALGRIND=ON
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Build collector
+        run: |
+          cmake -S . -B cmake-build \
+            ${{ matrix.config-args }} \
+            -DCMAKE_BUILD_TYPE=Debug
+          cmake --build cmake-build "-j$(nproc)"
+
+      - name: Run unit tests
+        run: |
+          ctest --no-tests=error -V --test-dir cmake-build
+
+  coverage:
+    runs-on: ubuntu-24.04
+    container:
+      image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Build collector
+        run: |
+          cmake -S . -B cmake-build \
+            -DCOVERAGE=ON \
+            -DCMAKE_BUILD_TYPE=Debug
+          cmake --build cmake-build "-j$(nproc)"
+
+      - name: Run unit tests
+        run: |
+          ctest --no-tests=error -V --test-dir cmake-build
+
+      - name: Generate coverage report
+        run: |
+          dnf install -y python-pip
+          pip install gcovr
+          gcovr --html-details /tmp/html-report/ --xml /tmp/xml-report/
+
+      - name: Store reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: codecov
+          path: |
+            /tmp/html-report
+            /tmp/xml-report

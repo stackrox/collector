@@ -63,33 +63,13 @@ jobs:
       rebuild-qa-containers: ${{ needs.init.outputs.rebuild-qa-containers == 'true' }}
     secrets: inherit
 
-  memory-checked-unit-tests:
-    runs-on: ubuntu-24.04
-    container:
-      image: quay.io/stackrox-io/collector-builder:${{ needs.build-builder-image.outputs.collector-builder-tag }}
+  unit-tests:
+    uses: ./.github/workflows/unit-tests.yml
     needs:
       - build-builder-image
-    strategy:
-      fail-fast: false
-      matrix:
-        config-args:
-        - -DADDRESS_SANITIZER=ON
-        - -DUSE_VALGRIND=ON
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Build collector
-        run: |
-          cmake -S . -B cmake-build \
-            ${{ matrix.config-args }} \
-            -DCMAKE_BUILD_TYPE=Debug
-          make -C cmake-build "-j$(nproc)"
-
-      - name: Run unit tests
-        run: |
-          ctest --no-tests=error -V --test-dir cmake-build
+    with:
+      collector-builder-tag: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
+    secrets: inherit
 
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml

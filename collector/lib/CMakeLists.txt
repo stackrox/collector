@@ -30,4 +30,10 @@ if(NOT DISABLE_PROFILING)
     target_link_libraries(collector_lib ${GPERFTOOLS_PROFILER} ${GPERFTOOLS_TCMALLOC})
 endif()
 
+
+if (COVERAGE)
+    target_compile_options(collector_lib PUBLIC "--coverage")
+    target_link_options(collector_lib PUBLIC "--coverage")
+endif()
+
 target_link_libraries(collector_lib z ssl crypto bpf)
