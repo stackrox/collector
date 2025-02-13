@@ -444,14 +444,9 @@ spec:
       values: [ "true" ]
 
   - name: build-image-index-extra
-    matrix:
-      params:
-      - name: IMAGE
-        value:
-        - $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-latest
-        - $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-slim
-        - $(params.output-image-repo):konflux-$(params.revision)
     params:
+    - name: IMAGE
+      value: $(params.output-image-repo):konflux-$(params.revision)
     - name: COMMIT_SHA
       value: $(tasks.clone-repository.results.commit)
     - name: IMAGES
