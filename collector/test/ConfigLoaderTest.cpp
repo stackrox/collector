@@ -198,6 +198,14 @@ TEST(TestParserYaml, ParserErrors) {
   }
 }
 
+TEST(TestParserYaml, UnknownField) {
+  test_config::Config cfg;
+  ParserYaml parser("/test.yml");
+  const ParserResult expected = {{"\"/test.yml\": Unknown field 'asdf'"}};
+  auto errors = parser.Parse(&cfg, YAML::Load("asdf: asdf"));
+  EXPECT_EQ(errors, expected);
+}
+
 /*
  * Collector specific parsing tests
  */

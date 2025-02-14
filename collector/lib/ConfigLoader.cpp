@@ -157,7 +157,7 @@ ParserResult ParserYaml::FindUnknownFields(const google::protobuf::Message& msg,
     const FieldDescriptor* field = descriptor->FindFieldByName(name);
     if (field == nullptr) {
       ParserError err;
-      err << "Unknown field '" << name << "'";
+      err << file_ << ": Unknown field '" << name << "'";
       errors.emplace_back(err);
       continue;
     }
