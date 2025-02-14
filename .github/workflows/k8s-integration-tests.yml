@@ -99,7 +99,7 @@ jobs:
       - uses: codecov/test-results-action@v1
         if: ${{ !cancelled() }}
         with:
-          directory: integration-tests/container-logs
+          directory: integration-tests
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: collector-integration-tests
 
