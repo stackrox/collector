@@ -92,6 +92,13 @@ jobs:
           path: |
             ${{ github.workspace }}/integration-tests/container-logs/**/*
 
+      - uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() }}
+        with:
+          directory: integration-tests/container-logs
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: collector-integration-tests
+
   notify:
     runs-on: ubuntu-24.04
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name != 'pull_request'

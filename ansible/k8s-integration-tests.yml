@@ -190,6 +190,21 @@
       tags:
         - test-only
 
+    - name: Write logs
+      ansible.builtin.copy:
+        content: "{{ log.log_lines }}"
+        dest: "{{ collector_root }}/integration-tests/integration-test-k8s.log"
+        mode: '644'
+
+    - name: Report
+      community.general.make:
+        chdir: "{{ collector_root }}/integration-tests"
+        target: report
+      environment:
+        LOG_FILE: "{{ collector_root }}/integration-tests/integration-test-k8s.log"
+        JUNIT_FILE: "{{ collector_root }}/integration-tests/integration-test-k8s-report.xml"
+      delegate_to: localhost
+
     - name: Cleanup namespace
       kubernetes.core.k8s:
         state: absent
