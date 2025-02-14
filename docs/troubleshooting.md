@@ -609,11 +609,11 @@ $ curl "http://<collector>:8080/state/runtime-config"
 
 ## Troubleshooting GRPC channel
 
-I case of network connectivity issues it can be hard to figure out the reason
-why Collector refuses to connect to Sensor. The reason for that is use
-WaitForConnected GRPC method, which doesn't betray much information. A
-workaround to get more information is to add `GRPC_TRACE='*'` environment
-variable to the DaemonSet, which will ask the GRPC library to trace all if it's
+In case of network connectivity issues it can be hard to figure out the reason
+why Collector refuses to connect to Sensor. The reason for that is the
+WaitForConnected GRPC method, which doesn't convey much information. A
+workaround to get more information is to add the `GRPC_TRACE='*'` environment
+variable to the DaemonSet, which will ask the GRPC library to trace all of its
 components, e.g. producing something like this for situations where Sensor is
 not available:
 
