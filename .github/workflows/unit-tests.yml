@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config-args:
+        cmake-flags:
         - -DADDRESS_SANITIZER=ON -DCMAKE_BUILD_TYPE=Debug
         - -DUSE_VALGRIND=ON -DCMAKE_BUILD_TYPE=Debug
     steps:
@@ -27,7 +27,7 @@ jobs:
 
       - uses: ./.github/actions/run-unit-tests
         with:
-          cmake-flags: ${{ matrix.config-args }}
+          cmake-flags: ${{ matrix.cmake-flags }}
 
   coverage:
     runs-on: ubuntu-24.04
