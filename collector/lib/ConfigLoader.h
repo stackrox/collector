@@ -130,7 +130,7 @@ class ParserYaml {
    * @param node The YAML::Node to be walked.
    * @returns an optional vector of parser errors.
    */
-  ParserResult FindUnkownFields(const google::protobuf::Message& msg, const YAML::Node& node);
+  ParserResult FindUnknownFields(const google::protobuf::Message& msg, const YAML::Node& node);
 
   ParserError WrapError(const std::exception& e);
 

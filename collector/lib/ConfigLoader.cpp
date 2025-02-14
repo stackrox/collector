@@ -72,7 +72,7 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
     }
   }
 
-  auto res = FindUnkownFields(*msg, node);
+  auto res = FindUnknownFields(*msg, node);
   if (res) {
     errors.insert(errors.end(), res->begin(), res->end());
   }
@@ -142,7 +142,7 @@ ParserResult ParserYaml::ParseArrayEnum(google::protobuf::Message* msg, const YA
   return {};
 }
 
-ParserResult ParserYaml::FindUnkownFields(const google::protobuf::Message& msg, const YAML::Node& node) {
+ParserResult ParserYaml::FindUnknownFields(const google::protobuf::Message& msg, const YAML::Node& node) {
   using namespace google::protobuf;
 
   const auto* descriptor = msg.GetDescriptor();
@@ -171,7 +171,7 @@ ParserResult ParserYaml::FindUnkownFields(const google::protobuf::Message& msg, 
       }
 
       const auto* reflection = msg.GetReflection();
-      auto res = FindUnkownFields(reflection->GetMessage(msg, field), it->second);
+      auto res = FindUnknownFields(reflection->GetMessage(msg, field), it->second);
 
       if (res) {
         errors.insert(errors.end(), res->begin(), res->end());
