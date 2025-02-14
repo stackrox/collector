@@ -51,6 +51,7 @@ jobs:
             --filter collector/lib/
 
       - uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() }}
         with:
           files: /tmp/junit.xml
           token: ${{ secrets.CODECOV_TOKEN }}
