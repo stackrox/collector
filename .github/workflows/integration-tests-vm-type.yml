@@ -106,6 +106,13 @@ jobs:
         with:
           paths: integration-tests/container-logs/**/integration-test-report-*.xml
 
+      - uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() }}
+        with:
+          directory: integration-tests/container-logs
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: collector-integration-tests
+
       - name: Create Benchmark VMs
         if: inputs.run-benchmarks
         run: |
