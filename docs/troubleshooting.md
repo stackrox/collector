@@ -607,3 +607,18 @@ $ curl "http://<collector>:8080/state/network/connection?container=c6f030bc4b42&
 The runtime configuration can be obtained using
 $ curl "http://<collector>:8080/state/runtime-config"
 
+## Troubleshooting GRPC channel
+
+I case of network connectivity issues it can be hard to figure out the reason
+why Collector refuses to connect to Sensor. The reason for that is use
+WaitForConnected GRPC method, which doesn't betray much information. A
+workaround to get more information is to add `GRPC_TRACE='*'` environment
+variable to the DaemonSet, which will ask the GRPC library to trace all if it's
+components, e.g. producing something like this for situations where Sensor is
+not available:
+
+```
+E0000 00:00:1739528892.222403      18 legacy_channel.cc:310] watch_completion_error: CANCELLED
+I0000 00:00:1739528892.222495      18 completion_queue.cc:703] cq_end_op_for_next(cq=0x37a8eb40, tag=0x37a34300, error=UNKNOWN:Timed out waiting for connection state change {created_time:"2025-02-14T10:28:12.222428015+00:00"}, done=true, done_arg=0x37a62b40, storage=0x37a62b70)
+I0000 00:00:1739528892.222536      18 completion_queue.cc:708] Operation failed: tag=0x37a34300, error=UNKNOWN:Timed out waiting for connection state change {created_time:"2025-02-14T10:28:12.222428015+00:00"}
+```
