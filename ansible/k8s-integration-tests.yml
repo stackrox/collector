@@ -147,7 +147,7 @@
                     value: "{{ lookup('env', 'COLLECTOR_QA_TAG', default=lookup('file', collector_root + '/integration-tests/container/QA_TAG')) }}"
                   - name: COLLECTOR_IMAGE
                     value: "{{ collector_image }}"
-                args: ["-test.run", "^TestK8s.*"]
+                args: ["-test.run", "^TestK8s.*", "-test.v"]
                 ports:
                   - containerPort: 9999
                 volumeMounts:
@@ -192,7 +192,7 @@
 
     - name: Write logs
       ansible.builtin.copy:
-        content: "{{ log.log_lines }}"
+        content: "{{ log.log }}"
         dest: "{{ collector_root }}/integration-tests/integration-test-k8s.log"
         mode: '644'
 
@@ -202,7 +202,7 @@
         target: report
       environment:
         LOG_FILE: "{{ collector_root }}/integration-tests/integration-test-k8s.log"
-        JUNIT_FILE: "{{ collector_root }}/integration-tests/integration-test-k8s-report.xml"
+        JUNIT_FILE: "integration-test-k8s-report.xml"
       delegate_to: localhost
 
     - name: Cleanup namespace
