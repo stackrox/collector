@@ -202,7 +202,7 @@
         target: report
       environment:
         LOG_FILE: "{{ collector_root }}/integration-tests/integration-test-k8s.log"
-        JUNIT_FILE: "integration-test-k8s-report.xml"
+        JUNIT_FILE: "integration-test-k8s-junit.xml"
       delegate_to: localhost
 
     - name: Cleanup namespace
