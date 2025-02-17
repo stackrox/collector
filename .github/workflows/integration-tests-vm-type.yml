@@ -104,7 +104,7 @@ jobs:
         if: |
            failure() && !inputs.run-benchmarks
         with:
-          paths: integration-tests/container-logs/**/integration-test-report-*.xml
+          paths: integration-tests/container-logs/**/integration-test-report-*.junit.xml
 
       - uses: codecov/test-results-action@v1
         if: ${{ !cancelled() }}

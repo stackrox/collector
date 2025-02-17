@@ -99,8 +99,9 @@ jobs:
       - uses: codecov/test-results-action@v1
         if: ${{ !cancelled() }}
         with:
-          files: integration-test-k8s-junit.xml
+          files: integration-test-k8s.junit.xml
           directory: integration-tests
+          disable_search: true
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: collector-integration-tests
 
