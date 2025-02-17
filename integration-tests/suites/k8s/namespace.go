@@ -82,6 +82,8 @@ func (k *K8sNamespaceTestSuite) TestK8sNamespace() {
 		namespace, ok := namespaceInterface.(string)
 		k.Require().True(ok)
 		k.Require().Equal(namespace, tt.expectecNamespace)
+
+		k.Require().FailNow("Test failure")
 	}
 }
 
