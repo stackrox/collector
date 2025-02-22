@@ -1,0 +1,13 @@
+[package]
+name = "rust_test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[lib]
+crate-type = ["staticlib"]
+name = "rust_test"
+
+[build-dependencies]
+cbindgen = "0.20"
