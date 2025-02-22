@@ -1,0 +1,5 @@
+*
+**
+!collector/
+!falcosecurity-libs/
+!CMakeLists.txt

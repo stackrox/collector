@@ -1,5 +1,5 @@
 ---
-- name: Build and push collector image
+- name: Build and push collector-builder image
   hosts: "{{ build_hosts | default('all') }}"
 
   environment:

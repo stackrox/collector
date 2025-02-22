@@ -6,6 +6,9 @@ NPROCS ?= $(shell nproc)
 DEV_SSH_SERVER_KEY ?= $(CURDIR)/.collector_dev_ssh_host_ed25519_key
 BUILD_BUILDER_IMAGE ?= false
 
+DOCKERFILE = collector/container/Dockerfile
+BUILD_TYPE = rhel
+
 export COLLECTOR_VERSION := $(COLLECTOR_TAG)
 
 PODMAN =
@@ -35,7 +38,7 @@ builder-tag:
 
 .PHONY: container-dockerfile-dev
 container-dockerfile-dev:
-	sed '1s/ubi-minimal/ubi/' $(CURDIR)/collector/container/Dockerfile > \
+	sed 's/ubi-minimal/ubi/' $(CURDIR)/collector/container/Dockerfile > \
 		$(CURDIR)/collector/container/Dockerfile.dev
 
 .PHONY: builder
@@ -61,22 +64,24 @@ connscrape:
 unittest:
 	make -C collector unittest
 
-image: collector unittest
+image:
 	make -C collector txt-files
 	docker buildx build --load --platform ${PLATFORM} \
+		--build-arg BUILD_TYPE="$(BUILD_TYPE)" \
+		--build-arg CMAKE_BUILD_TYPE="$(CMAKE_BUILD_TYPE)" \
+		--build-arg USE_VALGRIND="$(USE_VALGRIND)" \
+		--build-arg ADDRESS_SANITIZER="$(ADDRESS_SANITIZER)" \
+		--build-arg TRACE_SINSP_EVENTS="$(TRACE_SINSP_EVENTS)" \
+		--build-arg BPF_DEBUG_MODE="$(BPF_DEBUG_MODE)" \
 		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
-		-f collector/container/Dockerfile \
+		--build-arg BUILDER_TAG="$(COLLECTOR_BUILDER_TAG)" \
+		-f "$(DOCKERFILE)" \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
-image-dev: collector unittest container-dockerfile-dev
-	make -C collector txt-files
-	docker buildx build --load --platform ${PLATFORM} \
-		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
-		--build-arg BUILD_TYPE=devel \
-		-f collector/container/Dockerfile.dev \
-		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
-		$(COLLECTOR_BUILD_CONTEXT)
+image-dev: DOCKERFILE = collector/container/Dockerfile.dev
+image-dev: BUILD_TYPE = devel
+image-dev: container-dockerfile-dev image
 
 .PHONY: integration-tests-report
 integration-tests-report:
