@@ -48,7 +48,7 @@ func convertMapToSlice(env map[string]string) []string {
 	return result
 }
 
-func (d *dockerAPIExecutor) IsContainerFoundFiltered(containerID, filter string) (bool, error) {
+func (d *dockerAPIExecutor) IsContainerFoundFiltered(containerID ContainerID, filter string) (bool, error) {
 	parts := strings.SplitN(filter, "=", 2)
 	if len(parts) != 2 {
 		return false, fmt.Errorf("filter format is invalid")
@@ -57,7 +57,7 @@ func (d *dockerAPIExecutor) IsContainerFoundFiltered(containerID, filter string)
 	filterArgs := filters.NewArgs()
 	filterArgs.Add(filterKey, filterValue)
 	if containerID != "" {
-		filterArgs.Add("id", containerID)
+		filterArgs.Add("id", containerID.Long())
 	}
 
 	containers, err := d.client.ContainerList(context.Background(), container.ListOptions{
@@ -70,15 +70,15 @@ func (d *dockerAPIExecutor) IsContainerFoundFiltered(containerID, filter string)
 
 	found := false
 	for _, c := range containers {
-		if common.ContainerShortID(containerID) == common.ContainerShortID(c.ID) {
+		if containerID.Short() == ContainerID(c.ID).Short() {
 			found = true
 		}
 	}
-	log.Debug("checked %s for filter %s (%t)\n", common.ContainerShortID(containerID), filter, found)
+	log.Debug("checked %s for filter %s (%t)\n", containerID.Short(), filter, found)
 	return found, nil
 }
 
-func (d *dockerAPIExecutor) GetContainerHealthCheck(containerID string) (string, error) {
+func (d *dockerAPIExecutor) GetContainerHealthCheck(containerID ContainerID) (string, error) {
 	inspectResp, err := d.inspectContainer(containerID)
 	if err != nil {
 		return "", fmt.Errorf("error inspecting container: %w", err)
@@ -91,7 +91,7 @@ func (d *dockerAPIExecutor) GetContainerHealthCheck(containerID string) (string,
 	return strings.Join(inspectResp.Config.Healthcheck.Test, " "), nil
 }
 
-func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConfig) (string, error) {
+func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConfig) (ContainerID, error) {
 	ctx := context.Background()
 	var binds []string
 	volumes := map[string]struct{}{}
@@ -152,12 +152,12 @@ func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConf
 		return "", err
 	}
 
-	log.Info("start %s with %s (%s)\n",
-		startConfig.Name, startConfig.Image, common.ContainerShortID(resp.ID))
-	return resp.ID, nil
+	id := ContainerID(resp.ID)
+	log.Info("start %s with %s (%s)\n", startConfig.Name, startConfig.Image, id)
+	return id, nil
 }
 
-func (d *dockerAPIExecutor) ExecContainer(containerName string, command []string) (string, error) {
+func (d *dockerAPIExecutor) ExecContainer(containerID ContainerID, command []string) (string, error) {
 	ctx := context.Background()
 	execConfig := types.ExecConfig{
 		AttachStdout: true,
@@ -165,7 +165,7 @@ func (d *dockerAPIExecutor) ExecContainer(containerName string, command []string
 		Cmd:          command,
 	}
 
-	resp, err := d.client.ContainerExecCreate(ctx, containerName, execConfig)
+	resp, err := d.client.ContainerExecCreate(ctx, containerID.Long(), execConfig)
 	if err != nil {
 		return "", fmt.Errorf("error creating Exec: %w", err)
 	}
@@ -188,14 +188,14 @@ func (d *dockerAPIExecutor) ExecContainer(containerName string, command []string
 		return "", fmt.Errorf("error inspecting Exec: %w", err)
 	}
 	log.Info("exec %s %v (exitCode=%d, outBytes=%d)\n",
-		containerName, command, execInspect.ExitCode, stdoutBuf.Len())
+		containerID, command, execInspect.ExitCode, stdoutBuf.Len())
 	return stdoutBuf.String(), nil
 }
 
-func (d *dockerAPIExecutor) GetContainerLogs(containerID string) (ContainerLogs, error) {
+func (d *dockerAPIExecutor) GetContainerLogs(containerID ContainerID) (ContainerLogs, error) {
 	timeoutContext, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	logsReader, err := d.client.ContainerLogs(timeoutContext, containerID,
+	logsReader, err := d.client.ContainerLogs(timeoutContext, containerID.Long(),
 		container.LogsOptions{ShowStdout: true, ShowStderr: true})
 	if err != nil {
 		return ContainerLogs{}, fmt.Errorf("error getting container logs: %w", err)
@@ -214,11 +214,11 @@ func (d *dockerAPIExecutor) GetContainerLogs(containerID string) (ContainerLogs,
 	}, nil
 }
 
-func (c *dockerAPIExecutor) CaptureLogs(testName, containerName string) (string, error) {
-	log.Info("%s: Gathering logs for %q", testName, containerName)
-	logs, err := c.GetContainerLogs(containerName)
+func (c *dockerAPIExecutor) CaptureLogs(testName string, containerID ContainerID) (string, error) {
+	log.Info("%s: Gathering logs for %q", testName, containerID)
+	logs, err := c.GetContainerLogs(containerID)
 	if err != nil {
-		return "", log.Error("logs error (%v) for container %s\n", err, containerName)
+		return "", log.Error("logs error (%v) for container %s\n", err, containerID)
 	}
 
 	type logFile = struct {
@@ -230,21 +230,21 @@ func (c *dockerAPIExecutor) CaptureLogs(testName, containerName string) (string,
 	if logs.Empty() {
 		// Nothing to log, still we create an empty file for awareness
 		logFiles = []logFile{{
-			name: fmt.Sprintf("%s.log", containerName),
+			name: fmt.Sprintf("%s.log", containerID),
 		}}
 	} else if logs.Stderr == "" || logs.Stdout == "" {
 		// We only have stdout OR stderr to log
 		logFiles = []logFile{{
-			name:    fmt.Sprintf("%s.log", containerName),
+			name:    fmt.Sprintf("%s.log", containerID),
 			content: logs.GetSingleLog(),
 		}}
 	} else {
 		// We need to log both stdout and stderr, do so on separate files
 		logFiles = []logFile{{
-			name:    fmt.Sprintf("%s-stderr.log", containerName),
+			name:    fmt.Sprintf("%s-stderr.log", containerID),
 			content: logs.Stderr,
 		}, {
-			name:    fmt.Sprintf("%s-stdout.log", containerName),
+			name:    fmt.Sprintf("%s-stdout.log", containerID),
 			content: logs.Stdout,
 		}}
 	}
@@ -262,10 +262,10 @@ func (c *dockerAPIExecutor) CaptureLogs(testName, containerName string) (string,
 	return logFiles[0].content, nil
 }
 
-func (d *dockerAPIExecutor) KillContainer(containerID string) (string, error) {
+func (d *dockerAPIExecutor) KillContainer(containerID ContainerID) (string, error) {
 	timeoutContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	err := d.client.ContainerKill(timeoutContext, containerID, "KILL")
+	err := d.client.ContainerKill(timeoutContext, containerID.Long(), "KILL")
 	if err != nil {
 		return "", fmt.Errorf("error killing container: %w", err)
 	}
@@ -273,18 +273,18 @@ func (d *dockerAPIExecutor) KillContainer(containerID string) (string, error) {
 	return "", nil
 }
 
-func (d *dockerAPIExecutor) StopContainer(name string) (string, error) {
+func (d *dockerAPIExecutor) StopContainer(containerID ContainerID) (string, error) {
 	stopOptions := container.StopOptions{
 		Signal:  "SIGTERM",
 		Timeout: nil, // 10 secs
 	}
 	timeoutContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	err := d.client.ContainerStop(timeoutContext, name, stopOptions)
+	err := d.client.ContainerStop(timeoutContext, containerID.Long(), stopOptions)
 	if err != nil {
 		return "", fmt.Errorf("error stopping container: %w", err)
 	}
-	log.Debug("stop %s\n", name)
+	log.Debug("stop %s\n", containerID)
 	return "", nil
 }
 
@@ -296,16 +296,16 @@ func (d *dockerAPIExecutor) RemoveContainer(cf ContainerFilter) (string, error) 
 		RemoveVolumes: true,
 		Force:         true,
 	}
-	err := d.client.ContainerRemove(timeoutContext, cf.Name, removeOptions)
+	err := d.client.ContainerRemove(timeoutContext, cf.Id.Long(), removeOptions)
 	if err != nil {
 		return "", fmt.Errorf("error removing container: %w", err)
 	}
-	log.Debug("remove %s\n", cf.Name)
+	log.Debug("remove %s\n", cf.Id)
 	return "", nil
 }
 
-func (d *dockerAPIExecutor) inspectContainer(containerID string) (types.ContainerJSON, error) {
-	containerJSON, err := d.client.ContainerInspect(context.Background(), containerID)
+func (d *dockerAPIExecutor) inspectContainer(containerID ContainerID) (types.ContainerJSON, error) {
+	containerJSON, err := d.client.ContainerInspect(context.Background(), containerID.Long())
 	if err != nil {
 		return types.ContainerJSON{}, fmt.Errorf("error inspecting container: %w", err)
 	}
@@ -314,15 +314,15 @@ func (d *dockerAPIExecutor) inspectContainer(containerID string) (types.Containe
 }
 
 func (d *dockerAPIExecutor) ExitCode(cf ContainerFilter) (int, error) {
-	inspectResp, err := d.inspectContainer(cf.Name)
+	inspectResp, err := d.inspectContainer(cf.Id)
 	if err != nil {
 		return -1, err
 	}
-	log.Info("%s exitcode=%s\n", cf.Name, inspectResp.State.ExitCode)
+	log.Info("%s exitcode=%s\n", cf.Id, inspectResp.State.ExitCode)
 	return inspectResp.State.ExitCode, nil
 }
 
-func (d *dockerAPIExecutor) GetContainerIP(containerID string) (string, error) {
+func (d *dockerAPIExecutor) GetContainerIP(containerID ContainerID) (string, error) {
 	inspectResp, err := d.inspectContainer(containerID)
 	if err != nil {
 		return "", err
@@ -332,7 +332,7 @@ func (d *dockerAPIExecutor) GetContainerIP(containerID string) (string, error) {
 	return inspectResp.NetworkSettings.DefaultNetworkSettings.IPAddress, nil
 }
 
-func (d *dockerAPIExecutor) GetContainerPort(containerID string) (string, error) {
+func (d *dockerAPIExecutor) GetContainerPort(containerID ContainerID) (string, error) {
 	containerPort := "-1"
 	containerJSON, err := d.inspectContainer(containerID)
 	if err != nil {
@@ -351,7 +351,7 @@ func (d *dockerAPIExecutor) GetContainerPort(containerID string) (string, error)
 	return containerPort, nil
 }
 
-func (d *dockerAPIExecutor) CheckContainerHealthy(containerID string) (bool, error) {
+func (d *dockerAPIExecutor) CheckContainerHealthy(containerID ContainerID) (bool, error) {
 	containerJSON, err := d.inspectContainer(containerID)
 	if err != nil {
 		return false, err
@@ -360,7 +360,7 @@ func (d *dockerAPIExecutor) CheckContainerHealthy(containerID string) (bool, err
 	return containerJSON.State.Health.Status == "healthy", nil
 }
 
-func (d *dockerAPIExecutor) IsContainerRunning(containerID string) (bool, error) {
+func (d *dockerAPIExecutor) IsContainerRunning(containerID ContainerID) (bool, error) {
 	containerJSON, err := d.inspectContainer(containerID)
 	if err != nil {
 		return false, err
@@ -370,12 +370,12 @@ func (d *dockerAPIExecutor) IsContainerRunning(containerID string) (bool, error)
 }
 
 func (d *dockerAPIExecutor) ContainerExists(cf ContainerFilter) (bool, error) {
-	_, err := d.inspectContainer(cf.Name)
+	_, err := d.inspectContainer(cf.Id)
 	if err != nil {
-		log.Trace("%s does not exist\n", cf.Name)
+		log.Trace("%s does not exist\n", cf.Id)
 		return false, err
 	}
-	log.Trace("%s exists\n", cf.Name)
+	log.Trace("%s exists\n", cf.Id)
 	return true, nil
 }
 

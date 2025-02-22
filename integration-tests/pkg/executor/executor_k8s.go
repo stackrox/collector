@@ -56,10 +56,10 @@ func (e *K8sExecutor) IsPodRunning(podName string) (bool, error) {
 	return pod.Status.ContainerStatuses[0].Ready, nil
 }
 
-func (e *K8sExecutor) PodContainerID(podFilter ContainerFilter) string {
-	pod, err := e.ClientSet().CoreV1().Pods(podFilter.Namespace).Get(context.Background(), podFilter.Name, metaV1.GetOptions{})
+func (e *K8sExecutor) PodContainerID(podFilter ContainerFilter) ContainerID {
+	pod, err := e.ClientSet().CoreV1().Pods(podFilter.Namespace).Get(context.Background(), podFilter.Id.Long(), metaV1.GetOptions{})
 	if err != nil {
-		log.Error("namespace: %s pod: %s error: %s\n", podFilter.Namespace, podFilter.Name, err)
+		log.Error("namespace: %s pod: %s error: %s\n", podFilter.Namespace, podFilter.Id.Long(), err)
 		return ""
 	}
 
@@ -71,23 +71,23 @@ func (e *K8sExecutor) PodContainerID(podFilter ContainerFilter) string {
 	 * The format extracted from the following line looks something like this:
 	 *    containerd://01e8c0454972a6b22b2e8ff7bf5a7d011e7dc7c0cde95c468a823b7085669a36
 	 */
-	containerID := pod.Status.ContainerStatuses[0].ContainerID
-	if len(containerID) < 12 {
-		log.Error("Invalid container ID: %q", containerID)
+	id := pod.Status.ContainerStatuses[0].ContainerID
+	if len(id) < 12 {
+		log.Error("Invalid container ID: %q", id)
 		return ""
 	}
 
-	i := strings.LastIndex(containerID, "/")
+	i := strings.LastIndex(id, "/")
 	if i == -1 {
-		log.Error("Invalid container ID: %q", containerID)
+		log.Error("Invalid container ID: %q", id)
 		return ""
 	}
 
-	return common.ContainerShortID(containerID[i+1:])
+	return ContainerID(id)
 }
 
 func (e *K8sExecutor) PodExists(podFilter ContainerFilter) (bool, error) {
-	pod, err := e.clientset.CoreV1().Pods(podFilter.Namespace).Get(context.Background(), podFilter.Name, metaV1.GetOptions{})
+	pod, err := e.clientset.CoreV1().Pods(podFilter.Namespace).Get(context.Background(), podFilter.Id.Long(), metaV1.GetOptions{})
 	if err != nil {
 		return false, err
 	}
@@ -96,7 +96,7 @@ func (e *K8sExecutor) PodExists(podFilter ContainerFilter) (bool, error) {
 }
 
 func (e *K8sExecutor) ExitCode(podFilter ContainerFilter) (int, error) {
-	pod, err := e.clientset.CoreV1().Pods(podFilter.Namespace).Get(context.Background(), podFilter.Name, metaV1.GetOptions{})
+	pod, err := e.clientset.CoreV1().Pods(podFilter.Namespace).Get(context.Background(), podFilter.Id.Long(), metaV1.GetOptions{})
 	if err != nil {
 		return -1, err
 	}
@@ -114,13 +114,13 @@ func (e *K8sExecutor) ExitCode(podFilter ContainerFilter) (int, error) {
 }
 
 func (e *K8sExecutor) RemovePod(podFilter ContainerFilter) (string, error) {
-	err := e.clientset.CoreV1().Pods(podFilter.Namespace).Delete(context.Background(), podFilter.Name, metaV1.DeleteOptions{})
+	err := e.clientset.CoreV1().Pods(podFilter.Namespace).Delete(context.Background(), podFilter.Id.Long(), metaV1.DeleteOptions{})
 	return "", err
 }
 
 func (e *K8sExecutor) WaitPodRemoved(podFilter ContainerFilter) error {
 	ctx := context.Background()
-	opts := metaV1.ListOptions{LabelSelector: "app=" + podFilter.Name}
+	opts := metaV1.ListOptions{LabelSelector: "app=" + podFilter.Id.Long()}
 	w, err := e.clientset.CoreV1().Pods(podFilter.Namespace).Watch(ctx, opts)
 	if err != nil {
 		return err

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/executor"
 )
 
 type AsyncConnectionTestSuite struct {
@@ -18,8 +19,8 @@ type AsyncConnectionTestSuite struct {
 	BlockConnection                 bool
 	ExpectToSeeTheConnection        bool
 
-	clientContainer string
-	serverContainer string
+	clientContainer executor.ContainerID
+	serverContainer executor.ContainerID
 	serverIP        string
 }
 
@@ -53,7 +54,7 @@ func (s *AsyncConnectionTestSuite) SetupSuite() {
 
 	containerID, err := s.Executor().StartContainer(config.ContainerStartConfig{Name: "server", Image: image_store.ImageByKey("nginx")})
 	s.Require().NoError(err)
-	s.serverContainer = common.ContainerShortID(containerID)
+	s.serverContainer = containerID
 
 	s.serverIP, err = s.getIPAddress("server")
 	s.Require().NoError(err)
@@ -73,7 +74,7 @@ func (s *AsyncConnectionTestSuite) SetupSuite() {
 			Command: []string{"curl", "--connect-timeout", "5", fmt.Sprintf("http://%s/", target)},
 		})
 	s.Require().NoError(err)
-	s.clientContainer = common.ContainerShortID(containerID)
+	s.clientContainer = containerID
 
 	common.Sleep(10 * time.Second) // give some time to the connection to fail
 }

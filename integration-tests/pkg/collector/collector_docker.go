@@ -8,7 +8,6 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
 )
@@ -22,7 +21,7 @@ type DockerCollectorManager struct {
 	testName      string
 
 	CollectorOutput string
-	containerID     string
+	containerID     executor.ContainerID
 }
 
 func NewDockerCollectorManager(e executor.Executor, name string) *DockerCollectorManager {
@@ -91,7 +90,7 @@ func (c *DockerCollectorManager) TearDown() error {
 
 		// Check if collector container segfaulted or exited with error
 		exitCode, err := c.executor.ExitCode(executor.ContainerFilter{
-			Name: "collector",
+			Id: executor.ContainerID("collector"),
 		})
 		if err != nil || exitCode != 0 {
 			logsEnd := ""
@@ -145,24 +144,22 @@ func (c *DockerCollectorManager) launchCollector() error {
 	if err != nil {
 		return err
 	}
-	output, err := c.executor.StartContainer(startConfig)
-	c.CollectorOutput = output
+	id, err := c.executor.StartContainer(startConfig)
 	if err != nil {
 		return err
 	}
-	outLines := strings.Split(output, "\n")
-	c.containerID = common.ContainerShortID(string(outLines[len(outLines)-1]))
-	return err
+	c.containerID = id
+	return nil
 }
 
 func (c *DockerCollectorManager) captureLogs(containerName string) (string, error) {
-	return c.executor.CaptureLogs(c.testName, containerName)
+	return c.executor.CaptureLogs(c.testName, executor.ContainerID(containerName))
 }
 
 func (c *DockerCollectorManager) killContainer(name string) error {
-	_, err1 := c.executor.KillContainer(name)
+	_, err1 := c.executor.KillContainer(executor.ContainerID(name))
 	_, err2 := c.executor.RemoveContainer(executor.ContainerFilter{
-		Name: name,
+		Id: executor.ContainerID(name),
 	})
 
 	var result error
@@ -177,11 +174,11 @@ func (c *DockerCollectorManager) killContainer(name string) error {
 }
 
 func (c *DockerCollectorManager) stopContainer(name string) error {
-	_, err := c.executor.StopContainer(name)
+	_, err := c.executor.StopContainer(executor.ContainerID(name))
 	return err
 }
 
-func (c *DockerCollectorManager) ContainerID() string {
+func (c *DockerCollectorManager) ContainerID() executor.ContainerID {
 	return c.containerID
 }
 
