@@ -14,17 +14,19 @@ list-inventory:
 	ansible-inventory -i $(CONTEXT) --list
 
 .PHONY: create-vms
-create-vms:
+create-vms: secrets.yml
 	ansible-playbook -i $(CONTEXT) \
 		--tags setup,provision \
 		-e job_id="$(JOB_ID)" \
+		-e @secrets.yml \
 		vm-lifecycle.yml
 
 .PHONY: provision-vms
-provision-vms:
+provision-vms: secrets.yml
 	ansible-playbook -i $(CONTEXT) \
 		--tags provision \
 		-e job_id="$(JOB_ID)" \
+		-e @secrets.yml \
 		vm-lifecycle.yml
 
 .PHONY: destroy-vms
@@ -63,9 +65,10 @@ create-benchmark-vms:
 		benchmarks.yml
 
 .PHONY: create-ci-vms
-create-ci-vms:
+create-ci-vms: secrets.yml
 	ansible-playbook -i $(CONTEXT) \
 		-e job_id="$(JOB_ID)" \
+		-e @secrets.yml \
 		--tags setup,provision \
 		integration-tests.yml
 

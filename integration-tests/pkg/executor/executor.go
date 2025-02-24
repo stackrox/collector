@@ -30,12 +30,18 @@ func (l *ContainerLogs) GetSingleLog() string {
 	return l.Stdout
 }
 
+type ExecOptions struct {
+	ContainerName string
+	Command       []string
+	Detach        bool
+}
+
 type Executor interface {
 	PullImage(image string) error
 	IsContainerRunning(container string) (bool, error)
 	ContainerExists(filter ContainerFilter) (bool, error)
 	ExitCode(filter ContainerFilter) (int, error)
-	ExecContainer(containerName string, command []string) (string, error)
+	ExecContainer(opts *ExecOptions) (string, error)
 	KillContainer(name string) (string, error)
 	RemoveContainer(filter ContainerFilter) (string, error)
 	StopContainer(name string) (string, error)
@@ -53,5 +59,9 @@ type CommandBuilder interface {
 }
 
 func New() (Executor, error) {
-	return newDockerAPIExecutor()
+	command := config.RuntimeInfo().Command
+	if command == "docker" || command == "podman" {
+		return newDockerAPIExecutor()
+	}
+	return newCriExecutor()
 }

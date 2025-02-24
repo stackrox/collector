@@ -1,0 +1,132 @@
+---
+- name: Download crictl
+  ansible.builtin.get_url:
+    dest: /root
+    url: https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.32.0/crictl-v1.32.0-linux-amd64.tar.gz
+    checksum: sha256:https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.32.0/crictl-v1.32.0-linux-amd64.tar.gz.sha256
+    mode: '0644'
+
+- name: Unarchive crictl
+  ansible.builtin.unarchive:
+    src: /root/crictl-v1.32.0-linux-amd64.tar.gz
+    dest: /root
+    remote_src: true
+
+- name: Download CNI plugins
+  ansible.builtin.get_url:
+    dest: /root
+    url: https://github.com/containernetworking/plugins/releases/download/v1.6.2/cni-plugins-linux-amd64-v1.6.2.tgz
+    checksum: sha256:https://github.com/containernetworking/plugins/releases/download/v1.6.2/cni-plugins-linux-amd64-v1.6.2.tgz.sha256
+    mode: '0644'
+
+- name: Create /opt/cni/bin
+  ansible.builtin.file:
+    path: /opt/cni/bin
+    owner: root
+    group: root
+    state: directory
+    mode: '0755'
+
+- name: Unarchive CNI plugins
+  ansible.builtin.unarchive:
+    src: /root/cni-plugins-linux-amd64-v1.6.2.tgz
+    dest: /opt/cni/bin
+    remote_src: true
+
+- name: Create /etc/crictl.yaml
+  ansible.builtin.copy:
+    content: |
+      runtime-endpoint: unix:///run/containerd/containerd.sock
+      image-endpoint: unix:///run/containerd/containerd.sock
+      timeout: 2
+      debug: false
+      pull-image-on-create: false
+    dest: /etc/crictl.yaml
+    mode: '0644'
+
+- name: Create /etc/cni/net.d
+  ansible.builtin.file:
+    path: /etc/cni/net.d
+    owner: root
+    group: root
+    state: directory
+    mode: '0755'
+
+- name: Create /etc/cni/net.d/10-containerd-net.conflist
+  ansible.builtin.copy:
+    content: |
+      {
+        "cniVersion": "1.0.0",
+        "name": "containerd-net",
+        "plugins": [
+          {
+            "type": "bridge",
+            "bridge": "cni0",
+            "isGateway": true,
+            "ipMasq": true,
+            "promiscMode": true,
+            "ipam": {
+              "type": "host-local",
+              "ranges": [
+                [{
+                  "subnet": "10.88.0.0/16"
+                }],
+                [{
+                  "subnet": "2001:4860:4860::/64"
+                }]
+              ],
+              "routes": [
+                { "dst": "0.0.0.0/0" },
+                { "dst": "::/0" }
+              ]
+            }
+          },
+          {
+            "type": "portmap",
+            "capabilities": {"portMappings": true}
+          }
+        ]
+      }
+    dest: /etc/cni/net.d/10-containerd-net.conflist
+    mode: '0644'
+
+- name: Create credentials file for containerd
+  ansible.builtin.copy:
+    content: |
+      # explicitly use v2 config format
+      version = 2
+
+      # The registry host has to be a domain name or IP. Port number is also
+      # needed if the default HTTPS or HTTP port is not used.
+      [plugins."io.containerd.grpc.v1.cri".registry.configs."quay.io".auth]
+        username = "{{ quay_username }}"
+        password = "{{ quay_password }}"
+    dest: /etc/containerd/config.toml
+    mode: '0644'
+
+- name: Create .docker directory
+  ansible.builtin.file:
+    path: "/root/.docker"
+    owner: root
+    group: root
+    state: directory
+    mode: '0755'
+
+- name: Create .docker/config.json file
+  ansible.builtin.copy:
+    content: |
+      {
+        "auths": {
+          "quay.io": {
+          "auth": "{{ (quay_username + ':' + quay_password) | b64encode }}"
+          }
+        }
+      }
+    dest: /root/.docker/config.json
+    mode: '0644'
+
+- name: Start the containerd service
+  ansible.builtin.systemd_service:
+    name: containerd
+    state: started
+    enabled: true

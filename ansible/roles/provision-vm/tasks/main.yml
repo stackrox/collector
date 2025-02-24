@@ -17,6 +17,7 @@
     is_ubuntu: "{{ vm_config.find('ubuntu') != -1 }}"
     is_flatcar: "{{ vm_config.find('flatcar') != -1 }}"
     is_sles: "{{ vm_config.find('sles') != -1 }}"
+    is_garden: "{{ vm_config.find('garden') != -1 }}"
 
 # Wait for SSH to be available on the remote host
 # This is agnostic of whether or not ansible is available at that end.
@@ -53,6 +54,10 @@
 - name: SLES Provisioning
   include_tasks: sles.yml
   when: is_sles|bool
+
+- name: Garden Provisioning
+  include_tasks: garden.yml
+  when: is_garden|bool
 
 - name: Docker specific setup
   include_tasks: "docker.yml"

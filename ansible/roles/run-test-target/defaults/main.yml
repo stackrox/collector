@@ -1,0 +1,3 @@
+---
+runtime_command: docker
+runtime_socket: /var/run/docker.sock

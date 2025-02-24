@@ -2,6 +2,7 @@ package suites
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"sort"
 	"time"
@@ -38,21 +39,23 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 
 	processImage := getProcessListeningOnPortsImage()
 
+	serverName := "process-ports"
 	err := s.executor.PullImage(processImage)
 	s.Require().NoError(err)
 	containerID, err := s.Executor().StartContainer(
 		config.ContainerStartConfig{
-			Name:  "process-ports",
+			Name:  serverName,
 			Image: processImage,
+			Ports: []uint16{5000},
 		})
 	s.Require().NoError(err)
 
 	s.serverContainer = common.ContainerShortID(containerID)
 
-	ip, err := s.getIPAddress(s.serverContainer)
+	ip, err := s.getIPAddress(serverName)
 	s.Require().NoError(err)
 
-	port, err := s.getPort(s.serverContainer)
+	port, err := s.getPort(serverName)
 	s.Require().NoError(err)
 
 	s.serverURL = fmt.Sprintf("http://%s:%s", ip, port)
@@ -147,11 +150,25 @@ func getProcessListeningOnPortsImage() string {
 func (s *ProcessListeningOnPortTestSuite) openPort(port uint16) {
 	res, err := http.Get(fmt.Sprintf("%s/open/%d", s.serverURL, port))
 	s.Require().NoError(err)
-	s.Require().True(res.StatusCode == 200)
+	s.assertResponse(res, "openPort")
 }
 
 func (s *ProcessListeningOnPortTestSuite) closePort(port uint16) {
 	res, err := http.Get(fmt.Sprintf("%s/close/%d", s.serverURL, port))
 	s.Require().NoError(err)
-	s.Require().True(res.StatusCode == 200)
+	s.assertResponse(res, "closePort")
+}
+
+func (s *ProcessListeningOnPortTestSuite) assertResponse(resp *http.Response, caller string) {
+	if resp.StatusCode == 200 {
+		return
+	}
+
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	s.Require().NoError(err)
+
+	msg := fmt.Sprintf("%s failed", caller)
+	s.Require().FailNowf(msg, "%q", string(body))
 }
