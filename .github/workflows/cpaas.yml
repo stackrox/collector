@@ -64,6 +64,7 @@ jobs:
           - amd64
           - s390x
           - ppc64le
+          - arm64
     steps:
       - uses: actions/checkout@v4
 
@@ -75,12 +76,12 @@ jobs:
 
       - name: Pull downstream slim collector
         run: |
-          docker pull --platform linux/${{ matrix.arch }} brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
+          docker pull --platform linux/${{ matrix.arch }} brew.registry.redhat.io/rh-osbs/rhacs-collector-rhel8:0.1.0
 
-      - name: Retag and push stackrox-io -amd64-slim
+      - name: Retag and push stackrox-io
         uses: stackrox/actions/images/retag-and-push@v1
         with:
-          src-image: brew.registry.redhat.io/rh-osbs/rhacs-collector-slim-rhel8:0.1.0
+          src-image: brew.registry.redhat.io/rh-osbs/rhacs-collector-rhel8:0.1.0
           dst-image: ${{ needs.init.outputs.collector-image }}-cpaas-${{ matrix.arch }}
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
@@ -89,7 +90,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       COLLECTOR_TAG: ${{ needs.init.outputs.collector-tag }}-cpaas
-      ARCHS: amd64 ppc64le s390x
+      ARCHS: amd64 ppc64le s390x arm64
     needs:
       - init
       - build-collector
@@ -134,6 +135,7 @@ jobs:
           - rhel-sap
           - rhel-s390x
           - rhel-ppc64le
+          - rhel-arm64
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ needs.init.outputs.collector-tag }}-cpaas

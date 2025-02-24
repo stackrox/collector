@@ -1,0 +1,26 @@
+name: Run unit tests
+description: |
+  Configure, compile and run the collector unit tests.
+
+inputs:
+  cmake-flags:
+    description:
+      Additional CMake flags to use for configuration
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      name: Build collector
+      run: |
+        cmake -S . -B cmake-build ${{ inputs.cmake-flags }}
+        cmake --build cmake-build "-j$(nproc)"
+
+    - shell: bash
+      name: Run unit tests
+      run: |
+        ctest -V \
+          --no-tests=error \
+          --output-junit /tmp/junit.xml \
+          --test-dir cmake-build
+
