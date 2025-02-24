@@ -1,0 +1,3 @@
+---
+runtime_command: cri
+runtime_socket: /run/containerd/containerd.sock
