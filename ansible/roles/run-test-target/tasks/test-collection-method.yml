@@ -101,6 +101,8 @@
       COLLECTOR_IMAGE: "{{ collector_image }}"
       COLLECTOR_QA_TAG: "{{ lookup('env', 'COLLECTOR_QA_TAG', default=lookup('file', integration_tests_root + '/container/QA_TAG')) }}"
       COLLECTOR_LOG_LEVEL: "{{ lookup('env', 'COLLECTOR_LOG_LEVEL', default='debug') }}"
+      RUNTIME_COMMAND: "{{ runtime_command }}"
+      RUNTIME_SOCKET: "{{ runtime_socket }}"
     register: test_result
     # ensure that this is printed
     tags: [print_action]

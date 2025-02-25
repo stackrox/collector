@@ -53,5 +53,8 @@ type CommandBuilder interface {
 }
 
 func New() (Executor, error) {
+	if config.RuntimeInfo().Command == "cri" {
+		return newCriExecutor()
+	}
 	return newDockerAPIExecutor()
 }
