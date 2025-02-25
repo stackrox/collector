@@ -105,7 +105,7 @@ start-builder: builder teardown-builder
 		--name $(COLLECTOR_BUILDER_NAME) \
 		--pull never \
 		--platform ${PLATFORM} \
-		-v $(CURDIR):$(CURDIR) \
+		-v $(CURDIR):$(CURDIR):Z \
 		$(if $(LOCAL_SSH_PORT),-p $(LOCAL_SSH_PORT):22 )\
 		-w $(CURDIR) \
 		--cap-add sys_ptrace \
