@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	CollectionMethodEBPF    = "ebpf"
-	CollectionMethodCoreBPF = "core-bpf"
+	CollectionMethodEBPF       = "ebpf"
+	CollectionMethodCoreBPF    = "core-bpf"
+	CollectionMethodProcfsOnly = "procfs_only"
 
 	runtimeDefaultCommand     = "docker"
 	runtimeDefaultSocket      = "/var/run/docker.sock"
@@ -27,8 +28,9 @@ const (
 
 var (
 	qa_tag            = ReadEnvVar(envQATag)
-	collection_method = ReadEnvVarWithDefault(envCollectionMethod, CollectionMethodCoreBPF)
-	stop_timeout      = ReadEnvVarWithDefault(envStopTimeout, defaultStopTimeoutSeconds)
+	collection_method = ReadEnvVarWithDefault(envCollectionMethod, CollectionMethodProcfsOnly)
+	//collection_method = ReadEnvVarWithDefault(envCollectionMethod, CollectionMethodCoreBPF)
+	stop_timeout = ReadEnvVarWithDefault(envStopTimeout, defaultStopTimeoutSeconds)
 
 	image_store       *ImageStore
 	collector_options *CollectorOptions
