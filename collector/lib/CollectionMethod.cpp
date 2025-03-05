@@ -18,6 +18,8 @@ const char* CollectionMethodName(CollectionMethod method) {
       return "ebpf";
     case CollectionMethod::CORE_BPF:
       return "core_bpf";
+    case CollectionMethod::PROCFS_ONLY:
+      return "procfs_only";
     default:
       CLOG(WARNING) << "Unexpected CollectionMethod: " << static_cast<uint8_t>(method);
       return "unknown";
@@ -36,6 +38,10 @@ CollectionMethod ParseCollectionMethod(std::string_view method) {
 
   if (cm == "core_bpf") {
     return CollectionMethod::CORE_BPF;
+  }
+
+  if (cm == "procfs_only") {
+    return CollectionMethod::PROCFS_ONLY;
   }
 
   CLOG(WARNING) << "Invalid collection-method (" << cm << "), using CO-RE BPF";

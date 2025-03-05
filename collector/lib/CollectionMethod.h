@@ -9,6 +9,7 @@ namespace collector {
 enum class CollectionMethod : uint8_t {
   EBPF = 0,
   CORE_BPF,
+  PROCFS_ONLY,
 };
 
 std::ostream& operator<<(std::ostream& os, CollectionMethod method);
