@@ -29,7 +29,7 @@ ifneq ($(BUILD_BUILDER_IMAGE), false)
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
 		"$(CURDIR)/builder"
-else
+else ifeq ($(COLLECTOR_BUILDER_DEBUG),)
 	docker pull --platform ${PLATFORM} \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
 endif
