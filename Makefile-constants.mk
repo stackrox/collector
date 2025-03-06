@@ -2,6 +2,10 @@ ifeq ($(COLLECTOR_BUILDER_TAG),)
 COLLECTOR_BUILDER_TAG=master
 endif
 
+ifneq ($(COLLECTOR_BUILDER_DEBUG),)
+COLLECTOR_BUILDER_TAG:=$(COLLECTOR_BUILDER_TAG)-debug
+endif
+
 ifeq ($(COLLECTOR_TAG),)
 COLLECTOR_TAG=$(shell git describe --tags --abbrev=10 --dirty)
 endif

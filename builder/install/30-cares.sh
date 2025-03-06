@@ -12,7 +12,7 @@ cp LICENSE.md "${LICENSE_DIR}/c-ares-${CARES_VERSION}"
 
 mkdir cmake-build
 cd cmake-build
-cmake -DCMAKE_BUILD_TYPE=Release \
+cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
     -DCARES_INSTALL=ON \
     -DCMAKE_INSTALL_PREFIX=/usr/local \
     -DCARES_SHARED=OFF \

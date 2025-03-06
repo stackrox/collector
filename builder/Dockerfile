@@ -1,6 +1,7 @@
 FROM quay.io/centos/centos:stream9
 
 ARG BUILD_DIR=/install-tmp
+ARG COLLECTOR_BUILDER_DEBUG
 
 USER root
 
@@ -53,9 +54,8 @@ WORKDIR ${BUILD_DIR}
 COPY install builder/install
 COPY third_party third_party
 
-RUN "builder/install/install-dependencies.sh" && \
-    rm -rf ${BUILD_DIR} && \
-    echo -e '/usr/local/lib\n/usr/local/lib64' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
+RUN "builder/install/install-dependencies.sh" && if [ -z "${COLLECTOR_BUILDER_DEBUG}" ]; then rm -rf ${BUILD_DIR}; fi
+RUN echo -e '/usr/local/lib\n/usr/local/lib64' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig
 
 # Set up ssh for remote development with IDE
 RUN ssh-keygen -A \
