@@ -1,22 +1,27 @@
 ---
+- name: Tool versions
+  ansible.builtin.set_fact:
+    crictl_version: v1.32.0
+    cni_plugins_version: v1.6.2
+
 - name: Download crictl
   ansible.builtin.get_url:
     dest: /root
-    url: https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.32.0/crictl-v1.32.0-linux-amd64.tar.gz
-    checksum: sha256:https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.32.0/crictl-v1.32.0-linux-amd64.tar.gz.sha256
+    url: https://github.com/kubernetes-sigs/cri-tools/releases/download/{{ crictl_version }}/crictl-{{ crictl_version }}-linux-amd64.tar.gz
+    checksum: sha256:https://github.com/kubernetes-sigs/cri-tools/releases/download/{{ crictl_version }}/crictl-{{ crictl_version }}-linux-amd64.tar.gz.sha256
     mode: '0644'
 
 - name: Unarchive crictl
   ansible.builtin.unarchive:
-    src: /root/crictl-v1.32.0-linux-amd64.tar.gz
+    src: /root/crictl-{{ crictl_version }}-linux-amd64.tar.gz
     dest: /root
     remote_src: true
 
 - name: Download CNI plugins
   ansible.builtin.get_url:
     dest: /root
-    url: https://github.com/containernetworking/plugins/releases/download/v1.6.2/cni-plugins-linux-amd64-v1.6.2.tgz
-    checksum: sha256:https://github.com/containernetworking/plugins/releases/download/v1.6.2/cni-plugins-linux-amd64-v1.6.2.tgz.sha256
+    url: https://github.com/containernetworking/plugins/releases/download/{{ cni_plugins_version }}/cni-plugins-linux-amd64-{{ cni_plugins_version }}.tgz
+    checksum: sha256:https://github.com/containernetworking/plugins/releases/download/{{ cni_plugins_version }}/cni-plugins-linux-amd64-{{ cni_plugins_version }}.tgz.sha256
     mode: '0644'
 
 - name: Create /opt/cni/bin
@@ -29,7 +34,7 @@
 
 - name: Unarchive CNI plugins
   ansible.builtin.unarchive:
-    src: /root/cni-plugins-linux-amd64-v1.6.2.tgz
+    src: /root/cni-plugins-linux-amd64-{{ cni_plugins_version }}.tgz
     dest: /opt/cni/bin
     remote_src: true
 
@@ -52,6 +57,8 @@
     state: directory
     mode: '0755'
 
+# Configuration for CNIs to be used by containerd taken from:
+# https://github.com/containerd/containerd/blob/7a0ad09a0d5edcd40555a998e0e065e6dda43acc/script/setup/install-cni
 - name: Create /etc/cni/net.d/10-containerd-net.conflist
   ansible.builtin.copy:
     content: |

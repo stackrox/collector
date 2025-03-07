@@ -167,7 +167,10 @@ func (s *ProcessListeningOnPortTestSuite) assertResponse(resp *http.Response, ca
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
-	s.Require().NoError(err)
+	if err != nil {
+		log.Error("Failed to read response body: %s", err)
+		body = []byte("<failed to read body>")
+	}
 
 	msg := fmt.Sprintf("%s failed", caller)
 	s.Require().FailNowf(msg, "%q", string(body))
