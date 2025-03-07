@@ -29,7 +29,7 @@ class ParserError {
   const std::string& What() const { return msg_; }
 
   template <typename T>
-  friend ParserError& operator<<(ParserError& e, const T msg) {
+  friend ParserError& operator<<(ParserError& e, const T& msg) {
     std::stringstream ss;
     ss << msg;
     e.msg_ += ss.str();
@@ -51,7 +51,14 @@ using ParserResult = std::optional<std::vector<ParserError>>;
 
 class ParserYaml {
  public:
-  ParserYaml(std::filesystem::path file, bool read_camelcase = true) : file_(std::move(file)), read_camelcase_(read_camelcase) {}
+  enum ValidationMode : uint8_t {
+    STRICT = 0,           ///< Fail on unknown or missing fields
+    PERMISSIVE,           ///< No failures for missing or unknown fields
+    UNKNOWN_FIELDS_ONLY,  ///< Fail on unknown fields, but allow missing fields
+  };
+
+  ParserYaml(std::filesystem::path file, bool read_camelcase = true, ValidationMode v = PERMISSIVE)
+      : file_(std::move(file)), read_camelcase_(read_camelcase), validation_mode_(v) {}
 
   /**
    * Populate a protobuf message from the configuration file assigned
@@ -81,10 +88,11 @@ class ParserYaml {
    * @param msg The protobuf message to be populated.
    * @param node A YAML::Node used to populate the message.
    * @param field The descriptor for the field being parsed.
+   * @param path A string showing the full path to the current field.
    * @returns an optional vector of parser errors.
    */
   ParserResult Parse(google::protobuf::Message* msg, const YAML::Node& node,
-                     const google::protobuf::FieldDescriptor* field);
+                     const google::protobuf::FieldDescriptor* field, const std::string& path);
 
   /**
    * Populate a repeated protobuf message from an array.
@@ -160,6 +168,7 @@ class ParserYaml {
 
   std::filesystem::path file_;
   bool read_camelcase_;
+  ValidationMode validation_mode_;
 };
 
 /**

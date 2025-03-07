@@ -36,6 +36,16 @@ std::string NodeTypeToString(YAML::NodeType::value type) {
   }
   return "";  // Unreachable
 }
+
+std::string ConcatPath(const std::string& path, const std::string& name) {
+  auto out = path;
+  if (!path.empty()) {
+    out += ".";
+  }
+  out += name;
+  return out;
+}
+
 };  // namespace
 
 namespace stdf = std::filesystem;
@@ -65,16 +75,19 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
   const Descriptor* descriptor = msg->GetDescriptor();
   for (int i = 0; i < descriptor->field_count(); i++) {
     const FieldDescriptor* field = descriptor->field(i);
+    std::string path;
 
-    auto err = Parse(msg, node, field);
+    auto err = Parse(msg, node, field, path);
     if (err) {
       errors.insert(errors.end(), err->begin(), err->end());
     }
   }
 
-  auto res = FindUnknownFields(*msg, node);
-  if (res) {
-    errors.insert(errors.end(), res->begin(), res->end());
+  if (validation_mode_ != PERMISSIVE) {
+    auto res = FindUnknownFields(*msg, node);
+    if (res) {
+      errors.insert(errors.end(), res->begin(), res->end());
+    }
   }
 
   if (!errors.empty()) {
@@ -186,7 +199,7 @@ ParserResult ParserYaml::FindUnknownFields(const google::protobuf::Message& msg,
 }
 
 ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node& node,
-                               const google::protobuf::FieldDescriptor* field) {
+                               const google::protobuf::FieldDescriptor* field, const std::string& path) {
   using namespace google::protobuf;
 
   std::string camel;
@@ -197,6 +210,11 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
   }
 
   if (!node[*name]) {
+    if (validation_mode_ == STRICT) {
+      ParserError err;
+      err << file_ << ": Missing field '" << ConcatPath(path, *name) << "'";
+      return {{err}};
+    }
     return {};
   }
 
@@ -231,7 +249,7 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
     for (int i = 0; i < descriptor->field_count(); i++) {
       const FieldDescriptor* f = descriptor->field(i);
 
-      auto err = Parse(m, node[*name], f);
+      auto err = Parse(m, node[*name], f, ConcatPath(path, *name));
       if (err) {
         errors.insert(errors.end(), err->begin(), err->end());
       }
@@ -426,8 +444,9 @@ std::variant<T, ParserError> ParserYaml::TryConvert(const YAML::Node& node) {
 }
 
 std::string ParserYaml::SnakeCaseToCamel(const std::string& s) {
-  std::string out;
   bool capitalize = false;
+  std::string out;
+  out.reserve(s.size());
 
   for (const auto& c : s) {
     if (c == '_') {
@@ -489,10 +508,8 @@ ConfigLoader::Result ConfigLoader::LoadConfiguration(const std::optional<const Y
   }
 
   if (errors) {
-    CLOG(ERROR) << "Failed to parse " << parser_.GetFile();
-    for (const auto& err : *errors) {
-      CLOG(ERROR) << err;
-    }
+    CLOG(ERROR) << "Failed to parse " << parser_.GetFile() << ":\n"
+                << *errors;
     return PARSE_ERROR;
   }
 

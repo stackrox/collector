@@ -20,6 +20,12 @@ std::string ErrorsToString(const std::vector<ParserError>& errors) {
   return ss.str();
 }
 
+constexpr std::array ValidationModeStr{
+    "STRICT",
+    "PERMISSIVE",
+    "UNKNOWN_FIELDS_ONLY",
+};
+
 /*
  * Generic yaml parser tests
  */
@@ -181,9 +187,6 @@ TEST(TestParserYaml, ParserErrors) {
       "\"/test.yml\": Invalid enum value 'NOT_REAL' for field fieldEnum",
       "\"/test.yml\": Invalid enum value 'NOT_REAL' for field fieldRepeatedEnum",
       "\"/test.yml\": Invalid enum value 'ALSO_INVALID' for field fieldRepeatedEnum",
-      "\"/test.yml\": Invalid type 'Map' for field fieldU32, expected 'uint32'",
-      "\"/test.yml\": Invalid type 'Map' for field fieldDouble, expected 'double'",
-      "\"/test.yml\": Invalid type 'Map' for field fieldFloat, expected 'float'",
   };
 
   auto errors = parser.Parse(&cfg, YAML::Load(input));
@@ -198,12 +201,106 @@ TEST(TestParserYaml, ParserErrors) {
   }
 }
 
-TEST(TestParserYaml, UnknownField) {
+TEST(TestParserYaml, ValidationMode) {
   test_config::Config cfg;
-  ParserYaml parser("/test.yml");
-  const ParserResult expected = {{"\"/test.yml\": Unknown field 'asdf'"}};
-  auto errors = parser.Parse(&cfg, YAML::Load("asdf: asdf"));
-  EXPECT_EQ(errors, expected);
+  struct test_case {
+    ParserYaml::ValidationMode mode;
+    std::string input;
+    ParserResult result;
+  };
+  std::vector<test_case> tests = {
+      {ParserYaml::STRICT,
+       R"(
+            asdf: asdf
+            field_message: {}
+        )",
+       {{
+           "\"/test.yml\": Missing field 'enabled'",
+           "\"/test.yml\": Missing field 'field_i32'",
+           "\"/test.yml\": Missing field 'field_u32'",
+           "\"/test.yml\": Missing field 'field_i64'",
+           "\"/test.yml\": Missing field 'field_u64'",
+           "\"/test.yml\": Missing field 'field_double'",
+           "\"/test.yml\": Missing field 'field_float'",
+           "\"/test.yml\": Missing field 'field_string'",
+           "\"/test.yml\": Missing field 'field_message.enabled'",
+           "\"/test.yml\": Missing field 'field_repeated'",
+           "\"/test.yml\": Missing field 'field_enum'",
+           "\"/test.yml\": Missing field 'field_repeated_enum'",
+           "\"/test.yml\": Unknown field 'asdf'",
+       }}},
+      {
+          ParserYaml::STRICT,
+          R"(
+            enabled: true
+            field_i32: -32
+            field_u32: 32
+            field_i64: -64
+            field_u64: 64
+            field_double: 3.14
+            field_float: 0.12345
+            field_string: Yes, this is some random string for testing
+            field_message:
+                enabled: true
+            field_repeated:
+                - 1
+                - 2
+                - 3
+            field_enum: TYPE2
+            field_repeated_enum:
+                - TYPE1
+                - TYPE2
+            asdf: asdf
+            )",
+          {{
+              "\"/test.yml\": Unknown field 'asdf'",
+          }},
+      },
+      {
+          ParserYaml::STRICT,
+          R"(
+            enabled: true
+            field_i32: -32
+            field_u32: 32
+            field_i64: -64
+            field_u64: 64
+            field_double: 3.14
+            field_float: 0.12345
+            field_string: Yes, this is some random string for testing
+            field_message:
+                enabled: true
+            field_repeated:
+                - 1
+                - 2
+                - 3
+            field_enum: TYPE2
+            field_repeated_enum:
+                - TYPE1
+                - TYPE2
+            )",
+          {},
+      },
+      {
+          ParserYaml::PERMISSIVE,
+          R"(asdf: asdf)",
+          {},
+      },
+      {
+          ParserYaml::UNKNOWN_FIELDS_ONLY,
+          R"(
+            asdf: asdf
+            field_message: {}
+        )",
+          {{"\"/test.yml\": Unknown field 'asdf'"}},
+      },
+  };
+
+  for (auto& [mode, input, expected] : tests) {
+    test_config::Config cfg;
+    ParserYaml parser("/test.yml", false, mode);
+    auto res = parser.Parse(&cfg, YAML::Load(input));
+    EXPECT_EQ(res, expected) << "Mode: " << ValidationModeStr.at(mode);
+  }
 }
 
 /*
@@ -215,7 +312,7 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
       {R"(
                   networking:
                     externalIps:
-                      enabled: ENABLED
+                      enabled: enabled
                )",
        true},
       {R"(
@@ -267,11 +364,11 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigInvalid) {
   for (const auto& yamlStr : tests) {
     YAML::Node yamlNode = YAML::Load(yamlStr);
     CollectorConfig config;
-    ASSERT_EQ(ConfigLoader(config).LoadConfiguration(yamlNode), ConfigLoader::PARSE_ERROR) << "Input: " << yamlStr;
+    ASSERT_EQ(ConfigLoader(config).LoadConfiguration(yamlNode), ConfigLoader::SUCCESS) << "Input: " << yamlStr;
 
     auto runtime_config = config.GetRuntimeConfig();
 
-    EXPECT_FALSE(runtime_config.has_value()) << "Input: " << yamlStr;
+    EXPECT_TRUE(runtime_config.has_value()) << "Input: " << yamlStr;
   }
 }
 
