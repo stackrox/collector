@@ -115,6 +115,8 @@ func (s *ProcessNetworkTestSuite) TestProcessViz() {
 	}
 
 	s.Sensor().ExpectProcesses(s.T(), s.serverContainer, 10*time.Second, expectedProcesses...)
+
+	s.Require().FailNow("Test failure")
 }
 
 func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {

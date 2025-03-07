@@ -104,7 +104,14 @@ jobs:
         if: |
            failure() && !inputs.run-benchmarks
         with:
-          paths: integration-tests/container-logs/**/integration-test-report-*.xml
+          paths: integration-tests/container-logs/**/integration-test-report-*.junit.xml
+
+      - uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() }}
+        with:
+          directory: integration-tests/container-logs
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: collector-integration-tests
 
       - name: Create Benchmark VMs
         if: inputs.run-benchmarks
