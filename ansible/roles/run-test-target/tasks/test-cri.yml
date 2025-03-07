@@ -1,6 +1,6 @@
 ---
 #
-# This will run the steps for integration testing on docker and podman.
+# This will run the steps for integration testing on CRI.
 # It also handles creating the report and writing necessary log files.
 #
 
@@ -16,7 +16,7 @@
   delegate_to: localhost
 
 - name: Remove old logs directory
-  file:
+  ansible.builtin.file:
     path: "{{ remote_log_mount }}"
     state: absent
   # don't error if the directory doesn't exist yet
@@ -24,8 +24,8 @@
   become: true
 
 - name: Set core dump path
-  become: yes
-  shell: |
+  become: true
+  ansible.builtin.shell: |
     echo '/tmp/core_dumps/core_%t' | sudo tee /proc/sys/kernel/core_pattern
     mkdir /tmp/core_dumps || true
 
@@ -118,8 +118,8 @@
         {{ runtime_command }} inspect {{ container_id.stdout }}
       register: test_status
       until: (test_status.stdout | from_json).status.state == "CONTAINER_EXITED"
-      retries: "{{ (120*60) }}"
-      delay: 1
+      retries: "{{ (120*6) }}"
+      delay: 10
       ignore_errors: true
 
     - name: Get tests log

@@ -96,6 +96,14 @@ func (c *criExecutor) ExecContainer(opts *ExecOptions) (string, error) {
 	}
 
 	if opts.Detach {
+		// Some commands run processes in the background by doing something
+		// like '/bin/sh -c "comm &". In docker and podman, the shell exits
+		// after detaching the background process and returns control to the
+		// tests. On the other hand, containerd waits for the background
+		// process to end and hangs the tests. Best thing I could figure out
+		// to work around this is to throw the command into a goroutine.
+		// Once the container being exec'ed into exits, this goroutine will
+		// finish with an error, which we promptly ignore.
 		go c.runtimeService.ExecSync(context.Background(), id, opts.Command, 1*time.Minute)
 		return "", nil
 	}
@@ -242,12 +250,10 @@ func (c *criExecutor) StartContainer(config config.ContainerStartConfig) (string
 
 		status := resp.GetStatus()
 		// Container is running or has successfully completed execution
-		switch {
-		case status.State == pb.ContainerState_CONTAINER_RUNNING:
-			fallthrough
-		case status.State == pb.ContainerState_CONTAINER_EXITED && status.ExitCode == 0:
+		if status.State == pb.ContainerState_CONTAINER_RUNNING ||
+			(status.State == pb.ContainerState_CONTAINER_EXITED && status.ExitCode == 0) {
 			return "", nil
-		default:
+		} else {
 			return "", fmt.Errorf("Container %s is not running", config.Name)
 		}
 	}, fmt.Errorf("Container %s didn't start in time", config.Name))
@@ -408,18 +414,12 @@ func (c *criExecutor) getStatus(container string) (*pb.ContainerStatus, error) {
 }
 
 func (c *criExecutor) getContainerId(name string) (string, error) {
-	containers, err := c.runtimeService.ListContainers(context.Background(), &pb.ContainerFilter{
-		LabelSelector: map[string]string{"app": name},
-	})
+	container, err := c.getContainer(name)
 	if err != nil {
 		return "", err
 	}
 
-	if len(containers) != 1 {
-		return "", log.Error("Meant to find a single container with label 'app=%s', got=%d", name, len(containers))
-	}
-
-	return common.ContainerShortID(containers[0].GetId()), nil
+	return common.ContainerShortID(container.GetId()), nil
 }
 
 func (c *criExecutor) getContainer(name string) (*pb.Container, error) {
@@ -430,7 +430,7 @@ func (c *criExecutor) getContainer(name string) (*pb.Container, error) {
 		return nil, err
 	}
 	if len(containers) != 1 {
-		return nil, log.Error("Failed to get container %q", name)
+		return nil, log.Error("Meant to find a single container with label 'app=%s', got=%d", name, len(containers))
 	}
 	return containers[0], nil
 }
