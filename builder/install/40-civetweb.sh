@@ -8,7 +8,7 @@ cp LICENSE.md "${LICENSE_DIR}/CivetWeb-${CIVETWEB_VERSION}"
 
 mkdir cmake-build
 cd cmake-build
-cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
+cmake -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}" \
     -DCMAKE_INSTALL_PREFIX=/usr/local \
     -DCIVETWEB_ENABLE_CXX=ON \
     -DBUILD_SHARED_LIBS:BOOL=NO \
