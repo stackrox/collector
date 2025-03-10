@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <string.h>
+#include <vector>
 
 #include "logger.h"
 
@@ -200,6 +201,16 @@ class LogMessage {
   template <typename T>
   LogMessage& operator<<(const T& arg) {
     buf_ << arg;
+    return *this;
+  }
+
+  template <typename T>
+  LogMessage& operator<<(const std::vector<T>& args) {
+    std::stringstream out;
+    for (const auto& arg : args) {
+      out << arg << '\n';
+    }
+    buf_ << out.str();
     return *this;
   }
 

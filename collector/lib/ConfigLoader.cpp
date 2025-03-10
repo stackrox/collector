@@ -1,5 +1,11 @@
 #include "ConfigLoader.h"
 
+#include <algorithm>
+
+#include <google/protobuf/descriptor.h>
+
+#include "internalapi/sensor/collector.pb.h"
+
 #include "EnvVar.h"
 #include "Logging.h"
 
@@ -8,114 +14,537 @@ namespace collector {
 namespace {
 const PathEnvVar CONFIG_FILE("ROX_COLLECTOR_CONFIG_PATH", "/etc/stackrox/runtime_config.yaml");
 
-enum PathTags {
+enum PathTags : uint8_t {
   LOADER_PARENT_PATH = 1,
   LOADER_CONFIG_FILE,
   LOADER_CONFIG_REALPATH,
 };
-}  // namespace
+
+std::string NodeTypeToString(YAML::NodeType::value type) {
+  // Don't add the default case so linters can warn about a missing type
+  switch (type) {
+    case YAML::NodeType::Null:
+      return "Null";
+    case YAML::NodeType::Undefined:
+      return "Undefined";
+    case YAML::NodeType::Scalar:
+      return "Scalar";
+    case YAML::NodeType::Sequence:
+      return "Sequence";
+    case YAML::NodeType::Map:
+      return "Map";
+  }
+  return "";  // Unreachable
+}
+
+std::string ConcatPath(const std::string& path, const std::string& name) {
+  auto out = path;
+  if (!path.empty()) {
+    out += ".";
+  }
+  out += name;
+  return out;
+}
+
+};  // namespace
 
 namespace stdf = std::filesystem;
 
+ParserResult ParserYaml::Parse(google::protobuf::Message* msg) {
+  YAML::Node node;
+  try {
+    node = YAML::LoadFile(file_);
+  } catch (const YAML::BadFile& e) {
+    return {{WrapError(e)}};
+  } catch (const YAML::ParserException& e) {
+    return {{WrapError(e)}};
+  }
+
+  return Parse(msg, node);
+}
+
+ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node& node) {
+  using namespace google::protobuf;
+
+  if (node.IsScalar() || node.IsNull()) {
+    return {{"Invalid configuration"}};
+  }
+
+  std::vector<ParserError> errors;
+
+  const Descriptor* descriptor = msg->GetDescriptor();
+  for (int i = 0; i < descriptor->field_count(); i++) {
+    const FieldDescriptor* field = descriptor->field(i);
+    std::string path;
+
+    auto err = Parse(msg, node, field, path);
+    if (err) {
+      errors.insert(errors.end(), err->begin(), err->end());
+    }
+  }
+
+  if (validation_mode_ != PERMISSIVE) {
+    auto res = FindUnknownFields(*msg, node);
+    if (res) {
+      errors.insert(errors.end(), res->begin(), res->end());
+    }
+  }
+
+  if (!errors.empty()) {
+    return errors;
+  }
+
+  return {};
+}
+
+template <typename T>
+ParserResult ParserYaml::ParseArrayInner(google::protobuf::Message* msg, const YAML::Node& node,
+                                         const google::protobuf::FieldDescriptor* field) {
+  std::vector<ParserError> errors;
+  auto f = msg->GetReflection()->GetMutableRepeatedFieldRef<T>(msg, field);
+  f.Clear();
+  for (const auto& n : node) {
+    auto value = TryConvert<T>(n);
+    if (!IsError(value)) {
+      f.Add(std::get<T>(value));
+    } else {
+      errors.emplace_back(std::get<ParserError>(value));
+    }
+  }
+
+  if (!errors.empty()) {
+    return errors;
+  }
+  return {};
+}
+
+ParserResult ParserYaml::ParseArrayEnum(google::protobuf::Message* msg, const YAML::Node& node,
+                                        const google::protobuf::FieldDescriptor* field) {
+  using namespace google::protobuf;
+
+  std::vector<ParserError> errors;
+  auto f = msg->GetReflection()->GetMutableRepeatedFieldRef<int32>(msg, field);
+  f.Clear();
+
+  const EnumDescriptor* desc = field->enum_type();
+  for (const auto& n : node) {
+    auto v = TryConvert<std::string>(n);
+    if (IsError(v)) {
+      errors.emplace_back(std::get<ParserError>(v));
+      continue;
+    }
+    auto enum_name = std::get<std::string>(v);
+    std::transform(enum_name.begin(), enum_name.end(), enum_name.begin(), [](char c) {
+      return std::toupper(c);
+    });
+
+    const EnumValueDescriptor* value = desc->FindValueByName(enum_name);
+    if (value == nullptr) {
+      ParserError err;
+      err << file_ << ": Invalid enum value '" << enum_name << "' for field " << (read_camelcase_ ? SnakeCaseToCamel(field->name()) : field->name());
+      errors.emplace_back(err);
+      continue;
+    }
+
+    f.Add(value->number());
+  }
+
+  if (!errors.empty()) {
+    return errors;
+  }
+  return {};
+}
+
+ParserResult ParserYaml::FindUnknownFields(const google::protobuf::Message& msg, const YAML::Node& node) {
+  using namespace google::protobuf;
+
+  const auto* descriptor = msg.GetDescriptor();
+  std::vector<ParserError> errors;
+
+  for (YAML::const_iterator it = node.begin(); it != node.end(); it++) {
+    auto name = it->first.as<std::string>();
+    if (read_camelcase_) {
+      name = CamelCaseToSnake(name);
+    }
+
+    const FieldDescriptor* field = descriptor->FindFieldByName(name);
+    if (field == nullptr) {
+      ParserError err;
+      err << file_ << ": Unknown field '" << name << "'";
+      errors.emplace_back(err);
+      continue;
+    }
+
+    if (it->second.IsMap()) {
+      if (field->type() != FieldDescriptor::TYPE_MESSAGE) {
+        ParserError err;
+        err << file_ << ": Invalid type '" << NodeTypeToString(it->second.Type()) << "' for field " << it->first.as<std::string_view>() << ", expected '" << field->type_name() << "'";
+        errors.emplace_back(err);
+        continue;
+      }
+
+      const auto* reflection = msg.GetReflection();
+      auto res = FindUnknownFields(reflection->GetMessage(msg, field), it->second);
+
+      if (res) {
+        errors.insert(errors.end(), res->begin(), res->end());
+      }
+    }
+  }
+
+  if (!errors.empty()) {
+    return errors;
+  }
+  return {};
+}
+
+ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node& node,
+                               const google::protobuf::FieldDescriptor* field, const std::string& path) {
+  using namespace google::protobuf;
+
+  std::string camel;
+  const std::string* name = &field->name();
+  if (read_camelcase_) {
+    camel = SnakeCaseToCamel(*name);
+    name = &camel;
+  }
+
+  if (!node[*name]) {
+    if (validation_mode_ == STRICT) {
+      ParserError err;
+      err << file_ << ": Missing field '" << ConcatPath(path, *name) << "'";
+      return {{err}};
+    }
+    return {};
+  }
+
+  if (field->label() == FieldDescriptor::LABEL_REPEATED) {
+    if (!node[*name].IsSequence()) {
+      ParserError err;
+      YAML::NodeType::value type = node[*name].Type();
+      err << file_ << ": Type mismatch for '" << *name << "' - expected Sequence, got "
+          << NodeTypeToString(type);
+      return {{err}};
+    }
+    return ParseArray(msg, node[*name], field);
+  }
+
+  if (field->type() == FieldDescriptor::TYPE_MESSAGE) {
+    if (node[*name].IsNull()) {
+      // Ignore empty objects
+      return {};
+    }
+
+    if (!node[*name].IsMap()) {
+      ParserError err;
+      YAML::NodeType::value type = node[*name].Type();
+      err << file_ << ": Type mismatch for '" << *name << "' - expected Map, got "
+          << NodeTypeToString(type);
+      return {{err}};
+    }
+
+    std::vector<ParserError> errors;
+    Message* m = msg->GetReflection()->MutableMessage(msg, field);
+    const Descriptor* descriptor = m->GetDescriptor();
+    for (int i = 0; i < descriptor->field_count(); i++) {
+      const FieldDescriptor* f = descriptor->field(i);
+
+      auto err = Parse(m, node[*name], f, ConcatPath(path, *name));
+      if (err) {
+        errors.insert(errors.end(), err->begin(), err->end());
+      }
+    }
+
+    if (!errors.empty()) {
+      return errors;
+    }
+    return {};
+  }
+
+  if (!node[*name].IsScalar()) {
+    ParserError err;
+    err << file_ << ": Attempting to parse non-scalar field as scalar";
+    return {{err}};
+  }
+
+  return ParseScalar(msg, node[*name], field, *name);
+}
+
+ParserResult ParserYaml::ParseScalar(google::protobuf::Message* msg, const YAML::Node& node, const google::protobuf::FieldDescriptor* field, const std::string& name) {
+  using namespace google::protobuf;
+
+  switch (field->type()) {
+    case FieldDescriptor::TYPE_DOUBLE: {
+      auto value = TryConvert<double>(node);
+      if (IsError(value)) {
+        return {{std::get<ParserError>(value)}};
+      }
+
+      msg->GetReflection()->SetDouble(msg, field, std::get<double>(value));
+    } break;
+    case FieldDescriptor::TYPE_FLOAT: {
+      auto value = TryConvert<float>(node);
+      if (IsError(value)) {
+        return {{std::get<ParserError>(value)}};
+      }
+
+      msg->GetReflection()->SetFloat(msg, field, std::get<float>(value));
+    } break;
+    case FieldDescriptor::TYPE_SFIXED64:
+    case FieldDescriptor::TYPE_INT64: {
+      auto value = TryConvert<int64_t>(node);
+      if (IsError(value)) {
+        return {{std::get<ParserError>(value)}};
+      }
+
+      msg->GetReflection()->SetInt64(msg, field, std::get<int64_t>(value));
+    } break;
+    case FieldDescriptor::TYPE_SINT64:
+    case FieldDescriptor::TYPE_FIXED64:
+    case FieldDescriptor::TYPE_UINT64: {
+      auto value = TryConvert<uint64_t>(node);
+      if (IsError(value)) {
+        return {{std::get<ParserError>(value)}};
+      }
+
+      msg->GetReflection()->SetUInt64(msg, field, std::get<uint64_t>(value));
+    } break;
+    case FieldDescriptor::TYPE_FIXED32:
+    case FieldDescriptor::TYPE_UINT32: {
+      auto value = TryConvert<uint32_t>(node);
+      if (IsError(value)) {
+        return {{std::get<ParserError>(value)}};
+      }
+
+      msg->GetReflection()->SetUInt32(msg, field, std::get<uint32_t>(value));
+    } break;
+    case FieldDescriptor::TYPE_SINT32:
+    case FieldDescriptor::TYPE_SFIXED32:
+    case FieldDescriptor::TYPE_INT32: {
+      auto value = TryConvert<int32_t>(node);
+      if (IsError(value)) {
+        return {{std::get<ParserError>(value)}};
+      }
+
+      msg->GetReflection()->SetInt32(msg, field, std::get<int32_t>(value));
+    } break;
+    case FieldDescriptor::TYPE_BOOL: {
+      auto value = TryConvert<bool>(node);
+      if (IsError(value)) {
+        return {{std::get<ParserError>(value)}};
+      }
+
+      msg->GetReflection()->SetBool(msg, field, std::get<bool>(value));
+
+    } break;
+    case FieldDescriptor::TYPE_STRING: {
+      auto value = TryConvert<std::string>(node);
+      if (IsError(value)) {
+        return {{std::get<ParserError>(value)}};
+      }
+
+      msg->GetReflection()->SetString(msg, field, std::get<std::string>(value));
+
+    } break;
+    case FieldDescriptor::TYPE_BYTES: {
+      ParserError err;
+      err << "Unexpected type BYTES";
+      return {{err}};
+    }
+    case FieldDescriptor::TYPE_ENUM: {
+      auto enum_name = node.as<std::string>();
+
+      // We assume enum definitions use UPPER_CASE nomenclature, so
+      std::transform(enum_name.begin(), enum_name.end(), enum_name.begin(), [](char c) {
+        return std::toupper(c);
+      });
+
+      const EnumDescriptor* descriptor = field->enum_type();
+      const EnumValueDescriptor* value = descriptor->FindValueByName(enum_name);
+      if (value == nullptr) {
+        ParserError err;
+        err << file_ << ": Invalid enum value '" << enum_name << "' for field " << name;
+        return {{err}};
+      }
+      msg->GetReflection()->SetEnumValue(msg, field, value->number());
+    } break;
+
+    case FieldDescriptor::TYPE_MESSAGE:
+    case FieldDescriptor::TYPE_GROUP: {
+      ParserError err;
+      err << "Unexpected type: " << field->type_name();
+      return {{err}};
+    }
+  }
+
+  return {};
+}
+
+ParserResult ParserYaml::ParseArray(google::protobuf::Message* msg, const YAML::Node& node,
+                                    const google::protobuf::FieldDescriptor* field) {
+  using namespace google::protobuf;
+
+  // mapping for repeated fields:
+  // https://protobuf.dev/reference/cpp/api-docs/google.protobuf.message/#Reflection.GetRepeatedFieldRef.details
+  switch (field->cpp_type()) {
+    case FieldDescriptor::CPPTYPE_INT32:
+      return ParseArrayInner<int32>(msg, node, field);
+
+    case FieldDescriptor::CPPTYPE_UINT32:
+      return ParseArrayInner<uint32_t>(msg, node, field);
+
+    case FieldDescriptor::CPPTYPE_INT64:
+      return ParseArrayInner<int64_t>(msg, node, field);
+
+    case FieldDescriptor::CPPTYPE_UINT64:
+      return ParseArrayInner<uint64_t>(msg, node, field);
+
+    case FieldDescriptor::CPPTYPE_DOUBLE:
+      return ParseArrayInner<double>(msg, node, field);
+
+    case FieldDescriptor::CPPTYPE_FLOAT:
+      return ParseArrayInner<float>(msg, node, field);
+
+    case FieldDescriptor::CPPTYPE_BOOL:
+      return ParseArrayInner<bool>(msg, node, field);
+
+    case FieldDescriptor::CPPTYPE_ENUM:
+      return ParseArrayEnum(msg, node, field);
+
+    case FieldDescriptor::CPPTYPE_STRING:
+      return ParseArrayInner<std::string>(msg, node, field);
+
+    case FieldDescriptor::CPPTYPE_MESSAGE: {
+      return {{"Unsupport repeated type MESSAGE"}};
+    } break;
+
+    default: {
+      ParserError err;
+      err << "Unknown type " << field->type_name();
+      return {{err}};
+    }
+  }
+}
+
+ParserError ParserYaml::WrapError(const std::exception& e) {
+  ParserError err;
+  err << file_ << ": " << e.what();
+  return err;
+}
+
+template <typename T>
+std::variant<T, ParserError> ParserYaml::TryConvert(const YAML::Node& node) {
+  try {
+    return node.as<T>();
+  } catch (YAML::InvalidNode& e) {
+    return WrapError(e);
+  } catch (YAML::BadConversion& e) {
+    return WrapError(e);
+  }
+}
+
+std::string ParserYaml::SnakeCaseToCamel(const std::string& s) {
+  bool capitalize = false;
+  std::string out;
+  out.reserve(s.size());
+
+  for (const auto& c : s) {
+    if (c == '_') {
+      capitalize = true;
+      continue;
+    }
+
+    if (capitalize) {
+      out += (char)std::toupper(c);
+    } else {
+      out += c;
+    }
+    capitalize = false;
+  }
+
+  return out;
+}
+
+std::string ParserYaml::CamelCaseToSnake(const std::string& s) {
+  std::string out;
+  bool first = true;
+
+  for (const auto& c : s) {
+    if (!first && std::isupper(c) != 0) {
+      out += '_';
+    }
+    out += (char)std::tolower(c);
+    first = false;
+  }
+
+  return out;
+}
+
 ConfigLoader::ConfigLoader(CollectorConfig& config)
-    : config_(config), file_(CONFIG_FILE.value()) {}
+    : config_(config), parser_(CONFIG_FILE.value()) {}
 
 void ConfigLoader::Start() {
   thread_.Start([this] { WatchFile(); });
-  CLOG(INFO) << "Watching configuration file: " << file_;
+  CLOG(INFO) << "Watching configuration file: " << parser_.GetFile().string();
 }
 
 void ConfigLoader::Stop() {
   thread_.Stop();
-  CLOG(INFO) << "No longer watching configuration file: " << file_;
+  CLOG(INFO) << "No longer watching configuration file: " << parser_.GetFile().string();
 }
 
-bool ConfigLoader::LoadConfiguration(CollectorConfig& config) {
-  const auto& config_file = CONFIG_FILE.value();
-  YAML::Node node;
+ConfigLoader::Result ConfigLoader::LoadConfiguration(const std::optional<const YAML::Node>& node) {
+  sensor::CollectorConfig runtime_config = NewRuntimeConfig();
+  ParserResult errors;
 
-  if (!stdf::exists(config_file)) {
-    CLOG(DEBUG) << "No configuration file found: " << config_file;
-    return true;
-  }
+  if (!node.has_value()) {
+    if (!stdf::exists(parser_.GetFile())) {
+      return FILE_NOT_FOUND;
+    }
+    errors = parser_.Parse(&runtime_config);
 
-  try {
-    node = YAML::LoadFile(config_file);
-  } catch (const YAML::BadFile& e) {
-    CLOG(ERROR) << "Failed to open the configuration file: " << config_file << ". Error: " << e.what();
-    return false;
-  } catch (const YAML::ParserException& e) {
-    CLOG(ERROR) << "Failed to parse the configuration file: " << config_file << ". Error: " << e.what();
-    return false;
-  }
-
-  return LoadConfiguration(config, node);
-}
-
-bool ConfigLoader::LoadConfiguration(CollectorConfig& config, const YAML::Node& node) {
-  const auto& config_file = CONFIG_FILE.value();
-
-  if (node.IsNull() || !node.IsDefined() || !node.IsMap()) {
-    CLOG(ERROR) << "Unable to read config from " << config_file;
-    return false;
-  }
-
-  YAML::Node networking_node = node["networking"];
-  if (!networking_node || networking_node.IsNull()) {
-    CLOG(DEBUG) << "No networking in " << config_file;
-    return true;
-  }
-
-  YAML::Node external_ips_node = networking_node["externalIps"];
-  if (!external_ips_node) {
-    CLOG(DEBUG) << "No external IPs in " << config_file;
-    return true;
-  }
-
-  sensor::ExternalIpsEnabled enable_external_ips;
-  std::string enabled_value = external_ips_node["enabled"] ? external_ips_node["enabled"].as<std::string>() : "";
-  std::transform(enabled_value.begin(), enabled_value.end(), enabled_value.begin(), ::tolower);
-
-  if (enabled_value == "enabled") {
-    enable_external_ips = sensor::ExternalIpsEnabled::ENABLED;
-  } else if (enabled_value == "disabled") {
-    enable_external_ips = sensor::ExternalIpsEnabled::DISABLED;
   } else {
-    CLOG(WARNING) << "Unknown value for for networking.externalIps.enabled. Setting it to DISABLED";
-    enable_external_ips = sensor::ExternalIpsEnabled::DISABLED;
+    errors = parser_.Parse(&runtime_config, *node);
   }
-  int64_t max_connections_per_minute = networking_node["maxConnectionsPerMinute"].as<int64_t>(CollectorConfig::kMaxConnectionsPerMinute);
 
-  sensor::CollectorConfig runtime_config;
-  auto* networking = runtime_config.mutable_networking();
-  networking
-      ->mutable_external_ips()
-      ->set_enabled(enable_external_ips);
-  networking
-      ->set_max_connections_per_minute(max_connections_per_minute);
+  if (errors) {
+    CLOG(ERROR) << "Failed to parse " << parser_.GetFile() << ":\n"
+                << *errors;
+    return PARSE_ERROR;
+  }
 
-  config.SetRuntimeConfig(std::move(runtime_config));
-
+  config_.SetRuntimeConfig(std::move(runtime_config));
   CLOG(INFO) << "Runtime configuration:\n"
-             << config.GetRuntimeConfigStr();
-  return true;
+             << config_.GetRuntimeConfigStr();
+  return SUCCESS;
+}
+
+sensor::CollectorConfig ConfigLoader::NewRuntimeConfig() {
+  sensor::CollectorConfig runtime_config;
+
+  // Set default values that are different from the protobuf defaults
+  runtime_config.mutable_networking()->set_max_connections_per_minute(CollectorConfig::kMaxConnectionsPerMinute);
+
+  return runtime_config;
 }
 
 void ConfigLoader::WatchFile() {
+  const auto& file = parser_.GetFile();
+
   if (!inotify_.IsValid()) {
-    CLOG(ERROR) << "Configuration reloading will not be used for " << file_;
+    CLOG(ERROR) << "Configuration reloading will not be used for " << file;
     return;
   }
 
-  if (inotify_.AddDirectoryWatcher(file_.parent_path(), LOADER_PARENT_PATH) < 0) {
+  if (inotify_.AddDirectoryWatcher(file.parent_path(), LOADER_PARENT_PATH) < 0) {
     return;
   }
 
-  if (stdf::exists(file_)) {
-    inotify_.AddFileWatcher(file_, LOADER_CONFIG_FILE);
+  if (stdf::exists(file)) {
+    inotify_.AddFileWatcher(file, LOADER_CONFIG_FILE);
 
-    if (stdf::is_symlink(file_)) {
-      inotify_.AddFileWatcher(stdf::canonical(file_), LOADER_CONFIG_REALPATH);
+    if (stdf::is_symlink(file)) {
+      inotify_.AddFileWatcher(stdf::canonical(file), LOADER_CONFIG_REALPATH);
     }
 
     // Reload configuration in case it has changed since startup
@@ -170,25 +599,27 @@ bool ConfigLoader::HandleEvent(const struct inotify_event* event) {
 }
 
 bool ConfigLoader::HandleConfigDirectoryEvent(const struct inotify_event* event) {
-  CLOG(DEBUG) << "Got directory event for " << file_.parent_path() / event->name << " - mask: [ " << Inotify::MaskToString(event->mask) << " ]";
+  const auto& file = parser_.GetFile();
+
+  CLOG(DEBUG) << "Got directory event for " << file.parent_path() / event->name << " - mask: [ " << Inotify::MaskToString(event->mask) << " ]";
 
   if ((event->mask & (IN_MOVE_SELF | IN_DELETE_SELF)) != 0) {
     CLOG(ERROR) << "Configuration directory was removed or renamed. Stopping runtime configuration";
     return false;
   }
 
-  if (file_.filename() != event->name) {
+  if (file.filename() != event->name) {
     return true;
   }
 
   if ((event->mask & (IN_CREATE | IN_MOVED_TO)) != 0) {
-    inotify_.AddFileWatcher(file_, LOADER_CONFIG_FILE);
+    inotify_.AddFileWatcher(file, LOADER_CONFIG_FILE);
     LoadConfiguration();
-    if (stdf::is_symlink(file_)) {
-      inotify_.AddFileWatcher(stdf::canonical(file_), LOADER_CONFIG_REALPATH);
+    if (stdf::is_symlink(file)) {
+      inotify_.AddFileWatcher(stdf::canonical(file), LOADER_CONFIG_REALPATH);
     }
   } else if ((event->mask & (IN_DELETE | IN_MOVED_FROM)) != 0) {
-    auto w = inotify_.FindWatcher(file_);
+    auto w = inotify_.FindWatcher(file);
     inotify_.RemoveWatcher(w);
     config_.ResetRuntimeConfig();
   }
@@ -227,11 +658,12 @@ void ConfigLoader::HandleConfigRealpathEvent(const struct inotify_event* event, 
   if ((event->mask & IN_MODIFY) != 0) {
     LoadConfiguration();
   } else if ((event->mask & (IN_DELETE_SELF | IN_MOVE_SELF)) != 0) {
+    const auto& file = parser_.GetFile();
     // If the original file was a symlink pointing to this file and
     // it still exists, we need to add a new watcher to the newly
     // pointed configuration file and reload the configuration.
-    if (stdf::is_symlink(file_)) {
-      inotify_.AddFileWatcher(stdf::canonical(file_), LOADER_CONFIG_REALPATH);
+    if (stdf::is_symlink(file)) {
+      inotify_.AddFileWatcher(stdf::canonical(file), LOADER_CONFIG_REALPATH);
       LoadConfiguration();
     } else {
       inotify_.RemoveWatcher(w);
