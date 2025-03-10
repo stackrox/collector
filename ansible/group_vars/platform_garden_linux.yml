@@ -1,0 +1,4 @@
+---
+runtime_command: /root/crictl
+runtime_as_root: true
+runtime_socket: /run/containerd/containerd.sock

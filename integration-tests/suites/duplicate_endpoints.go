@@ -20,13 +20,13 @@ type DuplicateEndpointsTestSuite struct {
 
 func (s *DuplicateEndpointsTestSuite) killSocatProcess(port int) {
 	// Example output    13 root      0:00 socat TCP-LISTEN:81,fork STDOUT
-	output, err := s.execContainer("socat", []string{"/bin/sh", "-c", "ps | grep socat.*LISTEN:" + strconv.Itoa(port) + ",fork | head -1"})
+	output, err := s.execContainer("socat", []string{"/bin/sh", "-c", "ps | grep socat.*LISTEN:" + strconv.Itoa(port) + ",fork | head -1"}, false)
 	// When running remotely there are quotes around the response
 	outputReplaced := strings.Replace(output, "\"", "", -1)
 	outputTrimmed := strings.Trim(outputReplaced, " ")
 	pid := strings.Split(outputTrimmed, " ")[0]
 	s.Require().NoError(err)
-	_, err = s.execContainer("socat", []string{"/bin/sh", "-c", "kill -9 " + pid})
+	_, err = s.execContainer("socat", []string{"/bin/sh", "-c", "kill -9 " + pid}, false)
 	s.Require().NoError(err)
 }
 
@@ -95,19 +95,19 @@ func (s *DuplicateEndpointsTestSuite) TestDuplicateEndpoints() {
 	s.Sensor().ExpectEndpointsN(s.T(), containerID, 2*gScrapeInterval*time.Second, 1)
 
 	// (3) start the new endpoint, opening a different port
-	_, err = s.execContainer("socat", socatCommand)
+	_, err = s.execContainer("socat", socatCommand, true)
 	s.Require().NoError(err)
 
 	// (4) wait for the endpoint to be reported
 	// expecting two endpoints because that is the total expected for the container
-	s.Sensor().ExpectEndpointsN(s.T(), containerID, gScrapeInterval*time.Second, 2)
+	s.Sensor().ExpectEndpointsN(s.T(), containerID, 2*gScrapeInterval*time.Second, 2)
 
 	// (5) kill the process after a delay
 	common.Sleep(2 * time.Second)
 	s.killSocatProcess(81)
 
 	// (6) start an idential process
-	_, err = s.execContainer("socat", socatCommand)
+	_, err = s.execContainer("socat", socatCommand, true)
 	s.Require().NoError(err)
 
 	// (7) wait for another scrape interval, and verify we have still only

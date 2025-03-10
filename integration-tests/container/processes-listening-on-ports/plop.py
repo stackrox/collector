@@ -15,7 +15,7 @@ def open_port(port: int):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
-        s.bind((socket.gethostname(), port))
+        s.bind(('0.0.0.0', port))
     except Exception as e:
         return str(e), 500
 

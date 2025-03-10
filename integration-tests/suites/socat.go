@@ -56,7 +56,7 @@ func (s *SocatTestSuite) SetupSuite() {
 		})
 	s.Require().NoError(err)
 
-	_, err = s.execContainer("socat", []string{"/bin/sh", "-c", "socat TCP-LISTEN:8080,fork STDOUT &"})
+	_, err = s.execContainer("socat", []string{"/bin/sh", "-c", "socat TCP-LISTEN:8080,fork STDOUT &"}, true)
 	s.Require().NoError(err)
 
 	s.serverContainer = common.ContainerShortID(containerID)

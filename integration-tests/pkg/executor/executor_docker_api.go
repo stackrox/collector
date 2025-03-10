@@ -157,15 +157,15 @@ func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConf
 	return resp.ID, nil
 }
 
-func (d *dockerAPIExecutor) ExecContainer(containerName string, command []string) (string, error) {
+func (d *dockerAPIExecutor) ExecContainer(opts *ExecOptions) (string, error) {
 	ctx := context.Background()
 	execConfig := types.ExecConfig{
 		AttachStdout: true,
 		AttachStderr: true,
-		Cmd:          command,
+		Cmd:          opts.Command,
 	}
 
-	resp, err := d.client.ContainerExecCreate(ctx, containerName, execConfig)
+	resp, err := d.client.ContainerExecCreate(ctx, opts.ContainerName, execConfig)
 	if err != nil {
 		return "", fmt.Errorf("error creating Exec: %w", err)
 	}
@@ -188,7 +188,7 @@ func (d *dockerAPIExecutor) ExecContainer(containerName string, command []string
 		return "", fmt.Errorf("error inspecting Exec: %w", err)
 	}
 	log.Info("exec %s %v (exitCode=%d, outBytes=%d)\n",
-		containerName, command, execInspect.ExitCode, stdoutBuf.Len())
+		opts.ContainerName, opts.Command, execInspect.ExitCode, stdoutBuf.Len())
 	return stdoutBuf.String(), nil
 }
 

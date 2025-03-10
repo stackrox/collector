@@ -44,15 +44,16 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 		config.ContainerStartConfig{
 			Name:  "nginx",
 			Image: image_store.ImageByKey("nginx"),
+			Ports: []uint16{80},
 		})
 
 	s.Require().NoError(err)
 	s.serverContainer = common.ContainerShortID(containerID)
 
 	// invokes "sleep" and "sh" and "ls"
-	_, err = s.execContainer("nginx", []string{"sleep", "5"})
+	_, err = s.execContainer("nginx", []string{"sleep", "5"}, false)
 	s.Require().NoError(err)
-	_, err = s.execContainer("nginx", []string{"sh", "-c", "ls"})
+	_, err = s.execContainer("nginx", []string{"sh", "-c", "ls"}, false)
 	s.Require().NoError(err)
 
 	// invokes another container
@@ -71,7 +72,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	s.serverPort, err = s.getPort("nginx")
 	s.Require().NoError(err)
 
-	_, err = s.execContainer("nginx-curl", []string{"curl", fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)})
+	_, err = s.execContainer("nginx-curl", []string{"curl", fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)}, false)
 	s.Require().NoError(err)
 
 	s.clientIP, err = s.getIPAddress("nginx-curl")

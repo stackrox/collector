@@ -9,4 +9,5 @@ type ContainerStartConfig struct {
 	Env         map[string]string
 	Command     []string
 	Entrypoint  []string
+	Ports       []uint16
 }

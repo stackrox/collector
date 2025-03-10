@@ -1,0 +1,197 @@
+---
+#
+# This will run the steps for integration testing on CRI.
+# It also handles creating the report and writing necessary log files.
+#
+
+- name: Cleanup old containers
+  become: "{{ runtime_as_root }}"
+  shell: "{{ runtime_command }} rmp -af || true"
+
+- name: Get default collector tag
+  community.general.make:
+    target: tag
+    chdir: "{{ collector_root }}"
+  register: collector_tag_result
+  delegate_to: localhost
+
+- name: Remove old logs directory
+  ansible.builtin.file:
+    path: "{{ remote_log_mount }}"
+    state: absent
+  # don't error if the directory doesn't exist yet
+  ignore_errors: true
+  become: true
+
+- name: Set core dump path
+  become: true
+  ansible.builtin.shell: |
+    echo '/tmp/core_dumps/core_%t' | sudo tee /proc/sys/kernel/core_pattern
+    mkdir /tmp/core_dumps || true
+
+- name: Additional facts
+  ansible.builtin.set_fact:
+    logs_root: "{{ collector_root }}/integration-tests/container-logs"
+    collector_image: "{{ lookup('env', 'COLLECTOR_IMAGE', default='quay.io/rhacs-eng/collector:' +  collector_tag_result.stdout) }}"
+    integration_tests_image: "{{ lookup('env', 'TEST_IMAGE', default='quay.io/rhacs-eng/qa-multi-arch:collector-tests-' + collector_tag_result.stdout) }}"
+
+- name: Default args
+  ansible.builtin.set_fact:
+    run_args: '[ "-test.run", "{{ collector_test }}", "-test.timeout", "60m", "-test.count=1", "-test.v" ]'
+  when: collector_test != "ci-integration-tests"
+
+- name: CI args
+  ansible.builtin.set_fact:
+    run_args: '[ "-test.timeout", "120m", "-test.short", "-test.v" ]'
+  when: collector_test == "ci-integration-tests"
+
+- name: Create container-config.yaml
+  become: "{{ runtime_as_root }}"
+  ansible.builtin.copy:
+    dest: /root/container-config.yaml
+    mode: '0644'
+    content: |
+      metadata:
+        name: integration-tests
+      image:
+        image: {{ integration_tests_image }}
+      args: {{ run_args }}
+      envs:
+        - key: VM_CONFIG
+          value: {{ vm_config }}
+        - key: IMAGE_FAMILY
+          value: {{ vm_image_family }}
+        - key: COLLECTOR_IMAGE
+          value: {{ collector_image }}
+        - key: COLLECTOR_QA_TAG
+          value: {{ lookup('env', 'COLLECTOR_QA_TAG', default=lookup('file', integration_tests_root + '/container/QA_TAG')) }}
+        - key: COLLECTOR_LOG_LEVEL
+          value: {{ lookup('env', 'COLLECTOR_LOG_LEVEL', default='debug') }}
+        - key: RUNTIME_COMMAND
+          value: {{ runtime_command }}
+        - key: RUNTIME_SOCKET
+          value: {{ runtime_socket }}
+      mounts:
+        - container_path: {{ container_logs_root }}
+          host_path: {{ remote_log_mount }}
+        - container_path: /root/.docker
+          host_path: /root/.docker
+        - container_path: /tmp
+          host_path: /tmp
+        - container_path: {{ runtime_socket }}
+          host_path: {{ runtime_socket }}
+      log_path: integration-tests.log
+      stdin: true
+      tty: true
+      linux:
+        security_context:
+          namespace_options:
+            network: 2 # host
+
+- name: Create pod-config.yaml
+  become: "{{ runtime_as_root }}"
+  ansible.builtin.copy:
+    dest: /root/pod-config.yaml
+    mode: '0644'
+    content: |
+      metadata:
+        name: integration-tests
+        namespace: collector-integration-tests
+        uid: integration-tests-uid
+      log_directory: /tmp/collector-integration-tests
+      linux:
+        security_context:
+          namespace_options:
+            network: 2 # host
+
+- name: Run integration tests
+  block:
+    - name: Run integration tests
+      become: "{{ runtime_as_root }}"
+      ansible.builtin.command: |
+        {{ runtime_command }} run /root/container-config.yaml /root/pod-config.yaml
+      register: container_id
+
+    - name: Wait for tests to finish
+      become: "{{ runtime_as_root }}"
+      ansible.builtin.command: |
+        {{ runtime_command }} inspect {{ container_id.stdout }}
+      register: test_status
+      until: (test_status.stdout | from_json).status.state == "CONTAINER_EXITED"
+      retries: "{{ (120*6) }}"
+      delay: 10
+      ignore_errors: true
+
+    - name: Get tests log
+      become: "{{ runtime_as_root }}"
+      ansible.builtin.command: |
+        {{ runtime_command }} logs {{ container_id.stdout }}
+      register: test_log
+
+    - name: Fail integration tests
+      ansible.builtin.fail:
+        msg: Integration test exited with code '{{ (test_status.stdout | from_json).status.exitCode }}'
+      when: (test_status.stdout | from_json).status.exitCode != 0
+
+  rescue:
+    - name: Set tests as failed
+      ansible.builtin.set_fact:
+        success: false
+
+    - name: Output test log
+      ansible.builtin.debug:
+        msg: "{{ test_log.stdout }}"
+      tags: [print_action]
+
+  always:
+    - name: Make logs directories
+      ansible.builtin.file:
+        state: directory
+        path: "{{ logs_root }}"
+        mode: '0755'
+      delegate_to: localhost
+
+    - name: Compress log files
+      become: "{{ runtime_as_root }}"
+      ansible.builtin.archive:
+        path: "{{ remote_log_mount }}"
+        dest: /tmp/{{ vm_config }}.tar.gz
+        mode: '0644'
+
+    - name: Fetch log files
+      ansible.builtin.fetch:
+        src: /tmp/{{ vm_config }}.tar.gz
+        dest: "{{ logs_root }}/"
+        flat: true
+
+    - name: Write integration test log
+      ansible.builtin.copy:
+        content: "{{ test_log.stdout }}"
+        dest: "{{ logs_root }}/integration-test-{{ vm_config }}.log"
+        mode: '0644'
+      delegate_to: localhost
+
+    - name: Get core dump file paths
+      become: "{{ runtime_as_root }}"
+      ansible.builtin.find:
+        paths: "/tmp/core_dumps/"
+      register: core_files
+
+    - name: Fetch each core dump file
+      become: "{{ runtime_as_root }}"
+      ansible.builtin.fetch:
+        src: "{{ core_file }}"
+        dest: "{{ logs_root }}/"
+        flat: true
+      loop: "{{ core_files.files | map(attribute='path') | list }}"
+      loop_control:
+        loop_var: core_file
+
+    - name: Report
+      community.general.make:
+        chdir: "{{ integration_tests_root }}"
+        target: report
+      environment:
+        LOG_FILE: "{{ logs_root }}/integration-test-{{ vm_config }}.log"
+        JUNIT_FILE: "integration-test-report-{{ vm_config }}.xml"
+      delegate_to: localhost
