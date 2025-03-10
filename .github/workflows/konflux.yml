@@ -45,7 +45,8 @@ jobs:
 
       - id: generate-tag
         run: |
-          echo "collector-tag=$(make tag)-fast" >> "$GITHUB_OUTPUT"
+          COLLECTOR_TAG="$(make tag)-fast"
+          echo "collector-tag=${COLLECTOR_TAG}" >> "$GITHUB_OUTPUT"
 
           COLLECTOR_QA_TAG="$(cat ${{ github.workspace }}/integration-tests/container/QA_TAG)"
           if [[ "${GITHUB_EVENT_NAME}" == "pull_request" && "${{ steps.filter.outputs.container }}" == "true" ]]; then
