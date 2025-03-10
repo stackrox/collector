@@ -7,7 +7,7 @@ cp LICENSE "${LICENSE_DIR}/protobuf-${PROTOBUF_VERSION}"
 
 mkdir -p cmake-build && cd cmake-build
 cmake -S ../ \
-    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}" \
     -DCMAKE_INSTALL_PREFIX=/usr/local \
     -DBUILD_SHARED_LIBS=OFF \
     -Dprotobuf_BUILD_TESTS=OFF \
