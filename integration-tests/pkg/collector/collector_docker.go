@@ -188,3 +188,11 @@ func (c *DockerCollectorManager) ContainerID() string {
 func (c *DockerCollectorManager) TestName() string {
 	return c.testName
 }
+
+func (c *DockerCollectorManager) SetTestName(testName string) {
+	c.testName = testName
+}
+
+func (c *DockerCollectorManager) GetTestName() string {
+	return c.testName
+}

@@ -69,6 +69,8 @@ jobs:
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v3
+        with:
+          image: tonistiigi/binfmt:qemu-v8.1.5
 
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v3
@@ -171,6 +173,8 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+        with:
+          image: tonistiigi/binfmt:qemu-v9.2.2
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -185,3 +189,22 @@ jobs:
       - name: Build and Push containers
         run: |
           make -C "${{ matrix.directory }}" build-and-push
+
+  notify:
+    runs-on: ubuntu-24.04
+    if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name != 'pull_request'
+    needs:
+      - build-test-image
+      - rebuild-containers
+    steps:
+      - name: Slack notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_ONCALL_WEBHOOK }}
+          SLACK_CHANNEL: team-acs-collector-oncall
+          SLACK_COLOR: failure
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: "Failed to rebuild test containers"
+          MSG_MINIMAL: actions url,commit
+          SLACK_MESSAGE: |
+            @acs-collector-oncall

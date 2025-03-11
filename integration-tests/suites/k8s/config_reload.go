@@ -4,26 +4,35 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/assert"
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/log"
+	"github.com/stackrox/collector/integration-tests/pkg/types"
 
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	EXT_IP_ENABLE = `
-networking:
-  externalIps:
-    enable: true
-`
-
-	EXT_IP_DISABLE = `
-networking:
-  externalIps:
-    enable: false
-`
+var (
+	EXT_IP_ENABLE  string
+	EXT_IP_DISABLE string
 
 	CONFIG_MAP_NAME = "collector-config"
 )
+
+func init() {
+	var err error
+	var runtimeConfig types.RuntimeConfig
+	runtimeConfig.Networking.ExternalIps.Enabled = "ENABLED"
+
+	EXT_IP_ENABLE, err = runtimeConfig.GetRuntimeConfigStr()
+	if err != nil {
+		panic(err)
+	}
+
+	runtimeConfig.Networking.ExternalIps.Enabled = "DISABLED"
+	EXT_IP_DISABLE, err = runtimeConfig.GetRuntimeConfigStr()
+	if err != nil {
+		panic(err)
+	}
+}
 
 type K8sConfigReloadTestSuite struct {
 	K8sTestSuiteBase
@@ -64,12 +73,12 @@ func (k *K8sConfigReloadTestSuite) TestCreateConfigurationAfterStart() {
 		},
 	}
 	k.createConfigMap(&configMap)
-	assert.AssertExternalIps(k.T(), true, k.Collector().IP())
+	assert.AssertExternalIps(k.T(), "ENABLED", k.Collector().IP())
 
 	log.Info("Checking external IPs is disabled")
 	configMap.Data["runtime_config.yaml"] = EXT_IP_DISABLE
 	k.updateConfigMap(&configMap)
-	assert.AssertExternalIps(k.T(), false, k.Collector().IP())
+	assert.AssertExternalIps(k.T(), "DISABLED", k.Collector().IP())
 
 	log.Info("Checking runtime configuration is not in use")
 	k.deleteConfigMap(CONFIG_MAP_NAME)
@@ -78,7 +87,7 @@ func (k *K8sConfigReloadTestSuite) TestCreateConfigurationAfterStart() {
 	log.Info("Checking external IPs is enabled again")
 	configMap.Data["runtime_config.yaml"] = EXT_IP_ENABLE
 	k.createConfigMap(&configMap)
-	assert.AssertExternalIps(k.T(), true, k.Collector().IP())
+	assert.AssertExternalIps(k.T(), "ENABLED", k.Collector().IP())
 }
 
 func (k *K8sConfigReloadTestSuite) TestConfigurationReload() {
@@ -99,10 +108,10 @@ func (k *K8sConfigReloadTestSuite) TestConfigurationReload() {
 			"ROX_COLLECTOR_INTROSPECTION_ENABLE": "true",
 		},
 	})
-	assert.AssertExternalIps(k.T(), true, k.Collector().IP())
+	assert.AssertExternalIps(k.T(), "ENABLED", k.Collector().IP())
 
 	log.Info("Checking external IPs is disabled")
 	configMap.Data["runtime_config.yaml"] = EXT_IP_DISABLE
 	k.updateConfigMap(&configMap)
-	assert.AssertExternalIps(k.T(), false, k.Collector().IP())
+	assert.AssertExternalIps(k.T(), "DISABLED", k.Collector().IP())
 }

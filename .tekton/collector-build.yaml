@@ -10,10 +10,7 @@ metadata:
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "pull_request" || (
-        event == "push" && (
-          source_branch == "master" ||
-          target_branch.startsWith("refs/tags/")
-        )
+        event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")
       )
   labels:
     appstudio.openshift.io/application: acs
@@ -29,8 +26,7 @@ spec:
   - name: git-url
     value: '{{source_url}}'
   - name: image-expires-after
-    # TODO(ROX-24530): return expiration for non-released images to 13w
-    value: '52w'
+    value: '13w'
   - name: output-image-repo
     value: quay.io/rhacs-eng/collector
   - name: path-context

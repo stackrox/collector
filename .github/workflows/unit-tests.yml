@@ -1,0 +1,66 @@
+name: Run unit tests
+
+on:
+  workflow_call:
+    inputs:
+      collector-builder-tag:
+        type: string
+        required: true
+        description: |
+          The builder tag to use in the build
+
+jobs:
+  memory-checked:
+    runs-on: ubuntu-24.04
+    container:
+      image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
+    strategy:
+      fail-fast: false
+      matrix:
+        cmake-flags:
+        - -DADDRESS_SANITIZER=ON -DCMAKE_BUILD_TYPE=Debug
+        - -DUSE_VALGRIND=ON -DCMAKE_BUILD_TYPE=Debug
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: ./.github/actions/run-unit-tests
+        with:
+          cmake-flags: ${{ matrix.cmake-flags }}
+
+  coverage:
+    runs-on: ubuntu-24.04
+    container:
+      image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: ./.github/actions/run-unit-tests
+        with:
+          cmake-flags: -DCOVERAGE=ON -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Generate coverage report
+        run: |
+          dnf install -y python-pip
+          pip install gcovr
+          gcovr \
+            --xml /tmp/xml-report/ \
+            --filter collector/lib/
+
+      - uses: codecov/test-results-action@v1
+        if: ${{ !cancelled() }}
+        with:
+          files: /tmp/junit.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: collector-unit-tests
+          disable_search: true
+
+      - uses: codecov/codecov-action@v5
+        with:
+          files: /tmp/xml-report/cobertura.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: collector-unit-tests
+          disable_search: true

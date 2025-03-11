@@ -32,6 +32,10 @@
     name:
       - git
       - make
+  register: registration
+  retries: 2
+  delay: 30
+  until: registration is not failed
 
 - name: Add docker repos
   ansible.builtin.shell: |
