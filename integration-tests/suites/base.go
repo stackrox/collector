@@ -106,7 +106,7 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *col
 			// create at least one canary process to make sure everything is
 			// fine.
 			log.Info("Spawn a canary process")
-			_, err = s.execContainer("collector", []string{"echo"})
+			_, err = s.execContainer("collector", []string{"echo"}, false)
 			s.Require().NoError(err)
 		})
 	s.Require().True(selfCheckOk)
@@ -395,15 +395,12 @@ func (s *IntegrationTestSuiteBase) waitForContainerToExit(
 		timeoutThreshold, "status=exited")
 }
 
-func (s *IntegrationTestSuiteBase) execContainer(containerName string, command []string) (string, error) {
-	return s.Executor().ExecContainer(containerName, command)
-}
-
-func (s *IntegrationTestSuiteBase) execContainerShellScript(containerName string, shell string, script string, args ...string) (string, error) {
-	cmd := []string{shell, "-s"}
-	cmd = append(cmd, args...)
-
-	return s.Executor().ExecContainer(containerName, cmd)
+func (s *IntegrationTestSuiteBase) execContainer(containerName string, command []string, detach bool) (string, error) {
+	return s.Executor().ExecContainer(&executor.ExecOptions{
+		ContainerName: containerName,
+		Command:       command,
+		Detach:        detach,
+	})
 }
 
 func (s *IntegrationTestSuiteBase) cleanupContainers(containers ...string) {

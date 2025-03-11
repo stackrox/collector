@@ -1,10 +1,7 @@
 ---
 #
-# This will run the steps for integration testing, for a given collection method.
-# and handles creating the report and writing necessary log files.
-#
-# Args:
-#   collection_method: ebpf
+# This will run the steps for integration testing on docker and podman.
+# It also handles creating the report and writing necessary log files.
 #
 
 - set_fact:
@@ -86,7 +83,6 @@
         -v /tmp/:/tmp \
         -v {{ runtime_socket }}:/var/run/docker.sock \
         --network=host \
-        -e COLLECTION_METHOD \
         -e VM_CONFIG \
         -e IMAGE_FAMILY \
         -e COLLECTOR_IMAGE \
@@ -95,12 +91,13 @@
         {{ integration_tests_image }} \
         {{ run_args }} -test.v 2>&1
     environment:
-      COLLECTION_METHOD: "{{ collection_method }}"
       VM_CONFIG: "{{ vm_config }}"
       IMAGE_FAMILY: "{{ vm_image_family }}"
       COLLECTOR_IMAGE: "{{ collector_image }}"
       COLLECTOR_QA_TAG: "{{ lookup('env', 'COLLECTOR_QA_TAG', default=lookup('file', integration_tests_root + '/container/QA_TAG')) }}"
       COLLECTOR_LOG_LEVEL: "{{ lookup('env', 'COLLECTOR_LOG_LEVEL', default='debug') }}"
+      RUNTIME_COMMAND: "{{ runtime_command }}"
+      RUNTIME_SOCKET: "{{ runtime_socket }}"
     register: test_result
     # ensure that this is printed
     tags: [print_action]
@@ -125,11 +122,11 @@
     - name: Compress log files
       ansible.builtin.archive:
         path: "{{ remote_log_mount }}"
-        dest: /tmp/{{ vm_config }}-{{ collection_method }}.tar.gz
+        dest: /tmp/{{ vm_config }}.tar.gz
 
     - name: Fetch log files
       fetch:
-        src: /tmp/{{ vm_config }}-{{ collection_method }}.tar.gz
+        src: /tmp/{{ vm_config }}.tar.gz
         dest: "{{ logs_root }}/"
         flat: true
 
@@ -163,7 +160,3 @@
         LOG_FILE: "{{ logs_root }}/integration-test-{{ vm_config }}.log"
         JUNIT_FILE: "integration-test-report-{{ vm_config }}.xml"
       delegate_to: localhost
-
-  # If this host is just for a certain collection method, skip running
-  # the test if we're not using that collection method.
-  when: vm_collection_method == collection_method or vm_collection_method == 'any'

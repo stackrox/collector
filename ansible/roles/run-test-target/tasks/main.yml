@@ -4,6 +4,7 @@
   shell:
     cmd: "{{ runtime_command }} login -u {{ quay_username }} --password-stdin quay.io"
     stdin: "{{ quay_password }}"
+  when: runtime_command == 'docker' or runtime_command == 'podman'
 
 # 'success' will be set to false in the Run Integration Tests step
 # if any test fails. After the tests run, the Check results step
@@ -31,9 +32,12 @@
 # specific VMs (like in the benchmarks)
 #
 - name: Run Integration Tests
-  include_tasks: test-collection-method.yml
-  vars:
-    collection_method: "core_bpf"
+  ansible.builtin.include_tasks: test-docker.yml
+  when: runtime_command == 'docker' or runtime_command == 'podman'
+
+- name: Run Integration Tests
+  ansible.builtin.include_tasks: test-cri.yml
+  when: runtime_command != 'docker' and runtime_command != 'podman'
 
 - name: Check results
   ansible.builtin.fail:

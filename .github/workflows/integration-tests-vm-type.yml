@@ -85,6 +85,9 @@ jobs:
         if: ${{ ! inputs.run-benchmarks }}
         run: |
           make -C "${{ github.workspace }}/ansible" create-ci-vms
+        env:
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
       - name: Set log level
         if: ${{ runner.debug == '1' }}
