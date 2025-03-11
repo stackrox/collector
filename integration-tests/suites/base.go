@@ -151,6 +151,8 @@ func (s *IntegrationTestSuiteBase) Executor() executor.Executor {
 func (s *IntegrationTestSuiteBase) Sensor() *mock_sensor.MockSensor {
 	if s.sensor == nil {
 		s.sensor = mock_sensor.NewMockSensor(s.T().Name())
+	} else {
+		s.sensor.SetTestName(s.T().Name())
 	}
 	return s.sensor
 }

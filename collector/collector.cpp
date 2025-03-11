@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
 
   CollectorConfig config;
   config.InitCollectorConfig(args);
-  if (!ConfigLoader::LoadConfiguration(config)) {
+  if (ConfigLoader(config).LoadConfiguration() == collector::ConfigLoader::PARSE_ERROR) {
     CLOG(FATAL) << "Unable to parse configuration file";
   }
 

@@ -514,3 +514,7 @@ func (m *MockSensor) translateAddress(addr *sensorAPI.NetworkAddress) string {
 	}
 	return peerId.String()
 }
+
+func (m *MockSensor) SetTestName(testName string) {
+	m.testName = testName
+}
