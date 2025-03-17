@@ -1,10 +1,8 @@
 #ifndef _SYSTEM_INSPECTOR_EVENT_EXTRACTOR_H_
 #define _SYSTEM_INSPECTOR_EVENT_EXTRACTOR_H_
 
-#include <string>
 #include <vector>
 
-#include "libsinsp/filterchecks.h"
 #include "libsinsp/sinsp.h"
 
 #include "Logging.h"
