@@ -33,6 +33,7 @@ class CollectorService {
   bool WaitForGRPCServer();
 
   CollectorConfig& config_;
+  std::unique_ptr<ISensorClient> client_;
   system_inspector::Service system_inspector_;
 
   std::atomic<ControlValue>* control_;

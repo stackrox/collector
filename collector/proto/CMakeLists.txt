@@ -14,6 +14,7 @@ set(ROX_PROTO_FILES
     internalapi/sensor/network_connection_iservice.proto
     internalapi/sensor/network_enums.proto
     internalapi/sensor/signal_iservice.proto
+    internalapi/sensor/collector_iservice.proto
     storage/network_flow.proto
     storage/process_indicator.proto
 )
