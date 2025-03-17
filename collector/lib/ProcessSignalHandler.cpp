@@ -13,7 +13,7 @@
 
 namespace collector {
 
-std::string compute_process_key(const ::storage::ProcessSignal& s) {
+std::string compute_process_key(const ::sensor::ProcessSignal& s) {
   std::stringstream ss;
   ss << s.container_id() << " " << s.name() << " ";
   if (s.args().length() <= 256) {
@@ -39,21 +39,21 @@ bool ProcessSignalHandler::Stop() {
 SignalHandler::Result ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
   const auto* signal_msg = formatter_.ToProtoMessage(evt);
 
-  if (!signal_msg) {
+  if (signal_msg == nullptr) {
     ++(stats_->nProcessResolutionFailuresByEvt);
     return IGNORED;
   }
 
-  const char* name = signal_msg->signal().process_signal().name().c_str();
-  const int pid = signal_msg->signal().process_signal().pid();
+  const char* name = signal_msg->process_signal().name().c_str();
+  const uint32_t pid = signal_msg->process_signal().pid();
   DTRACE_PROBE2(collector, process_signal_handler, name, pid);
 
-  if (!rate_limiter_.Allow(compute_process_key(signal_msg->signal().process_signal()))) {
+  if (!rate_limiter_.Allow(compute_process_key(signal_msg->process_signal()))) {
     ++(stats_->nProcessRateLimitCount);
     return IGNORED;
   }
 
-  auto result = client_->PushSignals(*signal_msg);
+  auto result = client_->SendMsg(*signal_msg);
   if (result == SignalHandler::PROCESSED) {
     ++(stats_->nProcessSent);
   } else if (result == SignalHandler::ERROR) {
@@ -65,17 +65,17 @@ SignalHandler::Result ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
 
 SignalHandler::Result ProcessSignalHandler::HandleExistingProcess(sinsp_threadinfo* tinfo) {
   const auto* signal_msg = formatter_.ToProtoMessage(tinfo);
-  if (!signal_msg) {
+  if (signal_msg == nullptr) {
     ++(stats_->nProcessResolutionFailuresByTinfo);
     return IGNORED;
   }
 
-  if (!rate_limiter_.Allow(compute_process_key(signal_msg->signal().process_signal()))) {
+  if (!rate_limiter_.Allow(compute_process_key(signal_msg->process_signal()))) {
     ++(stats_->nProcessRateLimitCount);
     return IGNORED;
   }
 
-  auto result = client_->PushSignals(*signal_msg);
+  auto result = client_->SendMsg(*signal_msg);
   if (result == SignalHandler::PROCESSED) {
     ++(stats_->nProcessSent);
   } else if (result == SignalHandler::ERROR) {
