@@ -27,15 +27,20 @@ static const std::string PROMETHEUS_PORT = "9090";
 CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlValue>* control,
                                    const std::atomic<int>* signum)
     : config_(config),
-      system_inspector_(config_),
       control_(control),
       signum_(*signum),
       server_(OPTIONS),
       registry_(std::make_shared<prometheus::Registry>()),
       exposer_(PROMETHEUS_PORT),
-      exporter_(registry_, &config_, &system_inspector_),
       config_loader_(config_) {
   CLOG(INFO) << "Config: " << config_;
+
+  if (config_.grpc_channel != nullptr) {
+    client_ = std::make_unique<SensorClient>(config_.grpc_channel);
+  } else {
+    client_ = std::make_unique<SensorClientStdout>();
+  }
+  system_inspector_ = {config_, client_.get()};
 
   // Network tracking
   if (!config_.grpc_channel || !config_.DisableNetworkFlows()) {
@@ -87,6 +92,7 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
   }
 
   // Prometheus
+  exporter_ = {registry_, &config_, &system_inspector_};
   exposer_.RegisterCollectable(registry_);
 }
 
