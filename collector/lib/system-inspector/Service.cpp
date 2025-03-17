@@ -31,10 +31,10 @@
 
 namespace collector::system_inspector {
 
-Service::Service() {}
-Service::~Service() {}
+Service::Service() = default;
+Service::~Service() = default;
 
-void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) {
+void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker, ISensorClient* client) {
   // The self-check handlers should only operate during start up,
   // so they are added to the handler list first, so they have access
   // to self-check events before the network and process handlers have
@@ -51,13 +51,9 @@ void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTrac
     AddSignalHandler(std::move(network_signal_handler_));
   }
 
-  if (config.grpc_channel) {
-    signal_client_.reset(new SignalServiceClient(std::move(config.grpc_channel)));
-  } else {
-    signal_client_.reset(new StdoutSignalServiceClient());
-  }
+  signal_client_ = client;
   AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(),
-                                                    signal_client_.get(),
+                                                    signal_client_,
                                                     &userspace_stats_,
                                                     config));
 
