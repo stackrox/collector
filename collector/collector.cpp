@@ -12,6 +12,7 @@
 #include <sys/wait.h>
 
 #include "ConfigLoader.h"
+#include "SensorClient.h"
 
 extern "C" {
 #include <assert.h>

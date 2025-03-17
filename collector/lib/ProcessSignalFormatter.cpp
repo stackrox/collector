@@ -4,6 +4,7 @@
 
 #include <google/protobuf/util/time_util.h>
 
+#include "internalapi/sensor/collector_iservice.pb.h"
 #include "internalapi/sensor/signal_iservice.pb.h"
 
 #include "CollectorStats.h"
@@ -65,9 +66,9 @@ ProcessSignalFormatter::ProcessSignalFormatter(
   event_extractor_->Init(inspector);
 }
 
-ProcessSignalFormatter::~ProcessSignalFormatter() {}
+ProcessSignalFormatter::~ProcessSignalFormatter() = default;
 
-const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* event) {
+const sensor::MsgFromCollector* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* event) {
   if (process_signals[event->get_type()] == ProcessSignalType::UNKNOWN_PROCESS_TYPE) {
     return nullptr;
   }
@@ -80,38 +81,34 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
   }
 
   ProcessSignal* process_signal = CreateProcessSignal(event);
-  if (!process_signal) {
+  if (process_signal == nullptr) {
     return nullptr;
   }
 
-  Signal* signal = Allocate<Signal>();
-  signal->set_allocated_process_signal(process_signal);
-
-  SignalStreamMessage* signal_stream_message = AllocateRoot();
-  signal_stream_message->clear_collector_register_request();
-  signal_stream_message->set_allocated_signal(signal);
-  return signal_stream_message;
+  auto* msg = AllocateRoot();
+  msg->clear_info();
+  msg->clear_register_();
+  msg->set_allocated_process_signal(process_signal);
+  return msg;
 }
 
-const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
+const sensor::MsgFromCollector* ProcessSignalFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
   Reset();
   if (!ValidateProcessDetails(tinfo)) {
     CLOG(INFO) << "Dropping process event: " << tinfo;
     return nullptr;
   }
 
-  ProcessSignal* process_signal = CreateProcessSignal(tinfo);
-  if (!process_signal) {
+  ProcessSignal* signal = CreateProcessSignal(tinfo);
+  if (signal == nullptr) {
     return nullptr;
   }
 
-  Signal* signal = Allocate<Signal>();
-  signal->set_allocated_process_signal(process_signal);
-
-  SignalStreamMessage* signal_stream_message = AllocateRoot();
-  signal_stream_message->clear_collector_register_request();
-  signal_stream_message->set_allocated_signal(signal);
-  return signal_stream_message;
+  auto* msg = AllocateRoot();
+  msg->clear_register_();
+  msg->clear_info();
+  msg->set_allocated_process_signal(signal);
+  return msg;
 }
 
 ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
@@ -173,7 +170,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   // set time
   auto timestamp = Allocate<Timestamp>();
   *timestamp = TimeUtil::NanosecondsToTimestamp(event->get_ts());
-  signal->set_allocated_time(timestamp);
+  signal->set_allocated_creation_time(timestamp);
 
   // set container_id
   if (const std::string* container_id = event_extractor_->get_container_id(event)) {
@@ -238,7 +235,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   // set time
   auto timestamp = Allocate<Timestamp>();
   *timestamp = TimeUtil::NanosecondsToTimestamp(tinfo->m_clone_ts);
-  signal->set_allocated_time(timestamp);
+  signal->set_allocated_creation_time(timestamp);
 
   // set container_id
   signal->set_container_id(tinfo->m_container_id);
@@ -315,20 +312,20 @@ void ProcessSignalFormatter::CountLineage(const std::vector<LineageInfo>& lineag
 
 void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
                                                std::vector<LineageInfo>& lineage) {
-  if (tinfo == NULL) {
+  if (tinfo == nullptr) {
     return;
   }
-  sinsp_threadinfo* mt = NULL;
+  sinsp_threadinfo* mt = nullptr;
   if (tinfo->is_main_thread()) {
     mt = tinfo;
   } else {
     mt = tinfo->get_main_thread();
-    if (mt == NULL) {
+    if (mt == nullptr) {
       return;
     }
   }
-  sinsp_threadinfo::visitor_func_t visitor = [this, &lineage](sinsp_threadinfo* pt) {
-    if (pt == NULL) {
+  sinsp_threadinfo::visitor_func_t visitor = [&lineage](sinsp_threadinfo* pt) {
+    if (pt == nullptr) {
       return false;
     }
     if (pt->m_pid == 0) {

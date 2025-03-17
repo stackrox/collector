@@ -1,13 +1,12 @@
 #include "CollectorStatsExporter.h"
 
 #include <chrono>
-#include <iostream>
 #include <math.h>
 
+#include "CollectorStats.h"
 #include "Containers.h"
 #include "EventNames.h"
 #include "Logging.h"
-#include "Utility.h"
 #include "prometheus/gauge.h"
 #include "system-inspector/Service.h"
 
