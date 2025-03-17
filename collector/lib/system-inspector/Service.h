@@ -10,6 +10,7 @@
 #include "ConnTracker.h"
 #include "ContainerMetadata.h"
 #include "Control.h"
+#include "SensorClient.h"
 #include "SignalHandler.h"
 #include "SignalServiceClient.h"
 #include "SystemInspector.h"
@@ -24,13 +25,14 @@ namespace collector::system_inspector {
 
 class Service : public SystemInspector {
  public:
+  Service();
   Service(const Service&) = delete;
   Service(Service&&) = delete;
   Service& operator=(const Service&) = delete;
-  Service& operator=(Service&&) = delete;
+  Service& operator=(Service&&) noexcept;
   ~Service() override;
 
-  Service(const CollectorConfig& config);
+  Service(const CollectorConfig& config, ISensorClient* client);
   void Start() override;
   void Run(const std::atomic<ControlValue>& control) override;
   void CleanUp() override;
@@ -73,7 +75,7 @@ class Service : public SystemInspector {
   std::unique_ptr<sinsp> inspector_;
   std::shared_ptr<ContainerMetadata> container_metadata_inspector_;
   std::unique_ptr<sinsp_evt_formatter> default_formatter_;
-  std::unique_ptr<ISignalServiceClient> signal_client_;
+  ISensorClient* signal_client_;
   std::vector<SignalHandlerEntry> signal_handlers_;
   Stats userspace_stats_;
   std::bitset<PPM_EVENT_MAX> global_event_filter_;

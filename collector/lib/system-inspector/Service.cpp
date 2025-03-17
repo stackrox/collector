@@ -32,15 +32,41 @@
 
 namespace collector::system_inspector {
 
+Service::Service() : signal_client_(nullptr) {}
 Service::~Service() = default;
+Service& Service::operator=(Service&& other) noexcept {
+  {
+    auto other_sinsp_lock = std::lock_guard<std::mutex>(other.libsinsp_mutex_);
+    auto this_sinsp_lock = std::lock_guard<std::mutex>(libsinsp_mutex_);
 
-Service::Service(const CollectorConfig& config)
+    inspector_.swap(other.inspector_);
+    container_metadata_inspector_.swap(other.container_metadata_inspector_);
+    default_formatter_.swap(other.default_formatter_);
+  }
+
+  std::swap(signal_client_, other.signal_client_);
+  signal_handlers_.swap(other.signal_handlers_);
+
+  userspace_stats_ = other.userspace_stats_;
+  global_event_filter_ = other.global_event_filter_;
+
+  {
+    auto other_running_lock = std::lock_guard<std::mutex>(other.running_mutex_);
+    auto this_running_lock = std::lock_guard<std::mutex>(running_mutex_);
+    std::swap(running_, other.running_);
+  }
+
+  return *this;
+}
+
+Service::Service(const CollectorConfig& config, ISensorClient* client)
     : inspector_(std::make_unique<sinsp>(true)),
       container_metadata_inspector_(std::make_unique<ContainerMetadata>(inspector_.get())),
       default_formatter_(std::make_unique<sinsp_evt_formatter>(
           inspector_.get(),
           DEFAULT_OUTPUT_STR,
-          EventExtractor::FilterList())) {
+          EventExtractor::FilterList())),
+      signal_client_(client) {
   // Setup the inspector.
   // peeking into arguments has a big overhead, so we prevent it from happening
   inspector_->set_snaplen(0);
@@ -95,13 +121,8 @@ Service::Service(const CollectorConfig& config)
   AddSignalHandler(std::make_unique<SelfCheckProcessHandler>(inspector_.get()));
   AddSignalHandler(std::make_unique<SelfCheckNetworkHandler>(inspector_.get()));
 
-  if (config.grpc_channel) {
-    signal_client_ = std::make_unique<SignalServiceClient>(config.grpc_channel);
-  } else {
-    signal_client_ = std::make_unique<StdoutSignalServiceClient>();
-  }
   AddSignalHandler(std::make_unique<ProcessSignalHandler>(inspector_.get(),
-                                                          signal_client_.get(),
+                                                          signal_client_,
                                                           &userspace_stats_,
                                                           config));
 
