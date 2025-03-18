@@ -24,6 +24,7 @@ class CollectorService {
   const std::atomic<int>& signum_;
 
   system_inspector::Service system_inspector_;
+  std::unique_ptr<ISensorClient> client_;
 };
 
 bool SetupKernelDriver(CollectorService& collector, const CollectorConfig& config);

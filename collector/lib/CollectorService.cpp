@@ -119,7 +119,13 @@ void CollectorService::RunForever() {
     server.addHandler(collector_config_inspector->kBaseRoute, collector_config_inspector.get());
   }
 
-  system_inspector_.Init(config_, conn_tracker);
+  if (config_.grpc_channel != nullptr) {
+    client_ = std::make_unique<SensorClient>(config_.grpc_channel);
+  } else {
+    client_ = std::make_unique<SensorClientStdout>();
+  }
+
+  system_inspector_.Init(config_, conn_tracker, client_.get());
   system_inspector_.Start();
 
   ControlValue cv;

@@ -8,6 +8,7 @@
 #include "CollectorConfig.h"
 #include "ConnTracker.h"
 #include "Control.h"
+#include "SensorClient.h"
 #include "ppm_events_public.h"
 
 namespace collector::system_inspector {
@@ -44,7 +45,7 @@ class SystemInspector {
  public:
   virtual ~SystemInspector() = default;
 
-  virtual void Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) = 0;
+  virtual void Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker, ISensorClient* client) = 0;
   virtual bool InitKernel(const CollectorConfig& config) = 0;
   virtual void Start() = 0;
   virtual void Run(const std::atomic<ControlValue>& control) = 0;

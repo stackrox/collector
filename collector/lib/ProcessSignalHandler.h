@@ -8,6 +8,7 @@
 #include "CollectorConfig.h"
 #include "ProcessSignalFormatter.h"
 #include "RateLimit.h"
+#include "SensorClient.h"
 #include "SignalHandler.h"
 #include "system-inspector/Service.h"
 
@@ -22,7 +23,7 @@ class ProcessSignalHandler : public SignalHandler {
  public:
   ProcessSignalHandler(
       sinsp* inspector,
-      ISignalServiceClient* client,
+      ISensorClient* client,
       system_inspector::Stats* stats,
       const CollectorConfig& config)
       : client_(client),
@@ -38,7 +39,7 @@ class ProcessSignalHandler : public SignalHandler {
   std::vector<std::string> GetRelevantEvents() override;
 
  private:
-  ISignalServiceClient* client_;
+  ISensorClient* client_;
   ProcessSignalFormatter formatter_;
   system_inspector::Stats* stats_;
   RateLimitCache rate_limiter_;
