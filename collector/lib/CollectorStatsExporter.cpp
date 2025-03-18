@@ -131,8 +131,8 @@ void CollectorStatsExporter::run() {
   std::array<std::unique_ptr<CollectorTimerGauge>, CollectorStats::timer_type_max> collector_timers;
   for (int i = 0; i < CollectorStats::timer_type_max; i++) {
     auto tt = (CollectorStats::TimerType)(i);
-    collector_timers[tt] = MakeUnique<CollectorTimerGauge>(collector_timers_gauge,
-                                                           CollectorStats::timer_type_to_name[tt]);
+    collector_timers[tt] = std::make_unique<CollectorTimerGauge>(collector_timers_gauge,
+                                                                 CollectorStats::timer_type_to_name[tt]);
   }
   auto& collector_counters_gauge = prometheus::BuildGauge()
                                        .Name("rox_collector_counters")

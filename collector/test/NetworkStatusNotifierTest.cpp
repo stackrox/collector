@@ -209,7 +209,7 @@ TEST(NetworkStatusNotifier, SimpleStartStop) {
   EXPECT_CALL(*comm, PushNetworkConnectionInfoOpenStream)
       .Times(1)
       .WillOnce([&sem, &running](std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) -> std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> {
-        auto duplex_writer = MakeUnique<MockDuplexClientWriter>();
+        auto duplex_writer = std::make_unique<MockDuplexClientWriter>();
 
         // the service is sending Sensor a message
         EXPECT_CALL(*duplex_writer, Write).WillRepeatedly([&sem, &running](const sensor::NetworkConnectionInfoMessage& msg, const gpr_timespec& deadline) -> Result {
@@ -232,10 +232,10 @@ TEST(NetworkStatusNotifier, SimpleStartStop) {
     return true;
   });
 
-  auto net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper,
-                                                               conn_tracker,
-                                                               comm,
-                                                               config_);
+  auto net_status_notifier = std::make_unique<NetworkStatusNotifier>(conn_scraper,
+                                                                     conn_tracker,
+                                                                     comm,
+                                                                     config_);
 
   net_status_notifier->Start();
 
@@ -282,7 +282,7 @@ TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
                  &conn2,
                  &conn3,
                  &network_flows_callback](std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) -> std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> {
-        auto duplex_writer = MakeUnique<MockDuplexClientWriter>();
+        auto duplex_writer = std::make_unique<MockDuplexClientWriter>();
         network_flows_callback = receive_func;
 
         // the service is sending Sensor a message
@@ -331,10 +331,10 @@ TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
     return true;
   });
 
-  auto net_status_notifier = MakeUnique<NetworkStatusNotifier>(conn_scraper,
-                                                               conn_tracker,
-                                                               comm,
-                                                               config);
+  auto net_status_notifier = std::make_unique<NetworkStatusNotifier>(conn_scraper,
+                                                                     conn_tracker,
+                                                                     comm,
+                                                                     config);
 
   net_status_notifier->Start();
 

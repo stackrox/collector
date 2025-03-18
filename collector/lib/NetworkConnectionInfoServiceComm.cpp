@@ -10,7 +10,7 @@ constexpr char NetworkConnectionInfoServiceComm::kCapsMetadataKey[];
 constexpr char NetworkConnectionInfoServiceComm::kSupportedCaps[];
 
 std::unique_ptr<grpc::ClientContext> NetworkConnectionInfoServiceComm::CreateClientContext() const {
-  auto ctx = MakeUnique<grpc::ClientContext>();
+  auto ctx = std::make_unique<grpc::ClientContext>();
   ctx->AddMetadata(kHostnameMetadataKey, hostname_);
   ctx->AddMetadata(kCapsMetadataKey, kSupportedCaps);
   return ctx;
@@ -54,7 +54,7 @@ std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> Netwo
         &sensor::NetworkConnectionInfoService::Stub::AsyncPushNetworkConnectionInfo,
         channel_, context_.get(), std::move(receive_func));
   } else {
-    return MakeUnique<collector::grpc_duplex_impl::StdoutDuplexClientWriter<sensor::NetworkConnectionInfoMessage>>();
+    return std::make_unique<collector::grpc_duplex_impl::StdoutDuplexClientWriter<sensor::NetworkConnectionInfoMessage>>();
   }
 }
 
