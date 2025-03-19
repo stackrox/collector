@@ -120,6 +120,23 @@ void initialChecks() {
   }
 }
 
+void RunService(CollectorConfig& config) {
+  auto& startup_diagnostics = StartupDiagnostics::GetInstance();
+  CollectorService collector(config, &g_control, &g_signum);
+
+  if (!collector.InitKernel()) {
+    startup_diagnostics.Log();
+    CLOG(FATAL) << "Failed to initialize collector kernel components.";
+  }
+
+  // output the GPL notice only once the kernel object has been found or downloaded
+  gplNotice();
+
+  startup_diagnostics.Log();
+
+  collector.RunForever();
+}
+
 int main(int argc, char** argv) {
   // Print system information before doing actual work.
   auto& host_info = HostInfo::Instance();
@@ -174,19 +191,7 @@ int main(int argc, char** argv) {
 
   config.grpc_channel = std::move(sensor_connection);
 
-  CollectorService collector(config, &g_control, &g_signum);
-
-  if (!collector.InitKernel()) {
-    startup_diagnostics.Log();
-    CLOG(FATAL) << "Failed to initialize collector kernel components.";
-  }
-
-  // output the GPL notice only once the kernel object has been found or downloaded
-  gplNotice();
-
-  startup_diagnostics.Log();
-
-  collector.RunForever();
+  RunService(config);
 
   CLOG(INFO) << "Collector exiting successfully!";
 
