@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
 
   CollectorService collector(config, &g_control, &g_signum);
 
-  if (!SetupKernelDriver(collector, config)) {
+  if (!collector.InitKernel()) {
     startup_diagnostics.Log();
     CLOG(FATAL) << "Failed to initialize collector kernel components.";
   }

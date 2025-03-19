@@ -13,16 +13,20 @@ class ConnectionTracker;
 
 class NetworkStatusInspector : public IntrospectionEndpoint {
  public:
-  static const std::string kBaseRoute;
-  static const std::string kEndpointRoute;
-  static const std::string kConnectionRoute;
-
   NetworkStatusInspector(const std::shared_ptr<ConnectionTracker> conntracker);
 
   // implementation of CivetHandler
   bool handleGet(CivetServer* server, struct mg_connection* conn) override;
 
+  const std::string& GetBaseRoute() override {
+    return kBaseRoute;
+  }
+
  private:
+  static const std::string kBaseRoute;
+  static const std::string kEndpointRoute;
+  static const std::string kConnectionRoute;
+
   const std::shared_ptr<ConnectionTracker> conntracker_;
   Json::FastWriter writer_;
 

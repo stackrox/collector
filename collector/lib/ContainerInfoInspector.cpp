@@ -5,7 +5,7 @@
 #include <string_view>
 
 namespace collector {
-const char* const ContainerInfoInspector::kBaseRoute = "/state/containers/";
+const std::string ContainerInfoInspector::kBaseRoute = "/state/containers/";
 
 bool ContainerInfoInspector::handleGet(CivetServer* server, struct mg_connection* conn) {
   const mg_request_info* req_info = mg_get_request_info(conn);

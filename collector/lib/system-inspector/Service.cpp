@@ -1,6 +1,7 @@
 #include "Service.h"
 
 #include <cap-ng.h>
+#include <memory>
 #include <thread>
 
 #include <linux/ioctl.h>
@@ -31,10 +32,62 @@
 
 namespace collector::system_inspector {
 
-Service::Service() {}
-Service::~Service() {}
+Service::~Service() = default;
 
-void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) {
+Service::Service(const CollectorConfig& config)
+    : inspector_(std::make_unique<sinsp>(true)),
+      container_metadata_inspector_(std::make_unique<ContainerMetadata>(inspector_.get())),
+      default_formatter_(std::make_unique<sinsp_evt_formatter>(
+          inspector_.get(),
+          DEFAULT_OUTPUT_STR,
+          EventExtractor::FilterList())) {
+  // Setup the inspector.
+  // peeking into arguments has a big overhead, so we prevent it from happening
+  inspector_->set_snaplen(0);
+
+  auto log_level = (sinsp_logger::severity)logging::GetLogLevel();
+  inspector_->set_min_log_severity(log_level);
+  inspector_->disable_log_timestamps();
+  inspector_->set_log_callback(logging::InspectorLogCallback);
+
+  inspector_->set_import_users(config.ImportUsers(), false);
+  inspector_->set_thread_timeout_s(30);
+  inspector_->set_auto_threads_purging_interval_s(60);
+  inspector_->m_thread_manager->set_max_thread_table_size(config.GetSinspThreadCacheSize());
+
+  // Connection status tracking is used in NetworkSignalHandler,
+  // but only when trying to handle asynchronous connections
+  // as a special case.
+  if (config.CollectConnectionStatus()) {
+    inspector_->get_parser()->set_track_connection_status(true);
+  }
+
+  if (config.EnableRuntimeConfig()) {
+    uint64_t mask = 1 << CT_CRI |
+                    1 << CT_CRIO |
+                    1 << CT_CONTAINERD;
+
+    if (config.UseDockerCe()) {
+      mask |= 1 << CT_DOCKER;
+    }
+
+    if (config.UsePodmanCe()) {
+      mask |= 1 << CT_PODMAN;
+    }
+
+    inspector_->set_container_engine_mask(mask);
+
+    // k8s naming conventions specify that max length be 253 characters
+    // (the extra 2 are just for a nice 0xFF).
+    inspector_->set_container_labels_max_len(255);
+  } else {
+    auto engine = std::make_shared<ContainerEngine>(inspector_->m_container_manager);
+    auto* container_engines = inspector_->m_container_manager.get_container_engines();
+    container_engines->push_back(engine);
+  }
+
+  inspector_->set_filter("container.id != 'host'");
+
   // The self-check handlers should only operate during start up,
   // so they are added to the handler list first, so they have access
   // to self-check events before the network and process handlers have
@@ -42,19 +95,10 @@ void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTrac
   AddSignalHandler(std::make_unique<SelfCheckProcessHandler>(inspector_.get()));
   AddSignalHandler(std::make_unique<SelfCheckNetworkHandler>(inspector_.get()));
 
-  if (conn_tracker) {
-    auto network_signal_handler_ = std::make_unique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_);
-
-    network_signal_handler_->SetCollectConnectionStatus(config.CollectConnectionStatus());
-    network_signal_handler_->SetTrackSendRecv(config.TrackingSendRecv());
-
-    AddSignalHandler(std::move(network_signal_handler_));
-  }
-
   if (config.grpc_channel) {
-    signal_client_.reset(new SignalServiceClient(std::move(config.grpc_channel)));
+    signal_client_ = std::make_unique<SignalServiceClient>(config.grpc_channel);
   } else {
-    signal_client_.reset(new StdoutSignalServiceClient());
+    signal_client_ = std::make_unique<StdoutSignalServiceClient>();
   }
   AddSignalHandler(std::make_unique<ProcessSignalHandler>(inspector_.get(),
                                                           signal_client_.get(),
@@ -69,62 +113,6 @@ void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTrac
 }
 
 bool Service::InitKernel(const CollectorConfig& config) {
-  if (!inspector_) {
-    inspector_.reset(new sinsp(true));
-
-    // peeking into arguments has a big overhead, so we prevent it from happening
-    inspector_->set_snaplen(0);
-
-    auto log_level = (sinsp_logger::severity)logging::GetLogLevel();
-    inspector_->set_min_log_severity(log_level);
-    inspector_->disable_log_timestamps();
-    inspector_->set_log_callback(logging::InspectorLogCallback);
-
-    inspector_->set_import_users(config.ImportUsers(), false);
-    inspector_->set_thread_timeout_s(30);
-    inspector_->set_auto_threads_purging_interval_s(60);
-    inspector_->m_thread_manager->set_max_thread_table_size(config.GetSinspThreadCacheSize());
-
-    // Connection status tracking is used in NetworkSignalHandler,
-    // but only when trying to handle asynchronous connections
-    // as a special case.
-    if (config.CollectConnectionStatus()) {
-      inspector_->get_parser()->set_track_connection_status(true);
-    }
-
-    container_metadata_inspector_.reset(new ContainerMetadata(inspector_.get()));
-
-    if (config.EnableRuntimeConfig()) {
-      uint64_t mask = 1 << CT_CRI |
-                      1 << CT_CRIO |
-                      1 << CT_CONTAINERD;
-
-      if (config.UseDockerCe()) {
-        mask |= 1 << CT_DOCKER;
-      }
-
-      if (config.UsePodmanCe()) {
-        mask |= 1 << CT_PODMAN;
-      }
-
-      inspector_->set_container_engine_mask(mask);
-
-      // k8s naming conventions specify that max length be 253 characters
-      // (the extra 2 are just for a nice 0xFF).
-      inspector_->set_container_labels_max_len(255);
-    } else {
-      auto engine = std::make_shared<ContainerEngine>(inspector_->m_container_manager);
-      auto* container_engines = inspector_->m_container_manager.get_container_engines();
-      container_engines->push_back(engine);
-    }
-
-    inspector_->set_filter("container.id != 'host'");
-
-    default_formatter_.reset(new sinsp_evt_formatter(inspector_.get(),
-                                                     DEFAULT_OUTPUT_STR,
-                                                     EventExtractor::FilterList()));
-  }
-
   KernelDriverCOREEBPF driver;
   if (!driver.Setup(config, *inspector_)) {
     CLOG(ERROR) << "Failed to setup " << config.GetCollectionMethod() << " driver.";
