@@ -1,15 +1,16 @@
 #ifndef _INTROSPECTION_ENDPOINT_
 #define _INTROSPECTION_ENDPOINT_
 
-#include <CivetServer.h>
 #include <optional>
 #include <unordered_map>
+
+#include "CivetWrapper.h"
 
 namespace collector {
 
 using QueryParams = std::unordered_map<std::string, std::string>;
 
-class IntrospectionEndpoint : public CivetHandler {
+class IntrospectionEndpoint : public CivetWrapper {
  protected:
   static QueryParams ParseParameters(const char* queryString);
   static std::optional<std::string> GetParameter(const QueryParams& params, const std::string& paramName);

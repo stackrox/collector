@@ -1,125 +1,120 @@
 #include "CollectorService.h"
 
-#include "CollectionMethod.h"
-#include "ConfigLoader.h"
-#include "ContainerInfoInspector.h"
-
-extern "C" {
-#include <signal.h>
-}
-
 #include <memory>
 
-#include "CivetServer.h"
+#include "CollectionMethod.h"
 #include "CollectorRuntimeConfigInspector.h"
 #include "CollectorStatsExporter.h"
+#include "ConfigLoader.h"
 #include "ConnTracker.h"
-#include "Containers.h"
+#include "ContainerInfoInspector.h"
 #include "Diagnostics.h"
 #include "GRPCUtil.h"
 #include "GetStatus.h"
 #include "LogLevel.h"
+#include "NetworkSignalHandler.h"
 #include "NetworkStatusInspector.h"
 #include "NetworkStatusNotifier.h"
 #include "ProfilerHandler.h"
 #include "Utility.h"
-#include "prometheus/exposer.h"
 #include "system-inspector/Service.h"
-
-extern unsigned char g_bpf_drop_syscalls[];  // defined in libscap
 
 namespace collector {
 
+static const char* OPTIONS[] = {"listening_ports", "8080", nullptr};
+
 CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlValue>* control,
                                    const std::atomic<int>* signum)
-    : config_(config), control_(control), signum_(*signum) {
-  CLOG(INFO) << "Config: " << config;
-}
+    : config_(config),
+      system_inspector_(config_),
+      control_(control),
+      signum_(*signum),
+      server_(OPTIONS),
+      registry_(std::make_shared<prometheus::Registry>()),
+      exposer_("9090"),
+      exporter_(registry_, &config_, &system_inspector_),
+      config_loader_(config_) {
+  CLOG(INFO) << "Config: " << config_;
 
-void CollectorService::RunForever() {
-  // Start monitoring services.
-  // Some of these variables must remain in scope, so
-  // be cautious if decomposing to a separate function.
-  const char* options[] = {"listening_ports", "8080", 0};
-  CivetServer server(options);
+  // Initialize civetweb server handlers
+  civet_endpoints_.emplace_back(std::make_unique<GetStatus>(config_.Hostname(), &system_inspector_));
+  civet_endpoints_.emplace_back(std::make_unique<LogLevelHandler>());
+  civet_endpoints_.emplace_back(std::make_unique<ProfilerHandler>());
 
-  std::shared_ptr<ConnectionTracker> conn_tracker;
-
-  GetStatus getStatus(config_.Hostname(), &system_inspector_);
-
-  std::shared_ptr<prometheus::Registry> registry = std::make_shared<prometheus::Registry>();
-
-  server.addHandler("/ready", getStatus);
-  LogLevelHandler setLogLevel;
-  server.addHandler("/loglevel", setLogLevel);
-
-  ProfilerHandler profiler_handler;
-  server.addHandler(ProfilerHandler::kBaseRoute, profiler_handler);
-
-  prometheus::Exposer exposer("9090");
-  exposer.RegisterCollectable(registry);
-
-  CollectorStatsExporter exporter(registry, &config_, &system_inspector_);
-  ConfigLoader configLoader(config_);
-  configLoader.Start();
-
-  std::unique_ptr<NetworkStatusNotifier> net_status_notifier;
-
-  std::unique_ptr<ContainerInfoInspector> container_info_inspector;
-  std::unique_ptr<NetworkStatusInspector> network_status_inspector;
-  std::unique_ptr<CollectorConfigInspector> collector_config_inspector;
-
-  CLOG(INFO) << "Network scrape interval set to " << config_.ScrapeInterval() << " seconds";
-
-  if (config_.grpc_channel) {
-    CLOG(INFO) << "Waiting for Sensor to become ready ...";
-    if (!WaitForGRPCServer()) {
-      CLOG(INFO) << "Interrupted while waiting for Sensor to become ready ...";
-      return;
-    }
-    CLOG(INFO) << "Sensor connectivity is successful";
+  if (config.IsIntrospectionEnabled()) {
+    civet_endpoints_.emplace_back(std::make_unique<ContainerInfoInspector>(system_inspector_.GetContainerMetadataInspector()));
+    civet_endpoints_.emplace_back(std::make_unique<NetworkStatusInspector>(conn_tracker_));
+    civet_endpoints_.emplace_back(std::make_unique<CollectorConfigInspector>(config_));
   }
 
+  for (const auto& endpoint : civet_endpoints_) {
+    server_.addHandler(endpoint->GetBaseRoute(), endpoint.get());
+  }
+
+  // Prometheus
+  exposer_.RegisterCollectable(registry_);
+
+  // Network tracking
   if (!config_.grpc_channel || !config_.DisableNetworkFlows()) {
     // In case if no GRPC is used, continue to setup networking infrasturcture
     // with empty grpc_channel. NetworkConnectionInfoServiceComm will pick it
     // up and use stdout instead.
-    std::shared_ptr<ProcessStore> process_store;
     if (config_.IsProcessesListeningOnPortsEnabled()) {
-      process_store = std::make_shared<ProcessStore>(&system_inspector_);
+      process_store_ = std::make_shared<ProcessStore>(&system_inspector_);
     }
-    std::shared_ptr<IConnScraper> conn_scraper = std::make_shared<ConnScraper>(config_.HostProc(), process_store);
-    conn_tracker = std::make_shared<ConnectionTracker>();
+    conn_scraper_ = std::make_shared<ConnScraper>(config_.HostProc(), process_store_);
+    conn_tracker_ = std::make_shared<ConnectionTracker>();
     UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs(config_.IgnoredL4ProtoPortPairs());
-    conn_tracker->UpdateIgnoredL4ProtoPortPairs(std::move(ignored_l4proto_port_pairs));
-    conn_tracker->UpdateIgnoredNetworks(config_.IgnoredNetworks());
-    conn_tracker->UpdateNonAggregatedNetworks(config_.NonAggregatedNetworks());
+    conn_tracker_->UpdateIgnoredL4ProtoPortPairs(std::move(ignored_l4proto_port_pairs));
+    conn_tracker_->UpdateIgnoredNetworks(config_.IgnoredNetworks());
+    conn_tracker_->UpdateNonAggregatedNetworks(config_.NonAggregatedNetworks());
 
-    auto network_connection_info_service_comm = std::make_shared<NetworkConnectionInfoServiceComm>(config_.Hostname(), config_.grpc_channel);
+    network_connection_info_service_comm_ = std::make_shared<NetworkConnectionInfoServiceComm>(config_.Hostname(), config_.grpc_channel);
 
-    net_status_notifier = std::make_unique<NetworkStatusNotifier>(conn_scraper,
-                                                                  conn_tracker,
-                                                                  network_connection_info_service_comm,
-                                                                  config_,
-                                                                  config_.EnableConnectionStats() ? exporter.GetConnectionsTotalReporter() : 0,
-                                                                  config_.EnableConnectionStats() ? exporter.GetConnectionsRateReporter() : 0);
-    net_status_notifier->Start();
+    auto total_reporter = config_.EnableConnectionStats() ? exporter_.GetConnectionsTotalReporter() : nullptr;
+    auto rate_reporter = config_.EnableConnectionStats() ? exporter_.GetConnectionsRateReporter() : nullptr;
+
+    net_status_notifier_ = std::make_unique<NetworkStatusNotifier>(
+        conn_scraper_,
+        conn_tracker_,
+        network_connection_info_service_comm_,
+        config_,
+        total_reporter,
+        rate_reporter);
+
+    auto network_signal_handler = std::make_unique<NetworkSignalHandler>(system_inspector_.GetInspector(), conn_tracker_, system_inspector_.GetUserspaceStats());
+    network_signal_handler->SetCollectConnectionStatus(config_.CollectConnectionStatus());
+    network_signal_handler->SetTrackSendRecv(config_.TrackingSendRecv());
+    system_inspector_.AddSignalHandler(std::move(network_signal_handler));
+  }
+}
+
+CollectorService::~CollectorService() {
+  config_loader_.Stop();
+  server_.close();
+  exporter_.stop();
+  if (net_status_notifier_) {
+    net_status_notifier_->Stop();
   }
 
-  if (!exporter.start()) {
+  // system_inspector_ needs to be last, since other components relay on it.
+  system_inspector_.CleanUp();
+}
+
+void CollectorService::RunForever() {
+  // Start monitoring services.
+  config_loader_.Start();
+
+  CLOG(INFO) << "Network scrape interval set to " << config_.ScrapeInterval() << " seconds";
+
+  if (net_status_notifier_) {
+    net_status_notifier_->Start();
+  }
+
+  if (!exporter_.start()) {
     CLOG(FATAL) << "Unable to start collector stats exporter";
   }
 
-  if (config_.IsIntrospectionEnabled()) {
-    container_info_inspector = std::make_unique<ContainerInfoInspector>(system_inspector_.GetContainerMetadataInspector());
-    server.addHandler(container_info_inspector->kBaseRoute, container_info_inspector.get());
-    network_status_inspector = std::make_unique<NetworkStatusInspector>(conn_tracker);
-    server.addHandler(network_status_inspector->kBaseRoute, network_status_inspector.get());
-    collector_config_inspector = std::make_unique<CollectorConfigInspector>(config_);
-    server.addHandler(collector_config_inspector->kBaseRoute, collector_config_inspector.get());
-  }
-
-  system_inspector_.Init(config_, conn_tracker);
   system_inspector_.Start();
 
   ControlValue cv;
@@ -135,20 +130,6 @@ void CollectorService::RunForever() {
   }
 
   CLOG(INFO) << "Shutting down collector.";
-
-  if (net_status_notifier) {
-    net_status_notifier->Stop();
-  }
-  configLoader.Stop();
-  // Shut down these first since they access the system inspector object.
-  exporter.stop();
-  server.close();
-
-  system_inspector_.CleanUp();
-}
-
-bool CollectorService::InitKernel() {
-  return system_inspector_.InitKernel(config_);
 }
 
 bool CollectorService::WaitForGRPCServer() {
@@ -157,13 +138,13 @@ bool CollectorService::WaitForGRPCServer() {
   return WaitForChannelReady(config_.grpc_channel, interrupt);
 }
 
-bool SetupKernelDriver(CollectorService& collector, const CollectorConfig& config) {
+bool CollectorService::InitKernel() {
   auto& startup_diagnostics = StartupDiagnostics::GetInstance();
-  std::string cm_name(CollectionMethodName(config.GetCollectionMethod()));
+  std::string cm_name(CollectionMethodName(config_.GetCollectionMethod()));
 
   startup_diagnostics.DriverAvailable(cm_name);
 
-  if (collector.InitKernel()) {
+  if (system_inspector_.InitKernel(config_)) {
     startup_diagnostics.DriverSuccess(cm_name);
     return true;
   }
