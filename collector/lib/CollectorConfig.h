@@ -31,7 +31,8 @@ class CollectorConfig {
   static constexpr bool kTurnOffScrape = false;
   static constexpr int kScrapeInterval = 30;
   static constexpr int64_t kMaxConnectionsPerMinute = 2048;
-  static constexpr CollectionMethod kCollectionMethod = CollectionMethod::CORE_BPF;
+  // static constexpr CollectionMethod kCollectionMethod = CollectionMethod::CORE_BPF;
+  static constexpr CollectionMethod kCollectionMethod = CollectionMethod::PROCFS_ONLY;
   static constexpr const char* kSyscalls[] = {
       "accept",
       "accept4",
