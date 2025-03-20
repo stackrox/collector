@@ -21,6 +21,8 @@ type criExecutor struct {
 	imageService   internalapi.ImageManagerService
 	runtimeService internalapi.RuntimeService
 	registries     map[string]dockerRegistryConfig
+
+	tmpDirs []string
 }
 
 func newCriExecutor() (*criExecutor, error) {
@@ -137,6 +139,15 @@ func (c *criExecutor) RemoveContainer(filter ContainerFilter) (string, error) {
 	// explicitly delete the file here.
 	os.Remove(fmt.Sprintf("/tmp/collector-integration-tests/%s", filter.Name))
 
+	// We also need to remove any temporary directories associated to the
+	// container
+	for _, dir := range c.tmpDirs {
+		err := os.RemoveAll(dir)
+		if err != nil {
+			return "", err
+		}
+	}
+
 	container, err := c.getContainer(filter.Name)
 	if err != nil {
 		return "", err
@@ -197,6 +208,14 @@ func (c *criExecutor) StartContainer(config config.ContainerStartConfig) (string
 		if strings.HasSuffix(containerPath, ":ro") {
 			containerPath = strings.TrimSuffix(containerPath, ":ro")
 			readonly = true
+		}
+
+		if hostPath == "" {
+			hostPath, err = os.MkdirTemp("/tmp", "collector-emptydir-")
+			if err != nil {
+				return "", err
+			}
+			c.tmpDirs = append(c.tmpDirs, hostPath)
 		}
 
 		mounts = append(mounts, &pb.Mount{
