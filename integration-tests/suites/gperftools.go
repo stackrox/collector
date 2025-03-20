@@ -50,16 +50,16 @@ func (s *GperftoolsTestSuite) runProfilerTest(resource string) {
 
 	response, err := http.Post(heap_api_url, data_type, strings.NewReader("on"))
 	s.Require().NoError(err)
-	s.Assert().Equal(response.StatusCode, 200, "Failed to start heap profiling")
+	s.Assert().Equalf(response.StatusCode, 200, "Failed to start %s profiling", resource)
 
 	// Wait a bit to collect something in the heap profile
 	common.Sleep(1 * time.Second)
 
 	response, err = http.Post(heap_api_url, data_type, strings.NewReader("off"))
 	s.Require().NoError(err)
-	s.Assert().Equal(response.StatusCode, 200, "Failed to stop heap profiling")
+	s.Assert().Equalf(response.StatusCode, 200, "Failed to stop %s profiling", resource)
 
 	response, err = http.Get(heap_api_url)
 	s.Require().NoError(err)
-	s.Assert().Equal(response.StatusCode, 200, "Failed to fetch heap profile")
+	s.Assert().Equalf(response.StatusCode, 200, "Failed to fetch %s profile", resource)
 }
