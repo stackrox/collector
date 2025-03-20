@@ -36,24 +36,6 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
       config_loader_(config_) {
   CLOG(INFO) << "Config: " << config_;
 
-  // Initialize civetweb server handlers
-  civet_endpoints_.emplace_back(std::make_unique<GetStatus>(config_.Hostname(), &system_inspector_));
-  civet_endpoints_.emplace_back(std::make_unique<LogLevelHandler>());
-  civet_endpoints_.emplace_back(std::make_unique<ProfilerHandler>());
-
-  if (config.IsIntrospectionEnabled()) {
-    civet_endpoints_.emplace_back(std::make_unique<ContainerInfoInspector>(system_inspector_.GetContainerMetadataInspector()));
-    civet_endpoints_.emplace_back(std::make_unique<NetworkStatusInspector>(conn_tracker_));
-    civet_endpoints_.emplace_back(std::make_unique<CollectorConfigInspector>(config_));
-  }
-
-  for (const auto& endpoint : civet_endpoints_) {
-    server_.addHandler(endpoint->GetBaseRoute(), endpoint.get());
-  }
-
-  // Prometheus
-  exposer_.RegisterCollectable(registry_);
-
   // Network tracking
   if (!config_.grpc_channel || !config_.DisableNetworkFlows()) {
     // In case if no GRPC is used, continue to setup networking infrasturcture
@@ -87,6 +69,24 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
     network_signal_handler->SetTrackSendRecv(config_.TrackingSendRecv());
     system_inspector_.AddSignalHandler(std::move(network_signal_handler));
   }
+
+  // Initialize civetweb server handlers
+  civet_endpoints_.emplace_back(std::make_unique<GetStatus>(config_.Hostname(), &system_inspector_));
+  civet_endpoints_.emplace_back(std::make_unique<LogLevelHandler>());
+  civet_endpoints_.emplace_back(std::make_unique<ProfilerHandler>());
+
+  if (config.IsIntrospectionEnabled()) {
+    civet_endpoints_.emplace_back(std::make_unique<ContainerInfoInspector>(system_inspector_.GetContainerMetadataInspector()));
+    civet_endpoints_.emplace_back(std::make_unique<NetworkStatusInspector>(conn_tracker_));
+    civet_endpoints_.emplace_back(std::make_unique<CollectorConfigInspector>(config_));
+  }
+
+  for (const auto& endpoint : civet_endpoints_) {
+    server_.addHandler(endpoint->GetBaseRoute(), endpoint.get());
+  }
+
+  // Prometheus
+  exposer_.RegisterCollectable(registry_);
 }
 
 CollectorService::~CollectorService() {
