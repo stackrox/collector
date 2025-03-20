@@ -4,7 +4,6 @@
 #include <prometheus/exposer.h>
 #include <prometheus/registry.h>
 
-#include "CivetServer.h"
 #include "CivetWrapper.h"
 #include "CollectorConfig.h"
 #include "CollectorStatsExporter.h"
