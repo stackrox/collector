@@ -39,11 +39,11 @@ void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTrac
   // so they are added to the handler list first, so they have access
   // to self-check events before the network and process handlers have
   // a chance to process them and send them to Sensor.
-  AddSignalHandler(MakeUnique<SelfCheckProcessHandler>(inspector_.get()));
-  AddSignalHandler(MakeUnique<SelfCheckNetworkHandler>(inspector_.get()));
+  AddSignalHandler(std::make_unique<SelfCheckProcessHandler>(inspector_.get()));
+  AddSignalHandler(std::make_unique<SelfCheckNetworkHandler>(inspector_.get()));
 
   if (conn_tracker) {
-    auto network_signal_handler_ = MakeUnique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_);
+    auto network_signal_handler_ = std::make_unique<NetworkSignalHandler>(inspector_.get(), conn_tracker, &userspace_stats_);
 
     network_signal_handler_->SetCollectConnectionStatus(config.CollectConnectionStatus());
     network_signal_handler_->SetTrackSendRecv(config.TrackingSendRecv());
@@ -56,10 +56,10 @@ void Service::Init(const CollectorConfig& config, std::shared_ptr<ConnectionTrac
   } else {
     signal_client_.reset(new StdoutSignalServiceClient());
   }
-  AddSignalHandler(MakeUnique<ProcessSignalHandler>(inspector_.get(),
-                                                    signal_client_.get(),
-                                                    &userspace_stats_,
-                                                    config));
+  AddSignalHandler(std::make_unique<ProcessSignalHandler>(inspector_.get(),
+                                                          signal_client_.get(),
+                                                          &userspace_stats_,
+                                                          config));
 
   if (signal_handlers_.size() == 2) {
     // self-check handlers do not count towards this check, because they

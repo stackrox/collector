@@ -27,11 +27,6 @@ const char* StrError(int errnum = errno);
 // Return the name of a signal. This function is reentrant.
 const char* SignalName(int signum);
 
-template <typename T, typename... Args>
-std::unique_ptr<T> MakeUnique(Args&&... args) {
-  return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-}
-
 // Return string decoded from base 64
 std::string Base64Decode(std::string const& encoded_string);
 
