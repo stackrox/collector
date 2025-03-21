@@ -6,6 +6,8 @@
 
 namespace collector {
 
+const std::string GetStatus::kBaseRoute = "/ready";
+
 bool GetStatus::handleGet(CivetServer* server, struct mg_connection* conn) {
   using namespace std;
 

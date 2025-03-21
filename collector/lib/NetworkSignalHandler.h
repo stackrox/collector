@@ -11,17 +11,16 @@
 // forward declarations
 class sinsp;
 class sinsp_evt;
+
 namespace collector {
 namespace system_inspector {
 class EventExtractor;
 }
-}  // namespace collector
-
-namespace collector {
 
 class NetworkSignalHandler final : public SignalHandler {
  public:
   explicit NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker, system_inspector::Stats* stats);
+  ~NetworkSignalHandler();
 
   std::string GetName() override { return "NetworkSignalHandler"; }
   Result HandleSignal(sinsp_evt* evt) override;

@@ -4,7 +4,7 @@
 #include <memory>
 #include <mutex>
 
-#include "CivetServer.h"
+#include "CivetWrapper.h"
 #include "Profiler.h"
 
 namespace collector {
@@ -20,17 +20,21 @@ namespace collector {
 //   - get latest cpu profile
 // GET /profile/heap
 //   - get latest heap profile
-class ProfilerHandler : public CivetHandler {
+class ProfilerHandler : public CivetWrapper {
  public:
+  bool handleGet(CivetServer* server, struct mg_connection* conn) override;
+  bool handlePost(CivetServer* server, struct mg_connection* conn) override;
+
+  const std::string& GetBaseRoute() override {
+    return kBaseRoute;
+  }
+
+ private:
   static const std::string kCPUProfileFilename;
   static const std::string kBaseRoute;
   static const std::string kCPURoute;
   static const std::string kHeapRoute;
 
-  bool handleGet(CivetServer* server, struct mg_connection* conn);
-  bool handlePost(CivetServer* server, struct mg_connection* conn);
-
- private:
   bool ServerError(struct mg_connection* conn, const char* err);
   bool ClientError(struct mg_connection* conn, const char* err);
   bool SendStatus(struct mg_connection* conn);
