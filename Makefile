@@ -45,7 +45,7 @@ connscrape:
 unittest:
 	make -C collector unittest
 
-image: collector unittest
+image: collector
 	make -C collector txt-files
 	docker buildx build --load --platform ${PLATFORM} \
 		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
@@ -53,7 +53,7 @@ image: collector unittest
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
-image-dev: collector unittest container-dockerfile-dev
+image-dev: collector container-dockerfile-dev
 	make -C collector txt-files
 	docker buildx build --load --platform ${PLATFORM} \
 		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
