@@ -13,7 +13,10 @@
 
 namespace collector {
 
-const std::string ProfilerHandler::kCPUProfileFilename = "/module/cpu_profile";
+// The following route is used by the CPU profiler to dump information
+// into. When running in read only file systems, /var/profiles needs to
+// be writable, or the CPU profiler will not work.
+const std::string ProfilerHandler::kCPUProfileFilename = "/var/profiles/cpu_profile";
 const std::string ProfilerHandler::kBaseRoute = "/profile";
 const std::string ProfilerHandler::kCPURoute = kBaseRoute + "/cpu";
 const std::string ProfilerHandler::kHeapRoute = kBaseRoute + "/heap";
