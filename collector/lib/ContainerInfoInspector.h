@@ -7,15 +7,15 @@
 #include <string>
 #include <unordered_map>
 
+#include "CivetWrapper.h"
 #include "ContainerMetadata.h"
-#include "IntrospectionEndpoint.h"
 #include "json/writer.h"
 
 namespace collector {
 
 using QueryParams = std::unordered_map<std::string, std::string>;
 
-class ContainerInfoInspector : public IntrospectionEndpoint {
+class ContainerInfoInspector : public CivetWrapper {
  public:
   ContainerInfoInspector(const std::shared_ptr<ContainerMetadata>& cmi) : container_metadata_inspector_(cmi) {}
 

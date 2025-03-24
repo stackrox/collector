@@ -3,12 +3,12 @@
 
 #include <json/writer.h>
 
+#include "CivetWrapper.h"
 #include "CollectorConfig.h"
-#include "IntrospectionEndpoint.h"
 
 namespace collector {
 
-class CollectorConfigInspector : public IntrospectionEndpoint {
+class CollectorConfigInspector : public CivetWrapper {
  public:
   CollectorConfigInspector(const CollectorConfig& config);
 

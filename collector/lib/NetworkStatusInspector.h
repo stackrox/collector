@@ -5,13 +5,13 @@
 
 #include <json/writer.h>
 
-#include "IntrospectionEndpoint.h"
+#include "CivetWrapper.h"
 
 namespace collector {
 
 class ConnectionTracker;
 
-class NetworkStatusInspector : public IntrospectionEndpoint {
+class NetworkStatusInspector : public CivetWrapper {
  public:
   NetworkStatusInspector(const std::shared_ptr<ConnectionTracker> conntracker);
 
