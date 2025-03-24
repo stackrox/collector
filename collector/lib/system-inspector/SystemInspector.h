@@ -6,7 +6,6 @@
 
 #include "CollectorConfig.h"
 #include "Control.h"
-#include "SensorClient.h"
 #include "ppm_events_public.h"
 
 namespace collector::system_inspector {
