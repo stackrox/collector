@@ -24,7 +24,7 @@ func (s *LogLevelTestSuite) SetupSuite() {
 	s.StartCollector(false, options)
 }
 
-func (s *LogLevelTestSuite) TeardownSuite() {
+func (s *LogLevelTestSuite) TearDownSuite() {
 	s.StopCollector()
 }
 
