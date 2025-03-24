@@ -90,7 +90,7 @@ RUN if [[ "$(uname -m)" == "x86_64" ]];   \
            -DADDRESS_SANITIZER="${ADDRESS_SANITIZER}" \
            -DCOLLECTOR_VERSION="${COLLECTOR_TAG}" \
            -DTRACE_SINSP_EVENTS="${TRACE_SINSP_EVENTS}"
-RUN cmake --build "${CMAKE_BUILD_DIR}" --target collector -- -j "${NPROCS:-4}"
+RUN cmake --build "${CMAKE_BUILD_DIR}" --target collector self-checks -- -j "${NPROCS:-4}"
 RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 
