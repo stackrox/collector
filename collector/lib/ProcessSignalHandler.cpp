@@ -25,17 +25,6 @@ std::string compute_process_key(const ::sensor::ProcessSignal& s) {
   return ss.str();
 }
 
-bool ProcessSignalHandler::Start() {
-  client_->Start();
-  return true;
-}
-
-bool ProcessSignalHandler::Stop() {
-  client_->Stop();
-  rate_limiter_.ResetRateLimitCache();
-  return true;
-}
-
 SignalHandler::Result ProcessSignalHandler::HandleSignal(sinsp_evt* evt) {
   const auto* signal_msg = formatter_.ToProtoMessage(evt);
 
