@@ -1,13 +1,10 @@
 #pragma once
 
-#include <memory>
-
 #include <grpcpp/channel.h>
 
 #include "CollectorConfig.h"
 #include "ProcessSignalFormatter.h"
 #include "RateLimit.h"
-#include "SensorClient.h"
 #include "SignalHandler.h"
 #include "system-inspector/Service.h"
 
@@ -22,7 +19,7 @@ class ProcessSignalHandler : public SignalHandler {
  public:
   ProcessSignalHandler(
       sinsp* inspector,
-      ISensorClient* client,
+      CollectorOutput* client,
       system_inspector::Stats* stats,
       const CollectorConfig& config)
       : client_(client),
@@ -36,15 +33,13 @@ class ProcessSignalHandler : public SignalHandler {
   ProcessSignalHandler& operator=(ProcessSignalHandler&&) = delete;
   ~ProcessSignalHandler() override = default;
 
-  bool Start() override;
-  bool Stop() override;
   Result HandleSignal(sinsp_evt* evt) override;
   Result HandleExistingProcess(sinsp_threadinfo* tinfo) override;
   std::string GetName() override { return "ProcessSignalHandler"; }
   std::vector<std::string> GetRelevantEvents() override;
 
  private:
-  ISensorClient* client_;
+  CollectorOutput* client_;
   ProcessSignalFormatter formatter_;
   system_inspector::Stats* stats_;
   RateLimitCache rate_limiter_;

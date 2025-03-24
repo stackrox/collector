@@ -14,6 +14,7 @@
 
 #include "CollectionMethod.h"
 #include "CollectorException.h"
+#include "CollectorOutput.h"
 #include "CollectorStats.h"
 #include "ContainerEngine.h"
 #include "ContainerMetadata.h"
@@ -32,7 +33,7 @@
 
 namespace collector::system_inspector {
 
-Service::Service() : signal_client_(nullptr) {}
+Service::Service() = default;
 Service::~Service() = default;
 Service& Service::operator=(Service&& other) noexcept {
   {
@@ -44,7 +45,7 @@ Service& Service::operator=(Service&& other) noexcept {
     default_formatter_.swap(other.default_formatter_);
   }
 
-  std::swap(signal_client_, other.signal_client_);
+  std::swap(output_, other.output_);
   signal_handlers_.swap(other.signal_handlers_);
 
   userspace_stats_ = other.userspace_stats_;
@@ -59,14 +60,14 @@ Service& Service::operator=(Service&& other) noexcept {
   return *this;
 }
 
-Service::Service(const CollectorConfig& config, ISensorClient* client)
+Service::Service(const CollectorConfig& config, CollectorOutput* client)
     : inspector_(std::make_unique<sinsp>(true)),
       container_metadata_inspector_(std::make_unique<ContainerMetadata>(inspector_.get())),
       default_formatter_(std::make_unique<sinsp_evt_formatter>(
           inspector_.get(),
           DEFAULT_OUTPUT_STR,
           EventExtractor::FilterList())),
-      signal_client_(client) {
+      output_(client) {
   // Setup the inspector.
   // peeking into arguments has a big overhead, so we prevent it from happening
   inspector_->set_snaplen(0);
@@ -122,7 +123,7 @@ Service::Service(const CollectorConfig& config, ISensorClient* client)
   AddSignalHandler(std::make_unique<SelfCheckNetworkHandler>(inspector_.get()));
 
   AddSignalHandler(std::make_unique<ProcessSignalHandler>(inspector_.get(),
-                                                          signal_client_,
+                                                          output_,
                                                           &userspace_stats_,
                                                           config));
 
