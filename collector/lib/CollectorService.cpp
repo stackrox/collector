@@ -34,6 +34,7 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
       server_(OPTIONS),
       registry_(std::make_shared<prometheus::Registry>()),
       exposer_(PROMETHEUS_PORT),
+      exporter_(registry_, &config_, &system_inspector_),
       config_loader_(config_) {
   CLOG(INFO) << "Config: " << config_;
 
@@ -87,7 +88,6 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
   }
 
   // Prometheus
-  exporter_ = {registry_, &config_, &system_inspector_};
   exposer_.RegisterCollectable(registry_);
 }
 
