@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 )
 
 const collectorUrl = "http://localhost:8080/loglevel"
@@ -29,8 +30,11 @@ func (s *LogLevelTestSuite) TearDownSuite() {
 }
 
 func (s *LogLevelTestSuite) TestLogLevel() {
-	level := []byte("info")
-	resp, err := http.Post(collectorUrl, "application/text", bytes.NewBuffer(level))
+	err := checkLogLevel("DEBUG")
+	s.Assert().NoError(err)
+
+	level := bytes.NewBuffer([]byte("info"))
+	resp, err := http.Post(collectorUrl, "application/text", level)
 	s.Assert().NoError(err)
 	s.Assert().Equal(resp.StatusCode, 200)
 
@@ -39,13 +43,24 @@ func (s *LogLevelTestSuite) TestLogLevel() {
 	s.Assert().NoError(err)
 	s.Assert().True(json.Valid(body))
 
-	valid, err := http.Post(collectorUrl, "application/text", nil)
+	err = checkLogLevel("INFO")
 	s.Assert().NoError(err)
-	s.Assert().Equal(valid.StatusCode, 200)
+}
+
+func checkLogLevel(level string) error {
+	valid, err := http.Post(collectorUrl, "application/text", nil)
+	if err != nil {
+		return err
+	}
+	if valid.StatusCode != 200 {
+		return log.Error("Got status code %s", valid.Status)
+	}
 
 	defer valid.Body.Close()
 	bodyV, err := io.ReadAll(valid.Body)
-	s.Assert().NoError(err)
+	if err != nil {
+		return err
+	}
 
 	var logLevel struct {
 		Status string
@@ -53,6 +68,12 @@ func (s *LogLevelTestSuite) TestLogLevel() {
 	}
 
 	err = json.Unmarshal(bodyV, &logLevel)
-	s.Assert().NoError(err)
-	s.Assert().Equal("INFO", logLevel.Level)
+	if err != nil {
+		return err
+	}
+
+	if level != logLevel.Level {
+		return log.Error("Invalid log level, got=%q want=%q", logLevel.Level, level)
+	}
+	return nil
 }

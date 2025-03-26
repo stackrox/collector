@@ -28,6 +28,7 @@ func (s *PrometheusTestSuite) TestPrometheus() {
 	body := response.Body
 	defer body.Close()
 	var parser expfmt.TextParser
-	_, err = parser.TextToMetricFamilies(body)
+	m, err := parser.TextToMetricFamilies(body)
 	s.Require().NoError(err)
+	s.Assert().NotEmpty(m)
 }
