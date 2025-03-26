@@ -60,7 +60,7 @@ SignalHandler::Result SensorClient::SendMsg(const sensor::MsgFromCollector& msg)
     return SignalHandler::ERROR;
   }
 
-  if (first_write_) {
+  if (first_write_ && msg.has_process_signal()) {
     first_write_ = false;
     return SignalHandler::NEEDS_REFRESH;
   }

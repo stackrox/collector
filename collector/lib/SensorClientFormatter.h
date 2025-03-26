@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SENSOR_CLIENT_FORMATTER_H
+#define SENSOR_CLIENT_FORMATTER_H
 
 #include <memory>
 
@@ -6,8 +7,6 @@
 
 #include "api/v1/signal.pb.h"
 #include "internalapi/sensor/collector_iservice.pb.h"
-#include "internalapi/sensor/signal_iservice.pb.h"
-#include "storage/process_indicator.pb.h"
 
 #include "CollectorConfig.h"
 #include "ContainerMetadata.h"
@@ -24,17 +23,23 @@ class EventExtractor;
 
 namespace collector {
 
-class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
+class SensorClientFormatter : public ProtoSignalFormatter<sensor::MsgFromCollector> {
  public:
-  ProcessSignalFormatter(sinsp* inspector, const CollectorConfig& config);
-  ~ProcessSignalFormatter();
+  SensorClientFormatter(const SensorClientFormatter&) = delete;
+  SensorClientFormatter(SensorClientFormatter&&) = delete;
+  SensorClientFormatter& operator=(const SensorClientFormatter&) = delete;
+  SensorClientFormatter& operator=(SensorClientFormatter&&) = delete;
+  virtual ~SensorClientFormatter();
+
+  SensorClientFormatter(sinsp* inspector, const CollectorConfig& config);
 
   using Signal = v1::Signal;
-  using ProcessSignal = storage::ProcessSignal;
-  using LineageInfo = storage::ProcessSignal_LineageInfo;
+  using ProcessSignal = sensor::ProcessSignal;
+  using LineageInfo = sensor::ProcessSignal_LineageInfo;
+  using MsgFromCollector = sensor::MsgFromCollector;
 
-  const sensor::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
-  const sensor::SignalStreamMessage* ToProtoMessage(sinsp_threadinfo* tinfo) override;
+  const MsgFromCollector* ToProtoMessage(sinsp_evt* event) override;
+  const MsgFromCollector* ToProtoMessage(sinsp_threadinfo* tinfo) override;
 
   void GetProcessLineage(sinsp_threadinfo* tinfo, std::vector<LineageInfo>& lineage);
 
@@ -61,3 +66,5 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
 };
 
 }  // namespace collector
+
+#endif  // SENSOR_CLIENT_FORMATTER_H

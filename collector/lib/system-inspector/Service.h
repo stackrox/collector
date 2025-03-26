@@ -73,7 +73,6 @@ class Service : public SystemInspector {
   std::unique_ptr<sinsp> inspector_;
   std::shared_ptr<ContainerMetadata> container_metadata_inspector_;
   std::unique_ptr<sinsp_evt_formatter> default_formatter_;
-  CollectorOutput* output_{};
   std::vector<SignalHandlerEntry> signal_handlers_;
   Stats userspace_stats_;
   std::bitset<PPM_EVENT_MAX> global_event_filter_;
