@@ -1,9 +1,10 @@
-#include "ProcessSignalFormatter.h"
+#include "SensorClientFormatter.h"
 
 #include <uuid/uuid.h>
 
 #include <google/protobuf/util/time_util.h>
 
+#include "internalapi/sensor/collector_iservice.pb.h"
 #include "internalapi/sensor/signal_iservice.pb.h"
 
 #include "CollectorStats.h"
@@ -15,9 +16,9 @@
 namespace collector {
 
 using SignalStreamMessage = sensor::SignalStreamMessage;
-using Signal = ProcessSignalFormatter::Signal;
-using ProcessSignal = ProcessSignalFormatter::ProcessSignal;
-using LineageInfo = ProcessSignalFormatter::LineageInfo;
+using Signal = SensorClientFormatter::Signal;
+using ProcessSignal = SensorClientFormatter::ProcessSignal;
+using LineageInfo = SensorClientFormatter::LineageInfo;
 
 using Timestamp = google::protobuf::Timestamp;
 using TimeUtil = google::protobuf::util::TimeUtil;
@@ -56,7 +57,7 @@ std::string extract_proc_args(sinsp_threadinfo* tinfo) {
 
 }  // namespace
 
-ProcessSignalFormatter::ProcessSignalFormatter(
+SensorClientFormatter::SensorClientFormatter(
     sinsp* inspector,
     const CollectorConfig& config) : event_names_(EventNames::GetInstance()),
                                      event_extractor_(std::make_unique<system_inspector::EventExtractor>()),
@@ -65,9 +66,9 @@ ProcessSignalFormatter::ProcessSignalFormatter(
   event_extractor_->Init(inspector);
 }
 
-ProcessSignalFormatter::~ProcessSignalFormatter() = default;
+SensorClientFormatter::~SensorClientFormatter() = default;
 
-const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* event) {
+const sensor::MsgFromCollector* SensorClientFormatter::ToProtoMessage(sinsp_evt* event) {
   if (process_signals[event->get_type()] == ProcessSignalType::UNKNOWN_PROCESS_TYPE) {
     return nullptr;
   }
@@ -84,37 +85,33 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
     return nullptr;
   }
 
-  auto* signal = Allocate<Signal>();
-  signal->set_allocated_process_signal(process_signal);
-
-  SignalStreamMessage* signal_stream_message = AllocateRoot();
-  signal_stream_message->clear_collector_register_request();
-  signal_stream_message->set_allocated_signal(signal);
-  return signal_stream_message;
+  auto* msg = AllocateRoot();
+  msg->clear_info();
+  msg->clear_register_();
+  msg->set_allocated_process_signal(process_signal);
+  return msg;
 }
 
-const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
+const sensor::MsgFromCollector* SensorClientFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
   Reset();
   if (!ValidateProcessDetails(tinfo)) {
     CLOG(INFO) << "Dropping process event: " << tinfo;
     return nullptr;
   }
 
-  ProcessSignal* process_signal = CreateProcessSignal(tinfo);
-  if (process_signal == nullptr) {
+  ProcessSignal* signal = CreateProcessSignal(tinfo);
+  if (signal == nullptr) {
     return nullptr;
   }
 
-  auto* signal = Allocate<Signal>();
-  signal->set_allocated_process_signal(process_signal);
-
-  SignalStreamMessage* signal_stream_message = AllocateRoot();
-  signal_stream_message->clear_collector_register_request();
-  signal_stream_message->set_allocated_signal(signal);
-  return signal_stream_message;
+  auto* msg = AllocateRoot();
+  msg->clear_register_();
+  msg->clear_info();
+  msg->set_allocated_process_signal(signal);
+  return msg;
 }
 
-ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
+ProcessSignal* SensorClientFormatter::CreateProcessSignal(sinsp_evt* event) {
   auto signal = Allocate<ProcessSignal>();
 
   // set id
@@ -173,7 +170,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   // set time
   auto timestamp = Allocate<Timestamp>();
   *timestamp = TimeUtil::NanosecondsToTimestamp(event->get_ts());
-  signal->set_allocated_time(timestamp);
+  signal->set_allocated_creation_time(timestamp);
 
   // set container_id
   if (const std::string* container_id = event_extractor_->get_container_id(event)) {
@@ -197,7 +194,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   return signal;
 }
 
-ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tinfo) {
+ProcessSignal* SensorClientFormatter::CreateProcessSignal(sinsp_threadinfo* tinfo) {
   auto signal = Allocate<ProcessSignal>();
 
   // set id
@@ -238,7 +235,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   // set time
   auto timestamp = Allocate<Timestamp>();
   *timestamp = TimeUtil::NanosecondsToTimestamp(tinfo->m_clone_ts);
-  signal->set_allocated_time(timestamp);
+  signal->set_allocated_creation_time(timestamp);
 
   // set container_id
   signal->set_container_id(tinfo->m_container_id);
@@ -261,7 +258,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   return signal;
 }
 
-std::string ProcessSignalFormatter::ProcessDetails(sinsp_evt* event) {
+std::string SensorClientFormatter::ProcessDetails(sinsp_evt* event) {
   std::stringstream ss;
   const std::string* path = event_extractor_->get_exepath(event);
   const std::string* name = event_extractor_->get_comm(event);
@@ -278,7 +275,7 @@ std::string ProcessSignalFormatter::ProcessDetails(sinsp_evt* event) {
   return ss.str();
 }
 
-bool ProcessSignalFormatter::ValidateProcessDetails(const sinsp_threadinfo* tinfo) {
+bool SensorClientFormatter::ValidateProcessDetails(const sinsp_threadinfo* tinfo) {
   if (tinfo == nullptr) {
     return false;
   }
@@ -290,13 +287,13 @@ bool ProcessSignalFormatter::ValidateProcessDetails(const sinsp_threadinfo* tinf
   return true;
 }
 
-bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
+bool SensorClientFormatter::ValidateProcessDetails(sinsp_evt* event) {
   const sinsp_threadinfo* tinfo = event->get_thread_info();
 
   return ValidateProcessDetails(tinfo);
 }
 
-int ProcessSignalFormatter::GetTotalStringLength(const std::vector<LineageInfo>& lineage) {
+int SensorClientFormatter::GetTotalStringLength(const std::vector<LineageInfo>& lineage) {
   int totalStringLength = 0;
   for (LineageInfo l : lineage) {
     totalStringLength += l.parent_exec_file_path().size();
@@ -305,7 +302,7 @@ int ProcessSignalFormatter::GetTotalStringLength(const std::vector<LineageInfo>&
   return totalStringLength;
 }
 
-void ProcessSignalFormatter::CountLineage(const std::vector<LineageInfo>& lineage) {
+void SensorClientFormatter::CountLineage(const std::vector<LineageInfo>& lineage) {
   int totalStringLength = GetTotalStringLength(lineage);
   COUNTER_INC(CollectorStats::process_lineage_counts);
   COUNTER_ADD(CollectorStats::process_lineage_total, lineage.size());
@@ -313,8 +310,8 @@ void ProcessSignalFormatter::CountLineage(const std::vector<LineageInfo>& lineag
   COUNTER_ADD(CollectorStats::process_lineage_string_total, totalStringLength);
 }
 
-void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
-                                               std::vector<LineageInfo>& lineage) {
+void SensorClientFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
+                                              std::vector<LineageInfo>& lineage) {
   if (tinfo == nullptr) {
     return;
   }

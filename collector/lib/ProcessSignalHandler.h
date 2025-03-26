@@ -5,6 +5,7 @@
 #include "CollectorConfig.h"
 #include "ProcessSignalFormatter.h"
 #include "RateLimit.h"
+#include "SensorClientFormatter.h"
 #include "SignalHandler.h"
 #include "system-inspector/Service.h"
 
@@ -23,9 +24,9 @@ class ProcessSignalHandler : public SignalHandler {
       system_inspector::Stats* stats,
       const CollectorConfig& config)
       : client_(client),
-        formatter_(inspector, config),
-        stats_(stats),
-        config_(config) {}
+        signal_formatter_(inspector, config),
+        sensor_formatter_(inspector, config),
+        stats_(stats) {}
 
   ProcessSignalHandler(const ProcessSignalHandler&) = delete;
   ProcessSignalHandler(ProcessSignalHandler&&) = delete;
@@ -39,12 +40,19 @@ class ProcessSignalHandler : public SignalHandler {
   std::vector<std::string> GetRelevantEvents() override;
 
  private:
+  // Handlers for the old service
+  Result HandleProcessSignal(sinsp_evt* evt);
+  Result HandleExistingProcessSignal(sinsp_threadinfo* tinfo);
+
+  // Handlers for the new service
+  Result HandleSensorSignal(sinsp_evt* evt);
+  Result HandleExistingProcessSensor(sinsp_threadinfo* tinfo);
+
   CollectorOutput* client_;
-  ProcessSignalFormatter formatter_;
+  ProcessSignalFormatter signal_formatter_;
+  SensorClientFormatter sensor_formatter_;
   system_inspector::Stats* stats_;
   RateLimitCache rate_limiter_;
-
-  const CollectorConfig& config_;
 };
 
 }  // namespace collector

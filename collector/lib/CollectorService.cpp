@@ -106,6 +106,8 @@ void CollectorService::RunForever() {
     CLOG(FATAL) << "Unable to start collector stats exporter";
   }
 
+  output_.Register();
+
   system_inspector_.Start();
 
   ControlValue cv;
