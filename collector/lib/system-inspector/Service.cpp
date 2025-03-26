@@ -45,7 +45,6 @@ Service& Service::operator=(Service&& other) noexcept {
     default_formatter_.swap(other.default_formatter_);
   }
 
-  std::swap(output_, other.output_);
   signal_handlers_.swap(other.signal_handlers_);
 
   userspace_stats_ = other.userspace_stats_;
@@ -66,8 +65,7 @@ Service::Service(const CollectorConfig& config, CollectorOutput* client)
       default_formatter_(std::make_unique<sinsp_evt_formatter>(
           inspector_.get(),
           DEFAULT_OUTPUT_STR,
-          EventExtractor::FilterList())),
-      output_(client) {
+          EventExtractor::FilterList())) {
   // Setup the inspector.
   // peeking into arguments has a big overhead, so we prevent it from happening
   inspector_->set_snaplen(0);
@@ -123,7 +121,7 @@ Service::Service(const CollectorConfig& config, CollectorOutput* client)
   AddSignalHandler(std::make_unique<SelfCheckNetworkHandler>(inspector_.get()));
 
   AddSignalHandler(std::make_unique<ProcessSignalHandler>(inspector_.get(),
-                                                          output_,
+                                                          client,
                                                           &userspace_stats_,
                                                           config));
 
