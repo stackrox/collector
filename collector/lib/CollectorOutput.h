@@ -22,28 +22,7 @@ class CollectorOutput {
   CollectorOutput& operator=(const CollectorOutput&) = delete;
   CollectorOutput& operator=(CollectorOutput&&) = delete;
 
-  CollectorOutput(const CollectorConfig& config) {
-    if (config.grpc_channel != nullptr) {
-      auto sensor_client = std::make_unique<SensorClient>(config.grpc_channel);
-      auto signal_client = std::make_unique<SignalServiceClient>(config.grpc_channel);
-      sensor_clients_.emplace_back(std::move(sensor_client));
-      signal_clients_.emplace_back(std::move(signal_client));
-    }
-
-    if (config.UseStdout()) {
-      auto sensor_client = std::make_unique<SensorClientStdout>();
-      auto signal_client = std::make_unique<StdoutSignalServiceClient>();
-      sensor_clients_.emplace_back(std::move(sensor_client));
-      signal_clients_.emplace_back(std::move(signal_client));
-    }
-
-    if (sensor_clients_.empty() || signal_clients_.empty()) {
-      CLOG(FATAL) << "No available output configured";
-    }
-
-    StartClients(sensor_clients_);
-    StartClients(signal_clients_);
-  }
+  CollectorOutput(const CollectorConfig& config);
 
   ~CollectorOutput() {
     StopClients(sensor_clients_);
@@ -51,6 +30,9 @@ class CollectorOutput {
   }
 
   SignalHandler::Result SendMsg(const MessageType& msg);
+  void Register();
+
+  bool UseSensorClient() { return use_sensor_client_; }
 
  private:
   template <typename T>
@@ -69,6 +51,8 @@ class CollectorOutput {
 
   std::vector<std::unique_ptr<ISensorClient>> sensor_clients_;
   std::vector<std::unique_ptr<ISignalServiceClient>> signal_clients_;
+
+  bool use_sensor_client_{true};
 };
 
 }  // namespace collector
