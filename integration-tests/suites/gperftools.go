@@ -1,6 +1,7 @@
 package suites
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -36,30 +37,29 @@ func (s *GperftoolsTestSuite) TearDownSuite() {
 // NOTE: The test will only be performed on supported architectures (only
 // x86_64 at the moment).
 func (s *GperftoolsTestSuite) TestFetchHeapProfile() {
-	if ok, arch := common.ArchSupported("x86_64"); !ok {
-		s.T().Skip("[WARNING]: skip GperftoolsTestSuite on ", arch)
-	}
+	s.runProfilerTest("heap")
+}
 
-	var (
-		response *http.Response
-		err      error
-	)
+func (s *GperftoolsTestSuite) TestFetchCpuProfile() {
+	s.runProfilerTest("cpu")
+}
 
-	heap_api_url := "http://localhost:8080/profile/heap"
+func (s *GperftoolsTestSuite) runProfilerTest(resource string) {
+	heap_api_url := fmt.Sprintf("http://localhost:8080/profile/%s", resource)
 	data_type := "application/x-www-form-urlencoded"
 
-	response, err = http.Post(heap_api_url, data_type, strings.NewReader("on"))
+	response, err := http.Post(heap_api_url, data_type, strings.NewReader("on"))
 	s.Require().NoError(err)
-	s.Assert().Equal(response.StatusCode, 200, "Failed to start heap profiling")
+	s.Assert().Equalf(response.StatusCode, 200, "Failed to start %s profiling", resource)
 
 	// Wait a bit to collect something in the heap profile
 	common.Sleep(1 * time.Second)
 
 	response, err = http.Post(heap_api_url, data_type, strings.NewReader("off"))
 	s.Require().NoError(err)
-	s.Assert().Equal(response.StatusCode, 200, "Failed to stop heap profiling")
+	s.Assert().Equalf(response.StatusCode, 200, "Failed to stop %s profiling", resource)
 
 	response, err = http.Get(heap_api_url)
 	s.Require().NoError(err)
-	s.Assert().Equal(response.StatusCode, 200, "Failed to fetch heap profile")
+	s.Assert().Equalf(response.StatusCode, 200, "Failed to fetch %s profile", resource)
 }

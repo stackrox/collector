@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
+	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 	"github.com/stackrox/collector/integration-tests/suites"
@@ -516,6 +517,9 @@ func TestPerfEvent(t *testing.T) {
 }
 
 func TestGperftools(t *testing.T) {
+	if ok, arch := common.ArchSupported("x86_64"); !ok {
+		t.Skip("[WARNING]: skip GperftoolsTestSuite on ", arch)
+	}
 	suite.Run(t, new(suites.GperftoolsTestSuite))
 }
 

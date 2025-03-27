@@ -42,6 +42,7 @@ func NewDockerCollectorManager(e executor.Executor, name string) *DockerCollecto
 		"/host/usr/lib:ro":          "/usr/lib",
 		"/host/sys/kernel/debug:ro": "/sys/kernel/debug",
 		"/etc/stackrox:ro":          "/tmp/collector-test",
+		"/var/profiles":             "", // gperftools dump directory
 	}
 
 	return &DockerCollectorManager{

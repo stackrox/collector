@@ -31,7 +31,7 @@ jobs:
 
       - name: Install shfmt
         run: |
-          GOBIN="${HOME}/bin/" go install mvdan.cc/sh/v3/cmd/shfmt@latest
+          GOBIN="${HOME}/bin/" go install mvdan.cc/sh/v3/cmd/shfmt@v3.10.0
 
       - name: Install actionlint
         run: |
