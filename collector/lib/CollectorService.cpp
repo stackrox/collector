@@ -22,6 +22,7 @@
 namespace collector {
 
 static const char* OPTIONS[] = {"listening_ports", "8080", nullptr};
+static const std::string PROMETHEUS_PORT = "9090";
 
 CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlValue>* control,
                                    const std::atomic<int>* signum)
@@ -31,7 +32,7 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
       signum_(*signum),
       server_(OPTIONS),
       registry_(std::make_shared<prometheus::Registry>()),
-      exposer_("9090"),
+      exposer_(PROMETHEUS_PORT),
       exporter_(registry_, &config_, &system_inspector_),
       config_loader_(config_) {
   CLOG(INFO) << "Config: " << config_;
