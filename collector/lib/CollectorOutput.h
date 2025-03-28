@@ -17,7 +17,7 @@ using MessageType = std::variant<sensor::MsgFromCollector, sensor::SignalStreamM
 
 class CollectorOutput {
  public:
-  CollectorOutput(const CollectorOutput&) = default;
+  CollectorOutput(const CollectorOutput&) = delete;
   CollectorOutput(CollectorOutput&&) = delete;
   CollectorOutput& operator=(const CollectorOutput&) = delete;
   CollectorOutput& operator=(CollectorOutput&&) = delete;
@@ -25,34 +25,32 @@ class CollectorOutput {
   CollectorOutput(const CollectorConfig& config);
 
   ~CollectorOutput() {
-    StopClients(sensor_clients_);
-    StopClients(signal_clients_);
+    stream_interrupted_.notify_one();
+    thread_.Stop();
   }
 
   SignalHandler::Result SendMsg(const MessageType& msg);
   void Register();
 
-  bool UseSensorClient() { return use_sensor_client_; }
+  bool UseSensorClient() const { return use_sensor_client_; }
 
  private:
-  template <typename T>
-  void StartClients(std::vector<T>& clients) {
-    for (auto& client : clients) {
-      client->Start();
-    }
-  }
+  void EstablishGrpcStream();
+  bool EstablishGrpcStreamSingle();
 
-  template <typename T>
-  void StopClients(std::vector<T>& clients) {
-    for (auto& client : clients) {
-      client->Stop();
-    }
-  }
+  void HandleOutputError();
+  SignalHandler::Result SensorOutput(const sensor::MsgFromCollector& msg);
+  SignalHandler::Result SignalOutput(const sensor::SignalStreamMessage& msg);
 
   std::vector<std::unique_ptr<ISensorClient>> sensor_clients_;
   std::vector<std::unique_ptr<ISignalServiceClient>> signal_clients_;
 
   bool use_sensor_client_{true};
+
+  StoppableThread thread_;
+  std::atomic<bool> stream_active_{false};
+  std::condition_variable stream_interrupted_;
+  std::shared_ptr<grpc::Channel> channel_;
 };
 
 }  // namespace collector
