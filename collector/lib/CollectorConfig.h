@@ -7,6 +7,7 @@
 #include <shared_mutex>
 #include <vector>
 
+#include <gtest/gtest_prod.h>
 #include <json/json.h>
 #include <yaml-cpp/yaml.h>
 
@@ -197,6 +198,8 @@ class CollectorConfig {
   }
 
  protected:
+  FRIEND_TEST(SensorClientFormatterTest, NoProcessArguments);
+
   int scrape_interval_;
   CollectionMethod collection_method_;
   bool turn_off_scrape_;

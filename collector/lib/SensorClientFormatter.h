@@ -44,8 +44,8 @@ class SensorClientFormatter : public ProtoSignalFormatter<sensor::MsgFromCollect
   void GetProcessLineage(sinsp_threadinfo* tinfo, std::vector<LineageInfo>& lineage);
 
  private:
-  FRIEND_TEST(ProcessSignalFormatterTest, NoProcessArguments);
-  FRIEND_TEST(ProcessSignalFormatterTest, ProcessArguments);
+  FRIEND_TEST(SensorClientFormatterTest, NoProcessArguments);
+  FRIEND_TEST(SensorClientFormatterTest, ProcessArguments);
 
   ProcessSignal* CreateProcessSignal(sinsp_evt* event);
   Signal* CreateSignal(sinsp_evt* event);
