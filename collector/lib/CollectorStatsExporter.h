@@ -2,7 +2,6 @@
 #define _COLLECTOR_STATS_EXPORTER_H_
 
 #include <memory>
-#include <utility>
 
 #include "CollectorConfig.h"
 #include "CollectorStats.h"
@@ -14,32 +13,6 @@ namespace collector {
 
 class CollectorStatsExporter {
  public:
-  CollectorStatsExporter() = default;
-  CollectorStatsExporter(const CollectorStatsExporter&) = delete;
-  CollectorStatsExporter(CollectorStatsExporter&&) = delete;
-  CollectorStatsExporter& operator=(const CollectorStatsExporter&) = delete;
-  ~CollectorStatsExporter() = default;
-
-  CollectorStatsExporter& operator=(CollectorStatsExporter&& other) noexcept {
-    auto swap_running = other.thread_.running();
-
-    if (swap_running) {
-      other.stop();
-    }
-
-    registry_.swap(other.registry_);
-    std::swap(config_, other.config_);
-    std::swap(system_inspector_, other.system_inspector_);
-    connections_total_reporter_.swap(other.connections_total_reporter_);
-    connections_rate_reporter_.swap(other.connections_rate_reporter_);
-
-    if (swap_running) {
-      start();
-    }
-
-    return *this;
-  }
-
   CollectorStatsExporter(std::shared_ptr<prometheus::Registry> registry, const CollectorConfig* config, system_inspector::Service* si);
 
   bool start();
