@@ -24,8 +24,8 @@ class CollectorStatsExporter {
 
  private:
   std::shared_ptr<prometheus::Registry> registry_;
-  const CollectorConfig* config_{};
-  system_inspector::Service* system_inspector_{};
+  const CollectorConfig* config_;
+  system_inspector::Service* system_inspector_;
   std::shared_ptr<CollectorConnectionStats<unsigned int>> connections_total_reporter_;
   std::shared_ptr<CollectorConnectionStats<float>> connections_rate_reporter_;
   StoppableThread thread_;
