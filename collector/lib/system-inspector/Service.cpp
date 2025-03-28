@@ -14,6 +14,7 @@
 
 #include "CollectionMethod.h"
 #include "CollectorException.h"
+#include "CollectorOutput.h"
 #include "CollectorStats.h"
 #include "ContainerEngine.h"
 #include "ContainerMetadata.h"
@@ -34,7 +35,7 @@ namespace collector::system_inspector {
 
 Service::~Service() = default;
 
-Service::Service(const CollectorConfig& config)
+Service::Service(const CollectorConfig& config, CollectorOutput* client)
     : inspector_(std::make_unique<sinsp>(true)),
       container_metadata_inspector_(std::make_unique<ContainerMetadata>(inspector_.get())),
       default_formatter_(std::make_unique<sinsp_evt_formatter>(
@@ -95,13 +96,8 @@ Service::Service(const CollectorConfig& config)
   AddSignalHandler(std::make_unique<SelfCheckProcessHandler>(inspector_.get()));
   AddSignalHandler(std::make_unique<SelfCheckNetworkHandler>(inspector_.get()));
 
-  if (config.grpc_channel) {
-    signal_client_ = std::make_unique<SignalServiceClient>(config.grpc_channel);
-  } else {
-    signal_client_ = std::make_unique<StdoutSignalServiceClient>();
-  }
   AddSignalHandler(std::make_unique<ProcessSignalHandler>(inspector_.get(),
-                                                          signal_client_.get(),
+                                                          client,
                                                           &userspace_stats_,
                                                           config));
 
