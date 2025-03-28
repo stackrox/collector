@@ -4,6 +4,7 @@
 #include "internalapi/sensor/collector_iservice.pb.h"
 
 #include "GRPCUtil.h"
+#include "HostInfo.h"
 
 namespace collector {
 
@@ -97,7 +98,7 @@ void CollectorOutput::Register() {
   sensor::MsgFromCollector msg;
   msg.clear_info();
   msg.clear_process_signal();
-  msg.mutable_register_()->set_hostname(GetHostname());
+  msg.mutable_register_()->set_hostname(HostInfo::GetHostname());
 
   for (const auto& client : sensor_clients_) {
     auto res = client->SendMsg(msg);

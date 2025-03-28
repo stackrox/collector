@@ -23,11 +23,10 @@ namespace collector::system_inspector {
 
 class Service : public SystemInspector {
  public:
-  Service();
   Service(const Service&) = delete;
   Service(Service&&) = delete;
   Service& operator=(const Service&) = delete;
-  Service& operator=(Service&&) noexcept;
+  Service& operator=(Service&&) = delete;
   ~Service() override;
 
   Service(const CollectorConfig& config, CollectorOutput* client);
