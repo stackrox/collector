@@ -343,9 +343,9 @@ func (m *MockSensor) Communicate(stream sensorAPI.CollectorService_CommunicateSe
 		case *sensorAPI.MsgFromCollector_ProcessSignal:
 			m.pushSignal(signal.GetProcessSignal())
 		case *sensorAPI.MsgFromCollector_Register:
-			return nil
+			// Ignored event
 		case *sensorAPI.MsgFromCollector_Info:
-			return nil
+			// Unimplemented event
 		}
 	}
 }
