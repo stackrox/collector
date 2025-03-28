@@ -33,31 +33,7 @@
 
 namespace collector::system_inspector {
 
-Service::Service() = default;
 Service::~Service() = default;
-Service& Service::operator=(Service&& other) noexcept {
-  {
-    auto other_sinsp_lock = std::lock_guard<std::mutex>(other.libsinsp_mutex_);
-    auto this_sinsp_lock = std::lock_guard<std::mutex>(libsinsp_mutex_);
-
-    inspector_.swap(other.inspector_);
-    container_metadata_inspector_.swap(other.container_metadata_inspector_);
-    default_formatter_.swap(other.default_formatter_);
-  }
-
-  signal_handlers_.swap(other.signal_handlers_);
-
-  userspace_stats_ = other.userspace_stats_;
-  global_event_filter_ = other.global_event_filter_;
-
-  {
-    auto other_running_lock = std::lock_guard<std::mutex>(other.running_mutex_);
-    auto this_running_lock = std::lock_guard<std::mutex>(running_mutex_);
-    std::swap(running_, other.running_);
-  }
-
-  return *this;
-}
 
 Service::Service(const CollectorConfig& config, CollectorOutput* client)
     : inspector_(std::make_unique<sinsp>(true)),
