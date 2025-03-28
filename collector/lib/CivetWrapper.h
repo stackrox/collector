@@ -1,15 +1,17 @@
-#ifndef _INTROSPECTION_ENDPOINT_
-#define _INTROSPECTION_ENDPOINT_
+#ifndef CIVET_WRAPPER_H
+#define CIVET_WRAPPER_H
 
 #include <CivetServer.h>
 #include <optional>
 #include <unordered_map>
 
 namespace collector {
-
 using QueryParams = std::unordered_map<std::string, std::string>;
 
-class IntrospectionEndpoint : public CivetHandler {
+class CivetWrapper : public CivetHandler {
+ public:
+  virtual const std::string& GetBaseRoute() = 0;
+
  protected:
   static QueryParams ParseParameters(const char* queryString);
   static std::optional<std::string> GetParameter(const QueryParams& params, const std::string& paramName);
@@ -21,7 +23,6 @@ class IntrospectionEndpoint : public CivetHandler {
     return mg_send_http_error(conn, 400, err) >= 0;
   }
 };
-
 }  // namespace collector
 
-#endif  // _INTROSPECTION_ENDPOINT_
+#endif

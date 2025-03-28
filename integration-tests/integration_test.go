@@ -541,3 +541,18 @@ func TestRuntimeConfigFile(t *testing.T) {
 func TestThreads(t *testing.T) {
 	suite.Run(t, new(suites.ThreadsTestSuite))
 }
+
+func TestPrometheus(t *testing.T) {
+	suite.Run(t, new(suites.PrometheusTestSuite))
+}
+
+func TestGetStatus(t *testing.T) {
+	suite.Run(t, &suites.HttpEndpointAvailabilityTestSuite{
+		Port:      8080,
+		Endpoints: []string{"ready"},
+	})
+}
+
+func TestLogLevelEndpoint(t *testing.T) {
+	suite.Run(t, new(suites.LogLevelTestSuite))
+}

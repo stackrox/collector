@@ -47,6 +47,8 @@ NetworkSignalHandler::NetworkSignalHandler(sinsp* inspector, std::shared_ptr<Con
   event_extractor_->Init(inspector);
 }
 
+NetworkSignalHandler::~NetworkSignalHandler() = default;
+
 /*
  * Socket connection life-cycle scenarii:
  * - synchronous:

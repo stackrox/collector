@@ -177,6 +177,10 @@ bool NetworkStatusInspector::handleGet(CivetServer* server, struct mg_connection
     return ServerError(conn, "unable to read request");
   }
 
+  if (conntracker_ == nullptr) {
+    return ServerError(conn, "not tracking network connections");
+  }
+
   std::string uri = req_info->local_uri;
   auto parameters = ParseParameters(req_info->query_string);
   if (uri == kEndpointRoute) {
