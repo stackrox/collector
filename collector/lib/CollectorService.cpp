@@ -96,6 +96,8 @@ void CollectorService::RunForever() {
   // Start monitoring services.
   config_loader_.Start();
 
+  output_.Register();
+
   CLOG(INFO) << "Network scrape interval set to " << config_.ScrapeInterval() << " seconds";
 
   if (net_status_notifier_) {
@@ -105,8 +107,6 @@ void CollectorService::RunForever() {
   if (!exporter_.start()) {
     CLOG(FATAL) << "Unable to start collector stats exporter";
   }
-
-  output_.Register();
 
   system_inspector_.Start();
 

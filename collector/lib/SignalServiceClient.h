@@ -22,11 +22,10 @@ class ISignalServiceClient {
  public:
   using SignalStreamMessage = sensor::SignalStreamMessage;
 
-  virtual void Start() = 0;
-  virtual void Stop() = 0;
+  virtual bool Refresh() = 0;
   virtual SignalHandler::Result PushSignals(const SignalStreamMessage& msg) = 0;
 
-  virtual ~ISignalServiceClient() {}
+  virtual ~ISignalServiceClient() = default;
 };
 
 class SignalServiceClient : public ISignalServiceClient {
@@ -34,13 +33,20 @@ class SignalServiceClient : public ISignalServiceClient {
   using SignalService = sensor::SignalService;
   using SignalStreamMessage = sensor::SignalStreamMessage;
 
+  SignalServiceClient(const SignalServiceClient&) = delete;
+  SignalServiceClient(SignalServiceClient&&) = delete;
+  SignalServiceClient& operator=(const SignalServiceClient&) = delete;
+  SignalServiceClient& operator=(SignalServiceClient&&) = delete;
+  ~SignalServiceClient() override {
+    context_->TryCancel();
+  }
+
   explicit SignalServiceClient(std::shared_ptr<grpc::Channel> channel)
       : channel_(std::move(channel)), stream_active_(false) {}
 
-  void Start();
-  void Stop();
+  bool Refresh() override;
 
-  SignalHandler::Result PushSignals(const SignalStreamMessage& msg);
+  SignalHandler::Result PushSignals(const SignalStreamMessage& msg) override;
 
  private:
   void EstablishGRPCStream();
@@ -48,27 +54,24 @@ class SignalServiceClient : public ISignalServiceClient {
 
   std::shared_ptr<grpc::Channel> channel_;
 
-  StoppableThread thread_;
   std::atomic<bool> stream_active_;
-  std::condition_variable stream_interrupted_;
 
   // This needs to have the same lifetime as the class.
   std::unique_ptr<grpc::ClientContext> context_;
   std::unique_ptr<IDuplexClientWriter<SignalStreamMessage>> writer_;
 
-  bool first_write_;
+  bool first_write_{};
 };
 
 class StdoutSignalServiceClient : public ISignalServiceClient {
  public:
   using SignalStreamMessage = sensor::SignalStreamMessage;
 
-  explicit StdoutSignalServiceClient() {}
+  explicit StdoutSignalServiceClient() = default;
 
-  void Start() {};
-  void Stop() {};
+  bool Refresh() override { return true; }
 
-  SignalHandler::Result PushSignals(const SignalStreamMessage& msg);
+  SignalHandler::Result PushSignals(const SignalStreamMessage& msg) override;
 };
 
 }  // namespace collector
