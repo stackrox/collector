@@ -162,13 +162,14 @@ sinsp_evt* Service::GetNext() {
     return nullptr;
   }
 
-  HostInfo& host_info = HostInfo::Instance();
+  // HostInfo& host_info = HostInfo::Instance();
+  auto host_info = collector::rust::host_info();
 
   // This additional userspace filter is a guard against additional events
   // from the eBPF probe. This can occur when using sys_enter and sys_exit
   // tracepoints rather than a targeted approach, which we currently only do
   // on RHEL7 with backported eBPF
-  if (host_info.IsRHEL76() && !global_event_filter_[event->get_type()]) {
+  if (host_info->is_rhel76() && !global_event_filter_[event->get_type()]) {
     return nullptr;
   }
 
