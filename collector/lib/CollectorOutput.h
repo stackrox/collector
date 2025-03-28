@@ -26,7 +26,16 @@ class CollectorOutput {
 
   ~CollectorOutput() {
     stream_interrupted_.notify_one();
-    thread_.Stop();
+    if (thread_.running()) {
+      thread_.Stop();
+    }
+  }
+
+  // Constructor for tests
+  CollectorOutput(std::unique_ptr<ISensorClient>&& sensor_client,
+                  std::unique_ptr<ISignalServiceClient>&& signal_client) {
+    sensor_clients_.emplace_back(std::move(sensor_client));
+    signal_clients_.emplace_back(std::move(signal_client));
   }
 
   SignalHandler::Result SendMsg(const MessageType& msg);
