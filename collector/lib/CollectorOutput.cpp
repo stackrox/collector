@@ -9,23 +9,31 @@
 namespace collector {
 
 CollectorOutput::CollectorOutput(const CollectorConfig& config) {
+  use_sensor_client_ = !config.UseLegacyServices();
+
   if (config.grpc_channel != nullptr) {
     channel_ = config.grpc_channel;
 
-    auto sensor_client = std::make_unique<SensorClient>(channel_);
-    auto signal_client = std::make_unique<SignalServiceClient>(channel_);
-    sensor_clients_.emplace_back(std::move(sensor_client));
-    signal_clients_.emplace_back(std::move(signal_client));
+    if (use_sensor_client_) {
+      auto sensor_client = std::make_unique<SensorClient>(channel_);
+      sensor_clients_.emplace_back(std::move(sensor_client));
+    } else {
+      auto signal_client = std::make_unique<SignalServiceClient>(channel_);
+      signal_clients_.emplace_back(std::move(signal_client));
+    }
   }
 
   if (config.UseStdout()) {
-    auto sensor_client = std::make_unique<SensorClientStdout>();
-    auto signal_client = std::make_unique<StdoutSignalServiceClient>();
-    sensor_clients_.emplace_back(std::move(sensor_client));
-    signal_clients_.emplace_back(std::move(signal_client));
+    if (use_sensor_client_) {
+      auto sensor_client = std::make_unique<SensorClientStdout>();
+      sensor_clients_.emplace_back(std::move(sensor_client));
+    } else {
+      auto signal_client = std::make_unique<StdoutSignalServiceClient>();
+      signal_clients_.emplace_back(std::move(signal_client));
+    }
   }
 
-  if (sensor_clients_.empty() || signal_clients_.empty()) {
+  if (sensor_clients_.empty() && signal_clients_.empty()) {
     CLOG(FATAL) << "No available output configured";
   }
 
@@ -92,21 +100,6 @@ SignalHandler::Result CollectorOutput::SendMsg(const MessageType& msg) {
   };
 
   return std::visit(visitor, msg);
-}
-
-void CollectorOutput::Register() {
-  sensor::MsgFromCollector msg;
-  msg.clear_info();
-  msg.clear_process_signal();
-  msg.mutable_register_()->set_hostname(HostInfo::GetHostname());
-
-  for (const auto& client : sensor_clients_) {
-    auto res = client->SendMsg(msg);
-    if (res != SignalHandler::PROCESSED) {
-      use_sensor_client_ = false;
-      break;
-    }
-  }
 }
 
 void CollectorOutput::EstablishGrpcStream() {
