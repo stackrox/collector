@@ -1,10 +1,10 @@
-#include "IntrospectionEndpoint.h"
+#include "CivetWrapper.h"
 
 #include <sstream>
 
 namespace collector {
 
-QueryParams IntrospectionEndpoint::ParseParameters(const char* queryString) {
+QueryParams CivetWrapper::ParseParameters(const char* queryString) {
   QueryParams params;
 
   if (queryString == nullptr) {
@@ -26,7 +26,7 @@ QueryParams IntrospectionEndpoint::ParseParameters(const char* queryString) {
   return params;
 }
 
-std::optional<std::string> IntrospectionEndpoint::GetParameter(const QueryParams& params, const std::string& paramName) {
+std::optional<std::string> CivetWrapper::GetParameter(const QueryParams& params, const std::string& paramName) {
   return params.count(paramName) != 0 ? std::make_optional(params.at(paramName)) : std::nullopt;
 }
 
