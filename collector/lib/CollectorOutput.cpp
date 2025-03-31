@@ -1,6 +1,5 @@
 #include "CollectorOutput.h"
 
-#include "internalapi/sensor/collector.pb.h"
 #include "internalapi/sensor/collector_iservice.pb.h"
 
 #include "GRPCUtil.h"
@@ -104,7 +103,7 @@ SignalHandler::Result CollectorOutput::SendMsg(const MessageType& msg) {
 void CollectorOutput::EstablishGrpcStream() {
   while (EstablishGrpcStreamSingle()) {
   }
-  CLOG(INFO) << "Signal service client terminating.";
+  CLOG(INFO) << "Service client terminating.";
 }
 
 bool CollectorOutput::EstablishGrpcStreamSingle() {
@@ -135,7 +134,10 @@ bool CollectorOutput::EstablishGrpcStreamSingle() {
   }
 
   if (success) {
+    CLOG(INFO) << "Successfully established GRPC stream.";
     stream_active_.store(true, std::memory_order_release);
+  } else {
+    CLOG(WARNING) << "Failed to establish GRPC stream, retrying...";
   }
   return true;
 }
