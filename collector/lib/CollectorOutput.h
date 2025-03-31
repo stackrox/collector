@@ -39,7 +39,6 @@ class CollectorOutput {
   }
 
   SignalHandler::Result SendMsg(const MessageType& msg);
-  void Register();
 
   bool UseSensorClient() const { return use_sensor_client_; }
 

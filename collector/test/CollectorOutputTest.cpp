@@ -31,13 +31,6 @@ class CollectorOutputTest : public testing::Test {
   std::unique_ptr<MockSignalClient> signal_client;
 };
 
-TEST_F(CollectorOutputTest, Register) {
-  EXPECT_CALL(*sensor_client, SendMsg).Times(1).WillOnce(testing::Return(SignalHandler::PROCESSED));
-
-  CollectorOutput output{std::move(sensor_client), std::move(signal_client)};
-  output.Register();
-}
-
 TEST_F(CollectorOutputTest, SensorClient) {
   sensor::MsgFromCollector msg;
 

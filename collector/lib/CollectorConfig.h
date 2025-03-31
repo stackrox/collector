@@ -163,6 +163,7 @@ class CollectorConfig {
   unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
   bool DisableProcessArguments() const { return disable_process_arguments_; }
   bool UseStdout() const { return use_stdout_; }
+  bool UseLegacyServices() const { return use_legacy_services_; }
 
   static std::pair<option::ArgStatus, std::string> CheckConfiguration(const char* config, Json::Value* root);
 
@@ -231,6 +232,8 @@ class CollectorConfig {
   bool disable_process_arguments_ = false;
 
   bool use_stdout_ = false;
+
+  bool use_legacy_services_ = false;
 
   // One ring buffer will be initialized for this many CPUs
   unsigned int sinsp_cpu_per_buffer_ = 0;

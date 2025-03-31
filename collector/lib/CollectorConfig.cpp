@@ -84,6 +84,8 @@ PathEnvVar tls_client_key_path("ROX_COLLECTOR_TLS_CLIENT_KEY");
 BoolEnvVar disable_process_arguments("ROX_COLLECTOR_NO_PROCESS_ARGUMENTS", false);
 
 BoolEnvVar use_stdout_output("ROX_COLLECTOR_USE_STDOUT", false);
+
+BoolEnvVar use_legacy_services("ROX_COLLECTOR_USE_LEGACY_SERVICES", false);
 }  // namespace
 
 constexpr bool CollectorConfig::kTurnOffScrape;
@@ -115,6 +117,7 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   track_send_recv_ = track_send_recv.value();
   disable_process_arguments_ = disable_process_arguments.value();
   use_stdout_ = use_stdout_output.value();
+  use_legacy_services_ = use_legacy_services.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.emplace_back(syscall);
