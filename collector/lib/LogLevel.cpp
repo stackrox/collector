@@ -8,6 +8,8 @@
 
 namespace collector {
 
+const std::string LogLevelHandler::kBaseRoute = "/loglevel";
+
 bool LogLevelHandler::handlePost(CivetServer* server, struct mg_connection* conn) {
   using namespace std;
 

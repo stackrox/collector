@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/log"
@@ -22,12 +23,14 @@ func (s *HttpEndpointAvailabilityTestSuite) SetupSuite() {
 }
 
 func (s *HttpEndpointAvailabilityTestSuite) TestAvailability() {
+	collectorUrl, err := url.Parse(fmt.Sprintf("http://localhost:%d", s.Port))
+	s.Assert().NoError(err)
 	for _, endpoint := range s.Endpoints {
-		url := fmt.Sprintf("http://localhost:%d%s", s.Port, endpoint)
+		endpointUrl := collectorUrl.JoinPath(endpoint)
 
-		log.Info("url: %s", url)
+		log.Info("url: %s", endpointUrl)
 
-		resp, err := http.Get(url)
+		resp, err := http.Get(endpointUrl.String())
 		s.Require().NoError(err)
 		s.Require().NotNil(resp)
 		s.Require().Equal(resp.StatusCode, http.StatusOK, "HTTP status code")

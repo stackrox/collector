@@ -7,24 +7,28 @@
 #include <string>
 #include <unordered_map>
 
+#include "CivetWrapper.h"
 #include "ContainerMetadata.h"
-#include "IntrospectionEndpoint.h"
 #include "json/writer.h"
 
 namespace collector {
 
 using QueryParams = std::unordered_map<std::string, std::string>;
 
-class ContainerInfoInspector : public IntrospectionEndpoint {
+class ContainerInfoInspector : public CivetWrapper {
  public:
-  static const char* const kBaseRoute;
-
   ContainerInfoInspector(const std::shared_ptr<ContainerMetadata>& cmi) : container_metadata_inspector_(cmi) {}
 
   // implementation of CivetHandler
   bool handleGet(CivetServer* server, struct mg_connection* conn) override;
 
+  const std::string& GetBaseRoute() override {
+    return kBaseRoute;
+  }
+
  private:
+  static const std::string kBaseRoute;
+
   std::shared_ptr<ContainerMetadata> container_metadata_inspector_;
   Json::FastWriter writer_;
 };

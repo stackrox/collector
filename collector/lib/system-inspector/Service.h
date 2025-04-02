@@ -5,10 +5,10 @@
 #include <bitset>
 #include <memory>
 #include <mutex>
-#include <string>
 
 #include <gtest/gtest_prod.h>
 
+#include "ConnTracker.h"
 #include "ContainerMetadata.h"
 #include "Control.h"
 #include "SignalHandler.h"
@@ -25,10 +25,13 @@ namespace collector::system_inspector {
 
 class Service : public SystemInspector {
  public:
-  Service();
-  ~Service();
+  Service(const Service&) = delete;
+  Service(Service&&) = delete;
+  Service& operator=(const Service&) = delete;
+  Service& operator=(Service&&) = delete;
+  ~Service() override;
 
-  void Init(const CollectorConfig& config, std::shared_ptr<ConnectionTracker> conn_tracker) override;
+  Service(const CollectorConfig& config);
   void Start() override;
   void Run(const std::atomic<ControlValue>& control) override;
   void CleanUp() override;
@@ -37,11 +40,16 @@ class Service : public SystemInspector {
 
   bool InitKernel(const CollectorConfig& config) override;
 
-  typedef std::weak_ptr<std::function<void(std::shared_ptr<sinsp_threadinfo>)>> ProcessInfoCallbackRef;
+  using ProcessInfoCallbackRef = std::weak_ptr<std::function<void(std::shared_ptr<sinsp_threadinfo>)>>;
 
   void GetProcessInformation(uint64_t pid, ProcessInfoCallbackRef callback);
 
   std::shared_ptr<ContainerMetadata> GetContainerMetadataInspector() { return container_metadata_inspector_; };
+
+  sinsp* GetInspector() { return inspector_.get(); }
+  Stats* GetUserspaceStats() { return &userspace_stats_; }
+
+  void AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler);
 
  private:
   FRIEND_TEST(SystemInspectorServiceTest, FilterEvent);
@@ -61,8 +69,6 @@ class Service : public SystemInspector {
   static bool FilterEvent(const sinsp_threadinfo* tinfo);
 
   bool SendExistingProcesses(SignalHandler* handler);
-
-  void AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler);
 
   mutable std::mutex libsinsp_mutex_;
   std::unique_ptr<sinsp> inspector_;
