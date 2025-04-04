@@ -114,7 +114,10 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
 void ConnectionTracker::CloseNormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn) {
   for (auto it = old_conn_state->begin(); it != old_conn_state->end();) {
     auto& old_conn = *it;
-    if (old_conn.first.IsCanonicalExternalIp() && !old_conn.second.IsActive()) {
+    if (old_conn.first.IsCanonicalExternalIp()) {
+      if (old_conn.second.IsActive()) {
+        old_conn.second.SetActive(false);
+      }
       delta_conn->insert(old_conn);
       it = old_conn_state->erase(it);
     } else {

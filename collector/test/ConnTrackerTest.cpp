@@ -1651,6 +1651,40 @@ TEST(ConnTrackerTest, TestConnectionStats) {
   EXPECT_EQ(stats.outbound.public_, 4);
 }
 
+TEST(ConnTrackerTest, TestCloseNormalizedConnections) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(255, 255, 255, 255), 9999);
+
+  Connection conn("xyz", a, b, L4Proto::TCP, true);
+  int64_t connection_time = 990;
+
+  ConnMap old_state = {{conn, ConnStatus(connection_time, true)}};
+  ConnMap delta;
+  ConnMap expected_delta = {{conn, ConnStatus(connection_time, false)}};
+
+  CT::CloseNormalizedConnections(&old_state, &delta);
+
+  EXPECT_THAT(old_state, IsEmpty());
+  EXPECT_THAT(delta, expected_delta);
+}
+
+TEST(ConnTrackerTest, TestCloseNormalizedConnectionsUnnormalized) {
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn("xyz", a, b, L4Proto::TCP, true);
+  int64_t connection_time = 990;
+
+  ConnMap old_state = {{conn, ConnStatus(connection_time, true)}};
+  ConnMap delta;
+  ConnMap expected_old_state = {{conn, ConnStatus(connection_time, true)}};
+
+  CT::CloseNormalizedConnections(&old_state, &delta);
+
+  EXPECT_THAT(old_state, expected_old_state);
+  EXPECT_THAT(delta, IsEmpty());
+}
+
 }  // namespace
 
 }  // namespace collector

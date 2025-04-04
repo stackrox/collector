@@ -139,8 +139,9 @@ class Address {
   bool IsCanonicalExternalIp() const {
     switch (family_) {
       case Family::IPV4:
-        return data_[0] == 255 && data_[1] == 255 && data_[2] == 255 && data_[3] == 255;
+        return data_[0] == 0xffffffffULL;
       case Family::IPV6:
+        CLOG(INFO) << "data_ = " << data_[0] << " " << data_[1];
         return data_[0] == 0xffffffffffffffffULL && data_[1] == 0xffffffffffffffffULL;
       default:
         return false;
