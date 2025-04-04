@@ -57,12 +57,11 @@ std::string extract_proc_args(sinsp_threadinfo* tinfo) {
 
 }  // namespace
 
-SensorClientFormatter::SensorClientFormatter(
-    sinsp* inspector,
-    const CollectorConfig& config) : event_names_(EventNames::GetInstance()),
-                                     event_extractor_(std::make_unique<system_inspector::EventExtractor>()),
-                                     container_metadata_(inspector),
-                                     config_(config) {
+SensorClientFormatter::SensorClientFormatter(sinsp* inspector, const CollectorConfig& config)
+    : event_names_(EventNames::GetInstance()),
+      event_extractor_(std::make_unique<system_inspector::EventExtractor>()),
+      container_metadata_(inspector),
+      config_(config) {
   event_extractor_->Init(inspector);
 }
 
@@ -286,9 +285,7 @@ bool SensorClientFormatter::ValidateProcessDetails(const sinsp_threadinfo* tinfo
 }
 
 bool SensorClientFormatter::ValidateProcessDetails(sinsp_evt* event) {
-  const sinsp_threadinfo* tinfo = event->get_thread_info();
-
-  return ValidateProcessDetails(tinfo);
+  return ValidateProcessDetails(event->get_thread_info());
 }
 
 void SensorClientFormatter::UpdateLineageStats(const std::vector<LineageInfo>& lineage) {

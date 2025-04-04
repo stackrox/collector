@@ -31,6 +31,8 @@ class SensorClientFormatterTest : public testing::Test {
   SensorClientFormatterTest() : inspector(new sinsp()), formatter(inspector.get(), config) {
   }
 
+  ~SensorClientFormatterTest() override { CollectorStats::Reset(); }
+
  protected:
   std::unique_ptr<sinsp_threadinfo> build_threadinfo(const ThreadInfoParams& params) {
     auto tinfo = inspector->build_threadinfo();
@@ -72,8 +74,6 @@ TEST_F(SensorClientFormatterTest, ProcessWithoutParentTest) {
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_string_total, 0);
 
   EXPECT_TRUE(lineage.empty());
-
-  CollectorStats::Reset();
 }
 
 TEST_F(SensorClientFormatterTest, ProcessWithParentTest) {
@@ -98,8 +98,6 @@ TEST_F(SensorClientFormatterTest, ProcessWithParentTest) {
 
   EXPECT_EQ(lineage[0].parent_uid(), 42);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), "asdf");
-
-  CollectorStats::Reset();
 }
 
 TEST_F(SensorClientFormatterTest, ProcessWithParentWithPid0Test) {
@@ -121,8 +119,6 @@ TEST_F(SensorClientFormatterTest, ProcessWithParentWithPid0Test) {
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_string_total, 0);
 
   EXPECT_TRUE(lineage.empty());
-
-  CollectorStats::Reset();
 }
 
 TEST_F(SensorClientFormatterTest, ProcessWithParentWithSameNameTest) {
@@ -147,8 +143,6 @@ TEST_F(SensorClientFormatterTest, ProcessWithParentWithSameNameTest) {
 
   EXPECT_EQ(lineage[0].parent_uid(), 43);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), "asdf");
-
-  CollectorStats::Reset();
 }
 
 TEST_F(SensorClientFormatterTest, ProcessWithTwoParentsTest) {
@@ -177,8 +171,6 @@ TEST_F(SensorClientFormatterTest, ProcessWithTwoParentsTest) {
 
   EXPECT_EQ(lineage[1].parent_uid(), 42);
   EXPECT_EQ(lineage[1].parent_exec_file_path(), "asdf");
-
-  CollectorStats::Reset();
 }
 
 TEST_F(SensorClientFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
@@ -204,8 +196,6 @@ TEST_F(SensorClientFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
 
   EXPECT_EQ(lineage[0].parent_uid(), 7);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), "asdf");
-
-  CollectorStats::Reset();
 }
 
 TEST_F(SensorClientFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
@@ -232,8 +222,6 @@ TEST_F(SensorClientFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
 
   EXPECT_EQ(lineage[0].parent_uid(), 8);
   EXPECT_EQ(lineage[0].parent_exec_file_path(), "asdf");
-
-  CollectorStats::Reset();
 }
 
 TEST_F(SensorClientFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
@@ -262,8 +250,6 @@ TEST_F(SensorClientFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
 
   EXPECT_EQ(lineage[1].parent_uid(), 42);
   EXPECT_EQ(lineage[1].parent_exec_file_path(), "qwerty");
-
-  CollectorStats::Reset();
 }
 
 TEST_F(SensorClientFormatterTest, ProcessWithUnrelatedProcessTest) {
@@ -293,8 +279,6 @@ TEST_F(SensorClientFormatterTest, ProcessWithUnrelatedProcessTest) {
 
   EXPECT_EQ(lineage[1].parent_uid(), 42);
   EXPECT_EQ(lineage[1].parent_exec_file_path(), "qwerty");
-
-  CollectorStats::Reset();
 }
 
 TEST_F(SensorClientFormatterTest, CountTwoCounterCallsTest) {
@@ -312,8 +296,6 @@ TEST_F(SensorClientFormatterTest, CountTwoCounterCallsTest) {
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_string_total, 0);
 
   EXPECT_TRUE(lineage2.empty());
-
-  CollectorStats::Reset();
 }
 
 TEST_F(SensorClientFormatterTest, ProcessArguments) {
