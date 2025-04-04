@@ -7,9 +7,8 @@
 
 namespace collector {
 
-CollectorOutput::CollectorOutput(const CollectorConfig& config) {
-  use_sensor_client_ = !config.UseLegacyServices();
-
+CollectorOutput::CollectorOutput(const CollectorConfig& config)
+    : use_sensor_client_(!config.UseLegacyServices()) {
   if (config.grpc_channel != nullptr) {
     channel_ = config.grpc_channel;
 
@@ -22,7 +21,7 @@ CollectorOutput::CollectorOutput(const CollectorConfig& config) {
     }
   }
 
-  if (config.UseStdout()) {
+  if (config.grpc_channel == nullptr || config.UseStdout()) {
     if (use_sensor_client_) {
       auto sensor_client = std::make_unique<SensorClientStdout>();
       sensor_clients_.emplace_back(std::move(sensor_client));
@@ -30,10 +29,6 @@ CollectorOutput::CollectorOutput(const CollectorConfig& config) {
       auto signal_client = std::make_unique<StdoutSignalServiceClient>();
       signal_clients_.emplace_back(std::move(signal_client));
     }
-  }
-
-  if (sensor_clients_.empty() && signal_clients_.empty()) {
-    CLOG(FATAL) << "No available output configured";
   }
 
   thread_.Start([this] { EstablishGrpcStream(); });
@@ -125,7 +120,7 @@ bool CollectorOutput::EstablishGrpcStreamSingle() {
   }
 
   // Refresh all clients
-  auto success = true;
+  bool success = true;
   for (const auto& client : signal_clients_) {
     success &= client->Refresh();
   }

@@ -60,7 +60,7 @@ class SignalServiceClient : public ISignalServiceClient {
   std::unique_ptr<grpc::ClientContext> context_;
   std::unique_ptr<IDuplexClientWriter<SignalStreamMessage>> writer_;
 
-  bool first_write_{};
+  bool first_write_ = false;
 };
 
 class StdoutSignalServiceClient : public ISignalServiceClient {

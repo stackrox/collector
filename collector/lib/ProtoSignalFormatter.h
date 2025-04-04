@@ -29,7 +29,26 @@ class ProtoSignalFormatter : public BaseProtoSignalFormatter, protected ProtoAll
  public:
   ProtoSignalFormatter() = default;
 
+  /**
+   * Turn a sinsp_evt into a protobuf message to be sent to sensor.
+   *
+   * @param event The event to be translated.
+   * @returns A pointer to the message to be sent or nullptr if no
+   *          message should be sent. Ownership of the message is kept
+   *          in the implementing class, caller must not attempt to free
+   *          it.
+   */
   const Message* ToProtoMessage(sinsp_evt* event) override = 0;
+
+  /**
+   * Turn a sinsp_threadinfo into a protobuf message to be sent to sensor.
+   *
+   * @param event The event to be translated.
+   * @returns A pointer to the message to be sent or nullptr if no
+   *          message should be sent. Ownership of the message is kept
+   *          in the implementing class, caller must not attempt to free
+   *          it.
+   */
   const Message* ToProtoMessage(sinsp_threadinfo* tinfo) override = 0;
 };
 
