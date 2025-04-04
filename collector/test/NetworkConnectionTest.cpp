@@ -162,6 +162,35 @@ TEST(TestIPNet, Parse) {
   EXPECT_FALSE(ip_net);
 }
 
+TEST(TestIPNet, TestIsCanonicalExternalIp) {
+  Address addr1 = Address(192, 168, 0, 1);
+  Address addr2 = Address(192, 168, 1, 10);
+  Address addr3 = Address(255, 255, 255, 255);
+
+  EXPECT_FALSE(addr1.IsCanonicalExternalIp());
+  EXPECT_FALSE(addr2.IsCanonicalExternalIp());
+  EXPECT_TRUE(addr3.IsCanonicalExternalIp());
+
+  EXPECT_FALSE(Address(0xffffff4fffffffffULL, 0xffffffffffffffffULL).IsCanonicalExternalIp());
+  EXPECT_TRUE(Address(0xffffffffffffffffULL, 0xffffffffffffffffULL).IsCanonicalExternalIp());
+
+  Endpoint end1(addr1, 80);
+  Endpoint end2(addr2, 9999);
+  Endpoint end3(addr3, 9999);
+
+  EXPECT_FALSE(end1.IsCanonicalExternalIp());
+  EXPECT_FALSE(end2.IsCanonicalExternalIp());
+  EXPECT_TRUE(end3.IsCanonicalExternalIp());
+
+  Connection conn1("xyz", end1, end2, L4Proto::TCP, true);
+  Connection conn2("xyz", end1, end3, L4Proto::TCP, true);
+  Connection conn3("xyz", end3, end2, L4Proto::TCP, true);
+
+  EXPECT_FALSE(conn1.IsCanonicalExternalIp());
+  EXPECT_TRUE(conn2.IsCanonicalExternalIp());
+  EXPECT_FALSE(conn3.IsCanonicalExternalIp());
+}
+
 }  // namespace
 
 }  // namespace collector
