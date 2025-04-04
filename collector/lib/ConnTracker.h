@@ -100,6 +100,8 @@ class ConnectionTracker {
   template <typename T>
   static void UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, const UnorderedMap<T, ConnStatus>& new_state, int64_t time_micros, int64_t afterglow_period_micros);
 
+  static void CloseNormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn);
+
   // ComputeDelta computes a diff between new_state and old_state
   template <typename T>
   static void ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>& new_state, const UnorderedMap<T, ConnStatus>& old_state, UnorderedMap<T, ConnStatus>& delta, int64_t time_micros, int64_t time_at_last_scrape, int64_t afterglow_period_micros);
@@ -223,6 +225,18 @@ void ConnectionTracker::UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, c
     if (!insert_res.second) {  // Was already present. Update the connection.
       auto& old_conn = *insert_res.first;
       old_conn.second = conn.second;
+    }
+  }
+}
+
+void ConnectionTracker::CloseNormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn) {
+  for (auto it = old_conn_state->begin(); it != old_conn_state->end();) {
+    auto& old_conn = *it;
+    if (old_conn.first.IsCanonicalExternalIp() && !old_conn.second.IsActive()) {
+      delta_conn->insert(old_conn);
+      it = old_conn_state->erase(it);
+    } else {
+      it++;
     }
   }
 }

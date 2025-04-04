@@ -136,6 +136,17 @@ class Address {
     }
   }
 
+  bool IsCanonicalExternalIp() const {
+    switch (family_) {
+      case Family::IPV4:
+        return data_[0] == 255 && data_[1] == 255 && data_[2] == 255 && data_[3] == 255;
+      case Family::IPV6:
+        return data_[0] == 0xffffffffffffffffULL && data_[1] == 0xffffffffffffffffULL;
+      default:
+        return false;
+    }
+  }
+
  private:
   friend std::ostream& operator<<(std::ostream& os, const Address& addr) {
     int af = (addr.family_ == Family::IPV4) ? AF_INET : AF_INET6;
@@ -261,6 +272,10 @@ class IPNet {
     return address_ > that.address_;
   }
 
+  bool IsCanonicalExternalIp() const {
+    return address_.IsCanonicalExternalIp();
+  }
+
  private:
   friend std::ostream& operator<<(std::ostream& os, const IPNet& net) {
     return os << net.address_ << "/" << net.bits_;
@@ -296,6 +311,10 @@ class Endpoint {
 
   bool IsNull() const {
     return port_ == 0 && network_.IsNull();
+  }
+
+  bool IsCanonicalExternalIp() const {
+    return network_.IsCanonicalExternalIp();
   }
 
  private:
@@ -387,6 +406,10 @@ class Connection {
   }
 
   size_t Hash() const { return HashAll(container_, local_, remote_, flags_); }
+
+  bool IsCanonicalExternalIp() const {
+    return remote_.IsCanonicalExternalIp();
+  }
 
  private:
   std::string container_;
