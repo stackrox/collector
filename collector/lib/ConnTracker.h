@@ -229,18 +229,6 @@ void ConnectionTracker::UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, c
   }
 }
 
-void ConnectionTracker::CloseNormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn) {
-  for (auto it = old_conn_state->begin(); it != old_conn_state->end();) {
-    auto& old_conn = *it;
-    if (old_conn.first.IsCanonicalExternalIp() && !old_conn.second.IsActive()) {
-      delta_conn->insert(old_conn);
-      it = old_conn_state->erase(it);
-    } else {
-      it++;
-    }
-  }
-}
-
 template <typename T, typename E>
 void ConnectionTracker::ComputeDelta(const UnorderedMap<T, ConnStatus, E>& new_state, UnorderedMap<T, ConnStatus, E>* old_state) {
   // Insert all objects from the new state, if anything changed about them.
