@@ -6,6 +6,7 @@
 
 #include "CivetWrapper.h"
 #include "CollectorConfig.h"
+#include "CollectorOutput.h"
 #include "CollectorStatsExporter.h"
 #include "ConfigLoader.h"
 #include "Control.h"
@@ -33,6 +34,7 @@ class CollectorService {
   bool WaitForGRPCServer();
 
   CollectorConfig& config_;
+  CollectorOutput output_;
   system_inspector::Service system_inspector_;
 
   std::atomic<ControlValue>* control_;

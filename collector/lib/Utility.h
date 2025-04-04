@@ -3,9 +3,6 @@
 #define _UTILITY_H_
 
 #include <cerrno>
-#include <chrono>
-#include <cinttypes>
-#include <functional>
 #include <iostream>
 #include <memory>
 #include <mutex>
