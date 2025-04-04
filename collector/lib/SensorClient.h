@@ -26,8 +26,22 @@ class ISensorClient {
   ISensorClient& operator=(ISensorClient&&) = delete;
   virtual ~ISensorClient() = default;
 
+  /**
+   * Recreate the internal state of the object to allow communication.
+   *
+   * Mostly useful for handling gRPC reconnections.
+   *
+   * @returns true if the refresh was succesful, false otherwise.
+   */
   virtual bool Refresh() = 0;
 
+  /**
+   * Send a message to sensor through the iservice.
+   *
+   * @param msg The message to be sent to sensor.
+   * @returns A SignalHandler::Result with the outcome of the send
+   *          operation.
+   */
   virtual SignalHandler::Result SendMsg(const sensor::MsgFromCollector& msg) = 0;
 };
 

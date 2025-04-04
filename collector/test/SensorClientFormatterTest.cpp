@@ -23,10 +23,8 @@ struct ThreadInfoParams {
   std::string exepath;
 };
 
-static void ExpectStatsCounter(size_t index, long expected) {
-  auto value = CollectorStats::GetOrCreate().GetCounter(index);
-  EXPECT_EQ(value, expected);
-}
+#define EXPECT_STATS_COUNTER(index, expected) \
+  EXPECT_EQ(CollectorStats::GetOrCreate().GetCounter(index), expected)
 
 class SensorClientFormatterTest : public testing::Test {
  public:
@@ -53,14 +51,12 @@ class SensorClientFormatterTest : public testing::Test {
 
 TEST_F(SensorClientFormatterTest, NoProcessTest) {
   sinsp_threadinfo* tinfo = nullptr;
-  std::vector<LineageInfo> lineage;
+  auto lineage = SensorClientFormatter::GetProcessLineage(tinfo);
 
-  formatter.GetProcessLineage(tinfo, lineage);
-
-  ExpectStatsCounter(CollectorStats::process_lineage_counts, 0);
-  ExpectStatsCounter(CollectorStats::process_lineage_total, 0);
-  ExpectStatsCounter(CollectorStats::process_lineage_sqr_total, 0);
-  ExpectStatsCounter(CollectorStats::process_lineage_string_total, 0);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 0);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 0);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_sqr_total, 0);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_string_total, 0);
 
   EXPECT_TRUE(lineage.empty());
 }
@@ -68,14 +64,12 @@ TEST_F(SensorClientFormatterTest, NoProcessTest) {
 TEST_F(SensorClientFormatterTest, ProcessWithoutParentTest) {
   // {pid, tid, ptid, vpid, uid, container_id, exepath},
   inspector->add_thread(build_threadinfo({0, 0, -1, 2, 7, "", "qwerty"}));
-  std::vector<LineageInfo> lineage;
+  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(0).get());
 
-  formatter.GetProcessLineage(inspector->get_thread_ref(0).get(), lineage);
-
-  ExpectStatsCounter(CollectorStats::process_lineage_counts, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_total, 0);
-  ExpectStatsCounter(CollectorStats::process_lineage_sqr_total, 0);
-  ExpectStatsCounter(CollectorStats::process_lineage_string_total, 0);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 0);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_sqr_total, 0);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_string_total, 0);
 
   EXPECT_TRUE(lineage.empty());
 
@@ -93,13 +87,12 @@ TEST_F(SensorClientFormatterTest, ProcessWithParentTest) {
     inspector->add_thread(build_threadinfo(params));
   }
 
-  std::vector<SensorClientFormatter::LineageInfo> lineage;
-  formatter.GetProcessLineage(inspector->get_thread_ref(1).get(), lineage);
+  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(1).get());
 
-  ExpectStatsCounter(CollectorStats::process_lineage_counts, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_total, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_sqr_total, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_string_total, 4);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_sqr_total, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_string_total, 4);
 
   EXPECT_EQ(lineage.size(), 1);
 
@@ -120,13 +113,12 @@ TEST_F(SensorClientFormatterTest, ProcessWithParentWithPid0Test) {
     inspector->add_thread(build_threadinfo(params));
   }
 
-  std::vector<SensorClientFormatter::LineageInfo> lineage;
-  formatter.GetProcessLineage(inspector->get_thread_ref(1).get(), lineage);
+  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(1).get());
 
-  ExpectStatsCounter(CollectorStats::process_lineage_counts, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_total, 0);
-  ExpectStatsCounter(CollectorStats::process_lineage_sqr_total, 0);
-  ExpectStatsCounter(CollectorStats::process_lineage_string_total, 0);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 0);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_sqr_total, 0);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_string_total, 0);
 
   EXPECT_TRUE(lineage.empty());
 
@@ -144,13 +136,12 @@ TEST_F(SensorClientFormatterTest, ProcessWithParentWithSameNameTest) {
     inspector->add_thread(build_threadinfo(params));
   }
 
-  std::vector<SensorClientFormatter::LineageInfo> lineage;
-  formatter.GetProcessLineage(inspector->get_thread_ref(1).get(), lineage);
+  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(1).get());
 
-  ExpectStatsCounter(CollectorStats::process_lineage_counts, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_total, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_sqr_total, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_string_total, 4);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_sqr_total, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_string_total, 4);
 
   EXPECT_EQ(lineage.size(), 1);
 
@@ -172,13 +163,12 @@ TEST_F(SensorClientFormatterTest, ProcessWithTwoParentsTest) {
     inspector->add_thread(build_threadinfo(params));
   }
 
-  std::vector<SensorClientFormatter::LineageInfo> lineage;
-  formatter.GetProcessLineage(inspector->get_thread_ref(4).get(), lineage);
+  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(4).get());
 
-  ExpectStatsCounter(CollectorStats::process_lineage_counts, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_total, 2);
-  ExpectStatsCounter(CollectorStats::process_lineage_sqr_total, 4);
-  ExpectStatsCounter(CollectorStats::process_lineage_string_total, 10);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 2);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_sqr_total, 4);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_string_total, 10);
 
   EXPECT_EQ(lineage.size(), 2);
 
@@ -203,13 +193,12 @@ TEST_F(SensorClientFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
     inspector->add_thread(build_threadinfo(params));
   }
 
-  std::vector<SensorClientFormatter::LineageInfo> lineage;
-  formatter.GetProcessLineage(inspector->get_thread_ref(4).get(), lineage);
+  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(4).get());
 
-  ExpectStatsCounter(CollectorStats::process_lineage_counts, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_total, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_sqr_total, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_string_total, 4);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_sqr_total, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_string_total, 4);
 
   EXPECT_EQ(lineage.size(), 1);
 
@@ -232,13 +221,12 @@ TEST_F(SensorClientFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
     inspector->add_thread(build_threadinfo(params));
   }
 
-  std::vector<SensorClientFormatter::LineageInfo> lineage;
-  formatter.GetProcessLineage(inspector->get_thread_ref(5).get(), lineage);
+  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(5).get());
 
-  ExpectStatsCounter(CollectorStats::process_lineage_counts, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_total, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_sqr_total, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_string_total, 4);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_sqr_total, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_string_total, 4);
 
   EXPECT_EQ(lineage.size(), 1);
 
@@ -260,13 +248,12 @@ TEST_F(SensorClientFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   for (const auto& params : tinfo_params) {
     inspector->add_thread(build_threadinfo(params));
   }
-  std::vector<SensorClientFormatter::LineageInfo> lineage;
-  formatter.GetProcessLineage(inspector->get_thread_ref(5).get(), lineage);
+  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(5).get());
 
-  ExpectStatsCounter(CollectorStats::process_lineage_counts, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_total, 2);
-  ExpectStatsCounter(CollectorStats::process_lineage_sqr_total, 4);
-  ExpectStatsCounter(CollectorStats::process_lineage_string_total, 10);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 2);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_sqr_total, 4);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_string_total, 10);
 
   EXPECT_EQ(lineage.size(), 2);
 
@@ -292,13 +279,12 @@ TEST_F(SensorClientFormatterTest, ProcessWithUnrelatedProcessTest) {
     inspector->add_thread(build_threadinfo(params));
   }
 
-  std::vector<SensorClientFormatter::LineageInfo> lineage;
-  formatter.GetProcessLineage(inspector->get_thread_ref(4).get(), lineage);
+  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(4).get());
 
-  ExpectStatsCounter(CollectorStats::process_lineage_counts, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_total, 2);
-  ExpectStatsCounter(CollectorStats::process_lineage_sqr_total, 4);
-  ExpectStatsCounter(CollectorStats::process_lineage_string_total, 10);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 2);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_sqr_total, 4);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_string_total, 10);
 
   EXPECT_EQ(lineage.size(), 2);
 
@@ -312,53 +298,20 @@ TEST_F(SensorClientFormatterTest, ProcessWithUnrelatedProcessTest) {
 }
 
 TEST_F(SensorClientFormatterTest, CountTwoCounterCallsTest) {
-  std::vector<LineageInfo> lineage;
-  std::vector<LineageInfo> lineage2;
-
   // {pid, tid, ptid, vpid, uid, container_id, exepath},
   inspector->add_thread(build_threadinfo({1, 1, 555, 10, 9, "", "jkl;"}));
-
-  formatter.GetProcessLineage(inspector->get_thread_ref(1).get(), lineage);
+  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(1).get());
 
   // {pid, tid, ptid, vpid, uid, container_id, exepath},
   inspector->add_thread(build_threadinfo({2, 2, 555, 10, 9, "", "jkl;"}));
+  auto lineage2 = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(2).get());
 
-  formatter.GetProcessLineage(inspector->get_thread_ref(2).get(), lineage2);
-
-  ExpectStatsCounter(CollectorStats::process_lineage_counts, 2);
-  ExpectStatsCounter(CollectorStats::process_lineage_total, 0);
-  ExpectStatsCounter(CollectorStats::process_lineage_sqr_total, 0);
-  ExpectStatsCounter(CollectorStats::process_lineage_string_total, 0);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 2);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 0);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_sqr_total, 0);
+  EXPECT_STATS_COUNTER(CollectorStats::process_lineage_string_total, 0);
 
   EXPECT_TRUE(lineage2.empty());
-
-  CollectorStats::Reset();
-}
-
-TEST_F(SensorClientFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
-  // {pid, tid, ptid, vpid, uid, container_id, exepath},
-  std::vector<ThreadInfoParams> tinfo_params = {
-      {3, 3, -1, 0, 42, "", "qwerty"},
-      {1, 1, 3, 0, 7, "id", "asdf"},
-      {4, 4, 1, 0, 8, "id", "uiop"},
-  };
-
-  for (const auto& params : tinfo_params) {
-    inspector->add_thread(build_threadinfo(params));
-  }
-
-  std::vector<SensorClientFormatter::LineageInfo> lineage;
-  formatter.GetProcessLineage(inspector->get_thread_ref(4).get(), lineage);
-
-  ExpectStatsCounter(CollectorStats::process_lineage_counts, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_total, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_sqr_total, 1);
-  ExpectStatsCounter(CollectorStats::process_lineage_string_total, 4);
-
-  EXPECT_EQ(lineage.size(), 1);
-
-  EXPECT_EQ(lineage[0].parent_uid(), 7);
-  EXPECT_EQ(lineage[0].parent_exec_file_path(), "asdf");
 
   CollectorStats::Reset();
 }
