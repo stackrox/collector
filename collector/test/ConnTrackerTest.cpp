@@ -1685,6 +1685,66 @@ TEST(ConnTrackerTest, TestCloseNormalizedConnectionsUnnormalized) {
   EXPECT_THAT(delta, IsEmpty());
 }
 
+TEST(ConnTrackerTest, TestCloseExternalUnnormalizedConnections) {
+  ConnectionTracker tracker;
+
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(11, 168, 1, 10), 9999);
+
+  Connection conn("xyz", a, b, L4Proto::TCP, true);
+  int64_t connection_time = 990;
+
+  ConnMap old_state = {{conn, ConnStatus(connection_time, true)}};
+  ConnMap delta;
+  ConnMap expected_delta = {{conn, ConnStatus(connection_time, false)}};
+
+  tracker.CloseExternalUnnormalizedConnections(&old_state, &delta);
+
+  EXPECT_THAT(old_state, IsEmpty());
+  EXPECT_THAT(delta, expected_delta);
+}
+
+TEST(ConnTrackerTest, TestCloseExternalUnnormalizedConnectionsInternal) {
+  ConnectionTracker tracker;
+
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn("xyz", a, b, L4Proto::TCP, true);
+  int64_t connection_time = 990;
+
+  ConnMap old_state = {{conn, ConnStatus(connection_time, true)}};
+  ConnMap delta;
+  ConnMap expected_old_state = {{conn, ConnStatus(connection_time, true)}};
+
+  tracker.CloseExternalUnnormalizedConnections(&old_state, &delta);
+
+  EXPECT_THAT(old_state, expected_old_state);
+  EXPECT_THAT(delta, IsEmpty());
+}
+
+TEST(ConnTrackerTest, TestShouldNormalizeConnection) {
+  ConnectionTracker tracker;
+
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(11, 168, 1, 10), 9999);
+
+  Connection conn("xyz", a, b, L4Proto::TCP, true);
+
+  EXPECT_TRUE(tracker.ShouldNormalizeConnection(conn));
+}
+
+TEST(ConnTrackerTest, TestShouldNormalizeConnectionFalse) {
+  ConnectionTracker tracker;
+
+  Endpoint a(Address(192, 168, 0, 1), 80);
+  Endpoint b(Address(192, 168, 1, 10), 9999);
+
+  Connection conn("xyz", a, b, L4Proto::TCP, true);
+
+  EXPECT_FALSE(tracker.ShouldNormalizeConnection(conn));
+}
+
 }  // namespace
 
 }  // namespace collector

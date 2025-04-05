@@ -258,6 +258,8 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
         ConnectionTracker::ComputeDeltaAfterglow(new_conn_state, old_conn_state, delta_conn, time_micros, time_at_last_scrape, config_.AfterglowPeriod());
         if (!prevEnableExternalIPs && enableExternalIPs) {
           ConnectionTracker::CloseNormalizedConnections(&new_conn_state, &delta_conn);
+        } else if (prevEnableExternalIPs && !enableExternalIPs) {
+          conn_tracker_->CloseExternalUnnormalizedConnections(&new_conn_state, &delta_conn);
         }
       } else {
         ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
