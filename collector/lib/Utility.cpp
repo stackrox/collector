@@ -254,6 +254,11 @@ std::optional<std::string> SanitizedUTF8(std::string_view str) {
 
 void LogProtobufMessage(const google::protobuf::Message& msg) {
   using namespace google::protobuf::util;
+
+  if (!logging::CheckLogLevel(logging::LogLevel::DEBUG)) {
+    return;
+  }
+
   std::string output;
   absl::Status status = MessageToJsonString(msg, &output, JsonPrintOptions{});
   if (status.ok()) {
