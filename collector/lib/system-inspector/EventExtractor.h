@@ -57,6 +57,30 @@ class EventExtractor {
  private:                                                                                                  \
   DECLARE_FILTER_CHECK(id, fieldname)
 
+// When using FIELD_RAW_SAFE, type needs to be trivially copyable so we
+// can move it to a properly aligned variable.
+#define FIELD_RAW_SAFE(id, fieldname, type)                                                                \
+ public:                                                                                                   \
+  const std::optional<type> get_##id(sinsp_evt* event) {                                                   \
+    static_assert(std::is_trivially_copyable_v<type>,                                                      \
+                  "Attempted to create FIELD_RAW_SAFE on non trivial type");                               \
+    uint32_t len;                                                                                          \
+    auto buf = filter_check_##id##_->extract_single(event, &len);                                          \
+    if (!buf) return {};                                                                                   \
+    if (len != sizeof(type)) {                                                                             \
+      CLOG_THROTTLED(WARNING, std::chrono::seconds(30))                                                    \
+          << "Failed to extract value for field " << fieldname << ": expected type " << #type << " (size " \
+          << sizeof(type) << "), but returned value has size " << len;                                     \
+      return {};                                                                                           \
+    }                                                                                                      \
+    type val;                                                                                              \
+    std::memcpy(&val, buf, sizeof(type));                                                                  \
+    return {val};                                                                                          \
+  }                                                                                                        \
+                                                                                                           \
+ private:                                                                                                  \
+  DECLARE_FILTER_CHECK(id, fieldname)
+
 #define FIELD_CSTR(id, fieldname)                                 \
  public:                                                          \
   const char* get_##id(sinsp_evt* event) {                        \
@@ -100,6 +124,7 @@ class EventExtractor {
   // - FIELD_CSTR(id, fieldname): exposes the system inspector field <fieldname> via get_<id>(), returning a null-terminated
   //   const char*.
   // - FIELD_RAW(id, fieldname, type): exposes the system inspector field <fieldname> via get_<id>(), returning a const <type>*.
+  // - FIELD_RAW_SAFE(id, fieldname, type): exposes the system inspector field <fieldname> via get_<id>(), returning a std::optional<type>.
   // - EVT_ARG(argname): shorthand for FIELD_CSTR(evt_arg_<argname>, "evt.arg.<argname>")
   // - EVT_ARG_RAW(argname, type): shorthand for FIELD_RAW(evt_arg_<argname>, "evt.rawarg.<argname>", <type>)
   //
@@ -118,11 +143,11 @@ class EventExtractor {
   FIELD_CSTR(proc_args, "proc.args");
 
   // General event information
-  FIELD_RAW(event_rawres, "evt.rawres", int64_t);
+  FIELD_RAW_SAFE(event_rawres, "evt.rawres", int64_t);
 
   // File/network related
-  FIELD_RAW(client_port, "fd.cport", uint16_t);
-  FIELD_RAW(server_port, "fd.sport", uint16_t);
+  FIELD_RAW_SAFE(client_port, "fd.cport", uint16_t);
+  FIELD_RAW_SAFE(server_port, "fd.sport", uint16_t);
 
   // k8s metadata
   FIELD_CSTR(k8s_namespace, "k8s.ns.name");

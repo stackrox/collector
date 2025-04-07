@@ -56,10 +56,10 @@ SignalHandler::Result SelfCheckNetworkHandler::HandleSignal(sinsp_evt* evt) {
     return IGNORED;
   }
 
-  const uint16_t* server_port = event_extractor_->get_server_port(evt);
-  const uint16_t* client_port = event_extractor_->get_client_port(evt);
+  auto server_port = event_extractor_->get_server_port(evt);
+  auto client_port = event_extractor_->get_client_port(evt);
 
-  if (server_port == nullptr || client_port == nullptr) {
+  if (!server_port.has_value() | !client_port.has_value()) {
     return IGNORED;
   }
 

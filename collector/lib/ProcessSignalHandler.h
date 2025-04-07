@@ -30,6 +30,12 @@ class ProcessSignalHandler : public SignalHandler {
         stats_(stats),
         config_(config) {}
 
+  ProcessSignalHandler(const ProcessSignalHandler&) = delete;
+  ProcessSignalHandler(ProcessSignalHandler&&) = delete;
+  ProcessSignalHandler& operator=(const ProcessSignalHandler&) = delete;
+  ProcessSignalHandler& operator=(ProcessSignalHandler&&) = delete;
+  ~ProcessSignalHandler() override = default;
+
   bool Start() override;
   bool Stop() override;
   Result HandleSignal(sinsp_evt* evt) override;

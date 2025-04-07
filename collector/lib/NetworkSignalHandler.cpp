@@ -1,5 +1,6 @@
 #include "NetworkSignalHandler.h"
 
+#include <cstring>
 #include <optional>
 
 #include <libsinsp/sinsp.h>
@@ -88,8 +89,8 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
     }
   }
 
-  const int64_t* res = event_extractor_->get_event_rawres(evt);
-  if (!res || *res < 0) {
+  auto res = event_extractor_->get_event_rawres(evt);
+  if (!res.has_value() || res.value() < 0) {
     // ignore unsuccessful events for now.
     return std::nullopt;
   }
