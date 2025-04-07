@@ -5,7 +5,7 @@
 
 namespace collector {
 
-bool SignalServiceClient::Refresh() {
+bool SignalServiceClient::Recreate() {
   context_ = std::make_unique<grpc::ClientContext>();
   writer_ = DuplexClient::CreateWithReadsIgnored(&SignalService::Stub::AsyncPushSignals, channel_, context_.get());
   if (!writer_->WaitUntilStarted(std::chrono::seconds(30))) {
