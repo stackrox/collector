@@ -89,15 +89,8 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
     }
   }
 
-  const int64_t* res = event_extractor_->get_event_rawres(evt);
-  if (res == nullptr) {
-    return std::nullopt;
-  }
-
-  // Read the value into aligned memory
-  int64_t res_value = 0;
-  std::memcpy(&res_value, res, sizeof(int64_t));
-  if (res_value < 0) {
+  auto res = event_extractor_->get_event_rawres(evt);
+  if (!res.has_value() || res.value() < 0) {
     // ignore unsuccessful events for now.
     return std::nullopt;
   }
