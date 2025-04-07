@@ -122,11 +122,11 @@ bool CollectorOutput::EstablishGrpcStreamSingle() {
   // Refresh all clients
   bool success = true;
   for (const auto& client : signal_clients_) {
-    success &= client->Refresh();
+    success &= client->Recreate();
   }
 
   for (const auto& client : sensor_clients_) {
-    success &= client->Refresh();
+    success &= client->Recreate();
   }
 
   if (success) {

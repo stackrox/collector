@@ -10,6 +10,7 @@
 #include "SensorClient.h"
 #include "SignalHandler.h"
 #include "SignalServiceClient.h"
+#include "StoppableThread.h"
 
 namespace collector {
 
