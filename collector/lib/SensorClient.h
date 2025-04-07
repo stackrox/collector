@@ -1,7 +1,6 @@
 #ifndef _SENSOR_CLIENT_H_
 #define _SENSOR_CLIENT_H_
 
-#include <condition_variable>
 #include <memory>
 
 #include <grpcpp/channel.h>
@@ -11,7 +10,6 @@
 
 #include "DuplexGRPC.h"
 #include "SignalHandler.h"
-#include "StoppableThread.h"
 
 namespace collector {
 
@@ -33,7 +31,7 @@ class ISensorClient {
    *
    * @returns true if the refresh was succesful, false otherwise.
    */
-  virtual bool Refresh() = 0;
+  virtual bool Recreate() = 0;
 
   /**
    * Send a message to sensor through the iservice.
@@ -61,7 +59,7 @@ class SensorClient : public ISensorClient {
       : channel_(std::move(channel)) {
   }
 
-  bool Refresh() override;
+  bool Recreate() override;
 
   SignalHandler::Result SendMsg(const sensor::MsgFromCollector& msg) override;
 
@@ -78,7 +76,7 @@ class SensorClient : public ISensorClient {
 };
 
 class SensorClientStdout : public ISensorClient {
-  bool Refresh() override { return true; }
+  bool Recreate() override { return true; }
 
   SignalHandler::Result SendMsg(const sensor::MsgFromCollector& msg) override {
     LogProtobufMessage(msg);

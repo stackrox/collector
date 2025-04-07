@@ -10,13 +10,13 @@
 namespace collector {
 class MockSensorClient : public ISensorClient {
  public:
-  MOCK_METHOD(bool, Refresh, ());
+  MOCK_METHOD(bool, Recreate, ());
   MOCK_METHOD(SignalHandler::Result, SendMsg, (const sensor::MsgFromCollector&));
 };
 
 class MockSignalClient : public ISignalServiceClient {
  public:
-  MOCK_METHOD(bool, Refresh, ());
+  MOCK_METHOD(bool, Recreate, ());
   MOCK_METHOD(SignalHandler::Result, PushSignals, (const sensor::SignalStreamMessage&));
 };
 
