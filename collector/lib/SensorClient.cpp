@@ -3,7 +3,7 @@
 #include "Logging.h"
 
 namespace collector {
-bool SensorClient::Refresh() {
+bool SensorClient::Recreate() {
   context_ = std::make_unique<grpc::ClientContext>();
   writer_ = DuplexClient::CreateWithReadsIgnored(&sensor::CollectorService::Stub::AsyncCommunicate, channel_, context_.get());
   if (!writer_->WaitUntilStarted(std::chrono::seconds(30))) {
