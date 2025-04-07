@@ -25,6 +25,13 @@ class SignalHandler {
     FINISHED,
   };
 
+  SignalHandler() = default;
+  SignalHandler(const SignalHandler&) = default;
+  SignalHandler(SignalHandler&&) = delete;
+  SignalHandler& operator=(const SignalHandler&) = default;
+  SignalHandler& operator=(SignalHandler&&) = delete;
+  virtual ~SignalHandler() = default;
+
   virtual std::string GetName() = 0;
   virtual bool Start() { return true; }
   virtual bool Stop() { return true; }
