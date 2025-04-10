@@ -5,7 +5,7 @@
 #include "internalapi/sensor/signal_iservice.pb.h"
 
 #include "CollectorConfig.h"
-#include "SensorClient.h"
+#include "IClient.h"
 #include "SignalHandler.h"
 #include "SignalServiceClient.h"
 #include "StoppableThread.h"
@@ -31,7 +31,7 @@ class Output {
   }
 
   // Constructor for tests
-  Output(std::unique_ptr<ISensorClient>&& sensor_client,
+  Output(std::unique_ptr<IClient>&& sensor_client,
          std::unique_ptr<ISignalServiceClient>&& signal_client) {
     sensor_clients_.emplace_back(std::move(sensor_client));
     signal_clients_.emplace_back(std::move(signal_client));
@@ -64,7 +64,7 @@ class Output {
   SignalHandler::Result SensorOutput(const sensor::ProcessSignal& msg);
   SignalHandler::Result SignalOutput(const sensor::SignalStreamMessage& msg);
 
-  std::vector<std::unique_ptr<ISensorClient>> sensor_clients_;
+  std::vector<std::unique_ptr<IClient>> sensor_clients_;
   std::vector<std::unique_ptr<ISignalServiceClient>> signal_clients_;
 
   bool use_sensor_client_ = true;
