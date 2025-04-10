@@ -8,11 +8,11 @@
 
 #include <gtest/gtest_prod.h>
 
-#include "CollectorOutput.h"
 #include "ContainerMetadata.h"
 #include "Control.h"
 #include "SignalHandler.h"
 #include "SystemInspector.h"
+#include "output/Output.h"
 
 // forward declarations
 class sinsp;
@@ -30,7 +30,7 @@ class Service : public SystemInspector {
   Service& operator=(Service&&) = delete;
   ~Service() override;
 
-  Service(const CollectorConfig& config, CollectorOutput* client);
+  Service(const CollectorConfig& config, output::Output* client);
   void Start() override;
   void Run(const std::atomic<ControlValue>& control) override;
   void CleanUp() override;

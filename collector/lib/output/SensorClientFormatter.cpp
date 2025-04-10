@@ -13,7 +13,7 @@
 #include "Utility.h"
 #include "system-inspector/EventExtractor.h"
 
-namespace collector {
+namespace collector::output {
 
 using SignalStreamMessage = sensor::SignalStreamMessage;
 using Signal = SensorClientFormatter::Signal;
@@ -331,4 +331,4 @@ std::vector<LineageInfo> SensorClientFormatter::GetProcessLineage(sinsp_threadin
   return lineage;
 }
 
-}  // namespace collector
+}  // namespace collector::output
