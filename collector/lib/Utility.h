@@ -36,9 +36,6 @@ std::string GetHostPath(const std::string& file);
 // Get SNI hostname from SNI_HOSTNAME env var
 const char* GetSNIHostname();
 
-// Get hostname from NODE_HOSTNAME env var
-std::string GetHostname();
-
 // Allows Splitting a std::string_view into a vector of strings
 std::vector<std::string> SplitStringView(const std::string_view sv, char delim = ' ');
 

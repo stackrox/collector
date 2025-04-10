@@ -4,6 +4,8 @@
 
 #include <json/json.h>
 
+#include "HostInfo.h"
+
 namespace collector {
 
 const std::string GetStatus::kBaseRoute = "/ready";
@@ -24,7 +26,7 @@ bool GetStatus::handleGet(CivetServer* server, struct mg_connection* conn) {
 
     status["status"] = "ok";
     status["collector"] = Json::Value(Json::objectValue);
-    status["collector"]["node"] = node_name_;
+    status["collector"]["node"] = HostInfo::GetHostname();
     status["collector"]["events"] = Json::UInt64(stats.nEvents);
     status["collector"]["drops"] = drops;
     status["collector"]["preemptions"] = Json::UInt64(stats.nPreemptions);

@@ -1,6 +1,7 @@
 #include "NetworkConnectionInfoServiceComm.h"
 
 #include "GRPCUtil.h"
+#include "HostInfo.h"
 #include "Utility.h"
 
 namespace collector {
@@ -11,12 +12,12 @@ constexpr char NetworkConnectionInfoServiceComm::kSupportedCaps[];
 
 std::unique_ptr<grpc::ClientContext> NetworkConnectionInfoServiceComm::CreateClientContext() const {
   auto ctx = std::make_unique<grpc::ClientContext>();
-  ctx->AddMetadata(kHostnameMetadataKey, hostname_);
+  ctx->AddMetadata(kHostnameMetadataKey, HostInfo::GetHostname());
   ctx->AddMetadata(kCapsMetadataKey, kSupportedCaps);
   return ctx;
 }
 
-NetworkConnectionInfoServiceComm::NetworkConnectionInfoServiceComm(std::string hostname, std::shared_ptr<grpc::Channel> channel) : hostname_(std::move(hostname)), channel_(std::move(channel)) {
+NetworkConnectionInfoServiceComm::NetworkConnectionInfoServiceComm(std::shared_ptr<grpc::Channel> channel) : channel_(std::move(channel)) {
   if (channel_) {
     stub_ = sensor::NetworkConnectionInfoService::NewStub(channel_);
   }

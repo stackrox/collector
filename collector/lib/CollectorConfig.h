@@ -79,7 +79,6 @@ class CollectorConfig {
   bool TurnOffScrape() const;
   bool ScrapeListenEndpoints() const { return scrape_listen_endpoints_; }
   int ScrapeInterval() const;
-  std::string Hostname() const;
   std::string HostProc() const;
   CollectionMethod GetCollectionMethod() const;
   std::vector<std::string> Syscalls() const;
@@ -200,7 +199,6 @@ class CollectorConfig {
   CollectionMethod collection_method_;
   bool turn_off_scrape_;
   std::vector<std::string> syscalls_;
-  std::string hostname_;
   std::string host_proc_;
   bool disable_network_flows_ = false;
   bool scrape_listen_endpoints_ = false;
