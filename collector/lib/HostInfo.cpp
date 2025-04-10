@@ -29,6 +29,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <bpf/libbpf.h>
 #include <linux/bpf.h>
 
+#include "FileSystem.h"
 #include "Logging.h"
 
 namespace collector {
@@ -112,27 +113,38 @@ KernelVersion HostInfo::GetKernelVersion() {
   return kernel_version_;
 }
 
-const std::string& HostInfo::GetHostname() {
-  if (hostname_.empty()) {
-    const char* hostname_env = std::getenv("NODE_HOSTNAME");
-    if (hostname_env && *hostname_env) {
-      hostname_ = std::string(hostname_env);
-      CLOG(DEBUG) << "Found hostname in NODE_HOSTNAME environment variable";
-    } else {
-      // if we can't get the hostname from the environment
-      // we can look in /etc or /proc (mounted at /host/etc or /host/proc in the collector container)
-      std::vector<std::string> hostnamePaths{"/etc/hostname", "/proc/sys/kernel/hostname"};
-      for (auto hostnamePath : hostnamePaths) {
-        hostname_ = GetHostnameFromFile(hostnamePath);
-        if (!hostname_.empty()) {
-          CLOG(DEBUG) << "Found hostname in " << hostnamePath;
-          break;
-        }
-      }
-    }
-    CLOG(INFO) << "Hostname: '" << hostname_ << "'";
+const std::string& HostInfo::GetHostnameInner() {
+  if (!hostname_.empty()) {
+    return hostname_;
   }
 
+  const char* hostname_env = std::getenv("NODE_HOSTNAME");
+  if (hostname_env != nullptr && *hostname_env != '\0') {
+    hostname_ = hostname_env;
+    CLOG(DEBUG) << "Found hostname in NODE_HOSTNAME environment variable";
+    return hostname_;
+  }
+
+  // if we can't get the hostname from the environment
+  // we can look in /etc or /proc (mounted at /host/etc or /host/proc in the collector container)
+  std::vector<std::string> hostnamePaths{
+      "/etc/hostname",
+      "/proc/sys/kernel/hostname",
+  };
+
+  for (auto hostnamePath : hostnamePaths) {
+    hostname_ = GetHostnameFromFile(hostnamePath);
+    if (!hostname_.empty()) {
+      CLOG(DEBUG) << "Found hostname in " << hostnamePath;
+      break;
+    }
+  }
+
+  if (hostname_.empty()) {
+    CLOG(FATAL) << "Unable to determine the hostname. Consider setting the environment variable NODE_HOSTNAME";
+  }
+
+  CLOG(INFO) << "Hostname: '" << hostname_ << "'";
   return hostname_;
 }
 

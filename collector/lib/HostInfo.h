@@ -32,7 +32,6 @@ extern "C" {
 #include <regex>
 #include <string>
 
-#include "FileSystem.h"
 #include "Logging.h"
 #include "Utility.h"
 
@@ -92,7 +91,7 @@ struct KernelVersion {
       release = kernel_version_env;
     }
 
-    struct utsname uts_buffer {};
+    struct utsname uts_buffer{};
     if (uname(&uts_buffer) == 0) {
       if (release.empty()) {
         release = uts_buffer.release;
@@ -178,7 +177,9 @@ class HostInfo {
   virtual KernelVersion GetKernelVersion();
 
   // Get the host's hostname
-  const std::string& GetHostname();
+  static const std::string& GetHostname() {
+    return HostInfo::Instance().GetHostnameInner();
+  }
 
   // Get the Linux distribution, if possible.
   // If not, default to "Linux"
@@ -273,6 +274,8 @@ class HostInfo {
   HostInfo() = default;
 
  private:
+  const std::string& GetHostnameInner();
+
   // the kernel version of the host
   KernelVersion kernel_version_;
   // the Linux distribution of the host (defaults to Linux)

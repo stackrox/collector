@@ -124,12 +124,6 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
     }
   }
 
-  // Get hostname
-  hostname_ = GetHostname();
-  if (hostname_.empty()) {
-    CLOG(FATAL) << "Unable to determine the hostname. Consider setting the environment variable NODE_HOSTNAME";
-  }
-
   // Get path to host proc dir
   host_proc_ = GetHostPath("/proc");
 
@@ -414,10 +408,6 @@ CollectionMethod CollectorConfig::GetCollectionMethod() const {
   return collection_method_;
 }
 
-std::string CollectorConfig::Hostname() const {
-  return hostname_;
-}
-
 const std::filesystem::path& CollectorConfig::HostProc() const {
   return host_proc_;
 }
@@ -443,7 +433,7 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << "collection_method:" << c.GetCollectionMethod()
          << ", scrape_interval:" << c.ScrapeInterval()
          << ", turn_off_scrape:" << c.TurnOffScrape()
-         << ", hostname:" << c.Hostname()
+         << ", hostname:" << HostInfo::GetHostname()
          << ", processesListeningOnPorts:" << c.IsProcessesListeningOnPortsEnabled()
          << ", logLevel:" << c.LogLevel()
          << ", set_import_users:" << c.ImportUsers()
