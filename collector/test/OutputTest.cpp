@@ -4,11 +4,11 @@
 #include "internalapi/sensor/collector_iservice.pb.h"
 
 #include "SignalServiceClient.h"
+#include "output/IClient.h"
 #include "output/Output.h"
-#include "output/SensorClient.h"
 
 namespace collector::output {
-class MockSensorClient : public ISensorClient {
+class MockSensorClient : public IClient {
  public:
   MOCK_METHOD(bool, Recreate, ());
   MOCK_METHOD(SignalHandler::Result, SendMsg, (const sensor::MsgFromCollector&));

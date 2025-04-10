@@ -3,6 +3,8 @@
 #include "internalapi/sensor/collector_iservice.pb.h"
 
 #include "GRPCUtil.h"
+#include "output/grpc/Client.h"
+#include "output/log/Client.h"
 
 namespace collector::output {
 
@@ -12,7 +14,7 @@ Output::Output(const CollectorConfig& config)
     channel_ = config.grpc_channel;
 
     if (use_sensor_client_) {
-      auto sensor_client = std::make_unique<SensorClient>(channel_);
+      auto sensor_client = std::make_unique<grpc::Client>(channel_);
       sensor_clients_.emplace_back(std::move(sensor_client));
     } else {
       auto signal_client = std::make_unique<SignalServiceClient>(channel_);
@@ -22,7 +24,7 @@ Output::Output(const CollectorConfig& config)
 
   if (config.grpc_channel == nullptr || config.UseStdout()) {
     if (use_sensor_client_) {
-      auto sensor_client = std::make_unique<SensorClientStdout>();
+      auto sensor_client = std::make_unique<log::Client>();
       sensor_clients_.emplace_back(std::move(sensor_client));
     } else {
       auto signal_client = std::make_unique<StdoutSignalServiceClient>();
