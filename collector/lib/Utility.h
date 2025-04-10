@@ -3,11 +3,8 @@
 #define _UTILITY_H_
 
 #include <cerrno>
-#include <chrono>
-#include <cinttypes>
-#include <functional>
+#include <filesystem>
 #include <iostream>
-#include <memory>
 #include <mutex>
 #include <optional>
 #include <sstream>
@@ -31,7 +28,7 @@ const char* SignalName(int signum);
 std::string Base64Decode(std::string const& encoded_string);
 
 // Get path using host prefix from COLLECTOR_HOST_ROOT env var
-std::string GetHostPath(const std::string& file);
+std::filesystem::path GetHostPath(std::string_view file);
 
 // Get SNI hostname from SNI_HOSTNAME env var
 const char* GetSNIHostname();

@@ -23,6 +23,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "HostInfo.h"
 
+#include <filesystem>
 #include <fstream>
 
 #include <bpf/libbpf.h>
@@ -88,8 +89,8 @@ std::string filterForKey(std::istream& stream, const char* name) {
   return "";
 }
 
-const std::string GetHostnameFromFile(const std::string& hostnamePath) {
-  std::string hostnameFile = GetHostPath(hostnamePath);
+std::string GetHostnameFromFile(std::string_view hostnamePath) {
+  auto hostnameFile = GetHostPath(hostnamePath);
   std::ifstream file(hostnameFile);
   std::string hostname = "";
   if (!file.is_open()) {
@@ -270,23 +271,18 @@ bool HostInfo::HasBPFTracingSupport() {
 }
 
 bool HostInfo::IsUEFI() {
-  struct stat sb;
-  std::string efi_path = GetHostPath("/sys/firmware/efi");
+  auto efi_path = GetHostPath("/sys/firmware/efi");
+  std::error_code ec;
+  auto status = std::filesystem::status(efi_path, ec);
 
-  if (stat(efi_path.c_str(), &sb) == -1) {
-    if (errno == ENOTDIR || errno == ENOENT) {
-      CLOG(DEBUG) << "EFI directory doesn't exist, legacy boot mode";
-      return false;
-
-    } else {
-      CLOG(WARNING) << "Could not stat " << efi_path << ": " << StrError()
-                    << ". No UEFI heuristic is performed.";
-      return false;
-    }
+  if (ec) {
+    CLOG(WARNING) << "Could not stat " << efi_path << ": " << ec.message()
+                  << ". No UEFI heuristic is performed.";
+    return false;
   }
 
-  if (!S_ISDIR(sb.st_mode)) {
-    CLOG(WARNING) << "EFI path is not a directory, legacy boot mode";
+  if (status.type() != std::filesystem::file_type::directory) {
+    CLOG(WARNING) << "EFI path is not a directory or doesn't exist, legacy boot mode";
     return false;
   }
 
@@ -298,8 +294,7 @@ bool HostInfo::IsUEFI() {
 // variable is a small file <key name>-<vendor-guid> in efivarfs directory, and
 // its format is described in UEFI specification.
 SecureBootStatus HostInfo::GetSecureBootFromVars() {
-  std::uint8_t status;
-  std::string efi_path = GetHostPath("/sys/firmware/efi/efivars");
+  auto efi_path = GetHostPath("/sys/firmware/efi/efivars");
   DirHandle efivars = opendir(efi_path.c_str());
 
   if (!efivars.valid()) {
@@ -312,7 +307,7 @@ SecureBootStatus HostInfo::GetSecureBootFromVars() {
 
     if (name.rfind("SecureBoot-", 0) == 0) {
       std::uint8_t efi_key[5];
-      std::string path = efi_path + "/" + name;
+      auto path = efi_path / name;
 
       // There should be only one SecureBoot key, so it doesn't make sense to
       // search further in case if e.g. it couldn't be read.
@@ -327,7 +322,7 @@ SecureBootStatus HostInfo::GetSecureBootFromVars() {
       // it, so read the header first, then the actual value.
       // See https://www.kernel.org/doc/html/latest/filesystems/efivarfs.html
       secure_boot.read(reinterpret_cast<char*>(&efi_key), 5);
-      status = efi_key[4];
+      std::uint8_t status = efi_key[4];
 
       // Pretty intuitively 0 means the feature is disabled, 1 enabled.
       // SecureBoot efi variable doesn't have NOT_DETERMINED value.
@@ -350,7 +345,7 @@ SecureBootStatus HostInfo::GetSecureBootFromVars() {
 // determined.
 SecureBootStatus HostInfo::GetSecureBootFromParams() {
   std::uint8_t status;
-  std::string boot_params_path = GetHostPath("/sys/kernel/boot_params/data");
+  auto boot_params_path = GetHostPath("/sys/kernel/boot_params/data");
 
   std::ifstream boot_params(boot_params_path, std::ios::binary | std::ios::in);
 
@@ -393,8 +388,7 @@ SecureBootStatus HostInfo::GetSecureBootStatus() {
 
 // Minikube keeps its version under /etc/VERSION
 std::string HostInfo::GetMinikubeVersion() {
-  std::string version_path = GetHostPath("/etc/VERSION");
-  std::ifstream version_file(version_path);
+  std::ifstream version_file(GetHostPath("/etc/VERSION"));
 
   if (!version_file.is_open()) {
     CLOG(WARNING) << "Failed to acquire minikube version";

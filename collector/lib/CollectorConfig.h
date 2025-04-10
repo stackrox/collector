@@ -80,7 +80,7 @@ class CollectorConfig {
   bool ScrapeListenEndpoints() const { return scrape_listen_endpoints_; }
   int ScrapeInterval() const;
   std::string Hostname() const;
-  std::string HostProc() const;
+  const std::filesystem::path& HostProc() const;
   CollectionMethod GetCollectionMethod() const;
   std::vector<std::string> Syscalls() const;
   int64_t AfterglowPeriod() const;
@@ -201,7 +201,7 @@ class CollectorConfig {
   bool turn_off_scrape_;
   std::vector<std::string> syscalls_;
   std::string hostname_;
-  std::string host_proc_;
+  std::filesystem::path host_proc_;
   bool disable_network_flows_ = false;
   bool scrape_listen_endpoints_ = false;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
