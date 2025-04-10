@@ -21,15 +21,15 @@ class EventExtractor;
 
 namespace collector::output {
 
-class SensorClientFormatter : public ProtoSignalFormatter<sensor::ProcessSignal> {
+class Formatter : public ProtoSignalFormatter<sensor::ProcessSignal> {
  public:
-  SensorClientFormatter(const SensorClientFormatter&) = delete;
-  SensorClientFormatter(SensorClientFormatter&&) = delete;
-  SensorClientFormatter& operator=(const SensorClientFormatter&) = delete;
-  SensorClientFormatter& operator=(SensorClientFormatter&&) = delete;
-  virtual ~SensorClientFormatter();
+  Formatter(const Formatter&) = delete;
+  Formatter(Formatter&&) = delete;
+  Formatter& operator=(const Formatter&) = delete;
+  Formatter& operator=(Formatter&&) = delete;
+  virtual ~Formatter();
 
-  SensorClientFormatter(sinsp* inspector, const CollectorConfig& config);
+  Formatter(sinsp* inspector, const CollectorConfig& config);
 
   using Signal = v1::Signal;
   using ProcessSignal = sensor::ProcessSignal;

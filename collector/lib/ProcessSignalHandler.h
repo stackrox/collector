@@ -6,7 +6,7 @@
 #include "ProcessSignalFormatter.h"
 #include "RateLimit.h"
 #include "SignalHandler.h"
-#include "output/SensorClientFormatter.h"
+#include "output/Formatter.h"
 #include "system-inspector/Service.h"
 
 // forward declarations
@@ -50,7 +50,7 @@ class ProcessSignalHandler : public SignalHandler {
 
   output::Output* client_;
   ProcessSignalFormatter signal_formatter_;
-  output::SensorClientFormatter sensor_formatter_;
+  output::Formatter sensor_formatter_;
   system_inspector::Stats* stats_;
   RateLimitCache rate_limiter_;
 };
