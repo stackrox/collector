@@ -11,7 +11,7 @@
 #include "DuplexGRPC.h"
 #include "SignalHandler.h"
 
-namespace collector {
+namespace collector::output {
 
 class ISensorClient {
  public:
@@ -84,6 +84,6 @@ class SensorClientStdout : public ISensorClient {
   }
 };
 
-}  // namespace collector
+}  // namespace collector::output
 
 #endif  //_SENSOR_CLIENT_H_

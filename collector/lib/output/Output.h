@@ -12,20 +12,20 @@
 #include "SignalServiceClient.h"
 #include "StoppableThread.h"
 
-namespace collector {
+namespace collector::output {
 
 using MessageType = std::variant<sensor::MsgFromCollector, sensor::SignalStreamMessage>;
 
-class CollectorOutput {
+class Output {
  public:
-  CollectorOutput(const CollectorOutput&) = delete;
-  CollectorOutput(CollectorOutput&&) = delete;
-  CollectorOutput& operator=(const CollectorOutput&) = delete;
-  CollectorOutput& operator=(CollectorOutput&&) = delete;
+  Output(const Output&) = delete;
+  Output(Output&&) = delete;
+  Output& operator=(const Output&) = delete;
+  Output& operator=(Output&&) = delete;
 
-  CollectorOutput(const CollectorConfig& config);
+  Output(const CollectorConfig& config);
 
-  ~CollectorOutput() {
+  ~Output() {
     stream_interrupted_.notify_one();
     if (thread_.running()) {
       thread_.Stop();
@@ -33,8 +33,8 @@ class CollectorOutput {
   }
 
   // Constructor for tests
-  CollectorOutput(std::unique_ptr<ISensorClient>&& sensor_client,
-                  std::unique_ptr<ISignalServiceClient>&& signal_client) {
+  Output(std::unique_ptr<ISensorClient>&& sensor_client,
+         std::unique_ptr<ISignalServiceClient>&& signal_client) {
     sensor_clients_.emplace_back(std::move(sensor_client));
     signal_clients_.emplace_back(std::move(signal_client));
   }
@@ -77,6 +77,6 @@ class CollectorOutput {
   std::shared_ptr<grpc::Channel> channel_;
 };
 
-}  // namespace collector
+}  // namespace collector::output
 
 #endif  // COLLECTOR_OUTPUT_H

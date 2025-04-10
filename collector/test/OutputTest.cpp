@@ -3,11 +3,11 @@
 
 #include "internalapi/sensor/collector_iservice.pb.h"
 
-#include "CollectorOutput.h"
-#include "SensorClient.h"
 #include "SignalServiceClient.h"
+#include "output/Output.h"
+#include "output/SensorClient.h"
 
-namespace collector {
+namespace collector::output {
 class MockSensorClient : public ISensorClient {
  public:
   MOCK_METHOD(bool, Recreate, ());
@@ -36,7 +36,7 @@ TEST_F(CollectorOutputTest, SensorClient) {
 
   EXPECT_CALL(*sensor_client, SendMsg).Times(1).WillOnce(testing::Return(SignalHandler::PROCESSED));
 
-  CollectorOutput output{std::move(sensor_client), std::move(signal_client)};
+  Output output{std::move(sensor_client), std::move(signal_client)};
   auto result = output.SendMsg(msg);
 
   EXPECT_EQ(result, SignalHandler::PROCESSED);
@@ -47,10 +47,10 @@ TEST_F(CollectorOutputTest, SignalClient) {
 
   EXPECT_CALL(*signal_client, PushSignals).Times(1).WillOnce(testing::Return(SignalHandler::PROCESSED));
 
-  CollectorOutput output{std::move(sensor_client), std::move(signal_client)};
+  Output output{std::move(sensor_client), std::move(signal_client)};
 
   auto result = output.SendMsg(msg);
 
   EXPECT_EQ(result, SignalHandler::PROCESSED);
 }
-}  // namespace collector
+}  // namespace collector::output

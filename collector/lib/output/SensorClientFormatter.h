@@ -21,7 +21,7 @@ namespace collector::system_inspector {
 class EventExtractor;
 }
 
-namespace collector {
+namespace collector::output {
 
 class SensorClientFormatter : public ProtoSignalFormatter<sensor::MsgFromCollector> {
  public:
@@ -111,6 +111,6 @@ class SensorClientFormatter : public ProtoSignalFormatter<sensor::MsgFromCollect
   const CollectorConfig& config_;
 };
 
-}  // namespace collector
+}  // namespace collector::output
 
 #endif  // SENSOR_CLIENT_FORMATTER_H
