@@ -1,11 +1,11 @@
-#include "CollectorOutput.h"
+#include "Output.h"
 
 #include "GRPCUtil.h"
 #include "HostInfo.h"
 
-namespace collector {
+namespace collector::output {
 
-CollectorOutput::CollectorOutput(const CollectorConfig& config)
+Output::Output(const CollectorConfig& config)
     : use_sensor_client_(!config.UseLegacyServices()) {
   if (config.grpc_channel != nullptr) {
     channel_ = config.grpc_channel;
@@ -32,13 +32,13 @@ CollectorOutput::CollectorOutput(const CollectorConfig& config)
   thread_.Start([this] { EstablishGrpcStream(); });
 }
 
-void CollectorOutput::HandleOutputError() {
+void Output::HandleOutputError() {
   CLOG(ERROR) << "GRPC stream interrupted";
   stream_active_.store(false, std::memory_order_release);
   stream_interrupted_.notify_one();
 }
 
-SignalHandler::Result CollectorOutput::SensorOutput(const sensor::ProcessSignal& msg) {
+SignalHandler::Result Output::SensorOutput(const sensor::ProcessSignal& msg) {
   for (auto& client : sensor_clients_) {
     auto res = client->SendMsg(msg);
     switch (res) {
@@ -58,7 +58,7 @@ SignalHandler::Result CollectorOutput::SensorOutput(const sensor::ProcessSignal&
   return SignalHandler::PROCESSED;
 }
 
-SignalHandler::Result CollectorOutput::SignalOutput(const sensor::SignalStreamMessage& msg) {
+SignalHandler::Result Output::SignalOutput(const sensor::SignalStreamMessage& msg) {
   for (auto& client : signal_clients_) {
     auto res = client->PushSignals(msg);
     switch (res) {
@@ -78,7 +78,7 @@ SignalHandler::Result CollectorOutput::SignalOutput(const sensor::SignalStreamMe
   return SignalHandler::PROCESSED;
 }
 
-SignalHandler::Result CollectorOutput::SendMsg(const MessageType& msg) {
+SignalHandler::Result Output::SendMsg(const MessageType& msg) {
   auto visitor = [this](auto&& m) {
     using T = std::decay_t<decltype(m)>;
     if constexpr (std::is_same_v<T, sensor::ProcessSignal>) {
@@ -94,13 +94,13 @@ SignalHandler::Result CollectorOutput::SendMsg(const MessageType& msg) {
   return std::visit(visitor, msg);
 }
 
-void CollectorOutput::EstablishGrpcStream() {
+void Output::EstablishGrpcStream() {
   while (EstablishGrpcStreamSingle()) {
   }
   CLOG(INFO) << "Service client terminating.";
 }
 
-bool CollectorOutput::EstablishGrpcStreamSingle() {
+bool Output::EstablishGrpcStreamSingle() {
   std::mutex mtx;
   std::unique_lock<std::mutex> lock(mtx);
   stream_interrupted_.wait(lock, [this]() { return !stream_active_.load(std::memory_order_acquire) || thread_.should_stop(); });
@@ -135,4 +135,4 @@ bool CollectorOutput::EstablishGrpcStreamSingle() {
   }
   return true;
 }
-}  // namespace collector
+}  // namespace collector::output
