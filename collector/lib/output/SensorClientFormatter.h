@@ -19,7 +19,7 @@ namespace collector::system_inspector {
 class EventExtractor;
 }
 
-namespace collector {
+namespace collector::output {
 
 class SensorClientFormatter : public ProtoSignalFormatter<sensor::ProcessSignal> {
  public:
@@ -108,4 +108,4 @@ class SensorClientFormatter : public ProtoSignalFormatter<sensor::ProcessSignal>
   const CollectorConfig& config_;
 };
 
-}  // namespace collector
+}  // namespace collector::output

@@ -6,10 +6,10 @@
 #include "libsinsp/sinsp.h"
 
 #include "CollectorStats.h"
-#include "SensorClientFormatter.h"
 #include "Utility.h"
+#include "output/SensorClientFormatter.h"
 
-namespace collector {
+namespace collector::output {
 
 using LineageInfo = SensorClientFormatter::LineageInfo;
 
@@ -21,6 +21,15 @@ struct ThreadInfoParams {
   int64_t uid;
   std::string container_id;
   std::string exepath;
+};
+
+class MockCollectorConfig : public CollectorConfig {
+ public:
+  MockCollectorConfig() = default;
+
+  void SetDisableProcessArguments(bool value) {
+    disable_process_arguments_ = value;
+  }
 };
 
 #define EXPECT_STATS_COUNTER(index, expected) \
@@ -47,7 +56,7 @@ class SensorClientFormatterTest : public testing::Test {
   }
 
   std::unique_ptr<sinsp> inspector;
-  CollectorConfig config;
+  MockCollectorConfig config;
   SensorClientFormatter formatter;
 };
 
@@ -317,7 +326,7 @@ TEST_F(SensorClientFormatterTest, ProcessArguments) {
 }
 
 TEST_F(SensorClientFormatterTest, NoProcessArguments) {
-  config.disable_process_arguments_ = true;
+  config.SetDisableProcessArguments(true);
 
   // {pid, tid, ptid, vpid, uid, container_id, exepath},
   auto tinfo = build_threadinfo({3, 3, -1, 0, 42, "", "qwerty"});
@@ -336,4 +345,4 @@ TEST_F(SensorClientFormatterTest, NoProcessArguments) {
   EXPECT_TRUE(signal->args().empty());
 }
 
-}  // namespace collector
+}  // namespace collector::output

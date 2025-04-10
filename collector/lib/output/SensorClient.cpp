@@ -2,7 +2,7 @@
 
 #include "Logging.h"
 
-namespace collector {
+namespace collector::output {
 bool SensorClient::Recreate() {
   context_ = std::make_unique<grpc::ClientContext>();
   writer_ = DuplexClient::CreateWithReadsIgnored(&sensor::CollectorService::Stub::AsyncPushProcesses, channel_, context_.get());
@@ -44,4 +44,4 @@ SignalHandler::Result SensorClient::SendMsg(const sensor::ProcessSignal& msg) {
 
   return SignalHandler::PROCESSED;
 }
-}  // namespace collector
+}  // namespace collector::output
