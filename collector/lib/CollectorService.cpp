@@ -52,7 +52,7 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
     conn_tracker_->UpdateIgnoredNetworks(config_.IgnoredNetworks());
     conn_tracker_->UpdateNonAggregatedNetworks(config_.NonAggregatedNetworks());
 
-    network_connection_info_service_comm_ = std::make_shared<NetworkConnectionInfoServiceComm>(config_.Hostname(), config_.grpc_channel);
+    network_connection_info_service_comm_ = std::make_shared<NetworkConnectionInfoServiceComm>(config_.grpc_channel);
 
     auto total_reporter = config_.EnableConnectionStats() ? exporter_.GetConnectionsTotalReporter() : nullptr;
     auto rate_reporter = config_.EnableConnectionStats() ? exporter_.GetConnectionsRateReporter() : nullptr;
@@ -72,7 +72,7 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
   }
 
   // Initialize civetweb server handlers
-  civet_endpoints_.emplace_back(std::make_unique<GetStatus>(config_.Hostname(), &system_inspector_));
+  civet_endpoints_.emplace_back(std::make_unique<GetStatus>(&system_inspector_));
   civet_endpoints_.emplace_back(std::make_unique<LogLevelHandler>());
   civet_endpoints_.emplace_back(std::make_unique<ProfilerHandler>());
 
