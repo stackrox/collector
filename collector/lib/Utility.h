@@ -28,7 +28,7 @@ const char* SignalName(int signum);
 std::string Base64Decode(std::string const& encoded_string);
 
 // Get path using host prefix from COLLECTOR_HOST_ROOT env var
-std::filesystem::path GetHostPath(std::string_view file);
+std::filesystem::path GetHostPath(const std::filesystem::path& file);
 
 // Get SNI hostname from SNI_HOSTNAME env var
 const char* GetSNIHostname();
