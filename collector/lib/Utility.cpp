@@ -133,19 +133,13 @@ std::string Base64Decode(std::string const& encoded_string) {
   return ret;
 }
 
-std::string GetHostPath(const std::string& file) {
+std::filesystem::path GetHostPath(const std::filesystem::path& file) {
   const char* host_root = std::getenv("COLLECTOR_HOST_ROOT");
-  if (!host_root) {
+  if (host_root == nullptr) {
     host_root = "";
   }
-  std::string host_file(host_root);
-  // Check if we are joining paths without a seperator,
-  if (host_file.length() && file.length() &&
-      host_file.back() != '/' && file.front() != '/') {
-    host_file += '/';
-  }
-  host_file += file;
-  return host_file;
+  std::filesystem::path host_path(host_root);
+  return host_path / (file.is_absolute() ? file.relative_path() : file);
 }
 
 const char* GetSNIHostname() {

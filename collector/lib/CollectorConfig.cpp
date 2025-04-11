@@ -418,7 +418,7 @@ std::string CollectorConfig::Hostname() const {
   return hostname_;
 }
 
-std::string CollectorConfig::HostProc() const {
+const std::filesystem::path& CollectorConfig::HostProc() const {
   return host_proc_;
 }
 

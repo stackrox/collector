@@ -2,6 +2,7 @@
 #define COLLECTOR_PROCFSSCRAPER_H
 
 #include <cstring>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -19,7 +20,7 @@ class IConnScraper {
 // ConnScraper is a class that allows scraping a `/proc`-like directory structure for active network connections.
 class ConnScraper : public IConnScraper {
  public:
-  explicit ConnScraper(std::string proc_path, std::shared_ptr<ProcessStore> process_store = 0)
+  explicit ConnScraper(std::filesystem::path proc_path, std::shared_ptr<ProcessStore> process_store = 0)
       : proc_path_(std::move(proc_path)),
         process_store_(process_store) {}
 
@@ -27,7 +28,7 @@ class ConnScraper : public IConnScraper {
   bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints);
 
  private:
-  std::string proc_path_;
+  std::filesystem::path proc_path_;
   std::shared_ptr<ProcessStore> process_store_;
 };
 
