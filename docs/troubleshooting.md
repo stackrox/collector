@@ -453,6 +453,15 @@ $ curl collector:8080/profile/heap
 The resulting profile could be processed with `pprof` to get a human-readable
 output with debugging symbols.
 
+Collector also exposes a CPU profiler under `/profile/cpu`, which operates in
+a very similar manner to the heap profiler.
+
+---
+**_NOTE_**: If the CPU profiler fails to start, make sure /var/profiles exists
+in the collector container and is writable.
+
+---
+
 ## Benchmark CI step
 
 Whenever in doubt about performance implications of your changes, there is an
