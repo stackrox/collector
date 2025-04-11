@@ -6,7 +6,7 @@ jobs:
   lint:
     runs-on: ubuntu-24.04
     container:
-      image: fedora:40
+      image: fedora:41
     steps:
       - name: dnf install dependencies
         run: |
