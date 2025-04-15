@@ -3,7 +3,6 @@
 
 #include <variant>
 
-#include "internalapi/sensor/collector_iservice.pb.h"
 #include "internalapi/sensor/signal_iservice.pb.h"
 
 #include "CollectorConfig.h"
@@ -14,7 +13,7 @@
 
 namespace collector {
 
-using MessageType = std::variant<sensor::MsgFromCollector, sensor::SignalStreamMessage>;
+using MessageType = std::variant<sensor::ProcessSignal, sensor::SignalStreamMessage>;
 
 class CollectorOutput {
  public:
@@ -63,7 +62,7 @@ class CollectorOutput {
   bool EstablishGrpcStreamSingle();
 
   void HandleOutputError();
-  SignalHandler::Result SensorOutput(const sensor::MsgFromCollector& msg);
+  SignalHandler::Result SensorOutput(const sensor::ProcessSignal& msg);
   SignalHandler::Result SignalOutput(const sensor::SignalStreamMessage& msg);
 
   std::vector<std::unique_ptr<ISensorClient>> sensor_clients_;
