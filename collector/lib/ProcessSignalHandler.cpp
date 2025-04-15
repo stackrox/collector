@@ -104,9 +104,9 @@ SignalHandler::Result ProcessSignalHandler::HandleSensorSignal(sinsp_evt* evt) {
     return IGNORED;
   }
 
-  dtrace_probe(signal_msg->process_signal());
+  dtrace_probe(*signal_msg);
 
-  if (!rate_limiter_.Allow(compute_process_key(signal_msg->process_signal()))) {
+  if (!rate_limiter_.Allow(compute_process_key(*signal_msg))) {
     ++(stats_->nProcessRateLimitCount);
     return IGNORED;
   }
@@ -128,7 +128,7 @@ SignalHandler::Result ProcessSignalHandler::HandleExistingProcessSensor(sinsp_th
     return IGNORED;
   }
 
-  if (!rate_limiter_.Allow(compute_process_key(signal_msg->process_signal()))) {
+  if (!rate_limiter_.Allow(compute_process_key(*signal_msg))) {
     ++(stats_->nProcessRateLimitCount);
     return IGNORED;
   }

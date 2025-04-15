@@ -1,8 +1,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "internalapi/sensor/collector_iservice.pb.h"
-
 #include "CollectorOutput.h"
 #include "SensorClient.h"
 #include "SignalServiceClient.h"
@@ -11,7 +9,7 @@ namespace collector {
 class MockSensorClient : public ISensorClient {
  public:
   MOCK_METHOD(bool, Recreate, ());
-  MOCK_METHOD(SignalHandler::Result, SendMsg, (const sensor::MsgFromCollector&));
+  MOCK_METHOD(SignalHandler::Result, SendMsg, (const sensor::ProcessSignal&));
 };
 
 class MockSignalClient : public ISignalServiceClient {
@@ -32,7 +30,7 @@ class CollectorOutputTest : public testing::Test {
 };
 
 TEST_F(CollectorOutputTest, SensorClient) {
-  sensor::MsgFromCollector msg;
+  sensor::ProcessSignal msg;
 
   EXPECT_CALL(*sensor_client, SendMsg).Times(1).WillOnce(testing::Return(SignalHandler::PROCESSED));
 
