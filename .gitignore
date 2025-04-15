@@ -40,3 +40,5 @@ ansible/ci/inventory_ibmcloud.yml
 # vcpkg
 vcpkg_installed/
 vcpkg-manifest-install.log
+
+collector/lib/rust/*/target/

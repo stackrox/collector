@@ -3,7 +3,6 @@
 
 #include "CollectorConfig.h"
 #include "HostConfig.h"
-#include "HostInfo.h"
 
 namespace collector {
 
