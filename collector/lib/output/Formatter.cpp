@@ -1,4 +1,4 @@
-#include "SensorClientFormatter.h"
+#include "Formatter.h"
 
 #include <uuid/uuid.h>
 
@@ -13,12 +13,12 @@
 #include "Utility.h"
 #include "system-inspector/EventExtractor.h"
 
-namespace collector {
+namespace collector::output {
 
 using SignalStreamMessage = sensor::SignalStreamMessage;
-using Signal = SensorClientFormatter::Signal;
-using ProcessSignal = SensorClientFormatter::ProcessSignal;
-using LineageInfo = SensorClientFormatter::LineageInfo;
+using Signal = Formatter::Signal;
+using ProcessSignal = Formatter::ProcessSignal;
+using LineageInfo = Formatter::LineageInfo;
 
 using Timestamp = google::protobuf::Timestamp;
 using TimeUtil = google::protobuf::util::TimeUtil;
@@ -57,7 +57,7 @@ std::string extract_proc_args(sinsp_threadinfo* tinfo) {
 
 }  // namespace
 
-SensorClientFormatter::SensorClientFormatter(sinsp* inspector, const CollectorConfig& config)
+Formatter::Formatter(sinsp* inspector, const CollectorConfig& config)
     : event_names_(EventNames::GetInstance()),
       event_extractor_(std::make_unique<system_inspector::EventExtractor>()),
       container_metadata_(inspector),
@@ -65,9 +65,9 @@ SensorClientFormatter::SensorClientFormatter(sinsp* inspector, const CollectorCo
   event_extractor_->Init(inspector);
 }
 
-SensorClientFormatter::~SensorClientFormatter() = default;
+Formatter::~Formatter() = default;
 
-const sensor::ProcessSignal* SensorClientFormatter::ToProtoMessage(sinsp_evt* event) {
+const sensor::ProcessSignal* Formatter::ToProtoMessage(sinsp_evt* event) {
   if (process_signals[event->get_type()] == ProcessSignalType::UNKNOWN_PROCESS_TYPE) {
     return nullptr;
   }
@@ -82,7 +82,7 @@ const sensor::ProcessSignal* SensorClientFormatter::ToProtoMessage(sinsp_evt* ev
   return CreateProcessSignal(event);
 }
 
-const sensor::ProcessSignal* SensorClientFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
+const sensor::ProcessSignal* Formatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
   Reset();
   if (!ValidateProcessDetails(tinfo)) {
     CLOG(INFO) << "Dropping process event: " << tinfo;
@@ -92,7 +92,7 @@ const sensor::ProcessSignal* SensorClientFormatter::ToProtoMessage(sinsp_threadi
   return CreateProcessSignal(tinfo);
 }
 
-ProcessSignal* SensorClientFormatter::CreateProcessSignal(sinsp_evt* event) {
+ProcessSignal* Formatter::CreateProcessSignal(sinsp_evt* event) {
   auto signal = AllocateRoot();
 
   // set id
@@ -174,7 +174,7 @@ ProcessSignal* SensorClientFormatter::CreateProcessSignal(sinsp_evt* event) {
   return signal;
 }
 
-ProcessSignal* SensorClientFormatter::CreateProcessSignal(sinsp_threadinfo* tinfo) {
+ProcessSignal* Formatter::CreateProcessSignal(sinsp_threadinfo* tinfo) {
   auto signal = AllocateRoot();
 
   // set id
@@ -237,7 +237,7 @@ ProcessSignal* SensorClientFormatter::CreateProcessSignal(sinsp_threadinfo* tinf
   return signal;
 }
 
-std::string SensorClientFormatter::ToString(sinsp_evt* event) {
+std::string Formatter::ToString(sinsp_evt* event) {
   std::stringstream ss;
   const std::string* path = event_extractor_->get_exepath(event);
   const std::string* name = event_extractor_->get_comm(event);
@@ -254,7 +254,7 @@ std::string SensorClientFormatter::ToString(sinsp_evt* event) {
   return ss.str();
 }
 
-bool SensorClientFormatter::ValidateProcessDetails(const sinsp_threadinfo* tinfo) {
+bool Formatter::ValidateProcessDetails(const sinsp_threadinfo* tinfo) {
   if (tinfo == nullptr) {
     return false;
   }
@@ -266,11 +266,11 @@ bool SensorClientFormatter::ValidateProcessDetails(const sinsp_threadinfo* tinfo
   return true;
 }
 
-bool SensorClientFormatter::ValidateProcessDetails(sinsp_evt* event) {
+bool Formatter::ValidateProcessDetails(sinsp_evt* event) {
   return ValidateProcessDetails(event->get_thread_info());
 }
 
-void SensorClientFormatter::UpdateLineageStats(const std::vector<LineageInfo>& lineage) {
+void Formatter::UpdateLineageStats(const std::vector<LineageInfo>& lineage) {
   int string_total = std::accumulate(lineage.cbegin(), lineage.cend(), 0, [](int acc, const auto& l) {
     return acc + l.parent_exec_file_path().size();
   });
@@ -281,7 +281,7 @@ void SensorClientFormatter::UpdateLineageStats(const std::vector<LineageInfo>& l
   COUNTER_ADD(CollectorStats::process_lineage_string_total, string_total);
 }
 
-std::vector<LineageInfo> SensorClientFormatter::GetProcessLineage(sinsp_threadinfo* tinfo) {
+std::vector<LineageInfo> Formatter::GetProcessLineage(sinsp_threadinfo* tinfo) {
   std::vector<LineageInfo> lineage;
   if (tinfo == nullptr) {
     return lineage;
@@ -331,4 +331,4 @@ std::vector<LineageInfo> SensorClientFormatter::GetProcessLineage(sinsp_threadin
   return lineage;
 }
 
-}  // namespace collector
+}  // namespace collector::output
