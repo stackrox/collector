@@ -1,3 +1,5 @@
+add_subdirectory(rust)
+
 file(GLOB COLLECTOR_LIB_SRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/system-inspector/*.cpp
@@ -13,7 +15,13 @@ target_link_libraries(collector_lib gRPC::grpc++)
 target_link_libraries(collector_lib civetweb::civetweb-cpp)
 target_link_libraries(collector_lib yaml-cpp::yaml-cpp)
 
+target_link_libraries(collector_lib rust_test::rust_static_lib)
+target_link_libraries(collector_lib host_cxx)
+target_link_libraries(collector_lib host::rust_static_lib)
+
 target_link_libraries(collector_lib rox-proto)
+
+target_include_directories(collector_lib INTERFACE $<TARGET_PROPERTY:rust_test::rust_static_lib,INTERFACE_INCLUDE_DIRECTORIES>)
 
 if(NOT DISABLE_PROFILING)
     find_library(GPERFTOOLS_PROFILER profiler)

@@ -1,0 +1,3 @@
+[workspace]
+members = ["collector/lib/rust/test", "collector/lib/rust/host"]
+resolver = "2"
