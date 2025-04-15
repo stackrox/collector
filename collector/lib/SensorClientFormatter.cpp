@@ -4,7 +4,7 @@
 
 #include <google/protobuf/util/time_util.h>
 
-#include "internalapi/sensor/collector_iservice.pb.h"
+#include "internalapi/sensor/collector.pb.h"
 #include "internalapi/sensor/signal_iservice.pb.h"
 
 #include "CollectorStats.h"
@@ -67,7 +67,7 @@ SensorClientFormatter::SensorClientFormatter(sinsp* inspector, const CollectorCo
 
 SensorClientFormatter::~SensorClientFormatter() = default;
 
-const sensor::MsgFromCollector* SensorClientFormatter::ToProtoMessage(sinsp_evt* event) {
+const sensor::ProcessSignal* SensorClientFormatter::ToProtoMessage(sinsp_evt* event) {
   if (process_signals[event->get_type()] == ProcessSignalType::UNKNOWN_PROCESS_TYPE) {
     return nullptr;
   }
@@ -79,39 +79,21 @@ const sensor::MsgFromCollector* SensorClientFormatter::ToProtoMessage(sinsp_evt*
     return nullptr;
   }
 
-  ProcessSignal* process_signal = CreateProcessSignal(event);
-  if (process_signal == nullptr) {
-    return nullptr;
-  }
-
-  auto* msg = AllocateRoot();
-  msg->clear_info();
-  msg->clear_register_();
-  msg->set_allocated_process_signal(process_signal);
-  return msg;
+  return CreateProcessSignal(event);
 }
 
-const sensor::MsgFromCollector* SensorClientFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
+const sensor::ProcessSignal* SensorClientFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
   Reset();
   if (!ValidateProcessDetails(tinfo)) {
     CLOG(INFO) << "Dropping process event: " << tinfo;
     return nullptr;
   }
 
-  ProcessSignal* signal = CreateProcessSignal(tinfo);
-  if (signal == nullptr) {
-    return nullptr;
-  }
-
-  auto* msg = AllocateRoot();
-  msg->clear_register_();
-  msg->clear_info();
-  msg->set_allocated_process_signal(signal);
-  return msg;
+  return CreateProcessSignal(tinfo);
 }
 
 ProcessSignal* SensorClientFormatter::CreateProcessSignal(sinsp_evt* event) {
-  auto signal = Allocate<ProcessSignal>();
+  auto signal = AllocateRoot();
 
   // set id
   signal->set_id(UUIDStr());
@@ -193,7 +175,7 @@ ProcessSignal* SensorClientFormatter::CreateProcessSignal(sinsp_evt* event) {
 }
 
 ProcessSignal* SensorClientFormatter::CreateProcessSignal(sinsp_threadinfo* tinfo) {
-  auto signal = Allocate<ProcessSignal>();
+  auto signal = AllocateRoot();
 
   // set id
   signal->set_id(UUIDStr());
