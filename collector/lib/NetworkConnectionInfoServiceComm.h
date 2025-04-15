@@ -33,7 +33,7 @@ class INetworkConnectionInfoServiceComm {
 
 class NetworkConnectionInfoServiceComm : public INetworkConnectionInfoServiceComm {
  public:
-  NetworkConnectionInfoServiceComm(std::string hostname, std::shared_ptr<grpc::Channel> channel);
+  NetworkConnectionInfoServiceComm(std::shared_ptr<grpc::Channel> channel);
 
   void ResetClientContext() override;
   bool WaitForConnectionReady(const std::function<bool()>& check_interrupted) override;
@@ -54,7 +54,6 @@ class NetworkConnectionInfoServiceComm : public INetworkConnectionInfoServiceCom
 
   std::unique_ptr<grpc::ClientContext> CreateClientContext() const;
 
-  std::string hostname_;
   std::shared_ptr<grpc::Channel> channel_;
   std::unique_ptr<sensor::NetworkConnectionInfoService::Stub> stub_;
 

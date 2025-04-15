@@ -10,8 +10,8 @@ namespace collector {
 
 class GetStatus : public CivetWrapper {
  public:
-  GetStatus(std::string node_name, const system_inspector::SystemInspector* si)
-      : node_name_(std::move(node_name)), system_inspector_(si) {}
+  GetStatus(const system_inspector::SystemInspector* si)
+      : system_inspector_(si) {}
   bool handleGet(CivetServer* server, struct mg_connection* conn) override;
 
   const std::string& GetBaseRoute() override {
@@ -21,7 +21,6 @@ class GetStatus : public CivetWrapper {
  private:
   static const std::string kBaseRoute;
 
-  std::string node_name_;
   const system_inspector::SystemInspector* system_inspector_;
 };
 
