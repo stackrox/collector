@@ -23,15 +23,10 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
                         system_inspector::Service* inspector,
                         prometheus::Registry* registry)
       : conn_scraper_(std::make_unique<ConnScraper>(config, inspector)),
-        scrape_interval_(config.ScrapeInterval()),
-        turn_off_scraping_(config.TurnOffScrape()),
-        scrape_listen_endpoints_(config.ScrapeListenEndpoints()),
         conn_tracker_(std::move(conn_tracker)),
-        afterglow_period_micros_(config.AfterglowPeriod()),
-        enable_afterglow_(config.EnableAfterglow()),
         config_(config),
         comm_(std::make_unique<NetworkConnectionInfoServiceComm>(config.grpc_channel)) {
-    if (config.EnableConnectionStats()) {
+    if (config_.EnableConnectionStats()) {
       connections_total_reporter_ = {{registry,
                                       "rox_connections_total",
                                       "Amount of stored connections over time",
@@ -99,13 +94,8 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   StoppableThread thread_;
 
   std::unique_ptr<IConnScraper> conn_scraper_;
-  int scrape_interval_;
-  bool turn_off_scraping_;
-  bool scrape_listen_endpoints_;
   std::shared_ptr<ConnectionTracker> conn_tracker_;
 
-  int64_t afterglow_period_micros_;
-  bool enable_afterglow_;
   const CollectorConfig& config_;
   std::unique_ptr<INetworkConnectionInfoServiceComm> comm_;
 
