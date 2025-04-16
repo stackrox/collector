@@ -2,29 +2,27 @@
 #define COLLECTOR_NETWORKSTATUSNOTIFIER_H
 
 #include <memory>
+#include <utility>
 
 #include <gtest/gtest_prod.h>
 
 #include "CollectorConfig.h"
-#include "CollectorStats.h"
+#include "CollectorConnectionStats.h"
 #include "ConnTracker.h"
 #include "NetworkConnectionInfoServiceComm.h"
 #include "ProcfsScraper.h"
 #include "ProtoAllocator.h"
-#include "RateLimit.h"
 #include "StoppableThread.h"
 
 namespace collector {
 
 class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnectionInfoMessage> {
  public:
-  NetworkStatusNotifier(std::shared_ptr<IConnScraper> conn_scraper,
-                        std::shared_ptr<ConnectionTracker> conn_tracker,
-                        std::shared_ptr<INetworkConnectionInfoServiceComm> comm,
+  NetworkStatusNotifier(std::shared_ptr<ConnectionTracker> conn_tracker,
                         const CollectorConfig& config,
-                        std::shared_ptr<CollectorConnectionStats<unsigned int>> connections_total_reporter = 0,
-                        std::shared_ptr<CollectorConnectionStats<float>> connections_rate_reporter = 0)
-      : conn_scraper_(conn_scraper),
+                        system_inspector::Service* inspector,
+                        prometheus::Registry* registry)
+      : conn_scraper_(std::make_unique<ConnScraper>(config, inspector)),
         scrape_interval_(config.ScrapeInterval()),
         turn_off_scraping_(config.TurnOffScrape()),
         scrape_listen_endpoints_(config.ScrapeListenEndpoints()),
@@ -32,16 +30,51 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
         afterglow_period_micros_(config.AfterglowPeriod()),
         enable_afterglow_(config.EnableAfterglow()),
         config_(config),
-        comm_(comm),
-        connections_total_reporter_(connections_total_reporter),
-        connections_rate_reporter_(connections_rate_reporter) {
+        comm_(std::make_unique<NetworkConnectionInfoServiceComm>(config.grpc_channel)) {
+    if (config.EnableConnectionStats()) {
+      connections_total_reporter_ = {{registry,
+                                      "rox_connections_total",
+                                      "Amount of stored connections over time",
+                                      std::chrono::minutes{config.GetConnectionStatsWindow()},
+                                      config.GetConnectionStatsQuantiles(),
+                                      config.GetConnectionStatsError()}};
+      connections_rate_reporter_ = {{registry,
+                                     "rox_connections_rate",
+                                     "Rate of connections over time",
+                                     std::chrono::minutes{config.GetConnectionStatsWindow()},
+                                     config.GetConnectionStatsQuantiles(),
+                                     config.GetConnectionStatsError()}};
+    }
   }
 
   void Start();
   void Stop();
 
+  /**
+   * Replace the connection scraper object.
+   *
+   * This is meant to make testing easier by swapping in a mock object.
+   *
+   * @params cs A unique pointer to the new instance of the scraper to use.
+   */
+  void ReplaceConnScraper(std::unique_ptr<IConnScraper>&& cs) {
+    conn_scraper_ = std::move(cs);
+  }
+
+  /**
+   * Replace the communications object.
+   *
+   * This is meant to make testing easier by swapping in a mock object.
+   *
+   * @params comm A unique pointer to the new instance of communications
+   *              to use.
+   */
+  void ReplaceComm(std::unique_ptr<INetworkConnectionInfoServiceComm>&& comm) {
+    comm_ = std::move(comm);
+  }
+
  private:
-  FRIEND_TEST(NetworkStatusNotifier, RateLimitedConnections);
+  FRIEND_TEST(NetworkStatusNotifierTest, RateLimitedConnections);
 
   sensor::NetworkConnectionInfoMessage* CreateInfoMessage(const ConnMap& conn_delta, const AdvertisedEndpointMap& cep_delta);
   void AddConnections(::google::protobuf::RepeatedPtrField<sensor::NetworkConnection>* updates, const ConnMap& delta);
@@ -61,9 +94,11 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   void ReceivePublicIPs(const sensor::IPAddressList& public_ips);
   void ReceiveIPNetworks(const sensor::IPNetworkList& networks);
 
+  void ReportConnectionStats();
+
   StoppableThread thread_;
 
-  std::shared_ptr<IConnScraper> conn_scraper_;
+  std::unique_ptr<IConnScraper> conn_scraper_;
   int scrape_interval_;
   bool turn_off_scraping_;
   bool scrape_listen_endpoints_;
@@ -72,13 +107,12 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   int64_t afterglow_period_micros_;
   bool enable_afterglow_;
   const CollectorConfig& config_;
-  std::shared_ptr<INetworkConnectionInfoServiceComm> comm_;
+  std::unique_ptr<INetworkConnectionInfoServiceComm> comm_;
 
-  std::shared_ptr<CollectorConnectionStats<unsigned int>> connections_total_reporter_;
-  std::shared_ptr<CollectorConnectionStats<float>> connections_rate_reporter_;
+  std::optional<CollectorConnectionStats<unsigned int>> connections_total_reporter_;
+  std::optional<CollectorConnectionStats<float>> connections_rate_reporter_;
   std::chrono::steady_clock::time_point connections_last_report_time_;     // time delta between the current reporting and the previous (rate computation)
   std::optional<ConnectionTracker::Stats> connections_rate_counter_last_;  // previous counter values (rate computation)
-  void ReportConnectionStats();
 };
 
 }  // namespace collector

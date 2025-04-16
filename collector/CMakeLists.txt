@@ -68,8 +68,6 @@ add_subdirectory(lib)
 add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)
 
-target_link_libraries(collector prometheus-cpp::core prometheus-cpp::pull)
-
 add_executable(connscrape connscrape.cpp)
 target_link_libraries(connscrape collector_lib)
 
