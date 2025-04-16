@@ -6,14 +6,12 @@
 
 #include "internalapi/sensor/network_connection_iservice.grpc.pb.h"
 
-#include "CollectorArgs.h"
 #include "CollectorConfig.h"
 #include "DuplexGRPC.h"
 #include "NetworkStatusNotifier.h"
-#include "RateLimit.h"
-#include "Utility.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "system-inspector/Service.h"
 
 namespace collector {
 
@@ -189,13 +187,28 @@ class NetworkConnectionInfoMessageParser {
 
 }  // namespace
 
+class NetworkStatusNotifierTest : public testing::Test {
+ public:
+  NetworkStatusNotifierTest()
+      : inspector(config),
+        conn_tracker(std::make_shared<ConnectionTracker>()),
+        conn_scraper(std::make_unique<MockConnScraper>()),
+        comm(std::make_unique<MockNetworkConnectionInfoServiceComm>()),
+        net_status_notifier(conn_tracker, config, &inspector, nullptr) {
+  }
+
+ protected:
+  MockCollectorConfig config;
+  system_inspector::Service inspector;
+  std::shared_ptr<ConnectionTracker> conn_tracker;
+  std::unique_ptr<MockConnScraper> conn_scraper;
+  std::unique_ptr<MockNetworkConnectionInfoServiceComm> comm;
+  NetworkStatusNotifier net_status_notifier;
+};
+
 /* Simple validation that the service starts and sends at least one event */
-TEST(NetworkStatusNotifier, SimpleStartStop) {
+TEST_F(NetworkStatusNotifierTest, SimpleStartStop) {
   bool running = true;
-  CollectorConfig config_;
-  std::shared_ptr<MockConnScraper> conn_scraper = std::make_shared<MockConnScraper>();
-  auto conn_tracker = std::make_shared<ConnectionTracker>();
-  auto comm = std::make_shared<MockNetworkConnectionInfoServiceComm>();
   Semaphore sem(0);  // to wait for the service to accomplish its job.
 
   // the connection is always ready
@@ -232,16 +245,14 @@ TEST(NetworkStatusNotifier, SimpleStartStop) {
     return true;
   });
 
-  auto net_status_notifier = std::make_unique<NetworkStatusNotifier>(conn_scraper,
-                                                                     conn_tracker,
-                                                                     comm,
-                                                                     config_);
+  net_status_notifier.ReplaceConnScraper(std::move(conn_scraper));
+  net_status_notifier.ReplaceComm(std::move(comm));
 
-  net_status_notifier->Start();
+  net_status_notifier.Start();
 
   EXPECT_TRUE(sem.try_acquire_for(std::chrono::seconds(5)));
 
-  net_status_notifier->Stop();
+  net_status_notifier.Stop();
 }
 
 /* This test checks whether deltas are computed appropriately in case the "known network" list is received after a connection
@@ -250,13 +261,9 @@ TEST(NetworkStatusNotifier, SimpleStartStop) {
    - the connection is reported
    - we feed a "known network" into the NetworkStatusNotifier
    - we check that the former declared connection is deleted and redeclared as part of this network */
-TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
+TEST_F(NetworkStatusNotifierTest, UpdateIPnoAfterglow) {
   bool running = true;
-  MockCollectorConfig config;
   config.DisableAfterglow();
-  std::shared_ptr<MockConnScraper> conn_scraper = std::make_shared<MockConnScraper>();
-  auto conn_tracker = std::make_shared<ConnectionTracker>();
-  auto comm = std::make_shared<MockNetworkConnectionInfoServiceComm>();
   std::function<void(const sensor::NetworkFlowsControlMessage*)> network_flows_callback;
   Semaphore sem(0);  // to wait for the service to accomplish its job.
 
@@ -331,33 +338,24 @@ TEST(NetworkStatusNotifier, UpdateIPnoAfterglow) {
     return true;
   });
 
-  auto net_status_notifier = std::make_unique<NetworkStatusNotifier>(conn_scraper,
-                                                                     conn_tracker,
-                                                                     comm,
-                                                                     config);
+  net_status_notifier.ReplaceConnScraper(std::move(conn_scraper));
+  net_status_notifier.ReplaceComm(std::move(comm));
 
-  net_status_notifier->Start();
+  net_status_notifier.Start();
 
   // Wait for the first scrape to occur
   EXPECT_TRUE(sem.try_acquire_for(std::chrono::seconds(5)));
 
-  net_status_notifier->Stop();
+  net_status_notifier.Stop();
 }
 
-TEST(NetworkStatusNotifier, RateLimitedConnections) {
-  MockCollectorConfig config;
-  std::shared_ptr<MockConnScraper> conn_scraper = std::make_shared<MockConnScraper>();
-  auto conn_tracker = std::make_shared<ConnectionTracker>();
-  auto comm = std::make_shared<MockNetworkConnectionInfoServiceComm>();
-
+TEST_F(NetworkStatusNotifierTest, RateLimitedConnections) {
   // maximum of 2 connections per scrape interval
   // if we throw four connections from the same container into the conn
   // tracker delta, we expect only two to be returned
   // The scrape interval is 30 seconds so max_connections_per_minute_
   // should be 4 to make per_container_rate_limit 2
   config.SetMaxConnectionsPerMinute(4);
-
-  NetworkStatusNotifier netStatusNotifier(conn_scraper, conn_tracker, comm, config);
 
   Connection conn1("containerId", Endpoint(Address(10, 0, 1, 32), 1024), Endpoint(Address(192, 168, 0, 1), 1000), L4Proto::TCP, true);
   Connection conn2("containerId", Endpoint(Address(10, 0, 1, 32), 1024), Endpoint(Address(192, 168, 0, 2), 1001), L4Proto::TCP, true);
@@ -403,15 +401,15 @@ TEST(NetworkStatusNotifier, RateLimitedConnections) {
   ConnectionsField updatesDuo;
   ConnectionsField updatesClose;
 
-  netStatusNotifier.AddConnections(&updatesSingle, deltaSingle);
+  net_status_notifier.AddConnections(&updatesSingle, deltaSingle);
 
   EXPECT_TRUE(updatesSingle.size() == 2);
 
-  netStatusNotifier.AddConnections(&updatesDuo, deltaDuo);
+  net_status_notifier.AddConnections(&updatesDuo, deltaDuo);
 
   EXPECT_TRUE(updatesDuo.size() == 4);
 
-  netStatusNotifier.AddConnections(&updatesClose, deltaClose);
+  net_status_notifier.AddConnections(&updatesClose, deltaClose);
 
   EXPECT_TRUE(updatesClose.size() == 4);
 }

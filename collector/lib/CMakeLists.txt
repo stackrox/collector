@@ -12,6 +12,7 @@ target_link_libraries(collector_lib uuid)
 target_link_libraries(collector_lib gRPC::grpc++)
 target_link_libraries(collector_lib civetweb::civetweb-cpp)
 target_link_libraries(collector_lib yaml-cpp::yaml-cpp)
+target_link_libraries(collector_lib prometheus-cpp::core prometheus-cpp::pull)
 
 target_link_libraries(collector_lib rox-proto)
 

@@ -196,7 +196,7 @@ void NetworkStatusNotifier::ReportConnectionStats() {
 }
 
 bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
-  if (turn_off_scraping_) {
+  if (config_.TurnOffScrape()) {
     return true;
   }
 
@@ -204,7 +204,7 @@ bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
   std::vector<Connection> all_conns;
   std::vector<ContainerEndpoint> all_listen_endpoints;
   WITH_TIMER(CollectorStats::net_scrape_read) {
-    bool success = conn_scraper_->Scrape(&all_conns, scrape_listen_endpoints_ ? &all_listen_endpoints : nullptr);
+    bool success = conn_scraper_->Scrape(&all_conns, config_.ScrapeListenEndpoints() ? &all_listen_endpoints : nullptr);
     if (!success) {
       CLOG(ERROR) << "Failed to scrape connections and no pending connections to send";
       return false;
@@ -227,7 +227,7 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
 
   while (writer->Sleep(next_scrape)) {
     CLOG(DEBUG) << "Starting network status notification";
-    next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
+    next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(config_.ScrapeInterval());
 
     if (!UpdateAllConnsAndEndpoints()) {
       CLOG(DEBUG) << "No connection or endpoint to report";
@@ -244,8 +244,8 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
       conn_tracker_->EnableExternalIPs(config_.EnableExternalIPs());
 
       new_conn_state = conn_tracker_->FetchConnState(true, true);
-      if (enable_afterglow_) {
-        ConnectionTracker::ComputeDeltaAfterglow(new_conn_state, old_conn_state, delta_conn, time_micros, time_at_last_scrape, afterglow_period_micros_);
+      if (config_.EnableAfterglow()) {
+        ConnectionTracker::ComputeDeltaAfterglow(new_conn_state, old_conn_state, delta_conn, time_micros, time_at_last_scrape, config_.AfterglowPeriod());
       } else {
         ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
       }
@@ -255,9 +255,9 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
     }
 
     WITH_TIMER(CollectorStats::net_create_message) {
-      if (enable_afterglow_) {
+      if (config_.EnableAfterglow()) {
         msg = CreateInfoMessage(delta_conn, old_cep_state);
-        ConnectionTracker::UpdateOldState(&old_conn_state, new_conn_state, time_micros, afterglow_period_micros_);
+        ConnectionTracker::UpdateOldState(&old_conn_state, new_conn_state, time_micros, config_.AfterglowPeriod());
       } else {
         msg = CreateInfoMessage(old_conn_state, old_cep_state);
         old_conn_state = std::move(new_conn_state);
