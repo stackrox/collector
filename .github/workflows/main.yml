@@ -40,6 +40,7 @@ jobs:
     needs: init
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
+      arch-exclude: ${{ needs.init.outputs.arch-exclude }}
     secrets: inherit
 
   build-collector:
@@ -51,6 +52,7 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-image: ${{ needs.init.outputs.collector-image }}
       collector-builder-tag: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
+      arch-exclude: ${{ needs.init.outputs.arch-exclude }}
     secrets: inherit
 
   build-test-containers:
@@ -66,9 +68,11 @@ jobs:
   unit-tests:
     uses: ./.github/workflows/unit-tests.yml
     needs:
-      - build-builder-image
+    - init
+    - build-builder-image
     with:
       collector-builder-tag: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
+      arch-exclude: ${{ needs.init.outputs.arch-exclude }}
     secrets: inherit
 
   integration-tests:
@@ -78,6 +82,7 @@ jobs:
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
       collector-tests-tag: ${{ needs.build-test-containers.outputs.collector-tests-tag }}
       large-box: ${{ github.event.schedule == '0 0 * * 0' }}
+      arch-exclude: ${{ needs.init.outputs.arch-exclude }}
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init

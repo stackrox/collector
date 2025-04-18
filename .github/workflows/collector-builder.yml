@@ -8,6 +8,11 @@ on:
         required: true
         description: |
           The tag used to build the collector image
+      arch-exclude:
+        type: string
+        required: true
+        description: |
+          Which architectures to exclude from builds
     outputs:
       collector-builder-tag:
         description: The builder tag used by the build
@@ -36,11 +41,10 @@ jobs:
               - builder/install/**
               - builder/third_party/**
               - builder/Dockerfile
-              - .github/workflows/collector-builder.yml
+              #- .github/workflows/collector-builder.yml
 
   build-builder-image:
     name: Build the builder image
-    runs-on: ubuntu-24.04
     # Multiarch builds sometimes take for eeeeeeeeeever
     timeout-minutes: 480
     needs:
@@ -57,7 +61,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, ppc64le, s390x, arm64]
+        arch: [amd64, arm64, ppc64le, s390x]
+        include:
+          - runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+        exclude: ${{ fromJSON(inputs.arch-exclude) }}
+    runs-on: ${{ matrix.runner }}
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
@@ -68,25 +78,29 @@ jobs:
         with:
           submodules: true
 
-      - name: Set up QEMU
+      - if: matrix.arch != 's390x'
         uses: docker/setup-qemu-action@v3
         with:
           image: tonistiigi/binfmt:qemu-v8.1.5
 
-      - name: Set up Docker Buildx
+      - if: matrix.arch != 's390x'
         uses: docker/setup-buildx-action@v3
 
-      - uses: actions/setup-python@v5
+      - if: matrix.arch == 's390x'
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - uses: 'google-github-actions/auth@v2'
+      - if: matrix.arch == 's390x'
+        uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
-      - uses: 'google-github-actions/setup-gcloud@v2'
+      - if: matrix.arch == 's390x'
+        uses: 'google-github-actions/setup-gcloud@v2'
 
-      - uses: ./.github/actions/setup-vm-creds
+      - if: matrix.arch == 's390x'
+        uses: ./.github/actions/setup-vm-creds
         with:
           gcp-ssh-key: ${{ secrets.GCP_SSH_KEY }}
           gcp-ssh-key-pub: ${{ secrets.GCP_SSH_KEY_PUB }}
@@ -101,9 +115,7 @@ jobs:
           job-tag: builder
 
       - name: Create Build VMs
-        if: |
-          matrix.arch == 's390x' &&
-          (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds'))
+        if: matrix.arch == 's390x'
         run: |
           make -C "${{ github.workspace }}/ansible" create-build-vms
 
@@ -133,10 +145,7 @@ jobs:
           } > ${{ github.workspace }}/ansible/secrets.yml
 
       - name: Build images
-        if: |
-          (github.event_name != 'pull_request' && matrix.arch != 's390x') ||
-          matrix.arch == 'amd64' ||
-          (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch != 's390x')
+        if: matrix.arch != 's390x'
         timeout-minutes: 480
         run: |
           ansible-galaxy install -r ansible/requirements.yml
@@ -149,9 +158,7 @@ jobs:
             ansible/ci-build-builder.yml
 
       - name: Build s390x images
-        if: |
-          (github.event_name != 'pull_request' && matrix.arch == 's390x') ||
-          (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && matrix.arch == 's390x')
+        if: matrix.arch == 's390x'
         timeout-minutes: 480
         run: |
           ansible-playbook \
@@ -162,9 +169,11 @@ jobs:
             ansible/ci-build-builder.yml
 
       - name: Destroy VMs
-        if: always() && matrix.arch == 's390x'
+        if: always()
         run: |
-          make -C ansible destroy-vms
+          if [[ "${{ matrix.arch }}" == "s390x" ]]; then
+            make -C ansible destroy-vms
+          fi
 
   create-multiarch-manifest:
     needs:
@@ -173,11 +182,9 @@ jobs:
     runs-on: ubuntu-24.04
     if: |
       github.event_name != 'pull_request' ||
-      (needs.build-builder-image.outputs.collector-builder-tag != 'cache' &&
-       contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds'))
+      needs.build-builder-image.outputs.collector-builder-tag != 'cache'
     env:
       COLLECTOR_BUILDER_TAG: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
-      ARCHS: amd64 ppc64le s390x arm64
 
     steps:
       - uses: actions/checkout@v4
@@ -188,6 +195,18 @@ jobs:
           registry: quay.io
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+
+      - name: Exclude architectures if needed
+        uses: actions/github-script@v7
+        env:
+          exclude: ${{ inputs.arch-exclude }}
+        with:
+          script: |
+            const archs = ['amd64', 'arm64', 'ppc64le', 's390x'];
+            const exclude = JSON.parse(process.env.exclude).map(e => e.arch);
+            const filtered = archs.filter(arch => ! exclude.includes(arch));
+            core.exportVariable('ARCHS', filtered.join(' '));
+            core.info(`Builder image for ${filtered} architectures`);
 
       - name: Create and push multiarch manifest for builder to stackrox-io
         uses: ./.github/actions/create-multiarch-manifest
@@ -208,45 +227,12 @@ jobs:
           base-image: quay.io/rhacs-eng/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
           archs: ${{ env.ARCHS }}
 
-  retag-x86-image:
-    needs:
-    - build-builder-image
-    name: Retag x86 builder image
-    runs-on: ubuntu-24.04
-    if: |
-      github.event_name == 'pull_request' &&
-      needs.build-builder-image.outputs.collector-builder-tag != 'cache' &&
-      !contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
-    env:
-      COLLECTOR_BUILDER_TAG: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
-    steps:
-      - name: Pull image to retag
-        run: |
-          docker pull "quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}-amd64"
-
-      - name: Retag and push stackrox-io
-        uses: stackrox/actions/images/retag-and-push@v1
-        with:
-          src-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}-amd64
-          dst-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
-          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-
-      - name: Retag and push rhacs-eng
-        uses: stackrox/actions/images/retag-and-push@v1
-        with:
-          src-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}-amd64
-          dst-image: quay.io/rhacs-eng/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
-          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-
   notify:
     runs-on: ubuntu-24.04
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name != 'pull_request'
     needs:
       - build-builder-image
       - create-multiarch-manifest
-      - retag-x86-image
     steps:
       - name: Slack notification
         uses: rtCamp/action-slack-notify@v2

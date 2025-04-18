@@ -18,6 +18,11 @@ on:
         required: true
         description: |
           The builder tag to use in the build
+      arch-exclude:
+        type: string
+        required: true
+        description: |
+          Which architectures to exclude from builds
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
@@ -30,11 +35,19 @@ env:
 jobs:
   build-collector-image:
     name: Build Collector
-    runs-on: ubuntu-24.04
+    if: |
+      !contains(inputs.arch-exclude, 'amd64') || !contains(inputs.arch-exclude, 'arm64') ||
+      !contains(inputs.arch-exclude, 'ppc64le')
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, ppc64le, arm64]
+        arch: [amd64, arm64, ppc64le]
+        include:
+          - runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+        exclude: ${{ fromJSON(inputs.arch-exclude) }}
+    runs-on: ${{ matrix.runner }}
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
@@ -72,10 +85,6 @@ jobs:
           EOF
 
       - name: Build images
-        if: |
-          github.event_name != 'pull_request' ||
-          matrix.arch == 'amd64' ||
-          contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
         timeout-minutes: 480
         run: |
           ansible-playbook \
@@ -89,7 +98,7 @@ jobs:
   build-collector-image-remote-vm:
     name: Build Collector on a remote VM
     runs-on: ubuntu-24.04
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+    if: ${{ !contains(inputs.arch-exclude, 's390x') }}
     strategy:
       fail-fast: false
       matrix:
@@ -168,14 +177,22 @@ jobs:
     - build-collector-image-remote-vm
     name: Create Multiarch manifest
     runs-on: ubuntu-24.04
-    if: |
-      github.event_name != 'pull_request' ||
-      contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
-    env:
-      ARCHS: amd64 ppc64le s390x arm64
+    if: always() && !contains(join(needs.*.result, ','), 'failure')
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Exclude architectures if needed
+        uses: actions/github-script@v7
+        env:
+          exclude: ${{ inputs.arch-exclude }}
+        with:
+          script: |
+            const archs = ['amd64', 'arm64', 'ppc64le', 's390x'];
+            const exclude = JSON.parse(process.env.exclude).map(e => e.arch);
+            const filtered = archs.filter(arch => ! exclude.includes(arch));
+            core.exportVariable('ARCHS', filtered.join(' '));
+            core.info(`Builder image for ${filtered} architectures`);
 
       - name: Login to quay.io/stackrox-io
         uses: docker/login-action@v3
@@ -203,35 +220,6 @@ jobs:
           base-image: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
           archs: ${{ env.ARCHS }}
 
-  retag-x86-image:
-    needs:
-    - build-collector-image
-    name: Retag x86 image
-    runs-on: ubuntu-24.04
-    if: |
-      github.event_name == 'pull_request' &&
-      !contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
-    steps:
-      - name: Pull image to retag
-        run: |
-          docker pull ${{ inputs.collector-image }}-amd64
-
-      - name: Retag and push stackrox-io
-        uses: stackrox/actions/images/retag-and-push@v1
-        with:
-          src-image: ${{ inputs.collector-image }}-amd64
-          dst-image: ${{ inputs.collector-image }}
-          username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-
-      - name: Retag and push rhacs-eng
-        uses: stackrox/actions/images/retag-and-push@v1
-        with:
-          src-image: ${{ inputs.collector-image }}-amd64
-          dst-image: ${{ env.RHACS_ENG_IMAGE }}
-          username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-
   notify:
     runs-on: ubuntu-24.04
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name != 'pull_request'
@@ -239,7 +227,6 @@ jobs:
       - build-collector-image
       - build-collector-image-remote-vm
       - create-multiarch-manifest
-      - retag-x86-image
     steps:
       - name: Slack notification
         uses: rtCamp/action-slack-notify@v2

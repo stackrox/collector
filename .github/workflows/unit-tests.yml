@@ -8,10 +8,15 @@ on:
         required: true
         description: |
           The builder tag to use in the build
+      arch-exclude:
+        type: string
+        required: true
+        description: |
+          Which architectures to exclude from builds
 
 jobs:
   unit-tests:
-    runs-on: ubuntu-24.04
+    if: ${{ !contains(inputs.arch-exclude, 'amd64') || !contains(inputs.arch-exclude, 'arm64') }}
     container:
       image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
     strategy:
@@ -21,6 +26,15 @@ jobs:
         - -DCMAKE_BUILD_TYPE=Release
         - -DADDRESS_SANITIZER=ON -DCMAKE_BUILD_TYPE=Debug
         - -DUSE_VALGRIND=ON -DCMAKE_BUILD_TYPE=Debug
+        arch: [amd64, arm64]
+        include:
+        - arch: amd64
+          runner: ubuntu-24.04
+        - arch: arm64
+          runner: ubuntu-24.04-arm
+        exclude: ${{ fromJSON(inputs.arch-exclude) }}
+    runs-on: ${{ matrix.runner }}
+
     steps:
       - uses: actions/checkout@v4
         with:
