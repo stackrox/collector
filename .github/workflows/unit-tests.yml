@@ -35,7 +35,7 @@ jobs:
           submodules: true
 
       - uses: ./.github/actions/run-unit-tests
-        if: ! matrix.remote
+        if: matrix.arch == 'amd64' || matrix.arch == 'ppc64le'
         with:
           cmake-flags: ${{ matrix.cmake-flags }}
 
