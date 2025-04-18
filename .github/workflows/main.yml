@@ -53,6 +53,7 @@ jobs:
       collector-image: ${{ needs.init.outputs.collector-image }}
       collector-builder-tag: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
       exclude-arch-json: ${{ needs.init.outputs.exclude-arch-json }}
+      include-arch-json: ${{ needs.init.outputs.include-arch-json }}
     secrets: inherit
 
   build-test-containers:
