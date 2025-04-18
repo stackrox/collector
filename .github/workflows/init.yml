@@ -58,10 +58,10 @@ on:
         description: |
           Trigger rebuild of QA containers
         value: ${{ jobs.common-variables.outputs.rebuild-qa-containers }}
-      arch-exclude:
+      exclude-arch-json:
         description: |
-          Set of archs to not build or test based on PR labels
-        value: ${{ jobs.common-variables.outputs.arch-exclude }}
+          JSON for matrix.exclude in later jobs to prevent builds based on 'arch'
+        value: ${{ jobs.common-variables.outputs.exclude-arch-json }}
 
 jobs:
   common-variables:
@@ -79,35 +79,9 @@ jobs:
       cpaas-support-packages-bucket: ${{ steps.gcp-buckets.outputs.cpaas-support-packages-bucket }}
       support-packages-index-bucket: ${{ steps.gcp-buckets.outputs.support-packages-index-bucket }}
       rebuild-qa-containers: ${{ steps.filter.outputs.container }}
-      arch-exclude: ${{ steps.arch-exclude.outputs.arch-exclude }}
+      exclude-arch-json: ${{ steps.exclude-arch-json.outputs.exclude-arch-json }}
 
     steps:
-      - name: Determine architectures to exclude from builds
-        id: arch-exclude
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const archs = ['arm64', 'amd64', 'ppc64le', 's390x'];
-            let include = archs;
-            if (context.payload.pull_request) {
-              const labels = context.payload.pull_request.labels.map(label => label.name);
-              if (archs.some(a => labels.includes(`run-${a}-builds`))) {
-                // Check for labels that specify a specific architecture
-                include = archs.filter(a => labels.includes(`run-${a}-builds`))
-              } else {
-                // Otherwise, use default architectures on PRs
-                include = ['arm64', 'amd64']
-                // If multiarch label is included, also add z and power
-                if (labels.includes('run-multiarch-builds')) {
-                  include = include.concat(['ppc64le', 's390x'])
-                }
-              }
-            }
-            // Build exclude list for arch fields in job matrix
-            const exclude = archs.filter(a => !include.includes(a)).map(a => ({ arch: a }));
-            core.setOutput('arch-exclude', JSON.stringify(exclude));
-            core.info(`Excluding from builds: ${JSON.stringify(exclude)}`);
-
       - uses: actions/checkout@v4
         with:
           submodules: true
@@ -204,4 +178,29 @@ jobs:
               echo "support-packages-index-bucket=${SUPPORT_PACKAGES_BUCKET}"
             } >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Determine architectures to exclude from builds
+        id: exclude-arch-json
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const archs = ['arm64', 'amd64', 'ppc64le', 's390x'];
+            let include = archs;
+            if (context.payload.pull_request) {
+              const labels = context.payload.pull_request.labels.map(label => label.name);
+              if (archs.some(a => labels.includes(`run-${a}-builds`))) {
+                // Check for labels that specify a specific architecture
+                include = archs.filter(a => labels.includes(`run-${a}-builds`))
+              } else {
+                // Otherwise, use default architectures on PRs
+                include = ['arm64', 'amd64']
+                // If multiarch label is included, also add z and power
+                if (labels.includes('run-multiarch-builds')) {
+                  include = include.concat(['ppc64le', 's390x'])
+                }
+              }
+            }
+            // Build JSON string for matrix.exclude in jobs, all archs will build if empty
+            const exclude = archs.filter(a => !include.includes(a)).map(a => ({ arch: a }));
+            core.setOutput('exclude-arch-json', JSON.stringify(exclude));
 

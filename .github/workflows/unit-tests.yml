@@ -8,15 +8,15 @@ on:
         required: true
         description: |
           The builder tag to use in the build
-      arch-exclude:
+      exclude-arch-json:
         type: string
         required: true
         description: |
-          Which architectures to exclude from builds
+          JSON for matrix.exclude in later jobs to prevent builds based on 'arch'
 
 jobs:
   unit-tests:
-    if: ${{ !contains(inputs.arch-exclude, 'amd64') || !contains(inputs.arch-exclude, 'arm64') }}
+    if: ${{ !contains(inputs.exclude-arch-json, 'amd64') || !contains(inputs.exclude-arch-json, 'arm64') }}
     container:
       image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
     strategy:
@@ -32,7 +32,7 @@ jobs:
           runner: ubuntu-24.04
         - arch: arm64
           runner: ubuntu-24.04-arm
-        exclude: ${{ fromJSON(inputs.arch-exclude) }}
+        exclude: ${{ fromJSON(inputs.exclude-arch-json) }}
     runs-on: ${{ matrix.runner }}
 
     steps:

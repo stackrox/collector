@@ -18,11 +18,11 @@ on:
         required: true
         description: |
           The builder tag to use in the build
-      arch-exclude:
+      exclude-arch-json:
         type: string
         required: true
         description: |
-          Which architectures to exclude from builds
+          JSON for matrix.exclude in later jobs to prevent builds based on 'arch'
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
@@ -36,8 +36,8 @@ jobs:
   build-collector-image:
     name: Build Collector
     if: |
-      !contains(inputs.arch-exclude, 'amd64') || !contains(inputs.arch-exclude, 'arm64') ||
-      !contains(inputs.arch-exclude, 'ppc64le')
+      !contains(inputs.exclude-arch-json, 'amd64') || !contains(inputs.exclude-arch-json, 'arm64') ||
+      !contains(inputs.exclude-arch-json, 'ppc64le')
     strategy:
       fail-fast: false
       matrix:
@@ -46,7 +46,7 @@ jobs:
           - runner: ubuntu-24.04
           - arch: arm64
             runner: ubuntu-24.04-arm
-        exclude: ${{ fromJSON(inputs.arch-exclude) }}
+        exclude: ${{ fromJSON(inputs.exclude-arch-json) }}
     runs-on: ${{ matrix.runner }}
 
     env:
@@ -98,7 +98,7 @@ jobs:
   build-collector-image-remote-vm:
     name: Build Collector on a remote VM
     runs-on: ubuntu-24.04
-    if: ${{ !contains(inputs.arch-exclude, 's390x') }}
+    if: ${{ !contains(inputs.exclude-arch-json, 's390x') }}
     strategy:
       fail-fast: false
       matrix:
@@ -182,17 +182,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Exclude architectures if needed
+      - name: Create list of archs to build
         uses: actions/github-script@v7
         env:
-          exclude: ${{ inputs.arch-exclude }}
+          exclude: ${{ inputs.exclude-arch-json }}
         with:
           script: |
             const archs = ['amd64', 'arm64', 'ppc64le', 's390x'];
             const exclude = JSON.parse(process.env.exclude).map(e => e.arch);
             const filtered = archs.filter(arch => ! exclude.includes(arch));
             core.exportVariable('ARCHS', filtered.join(' '));
-            core.info(`Builder image for ${filtered} architectures`);
 
       - name: Login to quay.io/stackrox-io
         uses: docker/login-action@v3
