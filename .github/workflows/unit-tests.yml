@@ -12,11 +12,13 @@ on:
         type: string
         required: true
         description: |
-          JSON for matrix.include for later jobs
-      cmake-flags:
+          JSON list of {arch,runner,remote} build configurations
+      cmake-flags-list-json:
         type: string
         required: false
         default: "['-DCMAKE_BUILD_TYPE=Release','-DADDRESS_SANITIZER=ON -DCMAKE_BUILD_TYPE=Debug','-DUSE_VALGRIND=ON -DCMAKE_BUILD_TYPE=Debug']"
+        description: |
+          JSON list of cmake flags for unit tests
 
 jobs:
   unit-tests-amd64:
@@ -26,7 +28,7 @@ jobs:
       image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
     strategy:
       matrix:
-        cmake-flags: ${{ fromJSON(inputs.cmake-flags) }}
+        cmake-flags: ${{ fromJSON(inputs.cmake-flags-list-json) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,7 +44,7 @@ jobs:
       image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
     strategy:
       matrix:
-        cmake-flags: ${{ fromJSON(inputs.cmake-flags) }}
+        cmake-flags: ${{ fromJSON(inputs.cmake-flags-list-json) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,7 +53,7 @@ jobs:
         with:
           cmake-flags: ${{ matrix.cmake-flags }}
 
-  coverage:
+  unit-tests-coverage:
     runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
