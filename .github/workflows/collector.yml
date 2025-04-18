@@ -78,6 +78,18 @@ jobs:
           driver_version: ${DRIVER_VERSION}
           EOF
 
+      - name: Build ${{ matrix.arch }} image locally
+        if: matrix.remote != true
+        timeout-minutes: 480
+        run: |
+          ansible-playbook \
+            --connection local \
+            -i localhost, \
+            --limit localhost \
+            -e arch='${{ matrix.arch }}' \
+            -e @'${{ github.workspace }}/ansible/secrets.yml' \
+            ansible/ci-build-collector.yml
+
       - uses: actions/setup-python@v5
         if: matrix.remote
         with:
@@ -111,19 +123,16 @@ jobs:
         run: |
           make -C "${{ github.workspace }}/ansible" create-build-vms
 
-      - name: Build ${{ matrix.arch }} image
+      - name: Build ${{ matrix.arch }} image remotely
+        if: matrix.remote
         timeout-minutes: 480
         run: |
-          if [[ "${{ matrix.remote }}" == "true" ]]; then
-            ANSIBLE_ARGS=(-i ansible/ci -e build_hosts="job_id_${JOB_ID}")
-          else
-            ANSIBLE_ARGS=(--connection local -i 'localhost,' --limit localhost)
-          fi
           ansible-playbook \
+            -i ansible/ci \
             -e arch='${{ matrix.arch }}' \
+            -e build_hosts='job_id_${{ env.JOB_ID }}' \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
-            "${ANSIBLE_ARGS[@]}" \
-            ansible/ci-build-builder.yml
+            ansible/ci-build-collector.yml
 
       - name: Destroy Build VMs
         if: always()
