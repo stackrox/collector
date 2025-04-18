@@ -58,10 +58,6 @@ on:
         description: |
           Trigger rebuild of QA containers
         value: ${{ jobs.common-variables.outputs.rebuild-qa-containers }}
-      exclude-arch-json:
-        description: |
-          JSON for matrix.exclude in later jobs to prevent builds based on 'arch'
-        value: ${{ jobs.common-variables.outputs.exclude-arch-json }}
       include-arch-json:
         description: |
           JSON for matrix.include in later jobs
@@ -84,8 +80,7 @@ jobs:
       cpaas-support-packages-bucket: ${{ steps.gcp-buckets.outputs.cpaas-support-packages-bucket }}
       support-packages-index-bucket: ${{ steps.gcp-buckets.outputs.support-packages-index-bucket }}
       rebuild-qa-containers: ${{ steps.filter.outputs.container }}
-      exclude-arch-json: ${{ steps.exclude-arch-json.outputs.exclude-arch-json }}
-      include-arch-json: ${{ steps.exclude-arch-json.outputs.include-arch-json }}
+      include-arch-json: ${{ steps.arch-json.outputs.include-arch-json }}
 
     steps:
       - uses: actions/checkout@v4
@@ -186,7 +181,7 @@ jobs:
           fi
 
       - name: Determine architectures to exclude from builds
-        id: exclude-arch-json
+        id: arch-json
         uses: actions/github-script@v7
         with:
           script: |
@@ -206,12 +201,15 @@ jobs:
                 }
               }
             }
-            // Build JSON string for matrix.exclude in jobs, all archs will build if empty
-            const exclude = archs.filter(a => !include.includes(a)).map(a => ({ arch: a }));
-            core.setOutput('exclude-arch-json', JSON.stringify(exclude));
-            const includejson = archs.filter(a => include.includes(a)).map(a => ({ arch: a, runner: a === "arm64" ? "ubuntu-24.04-arm" : "ubuntu-24.04", remote: a === "s390x" ? true : false }));
+            const includejson = archs
+              .filter(arch => include.includes(arch))
+              .map(arch => {
+                const runner = arch === "arm64"
+                  ? "ubuntu-24.04-arm"
+                  : "ubuntu-24.04";
+                const remote = arch === "s390x";
+                return { arch, runner, remote };
+              });
             core.setOutput('include-arch-json', JSON.stringify(includejson));
-
-            core.info(JSON.stringify(exclude));
             core.info(JSON.stringify(includejson));
 

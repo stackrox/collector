@@ -89,7 +89,7 @@ jobs:
       collector-tests-tag: ${{ needs.integration-tests-containers.outputs.collector-tests-tag }}
       is-konflux: true
       job-tag: konf
-      exclude-arch-json: '[]'
+      include-arch-json: '[{"arch":"amd64"},{"arch","arm64"},{"arch":"ppc64le"},{"arch","s390x"}]'
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     secrets: inherit
 

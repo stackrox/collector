@@ -42,16 +42,16 @@ on:
           number of CPU cores.
         type: boolean
         default: false
-      exclude-arch-json:
+      include-arch-json:
         type: string
         required: true
         description: |
-          JSON for matrix.exclude in later jobs to prevent builds based on 'arch'
+          JSON for matrix.include in later jobs
 
 jobs:
   amd64-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: ${{ !contains(inputs.exclude-arch-json, 'amd64') }}
+    if: contains(inputs.include-arch-json, 'amd64')
     strategy:
       # ensure that if one part of the matrix fails, the
       # rest will continue
@@ -97,7 +97,7 @@ jobs:
 
   arm64-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: ${{ !contains(inputs.exclude-arch-json, 'arm64') }}
+    if: contains(inputs.include-arch-json, 'arm64')
     strategy:
       # ensure that if one part of the matrix fails, the
       # rest will continue
@@ -119,7 +119,7 @@ jobs:
 
   s390x-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: ${{ !contains(inputs.exclude-arch-json, 's390x') }}
+    if: contains(inputs.include-arch-json, 's390x')
     with:
       vm_type: rhel-s390x
       collector-tag: ${{ inputs.collector-tag }}
@@ -131,7 +131,7 @@ jobs:
 
   ppc64le-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: ${{ !contains(inputs.exclude-arch-json, 'ppc64le') }}
+    if: contains(inputs.include-arch-json, 'ppc64le')
     with:
       vm_type: rhel-ppc64le
       collector-tag: ${{ inputs.collector-tag }}

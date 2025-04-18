@@ -8,15 +8,15 @@ on:
         required: true
         description: |
           The builder tag to use in the build
-      exclude-arch-json:
+      include-arch-json:
         type: string
         required: true
         description: |
-          JSON for matrix.exclude in later jobs to prevent builds based on 'arch'
+          JSON for matrix.include for later jobs
 
 jobs:
   unit-tests:
-    if: ${{ !contains(inputs.exclude-arch-json, 'amd64') || !contains(inputs.exclude-arch-json, 'arm64') }}
+    if: contains(inputs.include-arch-json, 'amd64') || contains(inputs.include-arch-json, 'arm64')
     container:
       image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
     strategy:
@@ -26,12 +26,7 @@ jobs:
         - -DCMAKE_BUILD_TYPE=Release
         - -DADDRESS_SANITIZER=ON -DCMAKE_BUILD_TYPE=Debug
         - -DUSE_VALGRIND=ON -DCMAKE_BUILD_TYPE=Debug
-        arch: [amd64, arm64]
-        include:
-        - runner: ubuntu-24.04
-        - arch: arm64
-          runner: ubuntu-24.04-arm
-        exclude: ${{ fromJSON(inputs.exclude-arch-json) }}
+        include: ${{ fromJSON(inputs.include-arch-json) }}
     runs-on: ${{ matrix.runner }}
 
     steps:
@@ -40,6 +35,7 @@ jobs:
           submodules: true
 
       - uses: ./.github/actions/run-unit-tests
+        if: ! matrix.remote
         with:
           cmake-flags: ${{ matrix.cmake-flags }}
 
