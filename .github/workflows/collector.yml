@@ -135,7 +135,7 @@ jobs:
             ansible/ci-build-collector.yml
 
       - name: Destroy Build VMs
-        if: always()
+        if: always() && matrix.remote
         run: |
           make -C ansible destroy-vms
 
