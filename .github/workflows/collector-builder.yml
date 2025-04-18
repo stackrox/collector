@@ -171,11 +171,9 @@ jobs:
             ansible/ci-build-builder.yml
 
       - name: Destroy VMs
-        if: always()
+        if: always() && matrix.arch == 's390x'
         run: |
-          if [[ "${{ matrix.arch }}" == "s390x" ]]; then
-            make -C ansible destroy-vms
-          fi
+          make -C ansible destroy-vms
 
   create-multiarch-manifest:
     needs:
@@ -198,7 +196,7 @@ jobs:
           username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
           password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
 
-      - name: Exclude architectures if needed
+      - name: Create list of archs to build
         uses: actions/github-script@v7
         env:
           exclude: ${{ inputs.exclude-arch-json }}
