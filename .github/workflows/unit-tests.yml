@@ -28,8 +28,7 @@ jobs:
         - -DUSE_VALGRIND=ON -DCMAKE_BUILD_TYPE=Debug
         arch: [amd64, arm64]
         include:
-        - arch: amd64
-          runner: ubuntu-24.04
+        - runner: ubuntu-24.04
         - arch: arm64
           runner: ubuntu-24.04-arm
         exclude: ${{ fromJSON(inputs.exclude-arch-json) }}
