@@ -13,27 +13,40 @@ on:
         required: true
         description: |
           JSON for matrix.include for later jobs
+      cmake-flags:
+        type: string
+        required: false
+        default: "['-DCMAKE_BUILD_TYPE=Release','-DADDRESS_SANITIZER=ON -DCMAKE_BUILD_TYPE=Debug','-DUSE_VALGRIND=ON -DCMAKE_BUILD_TYPE=Debug']"
 
 jobs:
-  unit-tests:
-    if: contains(inputs.include-arch-json, 'amd64') || contains(inputs.include-arch-json, 'arm64')
+  unit-tests-amd64:
+    if: contains(inputs.include-arch-json, 'amd64')
+    runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
     strategy:
-      fail-fast: false
       matrix:
-        cmake-flags:
-        - -DCMAKE_BUILD_TYPE=Release
-        - -DADDRESS_SANITIZER=ON -DCMAKE_BUILD_TYPE=Debug
-        - -DUSE_VALGRIND=ON -DCMAKE_BUILD_TYPE=Debug
-        runner: ${{ fromJSON(inputs.include-arch-json).*.runner }}
-    runs-on: ${{ matrix.runner }}
-
+        cmake-flags: ${{ fromJSON(inputs.cmake-flags) }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
+      - uses: ./.github/actions/run-unit-tests
+        with:
+          cmake-flags: ${{ matrix.cmake-flags }}
 
+  unit-tests-arm64:
+    if: contains(inputs.include-arch-json, 'arm64')
+    runs-on: ubuntu-24.04-arm
+    container:
+      image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
+    strategy:
+      matrix:
+        cmake-flags: ${{ fromJSON(inputs.cmake-flags) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
       - uses: ./.github/actions/run-unit-tests
         with:
           cmake-flags: ${{ matrix.cmake-flags }}
