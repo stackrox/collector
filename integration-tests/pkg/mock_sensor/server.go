@@ -190,11 +190,7 @@ func (m *MockSensor) GetAllConnections(containerID string) []types.NetworkInfo {
 // HasConnection returns whether a given connection has been seen for a given
 // container ID
 func (m *MockSensor) HasConnection(containerID string, conn types.NetworkInfo) bool {
-	m.networkMutex.Lock()
-	defer m.networkMutex.Unlock()
-
 	conns := m.GetAllConnections(containerID)
-	//if conns, ok := m.connections[containerID]; ok {
 	if len(conns) > 0 {
 		return slices.ContainsFunc(conns, func(c types.NetworkInfo) bool {
 			return c.Equal(conn)
