@@ -96,7 +96,7 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 
 	// TODO If ExpectedNetwork is nil the test should check that it is actually nil
 	if s.Client.ExpectedNetwork != nil {
-		clientNetworks := s.Sensor().Connections(s.Client.ContainerID)
+		clientNetworks := s.Sensor().GetAllConnections(s.Client.ContainerID)
 		nNetwork := len(clientNetworks)
 		nExpectedNetwork := len(s.Client.ExpectedNetwork)
 		// TODO Get this assert to pass reliably for these tests. Don't just do the asserts for the last connection. https://issues.redhat.com/browse/ROX-17964
@@ -123,7 +123,7 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 
 	// TODO If ExpectedNetwork is nil the test should check that it is actually nil
 	if s.Server.ExpectedNetwork != nil {
-		serverNetworks := s.Sensor().Connections(s.Server.ContainerID)
+		serverNetworks := s.Sensor().GetAllConnections(s.Server.ContainerID)
 		nNetwork := len(serverNetworks)
 		nExpectedNetwork := len(s.Server.ExpectedNetwork)
 		// TODO Get this assert to pass reliably for these tests. Don't just do the asserts for the last connection. https://issues.redhat.com/browse/ROX-18803
