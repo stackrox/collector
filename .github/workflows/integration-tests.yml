@@ -42,10 +42,16 @@ on:
           number of CPU cores.
         type: boolean
         default: false
+      include-arch-json:
+        type: string
+        required: true
+        description: |
+          JSON for matrix.include in later jobs
 
 jobs:
   amd64-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
+    if: contains(inputs.include-arch-json, 'amd64')
     strategy:
       # ensure that if one part of the matrix fails, the
       # rest will continue
@@ -91,9 +97,7 @@ jobs:
 
   arm64-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: |
-      github.event_name != 'pull_request' || inputs.is-konflux ||
-      contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+    if: contains(inputs.include-arch-json, 'arm64')
     strategy:
       # ensure that if one part of the matrix fails, the
       # rest will continue
@@ -104,7 +108,6 @@ jobs:
           - ubuntu-arm
           - sles-arm64
           - fcarm
-
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ inputs.collector-tag }}
@@ -116,9 +119,7 @@ jobs:
 
   s390x-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: |
-      github.event_name != 'pull_request' || inputs.is-konflux ||
-      contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+    if: contains(inputs.include-arch-json, 's390x')
     with:
       vm_type: rhel-s390x
       collector-tag: ${{ inputs.collector-tag }}
@@ -130,9 +131,7 @@ jobs:
 
   ppc64le-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: |
-      github.event_name != 'pull_request' || inputs.is-konflux ||
-      contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+    if: contains(inputs.include-arch-json, 'ppc64le')
     with:
       vm_type: rhel-ppc64le
       collector-tag: ${{ inputs.collector-tag }}

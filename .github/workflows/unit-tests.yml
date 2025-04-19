@@ -8,30 +8,54 @@ on:
         required: true
         description: |
           The builder tag to use in the build
+      include-arch-json:
+        type: string
+        required: true
+        description: |
+          JSON list of {arch,runner,remote} build configurations
+      cmake-flags-list-json:
+        type: string
+        required: false
+        default: "['-DCMAKE_BUILD_TYPE=Release','-DADDRESS_SANITIZER=ON -DCMAKE_BUILD_TYPE=Debug','-DUSE_VALGRIND=ON -DCMAKE_BUILD_TYPE=Debug']"
+        description: |
+          JSON list of cmake flags for unit tests
 
 jobs:
-  unit-tests:
+  unit-tests-amd64:
+    if: contains(inputs.include-arch-json, 'amd64')
     runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
     strategy:
-      fail-fast: false
       matrix:
-        cmake-flags:
-        - -DCMAKE_BUILD_TYPE=Release
-        - -DADDRESS_SANITIZER=ON -DCMAKE_BUILD_TYPE=Debug
-        - -DUSE_VALGRIND=ON -DCMAKE_BUILD_TYPE=Debug
+        cmake-flags: ${{ fromJSON(inputs.cmake-flags-list-json) }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-
       - uses: ./.github/actions/run-unit-tests
         with:
           cmake-flags: ${{ matrix.cmake-flags }}
 
-  coverage:
-    runs-on: ubuntu-24.04
+  unit-tests-arm64:
+    if: contains(inputs.include-arch-json, 'arm64')
+    runs-on: ubuntu-24.04-arm
+    container:
+      image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
+    strategy:
+      matrix:
+        cmake-flags: ${{ fromJSON(inputs.cmake-flags-list-json) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: ./.github/actions/run-unit-tests
+        with:
+          cmake-flags: ${{ matrix.cmake-flags }}
+
+  unit-tests-coverage:
+    if: contains(inputs.include-arch-json, 'arm64')
+    runs-on: ubuntu-24.04-arm
     container:
       image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
     steps:
