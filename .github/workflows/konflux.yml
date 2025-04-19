@@ -20,7 +20,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  should-run:
+    outputs:
+      should-run: ${{ steps.should-run.outputs.should-run }}
+    runs-on: ubuntu-24.04
+    steps:
+      - id: should-run
+        run: |
+          SHOULD_RUN="${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-konflux-steps') }}"
+          echo "should-run=${SHOULD_RUN}" >> "$GITHUB_OUTPUT"
+
   init:
+    needs:
+    - should-run
+    if: needs.should-run.outputs.should-run == 'true'
     runs-on: ubuntu-24.04
     outputs:
       collector-tag: ${{ steps.generate-tag.outputs.collector-tag }}
@@ -89,6 +102,7 @@ jobs:
       collector-tests-tag: ${{ needs.integration-tests-containers.outputs.collector-tests-tag }}
       is-konflux: true
       job-tag: konf
+      include-arch-json: '[{"arch":"amd64"},{"arch","arm64"},{"arch":"ppc64le"},{"arch","s390x"}]'
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     secrets: inherit
 
