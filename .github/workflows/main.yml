@@ -40,6 +40,7 @@ jobs:
     needs: init
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
+      include-arch-json: ${{ needs.init.outputs.include-arch-json }}
     secrets: inherit
 
   build-collector:
@@ -51,6 +52,7 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-image: ${{ needs.init.outputs.collector-image }}
       collector-builder-tag: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
+      include-arch-json: ${{ needs.init.outputs.include-arch-json }}
     secrets: inherit
 
   build-test-containers:
@@ -66,9 +68,11 @@ jobs:
   unit-tests:
     uses: ./.github/workflows/unit-tests.yml
     needs:
-      - build-builder-image
+    - init
+    - build-builder-image
     with:
       collector-builder-tag: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
+      include-arch-json: ${{ needs.init.outputs.include-arch-json }}
     secrets: inherit
 
   integration-tests:
@@ -78,6 +82,7 @@ jobs:
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
       collector-tests-tag: ${{ needs.build-test-containers.outputs.collector-tests-tag }}
       large-box: ${{ github.event.schedule == '0 0 * * 0' }}
+      include-arch-json: ${{ needs.init.outputs.include-arch-json }}
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
     needs:
     - init
@@ -91,7 +96,9 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
       collector-tests-tag: ${{ needs.build-test-containers.outputs.collector-tests-tag }}
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') }}
+    if: |
+      !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests') &&
+      contains(needs.init.outputs.include-arch-json, 'amd64')
     needs:
     - init
     - build-collector
@@ -105,7 +112,7 @@ jobs:
       collector-qa-tag: ${{ needs.init.outputs.collector-qa-tag }}
       collector-tests-tag: ${{ needs.build-test-containers.outputs.collector-tests-tag }}
     if: |
-      always() &&
+      always() && contains(needs.init.outputs.include-arch-json, 'amd64') &&
       ((github.event_name != 'pull_request' && github.ref_name == 'master') ||
       contains(github.event.pull_request.labels.*.name, 'run-benchmark'))
     needs:
