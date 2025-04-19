@@ -180,14 +180,14 @@ jobs:
             } >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Create settings for runner type and remote/local builds per enabled arch
+      - name: Create settings for runner and remote builds per enabled arch
         id: arch-json
         uses: actions/github-script@v7
         with:
           script: |
             const all_archs = ['amd64', 'arm64', 'ppc64le', 's390x'];
 
-            // These are the build configs for runner and remote used for
+            // the arch build configs for runner and remote used for
             // collector-builder, collector image, and integration test jobs.
             const arch_configs = {
               amd64: { runner: 'ubuntu-24.04', remote: false },
@@ -209,11 +209,12 @@ jobs:
                 }
               }
             }
-            const arch_matrix = selected_archs.map(arch => ({
-              arch,
-              ...arch_configs[arch],
+            // create output array of selected arch config objects
+            const arch_output = selected_archs.map(arch => ({
+              arch: arch,
+              runner: arch_configs[arch].runner,
+              remote: arch_configs[arch].remote,
             }));
-
-            core.setOutput('include-arch-json', JSON.stringify(arch_matrix));
-            core.info(JSON.stringify(arch_matrix));
+            core.setOutput('include-arch-json', JSON.stringify(arch_output));
+            core.info(JSON.stringify(arch_output));
 
