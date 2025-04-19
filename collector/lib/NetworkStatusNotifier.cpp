@@ -225,6 +225,8 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
   auto next_scrape = std::chrono::system_clock::now();
   int64_t time_at_last_scrape = NowMicros();
 
+  bool prevEnableExternalIPs = config_.EnableExternalIPs();
+
   while (writer->Sleep(next_scrape)) {
     CLOG(DEBUG) << "Starting network status notification";
     next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(scrape_interval_);
@@ -240,12 +242,19 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
     const sensor::NetworkConnectionInfoMessage* msg;
     ConnMap new_conn_state, delta_conn;
     AdvertisedEndpointMap new_cep_state;
+    bool enableExternalIPs = config_.EnableExternalIPs();
+
     WITH_TIMER(CollectorStats::net_fetch_state) {
-      conn_tracker_->EnableExternalIPs(config_.EnableExternalIPs());
+      conn_tracker_->EnableExternalIPs(enableExternalIPs);
 
       new_conn_state = conn_tracker_->FetchConnState(true, true);
       if (enable_afterglow_) {
         ConnectionTracker::ComputeDeltaAfterglow(new_conn_state, old_conn_state, delta_conn, time_micros, time_at_last_scrape, afterglow_period_micros_);
+        if (!prevEnableExternalIPs && enableExternalIPs) {
+          ConnectionTracker::CloseNormalizedConnections(&old_conn_state, &delta_conn);
+        } else if (prevEnableExternalIPs && !enableExternalIPs) {
+          conn_tracker_->CloseExternalUnnormalizedConnections(&old_conn_state, &delta_conn);
+        }
       } else {
         ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
       }
@@ -276,6 +285,8 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
         CLOG(ERROR) << "Failed to write network connection info";
         return;
       }
+
+      prevEnableExternalIPs = enableExternalIPs;
     }
 
     CLOG(DEBUG) << "Network status notification done";
