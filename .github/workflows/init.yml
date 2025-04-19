@@ -185,32 +185,35 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const archs = ['arm64', 'amd64', 'ppc64le', 's390x'];
-            let include = archs;
+            const all_archs = ['amd64', 'arm64', 'ppc64le', 's390x'];
+
+            // These are the build configs for runner and remote used for
+            // collector-builder, collector image, and integration test jobs.
+            const arch_configs = {
+              amd64: { runner: 'ubuntu-24.04', remote: false },
+              arm64: { runner: 'ubuntu-24.04-arm', remote: false },
+              ppc64le: { runner: 'ubuntu-24.04', remote: false },
+              s390x: { runner: 'ubuntu-24.04', remote: true },
+            };
+
+            let selected_archs = all_archs;
             if (context.payload.pull_request) {
               const labels = context.payload.pull_request.labels.map(label => label.name);
-              if (archs.some(a => labels.includes(`run-${a}-builds`))) {
-                // Check for labels that specify a specific architecture
-                include = archs.filter(a => labels.includes(`run-${a}-builds`))
+              const specific = all_archs.filter(a => labels.includes(`run-${a}-builds`));
+              if (specific.length) {
+                selected_archs = specific;
               } else {
-                // Otherwise, use default architectures on PRs
-                include = ['arm64', 'amd64']
-                // If multiarch label is included, also add z and power
+                selected_archs = ['arm64', 'amd64'];
                 if (labels.includes('run-multiarch-builds')) {
-                  include = include.concat(['ppc64le', 's390x'])
+                  selected_archs.push('ppc64le', 's390x');
                 }
               }
             }
-            // Set runner for arm64 and remote=true for s390x
-            const includejson = archs
-              .filter(arch => include.includes(arch))
-              .map(arch => {
-                const runner = arch === "arm64"
-                  ? "ubuntu-24.04-arm"
-                  : "ubuntu-24.04";
-                const remote = arch === "s390x";
-                return { arch, runner, remote };
-              });
-            core.setOutput('include-arch-json', JSON.stringify(includejson));
-            core.info(JSON.stringify(includejson));
+            const arch_matrix = selected_archs.map(arch => ({
+              arch,
+              ...arch_configs[arch],
+            }));
+
+            core.setOutput('include-arch-json', JSON.stringify(arch_matrix));
+            core.info(JSON.stringify(arch_matrix));
 
