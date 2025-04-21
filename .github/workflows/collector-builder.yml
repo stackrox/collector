@@ -211,8 +211,9 @@ jobs:
     name: Create Multiarch manifest
     runs-on: ubuntu-24.04
     if: |
-      github.event_name != 'pull_request' ||
-      needs.build-builder-image.outputs.collector-builder-tag != 'cache'
+      always() && !contains(join(needs.*.result, ','), 'failure')
+      && (github.event_name != 'pull_request' ||
+      needs.build-builder-image.outputs.collector-builder-tag != 'cache')
     env:
       COLLECTOR_BUILDER_TAG: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
       ARCHS: ${{ (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && 'amd64 arm64 ppc64le s390x') || 'amd64 arm64' }}
