@@ -135,7 +135,7 @@ jobs:
     needs:
     - builder-needs-rebuilding
     if: |
-      needs.builder-needs-rebuilding.outputs.build-image == 'true' ||
+      needs.builder-needs-rebuilding.outputs.build-image == 'true' &&
       contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     outputs:
       collector-builder-tag: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}
