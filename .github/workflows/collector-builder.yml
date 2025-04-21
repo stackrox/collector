@@ -60,8 +60,8 @@ jobs:
       collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag }}
     strategy:
       matrix:
-        include: ${{ fromJSON(inputs.include-arch-json) }}
-    runs-on: ${{ matrix.runner }}
+        arch: [amd64, arm64]
+    runs-on: ${{ (matrix.arch != 'arm64' && ubuntu-24.04) || 'ubuntu-24.04-arm' }}
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
@@ -73,30 +73,91 @@ jobs:
           submodules: true
 
       - name: Set up QEMU
-        if: matrix.remote != true
         uses: docker/setup-qemu-action@v3
         with:
           image: tonistiigi/binfmt:qemu-v8.1.5
 
       - name: Set up Docker Buildx
-        if: matrix.remote != true
         uses: docker/setup-buildx-action@v3
 
+      - name: Define builder tag
+        id: builder-tag
+        run: |
+          COLLECTOR_BUILDER_TAG="${DEFAULT_BUILDER_TAG}"
+          if [[ "${{ github.event_name }}" == 'pull_request' || \
+                "${{ github.ref_type }}" == 'tag' || \
+                "${{ github.ref_name }}" =~ ^release- ]]; then
+            COLLECTOR_BUILDER_TAG="${{ inputs.collector-tag }}"
+          fi
+
+          echo "COLLECTOR_BUILDER_TAG=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_ENV"
+          echo "collector-builder-tag=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Create ansible vars
+        run: |
+          {
+            echo "---"
+            echo "stackrox_io_username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}"
+            echo "stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}"
+            echo "rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}"
+            echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
+            echo "collector_git_ref: ${{ github.ref }}"
+            echo "collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}"
+          } > ${{ github.workspace }}/ansible/secrets.yml
+
+      - name: Build images
+        timeout-minutes: 480
+        run: |
+          ansible-galaxy install -r ansible/requirements.yml
+          ansible-playbook \
+            --connection local \
+            -i localhost, \
+            --limit localhost \
+            -e arch='${{ matrix.arch }}' \
+            -e @'${{ github.workspace }}/ansible/secrets.yml' \
+            ansible/ci-build-builder.yml
+
+  build-builder-image-remote:
+    if: contains(inputs.include-arch-json, 's390x')
+    name: Build the builder image
+    # Multiarch builds sometimes take for eeeeeeeeeever
+    timeout-minutes: 480
+    needs:
+    - builder-needs-rebuilding
+    if: |
+      needs.builder-needs-rebuilding.outputs.build-image == 'true' ||
+      (github.event_name == 'push' && (
+        github.ref_type == 'tag' || startsWith(github.ref_name, 'release-')
+      )) ||
+      contains(github.event.pull_request.labels.*.name, 'build-builder-image') ||
+      github.event_name == 'schedule'
+    outputs:
+      collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag }}
+    strategy:
+      matrix:
+        arch: [s390x]
+    runs-on: ubuntu-24.04
+
+    env:
+      PLATFORM: linux/${{ matrix.arch }}
+      BUILD_TYPE: ci
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
       - uses: actions/setup-python@v5
-        if: matrix.remote
         with:
           python-version: "3.10"
 
       - uses: 'google-github-actions/auth@v2'
-        if: matrix.remote
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS_COLLECTOR_SVC_ACCT }}'
 
       - uses: 'google-github-actions/setup-gcloud@v2'
-        if: matrix.remote
 
       - uses: ./.github/actions/setup-vm-creds
-        if: matrix.remote
         with:
           gcp-ssh-key: ${{ secrets.GCP_SSH_KEY }}
           gcp-ssh-key-pub: ${{ secrets.GCP_SSH_KEY_PUB }}
@@ -111,7 +172,6 @@ jobs:
           job-tag: builder
 
       - name: Create Build VMs
-        if: matrix.remote
         run: |
           make -C "${{ github.workspace }}/ansible" create-build-vms
 
@@ -140,21 +200,7 @@ jobs:
             echo "collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}"
           } > ${{ github.workspace }}/ansible/secrets.yml
 
-      - name: Build images
-        if: matrix.remote != true
-        timeout-minutes: 480
-        run: |
-          ansible-galaxy install -r ansible/requirements.yml
-          ansible-playbook \
-            --connection local \
-            -i localhost, \
-            --limit localhost \
-            -e arch='${{ matrix.arch }}' \
-            -e @'${{ github.workspace }}/ansible/secrets.yml' \
-            ansible/ci-build-builder.yml
-
       - name: Build s390x images
-        if: matrix.remote
         timeout-minutes: 480
         run: |
           ansible-playbook \
@@ -165,13 +211,14 @@ jobs:
             ansible/ci-build-builder.yml
 
       - name: Destroy VMs
-        if: always() && matrix.remote
+        if: always()
         run: |
           make -C ansible destroy-vms
 
   create-multiarch-manifest:
     needs:
     - build-builder-image
+    - build-builder-image-remote
     name: Create Multiarch manifest
     runs-on: ubuntu-24.04
     if: |
@@ -215,6 +262,7 @@ jobs:
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name != 'pull_request'
     needs:
       - build-builder-image
+      - build-builder-image-remote
       - create-multiarch-manifest
     steps:
       - name: Slack notification
