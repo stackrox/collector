@@ -11,7 +11,7 @@ on:
     outputs:
       collector-builder-tag:
         description: The builder tag used by the build
-        value: ${{ jobs.builder-needs-rebuilding.outputs.collector-builder-tag || 'master' }}
+        value: ${{ jobs.builder-needs-rebuilding.outputs.collector-builder-tag }}
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       build-image: ${{ steps.check-builder-needed.outcome == 'success' }}
-      collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag }}
+      collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag || 'master'}}
 
     env:
       DEFAULT_BUILDER_TAG: master
@@ -42,19 +42,6 @@ jobs:
               - builder/Dockerfile
               - .github/workflows/collector-builder.yml
 
-      - name: Define builder tag
-        id: builder-tag
-        run: |
-          COLLECTOR_BUILDER_TAG="${DEFAULT_BUILDER_TAG}"
-          if [[ "${{ github.event_name }}" == 'pull_request' || \
-                "${{ github.ref_type }}" == 'tag' || \
-                "${{ github.ref_name }}" =~ ^release- ]]; then
-            COLLECTOR_BUILDER_TAG="${{ inputs.collector-tag }}"
-          fi
-
-          echo "COLLECTOR_BUILDER_TAG=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_ENV"
-          echo "collector-builder-tag=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
-
       - name: Check labels and branch status to check if builder is needed
         id: check-builder-needed
         if: |
@@ -65,7 +52,22 @@ jobs:
           contains(github.event.pull_request.labels.*.name, 'build-builder-image') ||
           github.event_name == 'schedule'
         run: |
+          echo "Rebuilding builder image"
+
+      - name: Define builder tag
+        id: builder-tag
+        if: |
+          steps.check-builder-needed.outcome == 'success'
+        run: |
+          COLLECTOR_BUILDER_TAG="${DEFAULT_BUILDER_TAG}"
+          if [[ "${{ github.event_name }}" == 'pull_request' || \
+                "${{ github.ref_type }}" == 'tag' || \
+                "${{ github.ref_name }}" =~ ^release- ]]; then
+            COLLECTOR_BUILDER_TAG="${{ inputs.collector-tag }}"
+          fi
+
           echo "Rebuild builder image with tag ${COLLECTOR_BUILDER_TAG}"
+          echo "collector-builder-tag=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
 
   build-builder-image:
     name: Local builder image
