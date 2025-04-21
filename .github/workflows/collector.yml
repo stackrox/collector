@@ -97,31 +97,9 @@ jobs:
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
-      CONTEXT_DRIVERS_DIR: ${{ github.workspace }}/collector/kernel-modules
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Create ansible vars
-        run: |
-          cat << EOF > ${{ github.workspace }}/ansible/secrets.yml
-          ---
-          stackrox_io_username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-          stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-          rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-          rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-          collector_git_ref: ${{ github.ref }}
-          collector_git_sha: ${{ github.sha }}
-          collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}
-          disable_profiling: ${{ matrix.arch != 'amd64' && matrix.arch != 'arm64' }}
-          rhacs_eng_image: ${{ env.RHACS_ENG_IMAGE }}
-          collector_image: ${{ inputs.collector-image }}
-          collector_tag: ${{ inputs.collector-tag }}
-          debug_mode: ${{ github.event_name == 'pull_request' }}
-          driver_version: ${DRIVER_VERSION}
-          EOF
 
       - uses: actions/setup-python@v5
         with:
@@ -147,6 +125,24 @@ jobs:
           vm-type: rhel-${{ matrix.arch }}
           job-tag: builder
 
+      - name: Create ansible vars
+        run: |
+          cat << EOF > ${{ github.workspace }}/ansible/secrets.yml
+          ---
+          stackrox_io_username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+          rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          collector_git_ref: ${{ github.ref }}
+          collector_git_sha: ${{ github.sha }}
+          collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}
+          disable_profiling: ${{ matrix.arch != 'amd64' && matrix.arch != 'arm64' }}
+          rhacs_eng_image: ${{ env.RHACS_ENG_IMAGE }}
+          collector_image: ${{ inputs.collector-image }}
+          collector_tag: ${{ inputs.collector-tag }}
+          debug_mode: ${{ github.event_name == 'pull_request' }}
+          EOF
+
       - name: Create Build VMs
         run: |
           make -C "${{ github.workspace }}/ansible" create-build-vms
@@ -169,6 +165,7 @@ jobs:
   create-multiarch-manifest:
     needs:
     - build-collector-image
+    - build-collector-image-remote
     name: Create Multiarch manifest
     runs-on: ubuntu-24.04
     if: always() && !contains(join(needs.*.result, ','), 'failure')

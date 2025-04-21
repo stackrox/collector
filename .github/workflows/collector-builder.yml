@@ -44,7 +44,7 @@ jobs:
               - .github/workflows/collector-builder.yml
 
   build-builder-image:
-    name: Build the builder image
+    name: local builder image ${{ matrix.arch }}
     # Multiarch builds sometimes take for eeeeeeeeeever
     timeout-minutes: 480
     needs:
@@ -118,7 +118,7 @@ jobs:
             ansible/ci-build-builder.yml
 
   build-builder-image-remote:
-    name: Build the builder image
+    name: remote builder image ${{ matrix.arch }}
     # Multiarch builds sometimes take for eeeeeeeeeever
     timeout-minutes: 480
     needs:
