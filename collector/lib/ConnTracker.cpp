@@ -111,17 +111,20 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address, bool ena
   }
 }
 
-bool ConnectionTracker::ShouldNormalizeConnection(const Connection& conn) const {
-  Endpoint local, remote = conn.remote();
+bool ConnectionTracker::ShouldNormalizeConnection(const Connection* conn) const {
+  Endpoint local, remote = conn->remote();
   IPNet ipnet = NormalizeAddressNoLock(remote.address(), false);
 
   return ipnet.IsCanonicalExternalIp();
 }
 
-void ConnectionTracker::CloseNormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn) {
+/**
+ * Closes connections that match a predicate and moves them to a delta
+ */
+void ConnectionTracker::CloseConnections(ConnMap* old_conn_state, ConnMap* delta_conn, std::function<bool(const Connection*)> predicate) {
   for (auto it = old_conn_state->begin(); it != old_conn_state->end();) {
     auto& old_conn = *it;
-    if (old_conn.first.IsCanonicalExternalIp()) {
+    if (predicate(&old_conn.first)) {
       if (old_conn.second.IsActive()) {
         old_conn.second.SetActive(false);
       }
@@ -133,19 +136,16 @@ void ConnectionTracker::CloseNormalizedConnections(ConnMap* old_conn_state, Conn
   }
 }
 
+void ConnectionTracker::CloseNormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn) {
+  CloseConnections(old_conn_state, delta_conn, [](const Connection* conn) {
+    return conn->IsCanonicalExternalIp();
+  });
+}
+
 void ConnectionTracker::CloseExternalUnnormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn) {
-  for (auto it = old_conn_state->begin(); it != old_conn_state->end();) {
-    auto& old_conn = *it;
-    if (ShouldNormalizeConnection(old_conn.first) && !old_conn.first.IsCanonicalExternalIp()) {
-      if (old_conn.second.IsActive()) {
-        old_conn.second.SetActive(false);
-      }
-      delta_conn->insert(old_conn);
-      it = old_conn_state->erase(it);
-    } else {
-      it++;
-    }
-  }
+  CloseConnections(old_conn_state, delta_conn, [this](const Connection* conn) {
+    return ShouldNormalizeConnection(conn) && !conn->IsCanonicalExternalIp();
+  });
 }
 
 Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) const {

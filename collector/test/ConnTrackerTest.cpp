@@ -1652,6 +1652,8 @@ TEST(ConnTrackerTest, TestConnectionStats) {
 }
 
 TEST(ConnTrackerTest, TestCloseNormalizedConnections) {
+  ConnectionTracker tracker;
+
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(255, 255, 255, 255), 9999);
 
@@ -1662,13 +1664,15 @@ TEST(ConnTrackerTest, TestCloseNormalizedConnections) {
   ConnMap delta;
   ConnMap expected_delta = {{conn, ConnStatus(connection_time, false)}};
 
-  CT::CloseNormalizedConnections(&old_state, &delta);
+  tracker.CloseNormalizedConnections(&old_state, &delta);
 
   EXPECT_THAT(old_state, IsEmpty());
   EXPECT_THAT(delta, expected_delta);
 }
 
 TEST(ConnTrackerTest, TestCloseNormalizedConnectionsUnnormalized) {
+  ConnectionTracker tracker;
+
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
@@ -1679,7 +1683,7 @@ TEST(ConnTrackerTest, TestCloseNormalizedConnectionsUnnormalized) {
   ConnMap delta;
   ConnMap expected_old_state = {{conn, ConnStatus(connection_time, true)}};
 
-  CT::CloseNormalizedConnections(&old_state, &delta);
+  tracker.CloseNormalizedConnections(&old_state, &delta);
 
   EXPECT_THAT(old_state, expected_old_state);
   EXPECT_THAT(delta, IsEmpty());
@@ -1729,9 +1733,9 @@ TEST(ConnTrackerTest, TestShouldNormalizeConnection) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(11, 168, 1, 10), 9999);
 
-  Connection conn("xyz", a, b, L4Proto::TCP, true);
+  const Connection conn("xyz", a, b, L4Proto::TCP, true);
 
-  EXPECT_TRUE(tracker.ShouldNormalizeConnection(conn));
+  EXPECT_TRUE(tracker.ShouldNormalizeConnection(&conn));
 }
 
 TEST(ConnTrackerTest, TestShouldNormalizeConnectionFalse) {
@@ -1740,9 +1744,9 @@ TEST(ConnTrackerTest, TestShouldNormalizeConnectionFalse) {
   Endpoint a(Address(192, 168, 0, 1), 80);
   Endpoint b(Address(192, 168, 1, 10), 9999);
 
-  Connection conn("xyz", a, b, L4Proto::TCP, true);
+  const Connection conn("xyz", a, b, L4Proto::TCP, true);
 
-  EXPECT_FALSE(tracker.ShouldNormalizeConnection(conn));
+  EXPECT_FALSE(tracker.ShouldNormalizeConnection(&conn));
 }
 
 }  // namespace

@@ -100,7 +100,8 @@ class ConnectionTracker {
   template <typename T>
   static void UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, const UnorderedMap<T, ConnStatus>& new_state, int64_t time_micros, int64_t afterglow_period_micros);
 
-  static void CloseNormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn);
+  void CloseConnections(ConnMap* old_conn_state, ConnMap* delta_conn, std::function<bool(const Connection*)> predicate);
+  void CloseNormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn);
   void CloseExternalUnnormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn);
 
   // ComputeDelta computes a diff between new_state and old_state
@@ -157,7 +158,7 @@ class ConnectionTracker {
   // Those counters are updated as new connections are reported by the system.
   Stats GetConnectionStats_NewConnectionCounters();
 
-  bool ShouldNormalizeConnection(const Connection& conn) const;
+  bool ShouldNormalizeConnection(const Connection* conn) const;
 
  private:
   // NormalizeConnection transforms a connection into a normalized form.
