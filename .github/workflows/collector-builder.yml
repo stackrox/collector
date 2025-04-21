@@ -29,6 +29,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       build-image: ${{ steps.changed.outputs.builder-changed }}
+      collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag }}
 
     steps:
       - uses: actions/checkout@v4
@@ -42,6 +43,19 @@ jobs:
               - builder/third_party/**
               - builder/Dockerfile
               - .github/workflows/collector-builder.yml
+
+      - name: Define builder tag
+        id: builder-tag
+        run: |
+          COLLECTOR_BUILDER_TAG="${DEFAULT_BUILDER_TAG}"
+          if [[ "${{ github.event_name }}" == 'pull_request' || \
+                "${{ github.ref_type }}" == 'tag' || \
+                "${{ github.ref_name }}" =~ ^release- ]]; then
+            COLLECTOR_BUILDER_TAG="${{ inputs.collector-tag }}"
+          fi
+
+          echo "COLLECTOR_BUILDER_TAG=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_ENV"
+          echo "collector-builder-tag=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
 
   build-builder-image:
     name: Local builder image ${{ matrix.arch }}
@@ -57,10 +71,12 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'build-builder-image') ||
       github.event_name == 'schedule'
     outputs:
-      collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag }}
+      collector-builder-tag: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}
     strategy:
       matrix:
-        arch: [amd64, arm64]
+        arch: [amd64, arm64, ppc64le]
+        exclude:
+          - arch: {{ (!contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && 'ppc64le' || '' }}
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
 
     env:
@@ -80,19 +96,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Define builder tag
-        id: builder-tag
-        run: |
-          COLLECTOR_BUILDER_TAG="${DEFAULT_BUILDER_TAG}"
-          if [[ "${{ github.event_name }}" == 'pull_request' || \
-                "${{ github.ref_type }}" == 'tag' || \
-                "${{ github.ref_name }}" =~ ^release- ]]; then
-            COLLECTOR_BUILDER_TAG="${{ inputs.collector-tag }}"
-          fi
-
-          echo "COLLECTOR_BUILDER_TAG=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_ENV"
-          echo "collector-builder-tag=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
-
       - name: Create ansible vars
         run: |
           {
@@ -102,7 +105,7 @@ jobs:
             echo "rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}"
             echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
             echo "collector_git_ref: ${{ github.ref }}"
-            echo "collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}"
+            echo "collector_builder_tag: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}"
           } > ${{ github.workspace }}/ansible/secrets.yml
 
       - name: Build images
@@ -132,7 +135,7 @@ jobs:
       github.event_name == 'schedule') &&
       contains(inputs.include-arch-json, 's390x')
     outputs:
-      collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag }}
+      collector-builder-tag: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}
     strategy:
       matrix:
         arch: [s390x]
@@ -175,19 +178,6 @@ jobs:
         run: |
           make -C "${{ github.workspace }}/ansible" create-build-vms
 
-      - name: Define builder tag
-        id: builder-tag
-        run: |
-          COLLECTOR_BUILDER_TAG="${DEFAULT_BUILDER_TAG}"
-          if [[ "${{ github.event_name }}" == 'pull_request' || \
-                "${{ github.ref_type }}" == 'tag' || \
-                "${{ github.ref_name }}" =~ ^release- ]]; then
-            COLLECTOR_BUILDER_TAG="${{ inputs.collector-tag }}"
-          fi
-
-          echo "COLLECTOR_BUILDER_TAG=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_ENV"
-          echo "collector-builder-tag=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
-
       - name: Create ansible vars
         run: |
           {
@@ -197,7 +187,7 @@ jobs:
             echo "rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}"
             echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
             echo "collector_git_ref: ${{ github.ref }}"
-            echo "collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}"
+            echo "collector_builder_tag: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}"
           } > ${{ github.workspace }}/ansible/secrets.yml
 
       - name: Build s390x images
