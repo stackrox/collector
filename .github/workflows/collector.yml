@@ -34,7 +34,7 @@ env:
 
 jobs:
   build-collector-image:
-    name: Build Collector
+    name: Local collector image ${{ matrix.arch }}
     strategy:
       matrix:
         arch: [amd64, arm64]
@@ -89,7 +89,7 @@ jobs:
 
   build-collector-image-remote:
     if: contains(inputs.include-arch-json, 's390x')
-    name: Build Collector
+    name: Remote collector image ${{ matrix.arch }}
     strategy:
       matrix:
         arch: [s390x]
