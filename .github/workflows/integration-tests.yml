@@ -97,6 +97,7 @@ jobs:
       fail-fast: false
       matrix:
         vm_type:
+          - cos-arm64
           - rhel-arm64
           - ubuntu-arm
           - sles-arm64
