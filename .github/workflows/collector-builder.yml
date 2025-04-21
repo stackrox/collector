@@ -26,6 +26,9 @@ jobs:
       build-image: ${{ steps.check-builder-needed.outcome == 'success' }}
       collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag }}
 
+    env:
+      DEFAULT_BUILDER_TAG: master
+
     steps:
       - uses: actions/checkout@v4
 
@@ -65,7 +68,7 @@ jobs:
           echo "Rebuild builder image with tag ${COLLECTOR_BUILDER_TAG}"
 
   build-builder-image:
-    name: Local builder image ${{ matrix.arch }}
+    name: Local builder image
     # Multiarch builds sometimes take for eeeeeeeeeever
     timeout-minutes: 480
     needs:
@@ -122,7 +125,7 @@ jobs:
             ansible/ci-build-builder.yml
 
   build-builder-image-remote-vm:
-    name: Remote builder image s390x
+    name: Remote builder image
     # Multiarch builds sometimes take for eeeeeeeeeever
     timeout-minutes: 480
     needs:
