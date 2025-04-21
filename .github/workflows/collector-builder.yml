@@ -61,7 +61,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ${{ (matrix.arch != 'arm64' && ubuntu-24.04) || 'ubuntu-24.04-arm' }}
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
@@ -118,19 +118,19 @@ jobs:
             ansible/ci-build-builder.yml
 
   build-builder-image-remote:
-    if: contains(inputs.include-arch-json, 's390x')
     name: Build the builder image
     # Multiarch builds sometimes take for eeeeeeeeeever
     timeout-minutes: 480
     needs:
     - builder-needs-rebuilding
     if: |
-      needs.builder-needs-rebuilding.outputs.build-image == 'true' ||
+      (needs.builder-needs-rebuilding.outputs.build-image == 'true' ||
       (github.event_name == 'push' && (
         github.ref_type == 'tag' || startsWith(github.ref_name, 'release-')
       )) ||
       contains(github.event.pull_request.labels.*.name, 'build-builder-image') ||
-      github.event_name == 'schedule'
+      github.event_name == 'schedule') &&
+      contains(inputs.include-arch-json, 's390x')
     outputs:
       collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag }}
     strategy:
