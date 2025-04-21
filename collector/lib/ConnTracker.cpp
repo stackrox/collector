@@ -136,12 +136,19 @@ void ConnectionTracker::CloseConnections(ConnMap* old_conn_state, ConnMap* delta
   }
 }
 
+/**
+ * Closes connections that have the 255.255.255.255 external IP address
+ */
 void ConnectionTracker::CloseNormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn) {
   CloseConnections(old_conn_state, delta_conn, [](const Connection* conn) {
     return conn->IsCanonicalExternalIp();
   });
 }
 
+/**
+ * Closes unnormalized connections that would be normalized to the canonical external
+ * IP address if external IPs was enabled
+ */
 void ConnectionTracker::CloseExternalUnnormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn) {
   CloseConnections(old_conn_state, delta_conn, [this](const Connection* conn) {
     return ShouldNormalizeConnection(conn) && !conn->IsCanonicalExternalIp();
