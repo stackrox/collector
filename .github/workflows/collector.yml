@@ -84,13 +84,13 @@ jobs:
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-collector.yml
 
-  build-collector-image-remote:
+  build-collector-image-remote-vm:
+    name: Remote collector image s390x
+    runs-on: ubuntu-24.04
     if: contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
-    name: Remote collector image ${{ matrix.arch }}
     strategy:
       matrix:
         arch: [s390x]
-    runs-on: ubuntu-24.04
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
@@ -122,6 +122,10 @@ jobs:
           vm-type: rhel-${{ matrix.arch }}
           job-tag: builder
 
+      - name: Create Build VMs
+        run: |
+          make -C "${{ github.workspace }}/ansible" create-build-vms
+
       - name: Create ansible vars
         run: |
           cat << EOF > ${{ github.workspace }}/ansible/secrets.yml
@@ -140,11 +144,7 @@ jobs:
           debug_mode: ${{ github.event_name == 'pull_request' }}
           EOF
 
-      - name: Create Build VMs
-        run: |
-          make -C "${{ github.workspace }}/ansible" create-build-vms
-
-      - name: Build ${{ matrix.arch }} image remotely
+      - name: Build ${{ matrix.arch }} image
         timeout-minutes: 480
         run: |
           ansible-playbook \
@@ -162,7 +162,7 @@ jobs:
   create-multiarch-manifest:
     needs:
     - build-collector-image
-    - build-collector-image-remote
+    - build-collector-image-remote-vm
     name: Create Multiarch manifest
     runs-on: ubuntu-24.04
     if: always() && !contains(join(needs.*.result, ','), 'failure')
@@ -203,7 +203,7 @@ jobs:
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name != 'pull_request'
     needs:
       - build-collector-image
-      - build-collector-image-remote
+      - build-collector-image-remote-vm
       - create-multiarch-manifest
     steps:
       - name: Slack notification

@@ -123,7 +123,7 @@ jobs:
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-builder.yml
 
-  build-builder-image-remote:
+  build-builder-image-remote-vm:
     name: Remote builder image s390x
     # Multiarch builds sometimes take for eeeeeeeeeever
     timeout-minutes: 480
@@ -132,8 +132,6 @@ jobs:
     if: |
       needs.builder-needs-rebuilding.outputs.build-image == 'true' &&
       contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
-    outputs:
-      collector-builder-tag: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}
     strategy:
       matrix:
         arch: [s390x]
@@ -207,7 +205,7 @@ jobs:
   create-multiarch-manifest:
     needs:
     - build-builder-image
-    - build-builder-image-remote
+    - build-builder-image-remote-vm
     name: Create Multiarch manifest
     runs-on: ubuntu-24.04
     if: |
@@ -252,7 +250,7 @@ jobs:
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name != 'pull_request'
     needs:
       - build-builder-image
-      - build-builder-image-remote
+      - build-builder-image-remote-vm
       - create-multiarch-manifest
     steps:
       - name: Slack notification
