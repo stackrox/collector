@@ -28,7 +28,7 @@ jobs:
     name: Determine if builder image needs to be built
     runs-on: ubuntu-24.04
     outputs:
-      build-image: ${{ steps.changed.outputs.builder-changed }}
+      build-image: ${{ steps.check-builder-needed.outcome == 'success' }}
       collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag }}
 
     steps:
@@ -57,6 +57,18 @@ jobs:
           echo "COLLECTOR_BUILDER_TAG=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_ENV"
           echo "collector-builder-tag=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
 
+      - name: Check labels and branch status to check if builder is needed
+        id: check-builder-needed
+        if: |
+          steps.changed.outputs.builder-changed == 'true' ||
+          (github.event_name == 'push' && (
+            github.ref_type == 'tag' || startsWith(github.ref_name, 'release-')
+          )) ||
+          contains(github.event.pull_request.labels.*.name, 'build-builder-image') ||
+          github.event_name == 'schedule'
+        run: |
+          echo "Rebuild builder image with tag ${COLLECTOR_BUILDER_TAG}"
+
   build-builder-image:
     name: Local builder image ${{ matrix.arch }}
     # Multiarch builds sometimes take for eeeeeeeeeever
@@ -64,12 +76,7 @@ jobs:
     needs:
     - builder-needs-rebuilding
     if: |
-      needs.builder-needs-rebuilding.outputs.build-image == 'true' ||
-      (github.event_name == 'push' && (
-        github.ref_type == 'tag' || startsWith(github.ref_name, 'release-')
-      )) ||
-      contains(github.event.pull_request.labels.*.name, 'build-builder-image') ||
-      github.event_name == 'schedule'
+      needs.builder-needs-rebuilding.outputs.build-image == 'true'
     outputs:
       collector-builder-tag: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}
     strategy:
@@ -128,13 +135,8 @@ jobs:
     needs:
     - builder-needs-rebuilding
     if: |
-      (needs.builder-needs-rebuilding.outputs.build-image == 'true' ||
-      (github.event_name == 'push' && (
-        github.ref_type == 'tag' || startsWith(github.ref_name, 'release-')
-      )) ||
-      contains(github.event.pull_request.labels.*.name, 'build-builder-image') ||
-      github.event_name == 'schedule') &&
-      contains(inputs.include-arch-json, 's390x')
+      needs.builder-needs-rebuilding.outputs.build-image == 'true' ||
+      contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     outputs:
       collector-builder-tag: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}
     strategy:

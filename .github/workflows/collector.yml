@@ -37,7 +37,9 @@ jobs:
     name: Local collector image ${{ matrix.arch }}
     strategy:
       matrix:
-        arch: [amd64, arm64]
+        arch: [amd64, arm64, ppc64le]
+        exclude:
+          - arch: ${{ (!contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && 'ppc64le') || '' }}
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-22.04-arm') || 'ubuntu-22.04' }}
 
     env:
@@ -88,7 +90,7 @@ jobs:
             ansible/ci-build-collector.yml
 
   build-collector-image-remote:
-    if: contains(inputs.include-arch-json, 's390x')
+    if: contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     name: Remote collector image ${{ matrix.arch }}
     strategy:
       matrix:
