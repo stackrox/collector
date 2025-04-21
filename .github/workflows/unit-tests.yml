@@ -8,11 +8,6 @@ on:
         required: true
         description: |
           The builder tag to use in the build
-      include-arch-json:
-        type: string
-        required: true
-        description: |
-          JSON list of {arch,runner,remote} build configurations
 
 jobs:
   unit-tests:
