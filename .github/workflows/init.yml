@@ -58,11 +58,6 @@ on:
         description: |
           Trigger rebuild of QA containers
         value: ${{ jobs.common-variables.outputs.rebuild-qa-containers }}
-      include-arch-json:
-        description: |
-          JSON for matrix.include in later jobs
-        value: ${{ jobs.common-variables.outputs.include-arch-json }}
-
 
 jobs:
   common-variables:
@@ -80,7 +75,6 @@ jobs:
       cpaas-support-packages-bucket: ${{ steps.gcp-buckets.outputs.cpaas-support-packages-bucket }}
       support-packages-index-bucket: ${{ steps.gcp-buckets.outputs.support-packages-index-bucket }}
       rebuild-qa-containers: ${{ steps.filter.outputs.container }}
-      include-arch-json: ${{ steps.arch-json.outputs.include-arch-json }}
 
     steps:
       - uses: actions/checkout@v4
@@ -179,43 +173,3 @@ jobs:
               echo "support-packages-index-bucket=${SUPPORT_PACKAGES_BUCKET}"
             } >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Create settings for runner and remote builds per enabled arch
-        id: arch-json
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const all_archs = ['amd64', 'arm64', 'ppc64le', 's390x'];
-            const default_archs = ['amd64', 'arm64'];
-
-            // the arch build configs for runner and remote used for
-            // collector-builder, collector image, and integration test jobs.
-            const arch_configs = {
-              amd64: { runner: 'ubuntu-24.04', remote: false },
-              arm64: { runner: 'ubuntu-24.04-arm', remote: false },
-              ppc64le: { runner: 'ubuntu-24.04', remote: false },
-              s390x: { runner: 'ubuntu-24.04', remote: true },
-            };
-
-            let selected_archs = all_archs;
-            if (context.payload.pull_request) {
-              const labels = context.payload.pull_request.labels.map(label => label.name);
-              const specific = all_archs.filter(a => labels.includes(`run-${a}-builds`));
-              if (specific.length) {
-                selected_archs = specific
-              } else {
-                selected_archs = default_archs
-                if (labels.includes('run-multiarch-builds')) {
-                  selected_archs.push('ppc64le', 's390x');
-                }
-              }
-            }
-            // create output array of selected arch config objects
-            const arch_output = selected_archs.map(arch => ({
-              arch: arch,
-              runner: arch_configs[arch].runner,
-              remote: arch_configs[arch].remote,
-            }));
-            core.setOutput('include-arch-json', JSON.stringify(arch_output));
-            core.info(JSON.stringify(arch_output));
-

@@ -18,11 +18,6 @@ on:
         required: true
         description: |
           The builder tag to use in the build
-      include-arch-json:
-        type: string
-        required: true
-        description: |
-          JSON for matrix.include to select architectures and runners to build
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
@@ -172,7 +167,7 @@ jobs:
     runs-on: ubuntu-24.04
     if: always() && !contains(join(needs.*.result, ','), 'failure')
     env:
-      ARCHS: ${{ join(fromJSON(inputs.include-arch-json).*.arch, ' ') }}
+      ARCHS: ${{ (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && 'amd64 arm64 ppc64le s390x') || 'amd64 arm64' }}
 
     steps:
       - uses: actions/checkout@v4

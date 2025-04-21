@@ -8,11 +8,6 @@ on:
         required: true
         description: |
           The tag used to build the collector image
-      include-arch-json:
-        type: string
-        required: true
-        description: |
-          JSON for matrix.include to select architectures and runners to build
     outputs:
       collector-builder-tag:
         description: The builder tag used by the build
