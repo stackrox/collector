@@ -11,7 +11,7 @@ on:
     outputs:
       collector-builder-tag:
         description: The builder tag used by the build
-        value: ${{ jobs.build-builder-image.outputs.collector-builder-tag || 'master' }}
+        value: ${{ jobs.builder-needs-rebuilding.outputs.collector-builder-tag || 'master' }}
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
@@ -72,8 +72,6 @@ jobs:
     - builder-needs-rebuilding
     if: |
       needs.builder-needs-rebuilding.outputs.build-image == 'true'
-    outputs:
-      collector-builder-tag: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}
     strategy:
       matrix:
         arch: [amd64, arm64, ppc64le]
@@ -204,6 +202,7 @@ jobs:
 
   create-multiarch-manifest:
     needs:
+    - builder-needs-rebuilding
     - build-builder-image
     - build-builder-image-remote-vm
     name: Create Multiarch manifest
@@ -211,9 +210,9 @@ jobs:
     if: |
       always() && !contains(join(needs.*.result, ','), 'failure')
       && (github.event_name != 'pull_request' ||
-      needs.build-builder-image.outputs.collector-builder-tag != 'cache')
+      needs.builder-needs-rebuilding.outputs.collector-builder-tag != 'cache')
     env:
-      COLLECTOR_BUILDER_TAG: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
+      COLLECTOR_BUILDER_TAG: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}
       ARCHS: ${{ (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && 'amd64 arm64 ppc64le s390x') || 'amd64 arm64' }}
 
     steps:
