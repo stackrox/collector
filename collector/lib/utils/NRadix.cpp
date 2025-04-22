@@ -26,9 +26,9 @@
  * SUCH DAMAGE.
  */
 
-#include "NRadix.h"
+#include "utils/NRadix.h"
 
-#include "Utility.h"
+#include "utils/Utility.h"
 
 namespace collector {
 

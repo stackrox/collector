@@ -1,9 +1,9 @@
 #include <utility>
 
 #include "NetworkConnection.h"
-#include "Utility.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "utils/Utility.h"
 
 namespace collector {
 

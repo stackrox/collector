@@ -27,6 +27,9 @@ extern "C" {
 #include <sys/syscall.h>
 #include <sys/types.h>
 }
+#include "grpc/GRPC.h"
+#include "grpc/GRPCUtil.h"
+
 #include "AbortHandler.h"
 #include "CollectorArgs.h"
 #include "CollectorService.h"
@@ -35,14 +38,12 @@ extern "C" {
 #include "Control.h"
 #include "Diagnostics.h"
 #include "EventNames.h"
-#include "FileSystem.h"
-#include "GRPC.h"
-#include "GRPCUtil.h"
 #include "GetStatus.h"
 #include "HostInfo.h"
-#include "Utility.h"
 #include "log/LogLevel.h"
 #include "log/Logging.h"
+#include "utils/FileSystem.h"
+#include "utils/Utility.h"
 
 static const int MAX_GRPC_CONNECTION_POLLS = 30;
 

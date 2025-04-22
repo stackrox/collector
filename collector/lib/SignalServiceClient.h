@@ -6,6 +6,7 @@
 
 #include <mutex>
 
+#include "grpc/DuplexGRPC.h"
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -13,9 +14,8 @@
 #include "api/v1/signal.pb.h"
 #include "internalapi/sensor/signal_iservice.grpc.pb.h"
 
-#include "DuplexGRPC.h"
 #include "SignalHandler.h"
-#include "StoppableThread.h"
+#include "utils/StoppableThread.h"
 
 namespace collector {
 

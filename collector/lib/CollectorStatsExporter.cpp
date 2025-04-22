@@ -4,13 +4,13 @@
 #include <iostream>
 #include <math.h>
 
-#include "Containers.h"
 #include "EventNames.h"
-#include "Utility.h"
 #include "log/Logging.h"
 #include "prometheus/gauge.h"
 #include "prometheus/summary.h"
 #include "system-inspector/Service.h"
+#include "utils/Containers.h"
+#include "utils/Utility.h"
 
 namespace collector {
 

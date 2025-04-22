@@ -32,8 +32,8 @@ extern "C" {
 #include <regex>
 #include <string>
 
-#include "Utility.h"
 #include "log/Logging.h"
+#include "utils/Utility.h"
 
 namespace collector {
 

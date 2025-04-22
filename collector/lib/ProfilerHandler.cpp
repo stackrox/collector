@@ -8,8 +8,8 @@
 #include <sys/stat.h>
 
 #include "Profiler.h"
-#include "Utility.h"
 #include "log/Logging.h"
+#include "utils/Utility.h"
 
 namespace collector {
 

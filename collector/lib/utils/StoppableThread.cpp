@@ -1,9 +1,9 @@
-#include "StoppableThread.h"
+#include "utils/StoppableThread.h"
 
 #include <iostream>
 #include <unistd.h>
 
-#include "Utility.h"
+#include "utils/Utility.h"
 
 namespace collector {
 

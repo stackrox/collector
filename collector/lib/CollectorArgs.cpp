@@ -6,8 +6,9 @@
 #include <sstream>
 #include <string>
 
+#include "grpc/GRPC.h"
+
 #include "CollectorConfig.h"
-#include "GRPC.h"
 #include "log/Logging.h"
 #include "optionparser.h"
 

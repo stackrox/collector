@@ -25,10 +25,10 @@
 #include "ProcessSignalHandler.h"
 #include "SelfCheckHandler.h"
 #include "SelfChecks.h"
-#include "TimeUtil.h"
-#include "Utility.h"
 #include "log/Logging.h"
 #include "logger.h"
+#include "utils/TimeUtil.h"
+#include "utils/Utility.h"
 
 namespace collector::system_inspector {
 

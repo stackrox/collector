@@ -7,7 +7,7 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/async_stream.h>
 
-#include "Utility.h"
+#include "utils/Utility.h"
 
 // This file defines an alternative client interface for bidirectional GRPC streams. The interface supports:
 // - simultaneous reading and writing without multithreading or low-level completion queue/tag work.

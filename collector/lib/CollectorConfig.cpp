@@ -9,16 +9,17 @@
 
 #include <libsinsp/sinsp.h>
 
+#include "grpc/GRPC.h"
+
 #include "CollectionMethod.h"
 #include "CollectorArgs.h"
-#include "EnvVar.h"
-#include "GRPC.h"
 #include "HostHeuristics.h"
 #include "HostInfo.h"
 #include "TlsConfig.h"
-#include "Utility.h"
 #include "log/Logging.h"
 #include "optionparser.h"
+#include "utils/EnvVar.h"
+#include "utils/Utility.h"
 
 namespace collector {
 

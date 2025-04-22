@@ -1,7 +1,8 @@
-add_subdirectory(log)
-
 file(GLOB COLLECTOR_LIB_SRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/log/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/grpc/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/system-inspector/*.cpp
 )
 
@@ -16,8 +17,6 @@ target_link_libraries(collector_lib civetweb::civetweb-cpp)
 target_link_libraries(collector_lib yaml-cpp::yaml-cpp)
 
 target_link_libraries(collector_lib rox-proto)
-
-target_link_libraries(collector_lib collector_logging)
 
 if(NOT DISABLE_PROFILING)
     find_library(GPERFTOOLS_PROFILER profiler)

@@ -10,7 +10,7 @@
 
 #include "CollectorConfig.h"
 #include "Inotify.h"
-#include "StoppableThread.h"
+#include "utils/StoppableThread.h"
 
 namespace collector {
 

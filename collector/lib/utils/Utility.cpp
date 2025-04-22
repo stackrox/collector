@@ -22,8 +22,8 @@ extern "C" {
 #include <google/protobuf/util/json_util.h>
 
 #include "HostInfo.h"
-#include "Utility.h"
 #include "log/Logging.h"
+#include "utils/Utility.h"
 
 namespace collector {
 
