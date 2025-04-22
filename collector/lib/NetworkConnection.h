@@ -136,12 +136,12 @@ class Address {
     }
   }
 
-  bool IsCanonicalExternalIp() const {
-    switch (family_) {
+  static bool IsCanonicalExternalIp(const Address& addr) {
+    switch (addr.family_) {
       case Family::IPV4:
-        return data_[0] == 0xffffffffULL;
+        return addr.data_[0] == 0xffffffffULL;
       case Family::IPV6:
-        return data_[0] == 0xffffffffffffffffULL && data_[1] == 0xffffffffffffffffULL;
+        return addr.data_[0] == 0xffffffffffffffffULL && addr.data_[1] == 0xffffffffffffffffULL;
       default:
         return false;
     }
@@ -272,8 +272,8 @@ class IPNet {
     return address_ > that.address_;
   }
 
-  bool IsCanonicalExternalIp() const {
-    return address_.IsCanonicalExternalIp();
+  static bool IsCanonicalExternalIp(const IPNet& ipnet) {
+    return Address::IsCanonicalExternalIp(ipnet.address_);
   }
 
  private:
@@ -313,8 +313,8 @@ class Endpoint {
     return port_ == 0 && network_.IsNull();
   }
 
-  bool IsCanonicalExternalIp() const {
-    return network_.IsCanonicalExternalIp();
+  static bool IsCanonicalExternalIp(const Endpoint& endpoint) {
+    return Address::IsCanonicalExternalIp(endpoint.address());
   }
 
  private:
@@ -407,8 +407,8 @@ class Connection {
 
   size_t Hash() const { return HashAll(container_, local_, remote_, flags_); }
 
-  bool IsCanonicalExternalIp() const {
-    return remote_.IsCanonicalExternalIp();
+  static bool HasCanonicalExternalIp(const Connection& conn) {
+    return Address::IsCanonicalExternalIp(conn.remote_.address());
   }
 
  private:
