@@ -155,14 +155,11 @@ void ConnectionTracker::CloseExternalUnnormalizedConnections(ConnMap* old_conn_s
   });
 }
 
-void ConnectionTracker::CloseConnectionsOnRuntimeConfigChange(ConnMap* old_conn_state, ConnMap* delta_conn, bool& prevEnableExternalIPs, bool enableExternalIPs) {
-  if (prevEnableExternalIPs != enableExternalIPs) {
-    if (enableExternalIPs) {
-      CloseNormalizedConnections(old_conn_state, delta_conn);
-    } else {
-      CloseExternalUnnormalizedConnections(old_conn_state, delta_conn);
-    }
-    prevEnableExternalIPs = enableExternalIPs;
+void ConnectionTracker::CloseConnectionsOnRuntimeConfigChange(ConnMap* old_conn_state, ConnMap* delta_conn, bool enableExternalIPs) {
+  if (enableExternalIPs) {
+    CloseNormalizedConnections(old_conn_state, delta_conn);
+  } else {
+    CloseExternalUnnormalizedConnections(old_conn_state, delta_conn);
   }
 }
 

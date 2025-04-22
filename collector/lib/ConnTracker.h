@@ -103,7 +103,7 @@ class ConnectionTracker {
   void CloseConnections(ConnMap* old_conn_state, ConnMap* delta_conn, std::function<bool(const Connection*)> predicate);
   void CloseNormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn);
   void CloseExternalUnnormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn);
-  void CloseConnectionsOnRuntimeConfigChange(ConnMap* old_conn_state, ConnMap* delta_conn, bool& prevEnableExternalIPs, bool enableExternalIPs);
+  void CloseConnectionsOnRuntimeConfigChange(ConnMap* old_conn_state, ConnMap* delta_conn, bool enableExternalIPs);
 
   // ComputeDelta computes a diff between new_state and old_state
   template <typename T>
