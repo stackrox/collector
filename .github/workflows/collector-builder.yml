@@ -213,6 +213,7 @@ jobs:
     name: Create Multiarch manifest
     runs-on: ubuntu-24.04
     if: |
+      always() && !contains(join(needs.*.result, ','), 'failure') &&
       needs.builder-needs-rebuilding.outputs.build-image == 'true'
     env:
       COLLECTOR_BUILDER_TAG: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}
