@@ -22,9 +22,9 @@ on:
         type: string
         required: false
         description: |
-          String seperated list of architectures
+          Space-seperated list of architectures
         default: |
-          ${{ ((github.event.name != 'pull_request' ||
+          ${{ ((github.event_name != 'pull_request' ||
             contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')) &&
             'amd64 arm64 ppc64le s390x') || 'amd64 arm64' }}
 
