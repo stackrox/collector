@@ -5,5 +5,4 @@ collections:
 - community.docker
 - containers.podman
 - kubernetes.core
-- name: ibm.cloudcollection
-  version: 1.51.0
+- ibm.cloudcollection
