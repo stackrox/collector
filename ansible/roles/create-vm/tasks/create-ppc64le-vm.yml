@@ -53,7 +53,7 @@
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
   failed_when:
     - pi_network_existing_output.rc != 0
-    - '"could not be found" not in ibmcloud_pi_network_existing_output.stderr'
+    - '"could not be found" not in pi_network_existing_output.stderr'
   register: pi_network_existing_output
 
 - set_fact:
