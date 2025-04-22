@@ -115,7 +115,7 @@ bool ConnectionTracker::ShouldNormalizeConnection(const Connection* conn) const 
   Endpoint local, remote = conn->remote();
   IPNet ipnet = NormalizeAddressNoLock(remote.address(), false);
 
-  return IPNet::IsCanonicalExternalIp(ipnet);
+  return Address::IsCanonicalExternalIp(ipnet.address());
 }
 
 /**
@@ -141,7 +141,7 @@ void ConnectionTracker::CloseConnections(ConnMap* old_conn_state, ConnMap* delta
  */
 void ConnectionTracker::CloseNormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn) {
   CloseConnections(old_conn_state, delta_conn, [](const Connection* conn) {
-    return Connection::HasCanonicalExternalIp(*conn);
+    return Address::IsCanonicalExternalIp(conn->remote().address());
   });
 }
 
@@ -151,7 +151,7 @@ void ConnectionTracker::CloseNormalizedConnections(ConnMap* old_conn_state, Conn
  */
 void ConnectionTracker::CloseExternalUnnormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn) {
   CloseConnections(old_conn_state, delta_conn, [this](const Connection* conn) {
-    return ShouldNormalizeConnection(conn) && !Connection::HasCanonicalExternalIp(*conn);
+    return ShouldNormalizeConnection(conn) && !Address::IsCanonicalExternalIp(conn->remote().address());
   });
 }
 

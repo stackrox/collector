@@ -272,10 +272,6 @@ class IPNet {
     return address_ > that.address_;
   }
 
-  static bool IsCanonicalExternalIp(const IPNet& ipnet) {
-    return Address::IsCanonicalExternalIp(ipnet.address_);
-  }
-
  private:
   friend std::ostream& operator<<(std::ostream& os, const IPNet& net) {
     return os << net.address_ << "/" << net.bits_;
@@ -311,10 +307,6 @@ class Endpoint {
 
   bool IsNull() const {
     return port_ == 0 && network_.IsNull();
-  }
-
-  static bool IsCanonicalExternalIp(const Endpoint& endpoint) {
-    return Address::IsCanonicalExternalIp(endpoint.address());
   }
 
  private:
@@ -406,10 +398,6 @@ class Connection {
   }
 
   size_t Hash() const { return HashAll(container_, local_, remote_, flags_); }
-
-  static bool HasCanonicalExternalIp(const Connection& conn) {
-    return Address::IsCanonicalExternalIp(conn.remote_.address());
-  }
 
  private:
   std::string container_;

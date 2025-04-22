@@ -176,22 +176,6 @@ TEST(TestIPNet, TestIsCanonicalExternalIp) {
 
   EXPECT_FALSE(Address::IsCanonicalExternalIp(addr_ipv6_1));
   EXPECT_TRUE(Address::IsCanonicalExternalIp(addr_ipv6_2));
-
-  Endpoint end1(addr1, 80);
-  Endpoint end2(addr2, 9999);
-  Endpoint end3(addr3, 9999);
-
-  EXPECT_FALSE(Endpoint::IsCanonicalExternalIp(end1));
-  EXPECT_FALSE(Endpoint::IsCanonicalExternalIp(end2));
-  EXPECT_TRUE(Endpoint::IsCanonicalExternalIp(end3));
-
-  Connection conn1("xyz", end1, end2, L4Proto::TCP, true);
-  Connection conn2("xyz", end1, end3, L4Proto::TCP, true);
-  Connection conn3("xyz", end3, end2, L4Proto::TCP, true);
-
-  EXPECT_FALSE(Connection::HasCanonicalExternalIp(conn1));
-  EXPECT_TRUE(Connection::HasCanonicalExternalIp(conn2));
-  EXPECT_FALSE(Connection::HasCanonicalExternalIp(conn3));
 }
 
 }  // namespace
