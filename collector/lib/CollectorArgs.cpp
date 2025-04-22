@@ -8,7 +8,7 @@
 
 #include "CollectorConfig.h"
 #include "GRPC.h"
-#include "Logging.h"
+#include "log/Logging.h"
 #include "optionparser.h"
 
 namespace collector {

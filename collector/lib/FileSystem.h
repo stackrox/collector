@@ -10,8 +10,8 @@
 #include <unistd.h>
 #include <zlib.h>
 
-#include "Logging.h"
 #include "Utility.h"
+#include "log/Logging.h"
 
 namespace collector {
 

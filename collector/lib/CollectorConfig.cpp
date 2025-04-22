@@ -15,9 +15,9 @@
 #include "GRPC.h"
 #include "HostHeuristics.h"
 #include "HostInfo.h"
-#include "Logging.h"
 #include "TlsConfig.h"
 #include "Utility.h"
+#include "log/Logging.h"
 #include "optionparser.h"
 
 namespace collector {

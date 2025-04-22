@@ -1,7 +1,8 @@
 #include "CollectorRuntimeConfigInspector.h"
 
-#include <Logging.h>
 #include <string>
+
+#include <log/Logging.h>
 
 #include <google/protobuf/util/json_util.h>
 

@@ -13,9 +13,9 @@
 #include "Containers.h"
 #include "FileSystem.h"
 #include "Hash.h"
-#include "Logging.h"
 #include "ProcfsScraper_internal.h"
 #include "Utility.h"
+#include "log/Logging.h"
 
 namespace collector {
 

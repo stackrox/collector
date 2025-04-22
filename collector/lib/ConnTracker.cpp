@@ -4,8 +4,8 @@
 
 #include "CollectorStats.h"
 #include "Containers.h"
-#include "Logging.h"
 #include "Utility.h"
+#include "log/Logging.h"
 
 namespace collector {
 

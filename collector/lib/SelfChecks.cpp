@@ -5,8 +5,8 @@
 
 #include <sys/wait.h>
 
-#include "Logging.h"
 #include "Utility.h"
+#include "log/Logging.h"
 
 namespace collector {
 

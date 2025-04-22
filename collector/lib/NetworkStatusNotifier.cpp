@@ -5,12 +5,12 @@
 #include "CollectorStats.h"
 #include "DuplexGRPC.h"
 #include "GRPCUtil.h"
-#include "Logging.h"
 #include "Profiler.h"
 #include "ProtoUtil.h"
 #include "RateLimit.h"
 #include "TimeUtil.h"
 #include "Utility.h"
+#include "log/Logging.h"
 
 namespace collector {
 

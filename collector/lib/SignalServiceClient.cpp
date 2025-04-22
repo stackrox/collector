@@ -3,9 +3,9 @@
 #include <fstream>
 
 #include "GRPCUtil.h"
-#include "Logging.h"
 #include "ProtoUtil.h"
 #include "Utility.h"
+#include "log/Logging.h"
 
 namespace collector {
 

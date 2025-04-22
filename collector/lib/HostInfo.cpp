@@ -30,7 +30,7 @@ You should have received a copy of the GNU General Public License along with thi
 #include <linux/bpf.h>
 
 #include "FileSystem.h"
-#include "Logging.h"
+#include "log/Logging.h"
 
 namespace collector {
 

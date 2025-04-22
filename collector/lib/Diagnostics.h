@@ -4,7 +4,7 @@
 #include <sstream>
 #include <string>
 
-#include "Logging.h"
+#include "log/Logging.h"
 
 namespace collector {
 

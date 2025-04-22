@@ -7,9 +7,9 @@
 #include <json/json.h>
 #include <sys/stat.h>
 
-#include "Logging.h"
 #include "Profiler.h"
 #include "Utility.h"
+#include "log/Logging.h"
 
 namespace collector {
 

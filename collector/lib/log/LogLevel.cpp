@@ -4,7 +4,7 @@
 
 #include <json/json.h>
 
-#include "Logging.h"
+#include "log/Logging.h"
 
 namespace collector {
 

@@ -10,7 +10,7 @@
 #include <thread>
 #include <utility>
 
-#include "Logging.h"
+#include "log/Logging.h"
 
 namespace collector {
 

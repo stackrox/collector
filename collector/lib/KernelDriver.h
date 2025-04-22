@@ -13,8 +13,8 @@ extern "C" {
 #include "CollectorConfig.h"
 #include "EventNames.h"
 #include "FileSystem.h"
-#include "Logging.h"
 #include "Utility.h"
+#include "log/Logging.h"
 #include "system-inspector/Service.h"
 
 extern const struct syscall_evt_pair g_syscall_table[];  // defined in libscap

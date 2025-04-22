@@ -40,9 +40,9 @@ extern "C" {
 #include "GRPCUtil.h"
 #include "GetStatus.h"
 #include "HostInfo.h"
-#include "LogLevel.h"
-#include "Logging.h"
 #include "Utility.h"
+#include "log/LogLevel.h"
+#include "log/Logging.h"
 
 static const int MAX_GRPC_CONNECTION_POLLS = 30;
 

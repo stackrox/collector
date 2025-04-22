@@ -6,8 +6,8 @@
 
 #include "Containers.h"
 #include "EventNames.h"
-#include "Logging.h"
 #include "Utility.h"
+#include "log/Logging.h"
 #include "prometheus/gauge.h"
 #include "prometheus/summary.h"
 #include "system-inspector/Service.h"

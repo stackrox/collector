@@ -16,10 +16,10 @@
 
 #include "CollectionMethod.h"
 #include "HostConfig.h"
-#include "Logging.h"
 #include "NetworkConnection.h"
 #include "TlsConfig.h"
 #include "json/value.h"
+#include "log/Logging.h"
 #include "optionparser.h"
 
 namespace collector {
