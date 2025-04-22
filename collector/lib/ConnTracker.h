@@ -4,10 +4,10 @@
 #include <mutex>
 #include <vector>
 
-#include "Containers.h"
-#include "Hash.h"
-#include "NRadix.h"
 #include "NetworkConnection.h"
+#include "utils/Containers.h"
+#include "utils/Hash.h"
+#include "utils/NRadix.h"
 
 namespace collector {
 

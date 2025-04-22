@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include "grpc/GRPCUtil.h"
+
 #include "CollectionMethod.h"
 #include "CollectorRuntimeConfigInspector.h"
 #include "CollectorStatsExporter.h"
@@ -9,15 +11,14 @@
 #include "ConnTracker.h"
 #include "ContainerInfoInspector.h"
 #include "Diagnostics.h"
-#include "GRPCUtil.h"
 #include "GetStatus.h"
-#include "LogLevel.h"
 #include "NetworkSignalHandler.h"
 #include "NetworkStatusInspector.h"
 #include "NetworkStatusNotifier.h"
 #include "ProfilerHandler.h"
-#include "Utility.h"
+#include "log/LogLevel.h"
 #include "system-inspector/Service.h"
+#include "utils/Utility.h"
 
 namespace collector {
 

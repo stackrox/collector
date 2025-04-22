@@ -5,9 +5,9 @@
 
 #include "CollectorConfig.h"
 #include "CollectorStats.h"
-#include "StoppableThread.h"
 #include "prometheus/registry.h"
 #include "system-inspector/Service.h"
+#include "utils/StoppableThread.h"
 
 namespace collector {
 

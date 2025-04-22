@@ -6,9 +6,10 @@
 #include <sstream>
 #include <string>
 
+#include "grpc/GRPC.h"
+
 #include "CollectorConfig.h"
-#include "GRPC.h"
-#include "Logging.h"
+#include "log/Logging.h"
 #include "optionparser.h"
 
 namespace collector {

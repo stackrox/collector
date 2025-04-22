@@ -1,8 +1,9 @@
 #include "NetworkConnectionInfoServiceComm.h"
 
-#include "GRPCUtil.h"
+#include "grpc/GRPCUtil.h"
+
 #include "HostInfo.h"
-#include "Utility.h"
+#include "utils/Utility.h"
 
 namespace collector {
 

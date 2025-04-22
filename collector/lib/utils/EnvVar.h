@@ -13,8 +13,8 @@
 #include <optional>
 #include <utility>
 
-#include "Logging.h"
-#include "Utility.h"
+#include "log/Logging.h"
+#include "utils/Utility.h"
 
 namespace collector {
 

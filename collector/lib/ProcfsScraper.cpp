@@ -10,12 +10,12 @@
 #include <netinet/tcp.h>
 
 #include "CollectorStats.h"
-#include "Containers.h"
-#include "FileSystem.h"
-#include "Hash.h"
-#include "Logging.h"
 #include "ProcfsScraper_internal.h"
-#include "Utility.h"
+#include "log/Logging.h"
+#include "utils/Containers.h"
+#include "utils/FileSystem.h"
+#include "utils/Hash.h"
+#include "utils/Utility.h"
 
 namespace collector {
 

@@ -2,18 +2,18 @@
 #include <mutex>
 #include <string>
 
+#include "grpc/DuplexGRPC.h"
 #include <google/protobuf/util/time_util.h>
 
 #include "internalapi/sensor/network_connection_iservice.grpc.pb.h"
 
 #include "CollectorArgs.h"
 #include "CollectorConfig.h"
-#include "DuplexGRPC.h"
 #include "NetworkStatusNotifier.h"
 #include "RateLimit.h"
-#include "Utility.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "utils/Utility.h"
 
 namespace collector {
 

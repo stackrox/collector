@@ -3,6 +3,7 @@
 
 #include <memory>
 
+#include "grpc/DuplexGRPC.h"
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -10,8 +11,6 @@
 #include <grpcpp/security/credentials.h>
 
 #include "internalapi/sensor/network_connection_iservice.grpc.pb.h"
-
-#include "DuplexGRPC.h"
 
 namespace collector {
 

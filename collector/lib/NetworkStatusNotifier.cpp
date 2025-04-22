@@ -1,16 +1,16 @@
 #include "NetworkStatusNotifier.h"
 
+#include "grpc/DuplexGRPC.h"
+#include "grpc/GRPCUtil.h"
 #include <google/protobuf/util/time_util.h>
 
 #include "CollectorStats.h"
-#include "DuplexGRPC.h"
-#include "GRPCUtil.h"
-#include "Logging.h"
 #include "Profiler.h"
 #include "ProtoUtil.h"
 #include "RateLimit.h"
-#include "TimeUtil.h"
-#include "Utility.h"
+#include "log/Logging.h"
+#include "utils/TimeUtil.h"
+#include "utils/Utility.h"
 
 namespace collector {
 

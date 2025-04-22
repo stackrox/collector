@@ -1,5 +1,8 @@
 file(GLOB COLLECTOR_LIB_SRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/log/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/grpc/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/system-inspector/*.cpp
 )
 

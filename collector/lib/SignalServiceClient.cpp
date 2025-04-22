@@ -2,10 +2,11 @@
 
 #include <fstream>
 
-#include "GRPCUtil.h"
-#include "Logging.h"
+#include "grpc/GRPCUtil.h"
+
 #include "ProtoUtil.h"
-#include "Utility.h"
+#include "log/Logging.h"
+#include "utils/Utility.h"
 
 namespace collector {
 

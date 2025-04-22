@@ -31,9 +31,9 @@
 
 #include <mutex>
 
-#include "Logging.h"
 #include "NetworkConnection.h"
-#include "Utility.h"
+#include "log/Logging.h"
+#include "utils/Utility.h"
 
 namespace collector {
 

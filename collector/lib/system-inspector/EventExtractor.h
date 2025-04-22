@@ -7,7 +7,7 @@
 #include "libsinsp/filterchecks.h"
 #include "libsinsp/sinsp.h"
 
-#include "Logging.h"
+#include "log/Logging.h"
 
 namespace collector::system_inspector {
 

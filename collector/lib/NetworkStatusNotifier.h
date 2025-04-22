@@ -12,7 +12,7 @@
 #include "ProcfsScraper.h"
 #include "ProtoAllocator.h"
 #include "RateLimit.h"
-#include "StoppableThread.h"
+#include "utils/StoppableThread.h"
 
 namespace collector {
 

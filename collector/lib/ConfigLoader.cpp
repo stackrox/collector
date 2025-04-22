@@ -6,8 +6,8 @@
 
 #include "internalapi/sensor/collector.pb.h"
 
-#include "EnvVar.h"
-#include "Logging.h"
+#include "log/Logging.h"
+#include "utils/EnvVar.h"
 
 namespace collector {
 
