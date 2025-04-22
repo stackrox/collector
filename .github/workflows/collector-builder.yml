@@ -8,6 +8,16 @@ on:
         required: true
         description: |
           The tag used to build the collector image
+      architectures:
+        type: string
+        required: false
+        description: |
+          String seperated list of architectures
+        default: |
+          ${{ ((github.event.name != 'pull_request' ||
+            contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')) &&
+            'amd64 arm64 ppc64le s390x') || 'amd64 arm64' }}
+
     outputs:
       collector-builder-tag:
         description: The builder tag used by the build
@@ -81,7 +91,7 @@ jobs:
       matrix:
         arch: [amd64, arm64, ppc64le]
         exclude:
-          - arch: ${{ (!contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && 'ppc64le') || '' }}
+          - arch: ${{ contains(inputs.architectures, 'ppc64le') && '' || 'ppc64le' }}
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
 
     env:
@@ -134,7 +144,7 @@ jobs:
     - builder-needs-rebuilding
     if: |
       needs.builder-needs-rebuilding.outputs.build-image == 'true' &&
-      contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
+      contains(inputs.architectures, 's390x')
     strategy:
       matrix:
         arch: [s390x]
@@ -190,7 +200,7 @@ jobs:
             echo "collector_builder_tag: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}"
           } > ${{ github.workspace }}/ansible/secrets.yml
 
-      - name: Build s390x images
+      - name: Build images
         timeout-minutes: 480
         run: |
           ansible-playbook \
@@ -217,7 +227,7 @@ jobs:
       needs.builder-needs-rebuilding.outputs.build-image == 'true'
     env:
       COLLECTOR_BUILDER_TAG: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}
-      ARCHS: ${{ (contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') && 'amd64 arm64 ppc64le s390x') || 'amd64 arm64' }}
+      ARCHS: ${{ inputs.architectures }}
 
     steps:
       - uses: actions/checkout@v4
