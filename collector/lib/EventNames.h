@@ -1,5 +1,4 @@
-#ifndef _EVENT_NAMES_H_
-#define _EVENT_NAMES_H_
+#pragma once
 
 #include <array>
 #include <string>
@@ -50,5 +49,3 @@ class EventNames {
 };
 
 }  // namespace collector
-
-#endif  // _EVENT_NAMES_H_

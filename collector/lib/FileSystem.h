@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_FILESYSTEM_H
-#define COLLECTOR_FILESYSTEM_H
+#pragma once
 
 #include <array>
 #include <cstdio>
@@ -188,5 +187,3 @@ class GZFileHandle : public ResourceWrapper<gzFile, GZFileHandle> {
 };
 
 }  // namespace collector
-
-#endif  // COLLECTOR_FILESYSTEM_H

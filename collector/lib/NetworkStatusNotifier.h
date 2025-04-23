@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_NETWORKSTATUSNOTIFIER_H
-#define COLLECTOR_NETWORKSTATUSNOTIFIER_H
+#pragma once
 
 #include <memory>
 
@@ -82,5 +81,3 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
 };
 
 }  // namespace collector
-
-#endif  // COLLECTOR_NETWORKSTATUSNOTIFIER_H

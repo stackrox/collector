@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_NETWORKSIGNALHANDLER_H
-#define COLLECTOR_NETWORKSIGNALHANDLER_H
+#pragma once
 
 #include <memory>
 #include <optional>
@@ -42,5 +41,3 @@ class NetworkSignalHandler final : public SignalHandler {
 };
 
 }  // namespace collector
-
-#endif  // COLLECTOR_NETWORKSIGNALHANDLER_H

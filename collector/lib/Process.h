@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_PROCESS_H
-#define COLLECTOR_PROCESS_H
+#pragma once
 
 #include <condition_variable>
 #include <cstdint>
@@ -99,5 +98,3 @@ class Process : public IProcess {
 std::ostream& operator<<(std::ostream& os, const IProcess& process);
 
 }  // namespace collector
-
-#endif

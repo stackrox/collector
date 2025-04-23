@@ -1,5 +1,4 @@
-#ifndef _PROTO_FORMATTER_H_
-#define _PROTO_FORMATTER_H_
+#pragma once
 
 #include <utility>
 
@@ -32,5 +31,3 @@ class ProtoSignalFormatter : public BaseProtoSignalFormatter, protected ProtoAll
 };
 
 }  // namespace collector
-
-#endif  // _PROTO_FORMATTER_H_

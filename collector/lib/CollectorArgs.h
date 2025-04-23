@@ -1,5 +1,4 @@
-#ifndef _COLLECTOR_ARGS_H_
-#define _COLLECTOR_ARGS_H_
+#pragma once
 
 #include <optional>
 #include <string>
@@ -41,5 +40,3 @@ class CollectorArgs {
 };
 
 } /* namespace collector */
-
-#endif /* _COLLECTOR_ARGS_H_ */

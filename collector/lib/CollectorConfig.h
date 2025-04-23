@@ -1,5 +1,4 @@
-#ifndef _COLLECTOR_CONFIG_H_
-#define _COLLECTOR_CONFIG_H_
+#pragma once
 
 #include <filesystem>
 #include <optional>
@@ -269,5 +268,3 @@ class CollectorConfig {
 std::ostream& operator<<(std::ostream& os, const CollectorConfig& c);
 
 }  // end namespace collector
-
-#endif  // _COLLECTOR_CONFIG_H_

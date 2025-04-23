@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_KERNEL_DRIVER_H
-#define COLLECTOR_KERNEL_DRIVER_H
+#pragma once
 
 #include <string>
 
@@ -78,5 +77,3 @@ class KernelDriverCOREEBPF : public IKernelDriver {
   }
 };
 }  // namespace collector
-
-#endif

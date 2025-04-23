@@ -1,5 +1,4 @@
-#ifndef _SYSTEM_INSPECTOR_
-#define _SYSTEM_INSPECTOR_
+#pragma once
 
 #include <atomic>
 #include <cstdint>
@@ -56,5 +55,3 @@ class SystemInspector {
 };
 
 }  // namespace collector::system_inspector
-
-#endif /* _SYSTEM_INSPECTOR_ */

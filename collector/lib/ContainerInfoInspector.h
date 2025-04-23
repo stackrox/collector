@@ -1,5 +1,4 @@
-#ifndef _CONTAINER_INFO_INSPECTOR_
-#define _CONTAINER_INFO_INSPECTOR_
+#pragma once
 
 #include <CivetServer.h>
 #include <civetweb.h>
@@ -34,5 +33,3 @@ class ContainerInfoInspector : public CivetWrapper {
 };
 
 }  // namespace collector
-
-#endif  //_CONTAINER_INFO_INSPECTOR_

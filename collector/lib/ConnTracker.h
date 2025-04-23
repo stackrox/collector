@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_CONNTRACKER_H
-#define COLLECTOR_CONNTRACKER_H
+#pragma once
 
 #include <mutex>
 #include <vector>
@@ -394,5 +393,3 @@ bool ConnectionTracker::CheckIfOldConnShouldBeInactiveInDelta(const T& conn_key,
 }
 
 }  // namespace collector
-
-#endif  // COLLECTOR_CONNTRACKER_H

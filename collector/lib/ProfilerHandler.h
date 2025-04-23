@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_PROFILERHANDLER_H
-#define COLLECTOR_PROFILERHANDLER_H
+#pragma once
 
 #include <memory>
 #include <mutex>
@@ -48,5 +47,3 @@ class ProfilerHandler : public CivetWrapper {
   std::mutex mutex_;
 };
 }  // namespace collector
-
-#endif  // COLLECTOR_PROFILERHANDLER_H

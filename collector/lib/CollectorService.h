@@ -1,5 +1,4 @@
-#ifndef _COLLECTOR_SERVICE_H_
-#define _COLLECTOR_SERVICE_H_
+#pragma once
 
 #include <prometheus/exposer.h>
 #include <prometheus/registry.h>
@@ -58,5 +57,3 @@ class CollectorService {
 };
 
 }  // namespace collector
-
-#endif  // _COLLECTOR_SERVICE_H_

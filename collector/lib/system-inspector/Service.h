@@ -1,5 +1,4 @@
-#ifndef _SYSTEM_INSPECTOR_SERVICE_H_
-#define _SYSTEM_INSPECTOR_SERVICE_H_
+#pragma once
 
 #include <atomic>
 #include <bitset>
@@ -89,5 +88,3 @@ class Service : public SystemInspector {
 };
 
 }  // namespace collector::system_inspector
-
-#endif  // _SYSTEM_INSPECTOR_SERVICE_H_

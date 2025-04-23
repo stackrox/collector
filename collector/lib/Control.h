@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_CONTROL_H
-#define COLLECTOR_CONTROL_H
+#pragma once
 
 namespace collector {
 
@@ -9,5 +8,3 @@ enum ControlValue {
 };
 
 }
-
-#endif

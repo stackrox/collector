@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_TIME_UTIL_H
-#define COLLECTOR_TIME_UTIL_H
+#pragma once
 
 #include <chrono>
 
@@ -11,5 +10,3 @@ inline int64_t NowMicros() {
 }
 
 }  // namespace collector
-
-#endif  // COLLECTOR_TIME_UTIL_H

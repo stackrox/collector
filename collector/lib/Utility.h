@@ -1,5 +1,4 @@
-
-#ifndef _UTILITY_H_
+#pragma once
 #define _UTILITY_H_
 
 #include <cerrno>
@@ -108,5 +107,3 @@ std::optional<std::string> SanitizedUTF8(std::string_view str);
 
 void LogProtobufMessage(const google::protobuf::Message& msg);
 }  // namespace collector
-
-#endif  // _UTILITY_H_

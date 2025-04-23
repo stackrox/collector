@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_GRPC_H
-#define COLLECTOR_GRPC_H
+#pragma once
 
 #include <optional>
 #include <string_view>
@@ -20,5 +19,3 @@ std::pair<option::ArgStatus, std::string> CheckGrpcServer(std::string_view serve
 std::pair<option::ArgStatus, std::string> CheckGrpcServer(const char* server);
 
 }  // namespace collector
-
-#endif  // COLLECTOR_GRPC_H

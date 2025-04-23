@@ -1,10 +1,7 @@
-#ifndef _COLLECTOR_VERSION_H_
-#define _COLLECTOR_VERSION_H_
+#pragma once
 
 #define COLLECTOR_VERSION "${COLLECTOR_VERSION}"
 
 inline const char* GetCollectorVersion() {
   return COLLECTOR_VERSION;
 }
-
-#endif  // _COLLECTOR_VERSION_H_

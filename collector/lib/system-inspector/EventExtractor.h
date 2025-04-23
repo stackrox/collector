@@ -1,5 +1,4 @@
-#ifndef _SYSTEM_INSPECTOR_EVENT_EXTRACTOR_H_
-#define _SYSTEM_INSPECTOR_EVENT_EXTRACTOR_H_
+#pragma once
 
 #include <string>
 #include <vector>
@@ -161,5 +160,3 @@ class EventExtractor {
 };
 
 }  // namespace collector::system_inspector
-
-#endif  // _SYSTEM_INSPECTOR_EVENT_EXTRACTOR_H_

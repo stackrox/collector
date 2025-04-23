@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_COLLECTORSTATS_H
-#define COLLECTOR_COLLECTORSTATS_H
+#pragma once
 
 #include <array>
 #include <atomic>
@@ -141,5 +140,3 @@ ScopedTimer<T> scoped_timer(T* timer_array, size_t index) {
 #define COUNTER_ZERO(i) COUNTER_SET(i, 0)
 
 }  // namespace collector
-
-#endif  // COLLECTOR_COLLECTORSTATS_H

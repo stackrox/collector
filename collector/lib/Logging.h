@@ -1,5 +1,4 @@
-#ifndef _LOGGING_H_
-#define _LOGGING_H_
+#pragma once
 
 #include <chrono>
 #include <cstdint>
@@ -246,5 +245,3 @@ class LogMessage {
   collector::logging::LogMessage(CLOG_VAR(_clog_stmt_))
 
 #define CLOG_THROTTLED(lvl, interval) CLOG_THROTTLED_IF(true, lvl, interval)
-
-#endif /* _LOG_LEVEL_H_ */

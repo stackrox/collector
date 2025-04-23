@@ -1,5 +1,4 @@
-#ifndef _LOG_LEVEL_H_
-#define _LOG_LEVEL_H_
+#pragma once
 
 #include "CivetWrapper.h"
 
@@ -18,5 +17,3 @@ class LogLevelHandler : public CivetWrapper {
 };
 
 }  // namespace collector
-
-#endif  // _LOG_LEVEL_H_

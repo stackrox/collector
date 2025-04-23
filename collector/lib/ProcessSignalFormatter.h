@@ -1,5 +1,4 @@
-#ifndef _PROCESS_SIGNAL_FORMATTER_H_
-#define _PROCESS_SIGNAL_FORMATTER_H_
+#pragma once
 
 #include <memory>
 
@@ -63,5 +62,3 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
 };
 
 }  // namespace collector
-
-#endif  // _PROCESS_SIGNAL_FORMATTER_H_

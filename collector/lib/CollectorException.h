@@ -1,5 +1,4 @@
-#ifndef _COLLECTOR_EXCEPTION_H_
-#define _COLLECTOR_EXCEPTION_H_
+#pragma once
 
 #include <exception>
 #include <string>
@@ -19,5 +18,3 @@ class CollectorException : public std::exception {
 };
 
 }  // namespace collector
-
-#endif  // _COLLECTOR_EXCEPTION_H_

@@ -1,5 +1,4 @@
-#ifndef _GRPC_UTIL_H_
-#define _GRPC_UTIL_H_
+#pragma once
 
 #include <chrono>
 #include <functional>
@@ -18,5 +17,3 @@ bool WaitForChannelReady(
     const std::chrono::nanoseconds& poll_interval = std::chrono::seconds(1));
 
 }  // namespace collector
-
-#endif  // _GRPC_UTIL_H_

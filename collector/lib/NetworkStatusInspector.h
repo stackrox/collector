@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_NETWORKSTATUSINSPECTOR_H
-#define COLLECTOR_NETWORKSTATUSINSPECTOR_H
+#pragma once
 
 #include <memory>
 
@@ -39,5 +38,3 @@ class NetworkStatusInspector : public CivetWrapper {
   bool handleGetConnections(struct mg_connection* conn, const QueryParams& queryParams);
 };
 }  // namespace collector
-
-#endif

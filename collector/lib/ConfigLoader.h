@@ -1,5 +1,4 @@
-#ifndef _CONFIG_LOADER_H_
-#define _CONFIG_LOADER_H_
+#pragma once
 
 #include <optional>
 
@@ -267,5 +266,3 @@ class ConfigLoader {
 };
 
 }  // namespace collector
-
-#endif  // _CONFIG_LOADER_H_

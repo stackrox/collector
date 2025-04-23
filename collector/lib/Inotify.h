@@ -1,5 +1,4 @@
-#ifndef _INOTIFY_H_
-#define _INOTIFY_H_
+#pragma once
 
 #include <array>
 #include <cstdint>
@@ -288,5 +287,3 @@ class Inotify {
 };
 
 }  // namespace collector
-
-#endif  // _INOTIFY_H_

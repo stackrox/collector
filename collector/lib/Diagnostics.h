@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_DIAGNOSTICS_H
-#define COLLECTOR_DIAGNOSTICS_H
+#pragma once
 
 #include <sstream>
 #include <string>
@@ -66,5 +65,3 @@ class StartupDiagnostics : public IDiagnostics {
 };
 
 }  // namespace collector
-
-#endif

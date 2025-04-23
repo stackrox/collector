@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_PROFILER_H
-#define COLLECTOR_PROFILER_H
+#pragma once
 
 #include <memory>
 #include <string>
@@ -62,5 +61,3 @@ class Profiler {
 };
 }  // namespace collector
 #endif
-
-#endif  // COLLECTOR_PROFILER_H

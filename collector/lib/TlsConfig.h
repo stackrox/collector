@@ -1,5 +1,4 @@
-#ifndef _TLS_H_
-#define _TLS_H_
+#pragma once
 
 #include <filesystem>
 #include <utility>
@@ -21,5 +20,3 @@ class TlsConfig {
   std::filesystem::path clientCert_;
   std::filesystem::path clientKey_;
 };
-
-#endif  // _TLS_H_

@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_HASH_H
-#define COLLECTOR_HASH_H
+#pragma once
 
 #include <algorithm>
 #include <unordered_map>
@@ -101,5 +100,3 @@ template <typename K, typename V, typename E = std::equal_to<K>>
 using UnorderedMap = std::unordered_map<K, V, Hasher, E>;
 
 }  // namespace collector
-
-#endif  // COLLECTOR_HASH_H

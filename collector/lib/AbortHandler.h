@@ -1,6 +1,4 @@
-
-#ifndef _ABORT_HANDLER_H_
-#define _ABORT_HANDLER_H_
+#pragma once
 
 #include <csignal>
 #include <cstdio>
@@ -26,5 +24,3 @@ extern "C" {
 //
 // [1]: https://en.cppreference.com/w/cpp/utility/program/signal
 extern "C" void AbortHandler(int signum);
-
-#endif  // _ABORT_H_

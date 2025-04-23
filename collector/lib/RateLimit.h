@@ -1,5 +1,4 @@
-#ifndef _RATE_LIMIT_H_
-#define _RATE_LIMIT_H_
+#pragma once
 
 #include <unordered_map>
 
@@ -53,5 +52,3 @@ class CountLimiter {
   std::unordered_map<std::string, TokenBucket> cache_;
 };
 }  // namespace collector
-
-#endif  // _RATE_LIMIT_H_
