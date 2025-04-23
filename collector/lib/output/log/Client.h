@@ -8,12 +8,15 @@
 
 namespace collector::output::log {
 class Client : public IClient {
-  bool Recreate() override { return true; }
-
-  SignalHandler::Result SendMsg(const sensor::ProcessSignal& msg) override {
-    LogProtobufMessage(msg);
+  SignalHandler::Result SendMsg(const MsgToSensor& msg) override {
+    // This works because all variants of MsgToSensor inherit from
+    // google::protobuf::Message, make sure it stays that way!
+    std::visit([](const auto& v) { LogProtobufMessage(v); }, msg);
     return SignalHandler::PROCESSED;
   }
+
+  // Always ready to send
+  bool IsReady() override { return true; }
 };
 }  // namespace collector::output::log
 #endif

@@ -40,8 +40,7 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
   // Network tracking
   if (!config_.grpc_channel || !config_.DisableNetworkFlows()) {
     // In case if no GRPC is used, continue to setup networking infrasturcture
-    // with empty grpc_channel. NetworkConnectionInfoServiceComm will pick it
-    // up and use stdout instead.
+    // with empty grpc_channel. output_ will pick it up and use stdout instead.
     conn_tracker_ = std::make_shared<ConnectionTracker>();
     UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs(config_.IgnoredL4ProtoPortPairs());
     conn_tracker_->UpdateIgnoredL4ProtoPortPairs(std::move(ignored_l4proto_port_pairs));
@@ -52,6 +51,7 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
         conn_tracker_,
         config_,
         &system_inspector_,
+        &output_,
         exporter_.GetRegistry().get());
 
     auto network_signal_handler = std::make_unique<NetworkSignalHandler>(system_inspector_.GetInspector(), conn_tracker_, system_inspector_.GetUserspaceStats());
@@ -98,6 +98,12 @@ void CollectorService::RunForever() {
 
   CLOG(INFO) << "Network scrape interval set to " << config_.ScrapeInterval() << " seconds";
 
+  auto should_stop = [this] {
+    return control_->load(std::memory_order_relaxed) == STOP_COLLECTOR;
+  };
+
+  output_.WaitReady(should_stop);
+
   if (net_status_notifier_) {
     net_status_notifier_->Start();
   }
@@ -108,8 +114,7 @@ void CollectorService::RunForever() {
 
   system_inspector_.Start();
 
-  ControlValue cv;
-  while ((cv = control_->load(std::memory_order_relaxed)) != STOP_COLLECTOR) {
+  while (!should_stop()) {
     system_inspector_.Run(*control_);
     CLOG(DEBUG) << "Interrupted collector!";
   }
@@ -121,12 +126,6 @@ void CollectorService::RunForever() {
   }
 
   CLOG(INFO) << "Shutting down collector.";
-}
-
-bool CollectorService::WaitForGRPCServer() {
-  std::string error_str;
-  auto interrupt = [this] { return control_->load(std::memory_order_relaxed) == STOP_COLLECTOR; };
-  return WaitForChannelReady(config_.grpc_channel, interrupt);
 }
 
 bool CollectorService::InitKernel() {
