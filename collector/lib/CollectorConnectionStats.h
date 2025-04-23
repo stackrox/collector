@@ -37,6 +37,12 @@ class CollectorConnectionStats {
   }
 
  private:
+  // prometheus::Registry owns all stats and only exposes references to
+  // them. However, storing references as members of a class invalidate
+  // copy and move constructors and assignment operators, making it
+  // harder to work with this type of class.
+  //
+  // To work around this, we store raw pointers instead.
   prometheus::Summary* inbound_private_summary_;
   prometheus::Summary* inbound_public_summary_;
   prometheus::Summary* outbound_private_summary_;
