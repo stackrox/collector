@@ -47,7 +47,7 @@ type MockSensor struct {
 	processLineages map[string]LineageMap
 	processMutex    sync.Mutex
 
-	connections  map[string][][]types.NetworkInfo
+	connections  map[string][]types.NetworkInfo
 	endpoints    map[string]EndpointMap
 	networkMutex sync.Mutex
 
@@ -65,7 +65,7 @@ func NewMockSensor(test string) *MockSensor {
 		testName:        test,
 		processes:       make(map[string]ProcessMap),
 		processLineages: make(map[string]LineageMap),
-		connections:     make(map[string][][]types.NetworkInfo),
+		connections:     make(map[string][]types.NetworkInfo),
 		endpoints:       make(map[string]EndpointMap),
 	}
 }
@@ -150,39 +150,15 @@ func (m *MockSensor) LiveConnections() <-chan *sensorAPI.NetworkConnection {
 
 // Connections returns a list of all connections that have been received for
 // a given container ID
-func (m *MockSensor) Connections(containerID string) [][]types.NetworkInfo {
+func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
 	if connections, ok := m.connections[containerID]; ok {
-		conns := make([][]types.NetworkInfo, len(connections))
+		conns := make([]types.NetworkInfo, len(connections))
 		copy(conns, connections)
-		for _, conn := range conns {
-			types.SortConnections(conn)
-		}
-
+		types.SortConnections(conns)
 		return conns
-	}
-	return make([][]types.NetworkInfo, 0)
-}
-
-// Connections returns a list of all connections that have been received for
-// a given container ID
-func (m *MockSensor) GetAllConnections(containerID string) []types.NetworkInfo {
-	m.networkMutex.Lock()
-	defer m.networkMutex.Unlock()
-
-	allConns := make([]types.NetworkInfo, 0)
-	if connections, ok := m.connections[containerID]; ok {
-		conns := make([][]types.NetworkInfo, len(connections))
-		copy(conns, connections)
-		for _, conn := range conns {
-			allConns = append(allConns, conn...)
-		}
-
-		types.SortConnections(allConns)
-
-		return allConns
 	}
 	return make([]types.NetworkInfo, 0)
 }
@@ -193,9 +169,7 @@ func (m *MockSensor) HasConnection(containerID string, conn types.NetworkInfo) b
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
-	conns := m.GetAllConnections(containerID)
-	//if conns, ok := m.connections[containerID]; ok {
-	if len(conns) > 0 {
+	if conns, ok := m.connections[containerID]; ok {
 		return slices.ContainsFunc(conns, func(c types.NetworkInfo) bool {
 			return c.Equal(conn)
 		})
@@ -297,7 +271,7 @@ func (m *MockSensor) Stop() {
 
 	m.processes = make(map[string]ProcessMap)
 	m.processLineages = make(map[string]LineageMap)
-	m.connections = make(map[string][][]types.NetworkInfo)
+	m.connections = make(map[string][]types.NetworkInfo)
 	m.endpoints = make(map[string]EndpointMap)
 
 	m.processChannel.Stop()
@@ -353,42 +327,6 @@ func (m *MockSensor) PushSignals(stream sensorAPI.SignalService_PushSignalsServe
 	}
 }
 
-func (m *MockSensor) convertConnection(connection *sensorAPI.NetworkConnection) types.NetworkInfo {
-	m.logger.Printf("NetworkInfo: %s %s|%s|%s|%s|%s\n",
-		connection.GetContainerId(),
-		m.translateAddress(connection.GetLocalAddress()),
-		m.translateAddress(connection.GetRemoteAddress()),
-		connection.GetRole().String(),
-		connection.GetSocketFamily().String(),
-		connection.GetCloseTimestamp().String())
-
-	conn := types.NetworkInfo{
-		LocalAddress:   m.translateAddress(connection.LocalAddress),
-		RemoteAddress:  m.translateAddress(connection.RemoteAddress),
-		Role:           connection.GetRole().String(),
-		SocketFamily:   connection.GetSocketFamily().String(),
-		CloseTimestamp: connection.GetCloseTimestamp().String(),
-	}
-
-	return conn
-}
-
-func (m *MockSensor) convertToContainerConnsMap(connections []*sensorAPI.NetworkConnection) map[string][]types.NetworkInfo {
-	containerConnsMap := make(map[string][]types.NetworkInfo)
-	for _, connection := range connections {
-		conn := m.convertConnection(connection)
-		containerID := connection.GetContainerId()
-
-		if c, ok := containerConnsMap[containerID]; ok {
-			containerConnsMap[containerID] = append(c, conn)
-		} else {
-			containerConnsMap[containerID] = []types.NetworkInfo{conn}
-		}
-	}
-
-	return containerConnsMap
-}
-
 // PushNetworkConnectionInfo conforms to the Sensor API. It is here that networking
 // events (connections and endpoints) are handled and stored/sent to the relevant channel
 func (m *MockSensor) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
@@ -407,9 +345,8 @@ func (m *MockSensor) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnectio
 			m.endpointChannel.Write(endpoint)
 		}
 
-		containerConnsMap := m.convertToContainerConnsMap(connections)
-		m.pushConnections(containerConnsMap)
 		for _, connection := range connections {
+			m.pushConnection(connection.GetContainerId(), connection)
 			m.connectionChannel.Write(connection)
 		}
 	}
@@ -473,16 +410,32 @@ func (m *MockSensor) pushLineage(containerID string, process *storage.ProcessSig
 	}
 }
 
-func (m *MockSensor) pushConnections(containerConnsMap map[string][]types.NetworkInfo) {
+// pushConnection converts a connection event into the test's own structure
+// and stores it
+func (m *MockSensor) pushConnection(containerID string, connection *sensorAPI.NetworkConnection) {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
-	for containerID, connections := range containerConnsMap {
-		if c, ok := m.connections[containerID]; ok {
-			m.connections[containerID] = append(c, connections)
-		} else {
-			m.connections[containerID] = [][]types.NetworkInfo{connections}
-		}
+	m.logger.Printf("NetworkInfo: %s %s|%s|%s|%s|%s\n",
+		connection.GetContainerId(),
+		m.translateAddress(connection.GetLocalAddress()),
+		m.translateAddress(connection.GetRemoteAddress()),
+		connection.GetRole().String(),
+		connection.GetSocketFamily().String(),
+		connection.GetCloseTimestamp().String())
+
+	conn := types.NetworkInfo{
+		LocalAddress:   m.translateAddress(connection.LocalAddress),
+		RemoteAddress:  m.translateAddress(connection.RemoteAddress),
+		Role:           connection.GetRole().String(),
+		SocketFamily:   connection.GetSocketFamily().String(),
+		CloseTimestamp: connection.GetCloseTimestamp().String(),
+	}
+
+	if c, ok := m.connections[containerID]; ok {
+		m.connections[containerID] = append(c, conn)
+	} else {
+		m.connections[containerID] = []types.NetworkInfo{conn}
 	}
 }
 
