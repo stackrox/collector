@@ -68,8 +68,8 @@ virtual_machines:
 
   rhcos:
     project: rhcos-cloud
-    # Test RHCOS images for RHEL version coverage (8.6, 9.2, 9.4, etc)
     images:
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.19') }}"
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.18') }}"
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.15') }}"
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.12') }}"
@@ -89,6 +89,7 @@ virtual_machines:
     arch: arm64
     machine_type: t2a-standard-2
     images:
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.19 aarch64.images.gcp.name') }}"
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.18 aarch64.images.gcp.name') }}"
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.15 aarch64.images.gcp.name') }}"
     username: core
