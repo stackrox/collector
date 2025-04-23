@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "CollectorConfig.h"
 #include "NetworkConnection.h"
 
 namespace collector {
@@ -20,16 +21,20 @@ class IConnScraper {
 // ConnScraper is a class that allows scraping a `/proc`-like directory structure for active network connections.
 class ConnScraper : public IConnScraper {
  public:
-  explicit ConnScraper(std::filesystem::path proc_path, std::shared_ptr<ProcessStore> process_store = 0)
-      : proc_path_(std::move(proc_path)),
-        process_store_(process_store) {}
+  explicit ConnScraper(std::string_view proc_path) : proc_path_(proc_path) {}
+  explicit ConnScraper(const CollectorConfig& config, system_inspector::Service* system_inspector)
+      : proc_path_(config.HostProc()) {
+    if (config.IsProcessesListeningOnPortsEnabled()) {
+      process_store_ = std::make_unique<ProcessStore>(system_inspector);
+    }
+  }
 
   // Scrape returns a snapshot of all active network connections in the given vector.
-  bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints);
+  bool Scrape(std::vector<Connection>* connections, std::vector<ContainerEndpoint>* listen_endpoints) override;
 
  private:
   std::filesystem::path proc_path_;
-  std::shared_ptr<ProcessStore> process_store_;
+  std::unique_ptr<ProcessStore> process_store_;
 };
 
 class ProcessScraper {

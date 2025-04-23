@@ -43,7 +43,6 @@ class CollectorService {
   std::vector<std::unique_ptr<CivetWrapper>> civet_endpoints_;
 
   // Prometheus
-  std::shared_ptr<prometheus::Registry> registry_;
   prometheus::Exposer exposer_;
   CollectorStatsExporter exporter_;
 
@@ -51,7 +50,6 @@ class CollectorService {
 
   // Network monitoring
   std::shared_ptr<ConnectionTracker> conn_tracker_;
-  std::shared_ptr<IConnScraper> conn_scraper_;
   std::unique_ptr<NetworkStatusNotifier> net_status_notifier_;
   std::shared_ptr<ProcessStore> process_store_;
   std::shared_ptr<NetworkConnectionInfoServiceComm> network_connection_info_service_comm_;

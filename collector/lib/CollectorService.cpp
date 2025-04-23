@@ -31,9 +31,8 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
       control_(control),
       signum_(*signum),
       server_(OPTIONS),
-      registry_(std::make_shared<prometheus::Registry>()),
       exposer_(PROMETHEUS_PORT),
-      exporter_(registry_, &config_, &system_inspector_),
+      exporter_(&config_, &system_inspector_),
       config_loader_(config_) {
   CLOG(INFO) << "Config: " << config_;
 
@@ -42,28 +41,17 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
     // In case if no GRPC is used, continue to setup networking infrasturcture
     // with empty grpc_channel. NetworkConnectionInfoServiceComm will pick it
     // up and use stdout instead.
-    if (config_.IsProcessesListeningOnPortsEnabled()) {
-      process_store_ = std::make_shared<ProcessStore>(&system_inspector_);
-    }
-    conn_scraper_ = std::make_shared<ConnScraper>(config_.HostProc(), process_store_);
     conn_tracker_ = std::make_shared<ConnectionTracker>();
     UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs(config_.IgnoredL4ProtoPortPairs());
     conn_tracker_->UpdateIgnoredL4ProtoPortPairs(std::move(ignored_l4proto_port_pairs));
     conn_tracker_->UpdateIgnoredNetworks(config_.IgnoredNetworks());
     conn_tracker_->UpdateNonAggregatedNetworks(config_.NonAggregatedNetworks());
 
-    network_connection_info_service_comm_ = std::make_shared<NetworkConnectionInfoServiceComm>(config_.grpc_channel);
-
-    auto total_reporter = config_.EnableConnectionStats() ? exporter_.GetConnectionsTotalReporter() : nullptr;
-    auto rate_reporter = config_.EnableConnectionStats() ? exporter_.GetConnectionsRateReporter() : nullptr;
-
     net_status_notifier_ = std::make_unique<NetworkStatusNotifier>(
-        conn_scraper_,
         conn_tracker_,
-        network_connection_info_service_comm_,
         config_,
-        total_reporter,
-        rate_reporter);
+        &system_inspector_,
+        exporter_.GetRegistry().get());
 
     auto network_signal_handler = std::make_unique<NetworkSignalHandler>(system_inspector_.GetInspector(), conn_tracker_, system_inspector_.GetUserspaceStats());
     network_signal_handler->SetCollectConnectionStatus(config_.CollectConnectionStatus());
@@ -87,16 +75,17 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
   }
 
   // Prometheus
-  exposer_.RegisterCollectable(registry_);
+  exposer_.RegisterCollectable(exporter_.GetRegistry());
 }
 
 CollectorService::~CollectorService() {
   config_loader_.Stop();
   server_.close();
-  exporter_.stop();
   if (net_status_notifier_) {
     net_status_notifier_->Stop();
   }
+
+  exporter_.stop();
 
   // system_inspector_ needs to be last, since other components relay on it.
   system_inspector_.CleanUp();
