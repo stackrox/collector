@@ -20,13 +20,9 @@ on:
           The builder tag to use in the build
       architectures:
         type: string
-        required: false
+        required: true
         description: |
-          Space-seperated list of architectures
-        default: |
-          ${{ ((github.event_name != 'pull_request' ||
-            contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')) &&
-            'amd64 arm64 ppc64le s390x') || 'amd64 arm64' }}
+          Space-seperated list of architectures to build
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
