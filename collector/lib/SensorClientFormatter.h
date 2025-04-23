@@ -1,5 +1,4 @@
-#ifndef SENSOR_CLIENT_FORMATTER_H
-#define SENSOR_CLIENT_FORMATTER_H
+#pragma once
 
 #include <memory>
 
@@ -112,5 +111,3 @@ class SensorClientFormatter : public ProtoSignalFormatter<sensor::MsgFromCollect
 };
 
 }  // namespace collector
-
-#endif  // SENSOR_CLIENT_FORMATTER_H

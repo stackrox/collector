@@ -1,5 +1,4 @@
-#ifndef _SENSOR_CLIENT_H_
-#define _SENSOR_CLIENT_H_
+#pragma once
 
 #include <memory>
 
@@ -85,5 +84,3 @@ class SensorClientStdout : public ISensorClient {
 };
 
 }  // namespace collector
-
-#endif  //_SENSOR_CLIENT_H_
