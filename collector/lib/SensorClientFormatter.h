@@ -5,7 +5,6 @@
 #include <gtest/gtest_prod.h>
 
 #include "api/v1/signal.pb.h"
-#include "internalapi/sensor/collector_iservice.pb.h"
 
 #include "CollectorConfig.h"
 #include "ContainerMetadata.h"
@@ -22,7 +21,7 @@ class EventExtractor;
 
 namespace collector {
 
-class SensorClientFormatter : public ProtoSignalFormatter<sensor::MsgFromCollector> {
+class SensorClientFormatter : public ProtoSignalFormatter<sensor::ProcessSignal> {
  public:
   SensorClientFormatter(const SensorClientFormatter&) = delete;
   SensorClientFormatter(SensorClientFormatter&&) = delete;
@@ -35,10 +34,9 @@ class SensorClientFormatter : public ProtoSignalFormatter<sensor::MsgFromCollect
   using Signal = v1::Signal;
   using ProcessSignal = sensor::ProcessSignal;
   using LineageInfo = sensor::ProcessSignal_LineageInfo;
-  using MsgFromCollector = sensor::MsgFromCollector;
 
-  const MsgFromCollector* ToProtoMessage(sinsp_evt* event) override;
-  const MsgFromCollector* ToProtoMessage(sinsp_threadinfo* tinfo) override;
+  const ProcessSignal* ToProtoMessage(sinsp_evt* event) override;
+  const ProcessSignal* ToProtoMessage(sinsp_threadinfo* tinfo) override;
 
   /**
    * Get the list of processes that spawned the current one.

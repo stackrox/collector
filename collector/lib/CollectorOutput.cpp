@@ -1,7 +1,5 @@
 #include "CollectorOutput.h"
 
-#include "internalapi/sensor/collector_iservice.pb.h"
-
 #include "GRPCUtil.h"
 #include "HostInfo.h"
 
@@ -40,7 +38,7 @@ void CollectorOutput::HandleOutputError() {
   stream_interrupted_.notify_one();
 }
 
-SignalHandler::Result CollectorOutput::SensorOutput(const sensor::MsgFromCollector& msg) {
+SignalHandler::Result CollectorOutput::SensorOutput(const sensor::ProcessSignal& msg) {
   for (auto& client : sensor_clients_) {
     auto res = client->SendMsg(msg);
     switch (res) {
@@ -83,7 +81,7 @@ SignalHandler::Result CollectorOutput::SignalOutput(const sensor::SignalStreamMe
 SignalHandler::Result CollectorOutput::SendMsg(const MessageType& msg) {
   auto visitor = [this](auto&& m) {
     using T = std::decay_t<decltype(m)>;
-    if constexpr (std::is_same_v<T, sensor::MsgFromCollector>) {
+    if constexpr (std::is_same_v<T, sensor::ProcessSignal>) {
       return SensorOutput(m);
     } else if constexpr (std::is_same_v<T, sensor::SignalStreamMessage>) {
       return SignalOutput(m);

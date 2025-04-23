@@ -5,7 +5,6 @@
 #include <grpcpp/channel.h>
 
 #include "internalapi/sensor/collector_iservice.grpc.pb.h"
-#include "internalapi/sensor/collector_iservice.pb.h"
 
 #include "DuplexGRPC.h"
 #include "SignalHandler.h"
@@ -39,7 +38,7 @@ class ISensorClient {
    * @returns A SignalHandler::Result with the outcome of the send
    *          operation.
    */
-  virtual SignalHandler::Result SendMsg(const sensor::MsgFromCollector& msg) = 0;
+  virtual SignalHandler::Result SendMsg(const sensor::ProcessSignal& msg) = 0;
 };
 
 class SensorClient : public ISensorClient {
@@ -60,7 +59,7 @@ class SensorClient : public ISensorClient {
 
   bool Recreate() override;
 
-  SignalHandler::Result SendMsg(const sensor::MsgFromCollector& msg) override;
+  SignalHandler::Result SendMsg(const sensor::ProcessSignal& msg) override;
 
  private:
   std::shared_ptr<grpc::Channel> channel_;
@@ -69,7 +68,7 @@ class SensorClient : public ISensorClient {
 
   // This needs to have the same lifetime as the class.
   std::unique_ptr<grpc::ClientContext> context_;
-  std::unique_ptr<IDuplexClientWriter<sensor::MsgFromCollector>> writer_;
+  std::unique_ptr<IDuplexClientWriter<sensor::ProcessSignal>> writer_;
 
   bool first_write_ = false;
 };
@@ -77,7 +76,7 @@ class SensorClient : public ISensorClient {
 class SensorClientStdout : public ISensorClient {
   bool Recreate() override { return true; }
 
-  SignalHandler::Result SendMsg(const sensor::MsgFromCollector& msg) override {
+  SignalHandler::Result SendMsg(const sensor::ProcessSignal& msg) override {
     LogProtobufMessage(msg);
     return SignalHandler::PROCESSED;
   }
