@@ -10,13 +10,9 @@ on:
           The tag used to build the collector image
       architectures:
         type: string
-        required: false
+        required: true
         description: |
-          Space-seperated list of architectures
-        default: |
-          ${{ ((github.event_name != 'pull_request' ||
-            contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')) &&
-            'amd64 arm64 ppc64le s390x') || 'amd64 arm64' }}
+          Space-seperated list of architectures to build
 
     outputs:
       collector-builder-tag:
@@ -33,7 +29,7 @@ jobs:
     name: Determine if builder image needs to be built
     runs-on: ubuntu-24.04
     outputs:
-      build-image: ${{ steps.check-builder-needed.outcome == 'success' }}
+      build-image: ${{ steps.builder-tag.build-image || false }}
       collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag || 'master'}}
 
     env:
@@ -52,8 +48,8 @@ jobs:
               - builder/Dockerfile
               - .github/workflows/collector-builder.yml
 
-      - name: Check labels and branch status to check if builder is needed
-        id: check-builder-needed
+      - name: Check labels and define builder tag
+        id: builder-tag
         if: |
           steps.changed.outputs.builder-changed == 'true' ||
           (github.event_name == 'push' && (
@@ -61,13 +57,6 @@ jobs:
           )) ||
           contains(github.event.pull_request.labels.*.name, 'build-builder-image') ||
           github.event_name == 'schedule'
-        run: |
-          echo "Rebuilding builder image"
-
-      - name: Define builder tag
-        id: builder-tag
-        if: |
-          steps.check-builder-needed.outcome == 'success'
         run: |
           COLLECTOR_BUILDER_TAG="${DEFAULT_BUILDER_TAG}"
           if [[ "${{ github.event_name }}" == 'pull_request' || \
@@ -78,6 +67,7 @@ jobs:
 
           echo "Rebuild builder image with tag ${COLLECTOR_BUILDER_TAG}"
           echo "collector-builder-tag=${COLLECTOR_BUILDER_TAG}" >> "$GITHUB_OUTPUT"
+          echo "build-image=true" >> "$GITHUB_OUTPUT"
 
   build-builder-image:
     name: Local builder image
@@ -114,15 +104,15 @@ jobs:
 
       - name: Create ansible vars
         run: |
-          {
-            echo "---"
-            echo "stackrox_io_username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}"
-            echo "stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}"
-            echo "rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}"
-            echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
-            echo "collector_git_ref: ${{ github.ref }}"
-            echo "collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}"
-          } > ${{ github.workspace }}/ansible/secrets.yml
+          cat << EOF > ${{ github.workspace }}/ansible/secrets.yml
+          ---
+          stackrox_io_username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+          rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          collector_git_ref: ${{ github.ref }}
+          collector_builder_tag: ${{ env.COLLECTOR_BUILDER_TAG }}
+          EOF
 
       - name: Build images
         timeout-minutes: 480
@@ -190,15 +180,15 @@ jobs:
 
       - name: Create ansible vars
         run: |
-          {
-            echo "---"
-            echo "stackrox_io_username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}"
-            echo "stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}"
-            echo "rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}"
-            echo "rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}"
-            echo "collector_git_ref: ${{ github.ref }}"
-            echo "collector_builder_tag: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}"
-          } > ${{ github.workspace }}/ansible/secrets.yml
+          cat << EOF > ${{ github.workspace }}/ansible/secrets.yml
+          ---
+          stackrox_io_username: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+          stackrox_io_password: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+          rhacs_eng_username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+          rhacs_eng_password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+          collector_git_ref: ${{ github.ref }}
+          collector_builder_tag: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}
+          EOF
 
       - name: Build images
         timeout-minutes: 480

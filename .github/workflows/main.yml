@@ -40,6 +40,7 @@ jobs:
     needs: init
     with:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
+      architectures: ${{ needs.init.architectures }}
     secrets: inherit
 
   build-collector:
@@ -51,6 +52,7 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
       collector-image: ${{ needs.init.outputs.collector-image }}
       collector-builder-tag: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
+      architectures: ${{ needs.init.architectures }}
     secrets: inherit
 
   build-test-containers:
