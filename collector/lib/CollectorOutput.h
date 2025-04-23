@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_OUTPUT_H
-#define COLLECTOR_OUTPUT_H
+#pragma once
 
 #include <variant>
 
@@ -78,5 +77,3 @@ class CollectorOutput {
 };
 
 }  // namespace collector
-
-#endif  // COLLECTOR_OUTPUT_H
