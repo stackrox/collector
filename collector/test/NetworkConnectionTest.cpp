@@ -163,19 +163,17 @@ TEST(TestIPNet, Parse) {
 }
 
 TEST(TestIPNet, TestIsCanonicalExternalIp) {
-  Address addr1 = Address(192, 168, 0, 1);
-  Address addr2 = Address(192, 168, 1, 10);
-  Address addr3 = Address(255, 255, 255, 255);
+  std::vector<std::pair<Address, bool>> tests = {
+    {{192, 168, 0, 1}, false},
+    {{192, 168, 1, 10}, false},
+    {{255, 255, 255, 255}, true},
+    {{0xffffff4fffffffffULL, 0xffffffffffffffffULL}, false},
+    {{0xffffffffffffffffULL, 0xffffffffffffffffULL}, true},
+  };
 
-  EXPECT_FALSE(Address::IsCanonicalExternalIp(addr1));
-  EXPECT_FALSE(Address::IsCanonicalExternalIp(addr2));
-  EXPECT_TRUE(Address::IsCanonicalExternalIp(addr3));
-
-  Address addr_ipv6_1 = Address(0xffffff4fffffffffULL, 0xffffffffffffffffULL);
-  Address addr_ipv6_2 = Address(0xffffffffffffffffULL, 0xffffffffffffffffULL);
-
-  EXPECT_FALSE(Address::IsCanonicalExternalIp(addr_ipv6_1));
-  EXPECT_TRUE(Address::IsCanonicalExternalIp(addr_ipv6_2));
+  for (const auto& [address, expected] : tests) {
+    EXPECT_EQ(Address::IsCanonicalExternalIp(address), expected);
+  }
 }
 
 }  // namespace

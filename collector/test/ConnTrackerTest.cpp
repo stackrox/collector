@@ -1670,7 +1670,7 @@ TEST(ConnTrackerTest, TestCloseNormalizedConnections) {
   EXPECT_THAT(delta, expected_delta);
 }
 
-TEST(ConnTrackerTest, TestCloseNormalizedConnectionsUnnormalized) {
+TEST(CloseNormalizedConnectionsTest, UnnormalizedConnectionsAreKept) {
   ConnectionTracker tracker;
 
   Endpoint a(Address(192, 168, 0, 1), 80);
@@ -1708,7 +1708,7 @@ TEST(ConnTrackerTest, TestCloseExternalUnnormalizedConnections) {
   EXPECT_THAT(delta, expected_delta);
 }
 
-TEST(ConnTrackerTest, TestCloseExternalUnnormalizedConnectionsInternal) {
+TEST(CloseExternalUnnormalizedConnectionsTest, InternalConnectionsAreKept) {
   ConnectionTracker tracker;
 
   Endpoint a(Address(192, 168, 0, 1), 80);
