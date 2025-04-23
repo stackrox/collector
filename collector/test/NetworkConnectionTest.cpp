@@ -164,11 +164,11 @@ TEST(TestIPNet, Parse) {
 
 TEST(TestIPNet, TestIsCanonicalExternalIp) {
   std::vector<std::pair<Address, bool>> tests = {
-    {{192, 168, 0, 1}, false},
-    {{192, 168, 1, 10}, false},
-    {{255, 255, 255, 255}, true},
-    {{0xffffff4fffffffffULL, 0xffffffffffffffffULL}, false},
-    {{0xffffffffffffffffULL, 0xffffffffffffffffULL}, true},
+      {{192, 168, 0, 1}, false},
+      {{192, 168, 1, 10}, false},
+      {{255, 255, 255, 255}, true},
+      {{0xdeadbeefULL, 0xffffffffffffffffULL}, false},
+      {{0xffffffffffffffffULL, 0xffffffffffffffffULL}, true},
   };
 
   for (const auto& [address, expected] : tests) {
