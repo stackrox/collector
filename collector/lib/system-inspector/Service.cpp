@@ -12,9 +12,7 @@
 
 #include <google/protobuf/util/time_util.h>
 
-#include "CollectionMethod.h"
 #include "CollectorException.h"
-#include "CollectorOutput.h"
 #include "CollectorStats.h"
 #include "ContainerEngine.h"
 #include "ContainerMetadata.h"
@@ -35,7 +33,7 @@ namespace collector::system_inspector {
 
 Service::~Service() = default;
 
-Service::Service(const CollectorConfig& config, CollectorOutput* client)
+Service::Service(const CollectorConfig& config, output::Output* client)
     : inspector_(std::make_unique<sinsp>(true)),
       container_metadata_inspector_(std::make_unique<ContainerMetadata>(inspector_.get())),
       default_formatter_(std::make_unique<sinsp_evt_formatter>(

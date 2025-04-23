@@ -5,8 +5,8 @@
 #include "CollectorConfig.h"
 #include "ProcessSignalFormatter.h"
 #include "RateLimit.h"
-#include "SensorClientFormatter.h"
 #include "SignalHandler.h"
+#include "output/Formatter.h"
 #include "system-inspector/Service.h"
 
 // forward declarations
@@ -20,7 +20,7 @@ class ProcessSignalHandler : public SignalHandler {
  public:
   ProcessSignalHandler(
       sinsp* inspector,
-      CollectorOutput* client,
+      output::Output* client,
       system_inspector::Stats* stats,
       const CollectorConfig& config)
       : client_(client),
@@ -48,9 +48,9 @@ class ProcessSignalHandler : public SignalHandler {
   Result HandleSensorSignal(sinsp_evt* evt);
   Result HandleExistingProcessSensor(sinsp_threadinfo* tinfo);
 
-  CollectorOutput* client_;
+  output::Output* client_;
   ProcessSignalFormatter signal_formatter_;
-  SensorClientFormatter sensor_formatter_;
+  output::Formatter sensor_formatter_;
   system_inspector::Stats* stats_;
   RateLimitCache rate_limiter_;
 };
