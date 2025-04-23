@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_PROCFSSCRAPER_H
-#define COLLECTOR_PROCFSSCRAPER_H
+#pragma once
 
 #include <cstring>
 #include <filesystem>
@@ -58,5 +57,3 @@ class ProcessScraper {
 };
 
 }  // namespace collector
-
-#endif  // COLLECTOR_CONNSCRAPER_H

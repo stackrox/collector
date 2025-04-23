@@ -2,8 +2,7 @@
 // Created by Malte Isberner on 8/12/20.
 //
 
-#ifndef COLLECTOR_ENVVAR_H
-#define COLLECTOR_ENVVAR_H
+#pragma once
 
 #include <algorithm>
 #include <cctype>
@@ -127,5 +126,3 @@ using PathEnvVar = EnvVar<std::filesystem::path, internal::ParsePath>;
 using FloatEnvVar = EnvVar<float, internal::ParseFloat>;
 
 }  // namespace collector
-
-#endif  // COLLECTOR_ENVVAR_H

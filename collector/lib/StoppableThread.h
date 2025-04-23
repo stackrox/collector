@@ -1,6 +1,4 @@
-
-#ifndef _STOPPABLE_THREAD_H_
-#define _STOPPABLE_THREAD_H_
+#pragma once
 
 #include <atomic>
 #include <chrono>
@@ -46,5 +44,3 @@ class StoppableThread {
 };
 
 }  // namespace collector
-
-#endif  // _STOPPABLE_THREAD_H_

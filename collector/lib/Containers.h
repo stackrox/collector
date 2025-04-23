@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_CONTAINERS_H
-#define COLLECTOR_CONTAINERS_H
+#pragma once
 
 // Utility methods for working with STL containers.
 
@@ -46,5 +45,3 @@ MappedType<M>* Lookup(M& map, const typename M::key_type& key) {
 }
 
 }  // namespace collector
-
-#endif  // COLLECTOR_CONTAINERS_H

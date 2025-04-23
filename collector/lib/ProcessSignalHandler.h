@@ -1,5 +1,4 @@
-#ifndef __PROCESS_SIGNAL_HANDLER_H__
-#define __PROCESS_SIGNAL_HANDLER_H__
+#pragma once
 
 #include <memory>
 
@@ -53,5 +52,3 @@ class ProcessSignalHandler : public SignalHandler {
 };
 
 }  // namespace collector
-
-#endif  // __PROCESS_SIGNAL_HANDLER_H__

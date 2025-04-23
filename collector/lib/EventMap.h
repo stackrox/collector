@@ -1,5 +1,4 @@
-#ifndef _EVENT_MAP_H_
-#define _EVENT_MAP_H_
+#pragma once
 
 #include <array>
 #include <string>
@@ -49,5 +48,3 @@ class EventMap {
 };
 
 }  // namespace collector
-
-#endif  // _EVENT_MAP_H_

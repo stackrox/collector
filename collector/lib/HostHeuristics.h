@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_HOSTHEURISTICS_H
-#define COLLECTOR_HOSTHEURISTICS_H
+#pragma once
 
 #include "CollectorConfig.h"
 #include "HostConfig.h"
@@ -12,5 +11,3 @@ namespace collector {
 HostConfig ProcessHostHeuristics(const CollectorConfig& config);
 
 }  // namespace collector
-
-#endif  // COLLECTOR_HOSTHEURISTICS_H

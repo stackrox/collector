@@ -1,6 +1,4 @@
-
-#ifndef COLLECTOR_SELF_CHECK_HANDLE_H
-#define COLLECTOR_SELF_CHECK_HANDLE_H
+#pragma once
 
 #include <chrono>
 #include <memory>
@@ -88,5 +86,3 @@ class SelfCheckNetworkHandler : public SelfCheckHandler {
 };
 
 }  // namespace collector
-
-#endif

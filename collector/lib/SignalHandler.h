@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_SIGNALHANDLER_H
-#define COLLECTOR_SIGNALHANDLER_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -43,5 +42,3 @@ class SignalHandler {
 };
 
 }  // namespace collector
-
-#endif  // COLLECTOR_SIGNALHANDLER_H

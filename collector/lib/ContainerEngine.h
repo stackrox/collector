@@ -1,5 +1,4 @@
-#ifndef _CONTAINER_ENGINE_H_
-#define _CONTAINER_ENGINE_H_
+#pragma once
 
 #include "container_engine/container_cache_interface.h"
 #include "container_engine/container_engine_base.h"
@@ -24,5 +23,3 @@ class ContainerEngine : public libsinsp::container_engine::container_engine_base
   }
 };
 }  // namespace collector
-
-#endif  // _CONTAINER_ENGINE_H_

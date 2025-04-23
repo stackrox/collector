@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_NETWORKCONNECTIONINFOSERVICECOMM_H
-#define COLLECTOR_NETWORKCONNECTIONINFOSERVICECOMM_H
+#pragma once
 
 #include <memory>
 
@@ -62,5 +61,3 @@ class NetworkConnectionInfoServiceComm : public INetworkConnectionInfoServiceCom
 };
 
 }  // namespace collector
-
-#endif

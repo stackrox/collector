@@ -1,5 +1,4 @@
-#ifndef __SIGNAL_SERVICE_CLIENT_H
-#define __SIGNAL_SERVICE_CLIENT_H
+#pragma once
 
 // SIGNAL_SERVICE_CLIENT.h
 // This class defines our GRPC client abstraction
@@ -73,5 +72,3 @@ class StdoutSignalServiceClient : public ISignalServiceClient {
 };
 
 }  // namespace collector
-
-#endif  // __SIGNAL_SERVICE_CLIENT_H

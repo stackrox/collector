@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_PROTOALLOCATOR_H
-#define COLLECTOR_PROTOALLOCATOR_H
+#pragma once
 
 #ifdef USE_PROTO_ARENAS
 #  include <google/protobuf/arena.h>
@@ -96,5 +95,3 @@ using ProtoAllocator =
 #endif
 
 }  // namespace collector
-
-#endif  // COLLECTOR_PROTOALLOCATOR_H

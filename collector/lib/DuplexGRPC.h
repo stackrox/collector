@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_DUPLEXGRPC_H
-#define COLLECTOR_DUPLEXGRPC_H
+#pragma once
 
 #include <chrono>
 #include <cstdint>
@@ -804,5 +803,3 @@ template <typename W, typename R>
 using DuplexClientReaderWriter = grpc_duplex_impl::DuplexClientReaderWriter<W, R>;
 
 }  // namespace collector
-
-#endif  // COLLECTOR_DUPLEXGRPC_H

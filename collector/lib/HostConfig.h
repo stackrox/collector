@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_HOSTCONFIG_H
-#define COLLECTOR_HOSTCONFIG_H
+#pragma once
 
 #include <optional>
 #include <string>
@@ -29,5 +28,3 @@ class HostConfig {
   std::optional<collector::CollectionMethod> collection_method_;
   unsigned int num_possible_cpus_;
 };
-
-#endif  // COLLECTOR_HOSTCONFIG_H

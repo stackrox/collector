@@ -1,5 +1,4 @@
-#ifndef CIVET_WRAPPER_H
-#define CIVET_WRAPPER_H
+#pragma once
 
 #include <CivetServer.h>
 #include <optional>
@@ -24,5 +23,3 @@ class CivetWrapper : public CivetHandler {
   }
 };
 }  // namespace collector
-
-#endif

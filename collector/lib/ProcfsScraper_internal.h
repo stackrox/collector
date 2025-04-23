@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_PROCFSSCRAPER_INTERNAL_H
-#define COLLECTOR_PROCFSSCRAPER_INTERNAL_H
+#pragma once
 
 #include <optional>
 #include <string_view>
@@ -15,5 +14,3 @@ std::optional<std::string_view> ExtractContainerID(std::string_view cgroup_line)
 std::optional<char> ExtractProcessState(std::string_view proc_pid_stat_line);
 
 }  // namespace collector
-
-#endif

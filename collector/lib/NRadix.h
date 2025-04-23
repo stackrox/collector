@@ -26,8 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#ifndef COLLECTOR_NRADIX_H
-#define COLLECTOR_NRADIX_H
+#pragma once
 
 #include <mutex>
 
@@ -125,5 +124,3 @@ class NRadixTree {
 };
 
 }  // namespace collector
-
-#endif  // COLLECTOR_NRADIX_H

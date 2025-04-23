@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_RUNTIME_CONFIG_INSPECTOR_H
-#define COLLECTOR_RUNTIME_CONFIG_INSPECTOR_H
+#pragma once
 
 #include <json/writer.h>
 
@@ -27,5 +26,3 @@ class CollectorConfigInspector : public CivetWrapper {
 };
 
 }  // namespace collector
-
-#endif

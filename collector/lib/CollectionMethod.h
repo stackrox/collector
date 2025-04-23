@@ -1,5 +1,4 @@
-#ifndef COLLECTION_METHOD_H
-#define COLLECTION_METHOD_H
+#pragma once
 
 #include <cstdint>
 #include <ostream>
@@ -17,5 +16,3 @@ const char* CollectionMethodName(CollectionMethod method);
 CollectionMethod ParseCollectionMethod(std::string_view method);
 
 }  // namespace collector
-
-#endif  // COLLECTION_METHOD_H

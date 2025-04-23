@@ -1,5 +1,4 @@
-#ifndef COLLECTOR_PROTOUTIL_H
-#define COLLECTOR_PROTOUTIL_H
+#pragma once
 
 #include <google/protobuf/timestamp.pb.h>
 
@@ -11,5 +10,3 @@ namespace collector {
 google::protobuf::Timestamp CurrentTimeProto();
 
 }  // namespace collector
-
-#endif  // COLLECTOR_PROTOUTIL_H

@@ -1,5 +1,4 @@
-#ifndef _GET_STATUS_H_
-#define _GET_STATUS_H_
+#pragma once
 
 #include <string>
 
@@ -25,5 +24,3 @@ class GetStatus : public CivetWrapper {
 };
 
 } /* namespace collector */
-
-#endif /* _GET_STATUS_H_ */

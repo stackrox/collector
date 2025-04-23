@@ -1,5 +1,4 @@
-#ifndef _COLLECTOR_STATS_EXPORTER_H_
-#define _COLLECTOR_STATS_EXPORTER_H_
+#pragma once
 
 #include <memory>
 
@@ -29,5 +28,3 @@ class CollectorStatsExporter {
 };
 
 }  // namespace collector
-
-#endif  // _COLLECTOR_STATS_EXPORTER_H_

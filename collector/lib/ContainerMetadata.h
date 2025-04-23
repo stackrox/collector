@@ -1,5 +1,4 @@
-#ifndef _CONTAINER_METADATA_H_
-#define _CONTAINER_METADATA_H_
+#pragma once
 
 #include <memory>
 #include <string>
@@ -31,5 +30,3 @@ class ContainerMetadata {
 };
 
 }  // namespace collector
-
-#endif  // _CONTAINER_METADATA_H_
