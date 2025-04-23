@@ -30,8 +30,6 @@ class CollectorService {
   bool InitKernel();
 
  private:
-  bool WaitForGRPCServer();
-
   CollectorConfig& config_;
   output::Output output_;
   system_inspector::Service system_inspector_;
@@ -53,7 +51,6 @@ class CollectorService {
   std::shared_ptr<ConnectionTracker> conn_tracker_;
   std::unique_ptr<NetworkStatusNotifier> net_status_notifier_;
   std::shared_ptr<ProcessStore> process_store_;
-  std::shared_ptr<NetworkConnectionInfoServiceComm> network_connection_info_service_comm_;
 };
 
 }  // namespace collector
