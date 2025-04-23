@@ -59,7 +59,6 @@ on:
           Trigger rebuild of QA containers
         value: ${{ jobs.common-variables.outputs.rebuild-qa-containers }}
       architectures:
-        type: string
         description: |
           Space-seperated list of architectures to build
         value: |

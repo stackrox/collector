@@ -29,7 +29,7 @@ jobs:
     name: Determine if builder image needs to be built
     runs-on: ubuntu-24.04
     outputs:
-      build-image: ${{ steps.builder-tag.build-image || false }}
+      build-image: ${{ steps.builder-tag.outputs.build-image || false }}
       collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag || 'master'}}
 
     env:
