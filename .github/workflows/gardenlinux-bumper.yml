@@ -3,7 +3,6 @@ name: Garden Linux VM bumper
 on:
   schedule:
     - cron: '0 6 * * *'
-  pull_request:
 
 jobs:
   run-bumper:
