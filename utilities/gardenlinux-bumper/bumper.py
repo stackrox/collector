@@ -11,7 +11,8 @@ from bs4 import BeautifulSoup
 
 import requests
 
-type GardenVersion = tuple[str, int, int, str]
+# Type alias for the garden version
+GardenVersion = tuple[str, int, int, str]
 
 
 def get_latest_release() -> GardenVersion:
