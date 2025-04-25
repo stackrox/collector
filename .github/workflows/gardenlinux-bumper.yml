@@ -34,6 +34,7 @@ jobs:
           committer: ${{ vars.RHACS_BOT_GITHUB_USERNAME }} <${{ vars.RHACS_BOT_GITHUB_EMAIL }}>
           author: ${{ vars.RHACS_BOT_GITHUB_USERNAME }} <${{ vars.RHACS_BOT_GITHUB_EMAIL }}>
           branch: ${{ vars.RHACS_BOT_GITHUB_USERNAME }}/gardenlinux-bump
+          base: mauro/fix-gardenlinux
           signoff: false
           delete-branch: true
           title: Update Garden Linux VM
