@@ -57,15 +57,28 @@ for inspection.
 
 ### Log level
 
-There are few ways to configure log level in Collector:
+Collector features several log levels:
+
+* TRACE: The most verbose one, contains e.g. relocations for the eBPF program
+  and processed events. Not recommended turning on in production due to large
+  performance overhead.
+* DEBUG: Log information essential for debugging, reasonable to use without
+  taking large performance overhead.
+* INFO: The default log level.
+* WARNING: Contains information about unexpected situations.
+* ERROR: Reports processing failures, without stopping Collector.
+* FATAL: Unrecoverable errors, duplicated to the termination log.
+
+There are a few ways to configure log level in Collector, all are
+case-insensitive:
+
+* Via environment variable `ROX_COLLECTOR_LOG_LEVEL`.
 
 * In the Collector configuration via the `logLevel` key. This option takes
   precedence over the environment variable.
 
-* Via environment variable `ROX_COLLECTOR_LOG_LEVEL`. It will be used only if
-  no `logLevel` is specified in the Collector configuration.
-
-* Via API call `/loglevel`. This way any current value will be overwritten.
+* Via API call `/loglevel`. This will enforce the log level value, regardless
+  of existing configuration.
 
 ```
 $ curl -X POST -d "trace" collector:8080/loglevel
