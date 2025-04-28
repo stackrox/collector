@@ -1,32 +1,32 @@
 packages:
-  - make
-  - wget
-  - unzip
-  - clang
-  - llvm
-  - cmake-3.18.2-9.el8
-  - gcc-c++
-  - openssl-devel
-  - ncurses-devel
-  - curl-devel
-  - libuuid-devel
-  - libcap-ng-devel
-  - autoconf
-  - libtool
-  - git
-  - elfutils-libelf-devel
-  - tbb-devel
-  - c-ares-devel
-  - patch
-  - systemtap-sdt-devel
+- make
+- wget
+- unzip
+- clang
+- llvm
+- cmake-3.18.2-9.el8
+- gcc-c++
+- openssl-devel
+- ncurses-devel
+- curl-devel
+- libuuid-devel
+- libcap-ng-devel
+- autoconf
+- libtool
+- git
+- elfutils-libelf-devel
+- tbb-devel
+- c-ares-devel
+- patch
+- systemtap-sdt-devel
 contentOrigin:
-  repofiles: ["redhat.repo"]
+  repofiles: [ "redhat.repo" ]
 context:
   containerfile:
     file: ../../collector/container/konflux.Dockerfile
     stageName: builder
 arches:
-  - aarch64
-  - ppc64le
-  - s390x
-  - x86_64
+- aarch64
+- ppc64le
+- s390x
+- x86_64
