@@ -1,5 +1,4 @@
 packages:
-  # Builder
   - make
   - wget
   - unzip
@@ -19,15 +18,13 @@ packages:
   - tbb-devel
   - c-ares-devel
   - patch
-  ## for USDT support
   - systemtap-sdt-devel
-  # App
-  - tbb
-  - c-ares
 contentOrigin:
   repofiles: ["redhat.repo"]
 context:
-  containerfile: ../../collector/container/konflux.Dockerfile
+  containerfile:
+    file: ../../collector/container/konflux.Dockerfile
+    stageName: builder
 arches:
   - aarch64
   - ppc64le
