@@ -23,7 +23,7 @@ contentOrigin:
   repofiles: [ "redhat.repo" ]
 context:
   containerfile:
-    file: ../../collector/container/konflux.Dockerfile
+    file: ../../konflux.Dockerfile
     stageName: builder
 arches:
 - aarch64
