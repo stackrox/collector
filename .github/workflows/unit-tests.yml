@@ -11,16 +11,18 @@ on:
 
 jobs:
   unit-tests:
-    runs-on: ubuntu-24.04
     container:
       image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
     strategy:
       fail-fast: false
       matrix:
+        arch: [amd64, arm64]
         cmake-flags:
         - -DCMAKE_BUILD_TYPE=Release
         - -DADDRESS_SANITIZER=ON -DCMAKE_BUILD_TYPE=Debug
         - -DUSE_VALGRIND=ON -DCMAKE_BUILD_TYPE=Debug
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
+
     steps:
       - uses: actions/checkout@v4
         with:
