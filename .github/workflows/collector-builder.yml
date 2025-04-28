@@ -71,7 +71,7 @@ jobs:
           echo "build-image=true" >> "$GITHUB_OUTPUT"
 
       - name: Check arches for local build
-        if: ! contains(inputs.architectures, 'ppc64le')
+        if: ${{ ! contains(inputs.architectures, 'ppc64le') }}
         id: arch
         run: |
           echo "local-exclude=[{arch:ppc64le}]" >> "$GITHUB_OUTPUT"
