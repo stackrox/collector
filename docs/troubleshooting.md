@@ -55,6 +55,22 @@ following the instructions [here](https://docs.openshift.com/acs/configuration/g
 Within the downloaded bundle, the logs for all Collector pods will be available
 for inspection.
 
+### Log level
+
+There are few ways to configure log level in Collector:
+
+* In the Collector configuration via the `logLevel` key. This option takes
+  precedence over the environment variable.
+
+* Via environment variable `ROX_COLLECTOR_LOG_LEVEL`. It will be used only if
+  no `logLevel` is specified in the Collector configuration.
+
+* Via API call `/loglevel`. This way any current value will be overwritten.
+
+```
+$ curl -X POST -d "trace" collector:8080/loglevel
+```
+
 ### Pod Status
 
 Another way of getting a quick look at the reason for a crashing Collector is to
