@@ -96,6 +96,11 @@ bucket (unless they match a defined CIDR-block). Runtime configuration is the
 preferred method to control external IPs, and it overrides this variable.
 Default is disabled.
 
+* `ROX_COLLECTOR_LOG_LEVEL`: Specifies which log level to use, if no logLevel
+is set in the Collector configuration. This is a convenience option: modifying
+Collector configuration might be cumbersome, and setting one environment
+variable is easier.
+
 NOTE: Using environment variables is a preferred way of configuring Collector,
 so if you're adding a new configuration knob, keep this in mind.
 
