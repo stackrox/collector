@@ -20,7 +20,7 @@ packages:
 - patch
 - systemtap-sdt-devel
 contentOrigin:
-  repofiles: [ "redhat.repo" ]
+  repofiles: [ "rpms.rhel.repo" ]
 context:
   containerfile:
     file: ../../konflux.Dockerfile
