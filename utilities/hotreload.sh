@@ -144,6 +144,10 @@ function revert_config() {
 check_command jq
 check_command kubectl
 
+if ! krox get ds/collector &> /dev/null; then
+    die "collector daemonset not found (did you forget to deploy stackrox?)"
+fi
+
 TEMP=$(getopt -o 'hrp:n:' -l 'help,revert,path:,namespace:' -n "$0" -- "$@")
 
 # shellcheck disable=SC2181
@@ -161,7 +165,7 @@ while true; do
             exit 0
             ;;
 
-        '-r' | '--hotreload')
+        '-r' | '--revert')
             REVERT=1
             shift
             ;;
