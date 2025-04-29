@@ -136,6 +136,17 @@ class Address {
     }
   }
 
+  static bool IsCanonicalExternalIp(const Address& addr) {
+    switch (addr.family_) {
+      case Family::IPV4:
+        return addr.data_[0] == 0xffffffffULL;
+      case Family::IPV6:
+        return addr.data_[0] == 0xffffffffffffffffULL && addr.data_[1] == 0xffffffffffffffffULL;
+      default:
+        return false;
+    }
+  }
+
  private:
   friend std::ostream& operator<<(std::ostream& os, const Address& addr) {
     int af = (addr.family_ == Family::IPV4) ? AF_INET : AF_INET6;

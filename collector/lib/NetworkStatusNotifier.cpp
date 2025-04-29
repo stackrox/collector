@@ -225,6 +225,8 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
   auto next_scrape = std::chrono::system_clock::now();
   int64_t time_at_last_scrape = NowMicros();
 
+  bool prevEnableExternalIPs = config_.EnableExternalIPs();
+
   while (writer->Sleep(next_scrape)) {
     CLOG(DEBUG) << "Starting network status notification";
     next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(config_.ScrapeInterval());
@@ -240,12 +242,18 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
     const sensor::NetworkConnectionInfoMessage* msg;
     ConnMap new_conn_state, delta_conn;
     AdvertisedEndpointMap new_cep_state;
+    bool enableExternalIPs = config_.EnableExternalIPs();
+
     WITH_TIMER(CollectorStats::net_fetch_state) {
-      conn_tracker_->EnableExternalIPs(config_.EnableExternalIPs());
+      conn_tracker_->EnableExternalIPs(enableExternalIPs);
 
       new_conn_state = conn_tracker_->FetchConnState(true, true);
       if (config_.EnableAfterglow()) {
         ConnectionTracker::ComputeDeltaAfterglow(new_conn_state, old_conn_state, delta_conn, time_micros, time_at_last_scrape, config_.AfterglowPeriod());
+        if (prevEnableExternalIPs != enableExternalIPs) {
+          conn_tracker_->CloseConnectionsOnRuntimeConfigChange(&old_conn_state, &delta_conn, enableExternalIPs);
+          prevEnableExternalIPs = enableExternalIPs;
+        }
       } else {
         ConnectionTracker::ComputeDelta(new_conn_state, &old_conn_state);
       }

@@ -71,7 +71,7 @@ void ConnectionTracker::Update(
   }
 }
 
-IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
+IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address, bool enable_external_ips) const {
   if (address.IsNull()) {
     return {};
   }
@@ -96,7 +96,7 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
     return network;
   }
 
-  if (enable_external_ips_) {
+  if (enable_external_ips) {
     return IPNet(address, address.length() * 8);
   }
 
@@ -108,6 +108,58 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address) const {
       return IPNet(canonical_external_ipv6_addr, 0, true);
     default:
       return {};
+  }
+}
+
+bool ConnectionTracker::ShouldNormalizeConnection(const Connection* conn) const {
+  Endpoint local, remote = conn->remote();
+  IPNet ipnet = NormalizeAddressNoLock(remote.address(), false);
+
+  return Address::IsCanonicalExternalIp(ipnet.address());
+}
+
+/**
+ * Closes connections that match a predicate and moves them to a delta
+ */
+void ConnectionTracker::CloseConnections(ConnMap* old_conn_state, ConnMap* delta_conn, std::function<bool(const Connection*)> predicate) {
+  for (auto it = old_conn_state->begin(); it != old_conn_state->end();) {
+    auto& old_conn = *it;
+    if (predicate(&old_conn.first)) {
+      if (old_conn.second.IsActive()) {
+        old_conn.second.SetActive(false);
+      }
+      delta_conn->insert(old_conn);
+      it = old_conn_state->erase(it);
+    } else {
+      it++;
+    }
+  }
+}
+
+/**
+ * Closes connections that have the 255.255.255.255 external IP address
+ */
+void ConnectionTracker::CloseNormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn) {
+  CloseConnections(old_conn_state, delta_conn, [](const Connection* conn) {
+    return Address::IsCanonicalExternalIp(conn->remote().address());
+  });
+}
+
+/**
+ * Closes unnormalized connections that would be normalized to the canonical external
+ * IP address if external IPs was enabled
+ */
+void ConnectionTracker::CloseExternalUnnormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn) {
+  CloseConnections(old_conn_state, delta_conn, [this](const Connection* conn) {
+    return ShouldNormalizeConnection(conn) && !Address::IsCanonicalExternalIp(conn->remote().address());
+  });
+}
+
+void ConnectionTracker::CloseConnectionsOnRuntimeConfigChange(ConnMap* old_conn_state, ConnMap* delta_conn, bool enableExternalIPs) {
+  if (enableExternalIPs) {
+    CloseNormalizedConnections(old_conn_state, delta_conn);
+  } else {
+    CloseExternalUnnormalizedConnections(old_conn_state, delta_conn);
   }
 }
 
@@ -123,11 +175,11 @@ Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) 
   if (is_server) {
     // If this is the server, only the local port is relevant, while the remote port does not matter.
     local = Endpoint(IPNet(Address()), conn.local().port());
-    remote = Endpoint(NormalizeAddressNoLock(conn.remote().address()), 0);
+    remote = Endpoint(NormalizeAddressNoLock(conn.remote().address(), enable_external_ips_), 0);
   } else {
     // If this is the client, the local port and address are not relevant.
     local = Endpoint();
-    remote = Endpoint(NormalizeAddressNoLock(remote.address()), remote.port());
+    remote = Endpoint(NormalizeAddressNoLock(remote.address(), enable_external_ips_), remote.port());
   }
 
   return Connection(conn.container(), local, remote, conn.l4proto(), is_server);

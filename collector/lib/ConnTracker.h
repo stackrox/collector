@@ -100,6 +100,11 @@ class ConnectionTracker {
   template <typename T>
   static void UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, const UnorderedMap<T, ConnStatus>& new_state, int64_t time_micros, int64_t afterglow_period_micros);
 
+  void CloseConnections(ConnMap* old_conn_state, ConnMap* delta_conn, std::function<bool(const Connection*)> predicate);
+  void CloseNormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn);
+  void CloseExternalUnnormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn);
+  void CloseConnectionsOnRuntimeConfigChange(ConnMap* old_conn_state, ConnMap* delta_conn, bool enableExternalIPs);
+
   // ComputeDelta computes a diff between new_state and old_state
   template <typename T>
   static void ComputeDeltaAfterglow(const UnorderedMap<T, ConnStatus>& new_state, const UnorderedMap<T, ConnStatus>& old_state, UnorderedMap<T, ConnStatus>& delta, int64_t time_micros, int64_t time_at_last_scrape, int64_t afterglow_period_micros);
@@ -154,11 +159,12 @@ class ConnectionTracker {
   // Those counters are updated as new connections are reported by the system.
   Stats GetConnectionStats_NewConnectionCounters();
 
+  bool ShouldNormalizeConnection(const Connection* conn) const;
+
  private:
   // NormalizeConnection transforms a connection into a normalized form.
   Connection NormalizeConnectionNoLock(const Connection& conn) const;
-
-  IPNet NormalizeAddressNoLock(const Address& address) const;
+  IPNet NormalizeAddressNoLock(const Address& address, bool enable_external_ips) const;
 
   // Returns true if any connection filters are found.
   inline bool HasConnectionFilters() const {
