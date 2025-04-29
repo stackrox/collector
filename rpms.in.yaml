@@ -4,7 +4,7 @@ packages:
 - unzip
 - clang
 - llvm
-- cmake-3.18.2-9.el8
+- cmake
 - gcc-c++
 - openssl-devel
 - ncurses-devel
