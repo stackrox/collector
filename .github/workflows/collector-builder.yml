@@ -12,7 +12,7 @@ on:
         type: string
         required: true
         description: |
-          Space-seperated list of architectures to build
+          Space-separated list of architectures to build
 
     outputs:
       collector-builder-tag:
