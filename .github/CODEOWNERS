@@ -11,5 +11,4 @@ RELEASED_VERSIONS.unsupported   @stackrox/collector-team
 # The RHTAP maintainers for ACS review all changes related to the Konflux (f.k.a. RHTAP) pipelines, such as new
 # pipelines, parameter changes or automated task updates as well as Dockerfile updates.
 **/konflux.*Dockerfile  @stackrox/rhtap-maintainers
-/.konflux/              @stackrox/rhtap-maintainers
 /.tekton/               @stackrox/rhtap-maintainers
