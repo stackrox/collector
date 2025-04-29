@@ -11,7 +11,7 @@ RUN dnf -y install --nobest \
         unzip \
         clang \
         llvm \
-        cmake-3.18.2-9.el8 \
+        cmake \
         gcc-c++ \
         openssl-devel \
         ncurses-devel \
@@ -78,6 +78,7 @@ RUN if [[ "$(uname -m)" == "x86_64" ]];   \
 RUN cmake --build "${CMAKE_BUILD_DIR}" --target all -- -j "${NPROCS:-4}"
 RUN ctest --no-tests=error -V --test-dir "${CMAKE_BUILD_DIR}"
 RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
+
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
