@@ -31,7 +31,7 @@ jobs:
     outputs:
       build-image: ${{ steps.builder-tag.outputs.build-image || false }}
       collector-builder-tag: ${{ steps.builder-tag.outputs.collector-builder-tag || 'master'}}
-      local-exclude: ${{ steps.builder-tag.outputs.local-exclude || ''}}
+      local-exclude: ${{ steps.arch.outputs.local-exclude || '[]'}}
 
     env:
       DEFAULT_BUILDER_TAG: master
