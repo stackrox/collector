@@ -22,7 +22,7 @@ on:
         type: string
         required: true
         description: |
-          Space-seperated list of architectures to build
+          Space-separated list of architectures to build
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}

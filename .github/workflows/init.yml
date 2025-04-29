@@ -60,7 +60,7 @@ on:
         value: ${{ jobs.common-variables.outputs.rebuild-qa-containers }}
       architectures:
         description: |
-          Space-seperated list of architectures to build
+          Space-separated list of architectures to build
         value: |
           ${{ ((github.event_name != 'pull_request' ||
             contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')) &&
