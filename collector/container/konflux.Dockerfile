@@ -85,7 +85,6 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 RUN microdnf -y install --nobest \
       tbb \
       c-ares && \
-    # We can do usual cleanup while we're here: remove packages that would trigger violations. \
     microdnf -y clean all && \
     rpm --verbose -e --nodeps $(rpm -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*') && \
     rm -rf /var/cache/dnf /var/cache/yum
