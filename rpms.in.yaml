@@ -1,4 +1,5 @@
 packages:
+# builder stage in collector/container/konflux.Dockerfile
 - make
 - wget
 - unzip
@@ -19,12 +20,13 @@ packages:
 - c-ares-devel
 - patch
 - systemtap-sdt-devel
+# final stage in collector/container/konflux.Dockerfile
+- tbb
+- c-ares
 contentOrigin:
   repofiles: [ "rpms.rhel.repo" ]
 context:
-  containerfile:
-    file: ../../konflux.Dockerfile
-    stageName: builder
+  bare: true
 arches:
 - aarch64
 - ppc64le
