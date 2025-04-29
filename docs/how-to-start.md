@@ -164,6 +164,24 @@ Or similarly via a CLI parameter:
 $ collector --grpc-server=
 ```
 
+## Hotreload on local k8s cluster
+
+If using some sort of local k8s cluster for development (KinD, k3s, minikube)
+that has access to your local filesystem, you can use the
+[hotreload.sh](../utilities/hotreload.sh) script to run the collector binary in
+the cluster without rebuilding the entire image.
+
+Start by deploying stackrox to your cluster using the `deploy-local.sh` script
+from the main repo, the run `hotreload.sh` to have the collector repository
+mounted into the collector container and its command changed to run the binary
+in `cmake-build/collector/collector`. Once that is done, you can recompile the
+binary by using the `make -C collector container/bin/collector` command or by
+exec'ing into the builder container directly and compiling from there with
+cmake.
+
+This is also an easy way to run collector under thread or address sanitizer, but
+you will need to deploy an image built with the `image-dev` make target.
+
 ### Development with an IDE (CLion)
 
 #### Setup
