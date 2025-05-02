@@ -26,7 +26,7 @@
 - name: Save network details
   delegate_to: localhost
   set_fact:
-    public_subnet: "{{ pi_instance.addresses|rejectattr('external_ip', 'equalto', '') | list | first }}"
+    public_subnet: "{{ pi_instance.networks|rejectattr('external_ip', 'equalto', '') | list | first }}"
   when: pi_instance_existing_output.rc == 0
 
 - name: Delete instance by id
