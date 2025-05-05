@@ -139,7 +139,9 @@ class Address {
   static bool IsCanonicalExternalIp(const Address& addr) {
     switch (addr.family_) {
       case Family::IPV4:
-        return addr.data_[0] == 0xffffffffULL;
+        uint32_t ipv4_val;
+        std::memcpy(&ipv4_val, &addr.data_[0], sizeof(ipv4_val));
+        return ipv4_val == 0xffffffffULL;
       case Family::IPV6:
         return addr.data_[0] == 0xffffffffffffffffULL && addr.data_[1] == 0xffffffffffffffffULL;
       default:
