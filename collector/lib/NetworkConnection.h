@@ -139,7 +139,7 @@ class Address {
   static bool IsCanonicalExternalIp(const Address& addr) {
     switch (addr.family_) {
       case Family::IPV4:
-        return addr.data_[0] == 0xffffffffULL;
+        return (addr.data_[0] & htonll(0xffffffff00000000ULL)) == htonll(0xffffffff00000000ULL);
       case Family::IPV6:
         return addr.data_[0] == 0xffffffffffffffffULL && addr.data_[1] == 0xffffffffffffffffULL;
       default:
