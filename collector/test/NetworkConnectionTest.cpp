@@ -172,7 +172,7 @@ TEST(TestIPNet, TestIsCanonicalExternalIp) {
   };
 
   for (const auto& [address, expected] : tests) {
-    EXPECT_EQ(Address::IsCanonicalExternalIp(address), expected);
+    EXPECT_EQ(Address::IsCanonicalExternalIp(address), expected) << "Address under test: " << address;
   }
 }
 
