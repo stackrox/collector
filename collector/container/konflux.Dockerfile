@@ -1,9 +1,8 @@
 ARG BUILD_DIR=/build
 ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
 
-# Builder
-# TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-FROM registry.access.redhat.com/ubi8/ubi:latest AS builder
+
+FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:244e9858f9d8a2792a3dceb850b4fa8fdbd67babebfde42587bfa919d5d1ecef AS builder
 
 RUN dnf -y install --nobest \
         make \
@@ -80,7 +79,7 @@ RUN ctest --no-tests=error -V --test-dir "${CMAKE_BUILD_DIR}"
 RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:b2a1bec3dfbc7a14a1d84d98934dfe8fdde6eb822a211286601cf109cbccb075
 
 RUN microdnf -y install --nobest \
       tbb \
