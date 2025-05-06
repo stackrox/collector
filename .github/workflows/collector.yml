@@ -37,7 +37,7 @@ jobs:
     name: Prepare builders for collector
     runs-on: ubuntu-24.04
     outputs:
-      local-exclude: ${{ steps.arch.outputs.local-exclude || '' }}
+      local-exclude: ${{ steps.arch.outputs.local-exclude || '[]' }}
 
     steps:
       - name: Check arches for local build
