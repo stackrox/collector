@@ -87,7 +87,7 @@ jobs:
       matrix:
         arch: [amd64, arm64, ppc64le]
         exclude: ${{ fromJSON(needs.builder-needs-rebuilding.outputs.local-exclude) }}
-    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
+    runs-on: ${{ (matrix.arch == 'amd64' && 'ubuntu-24.04') || 'ubuntu-24.04-arm' }}
 
     env:
       PLATFORM: linux/${{ matrix.arch }}
