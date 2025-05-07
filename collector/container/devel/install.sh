@@ -2,4 +2,4 @@
 set -eo pipefail
 
 dnf upgrade -y
-dnf install -y libasan elfutils-libelf
+dnf install -y libasan libubsan libtsan elfutils-libelf
