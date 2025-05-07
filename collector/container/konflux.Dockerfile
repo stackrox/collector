@@ -2,19 +2,9 @@ ARG BUILD_DIR=/build
 ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
 
 
-# Builder
-# TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-# TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available.
-FROM registry.access.redhat.com/ubi8/ubi:latest AS ubi-normal
-FROM ubi-normal AS rpm-implanter-builder
+FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:244e9858f9d8a2792a3dceb850b4fa8fdbd67babebfde42587bfa919d5d1ecef AS builder
 
-COPY --from=ubi-normal / /mnt
-COPY ./.konflux /tmp/.konflux
-
-# TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
-RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
-    dnf -y --installroot=/mnt upgrade --nobest && \
-    dnf -y --installroot=/mnt install --nobest \
+RUN dnf -y install --nobest \
         make \
         wget \
         unzip \
@@ -36,13 +26,7 @@ RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
         patch \
         # for USDT support
         systemtap-sdt-devel && \
-    /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
-    dnf -y --installroot=/mnt clean all
-
-
-FROM scratch as builder
-
-COPY --from=rpm-implanter-builder /mnt /
+    dnf -y clean all
 
 ARG SOURCES_DIR=/staging
 
@@ -95,32 +79,14 @@ RUN ctest --no-tests=error -V --test-dir "${CMAKE_BUILD_DIR}"
 RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 
-# TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS ubi-minimal
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:b2a1bec3dfbc7a14a1d84d98934dfe8fdde6eb822a211286601cf109cbccb075
 
-
-# Application
-FROM ubi-normal AS rpm-implanter-app
-
-COPY --from=ubi-minimal / /mnt
-COPY ./.konflux /tmp/.konflux
-
-# TODO(ROX-20234): use hermetic builds when installing/updating RPMs becomes hermetic.
-RUN /tmp/.konflux/scripts/subscription-manager-bro.sh register /mnt && \
-    dnf -y --installroot=/mnt upgrade --nobest && \
-    dnf -y --installroot=/mnt install --nobest \
+RUN microdnf -y install --nobest \
       tbb \
       c-ares && \
-    /tmp/.konflux/scripts/subscription-manager-bro.sh cleanup && \
-    # We can do usual cleanup while we're here: remove packages that would trigger violations. \
-    dnf -y --installroot=/mnt clean all && \
-    rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*') && \
-    rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
-
-
-FROM scratch
-
-COPY --from=rpm-implanter-app /mnt /
+    microdnf -y clean all && \
+    rpm --verbose -e --nodeps $(rpm -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*') && \
+    rm -rf /var/cache/dnf /var/cache/yum
 
 ARG COLLECTOR_TAG
 
