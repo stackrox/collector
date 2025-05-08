@@ -1,6 +1,5 @@
 #include "Output.h"
 
-#include "GRPCUtil.h"
 #include "output/grpc/Client.h"
 #include "output/log/Client.h"
 
@@ -9,131 +8,40 @@ namespace collector::output {
 Output::Output(const CollectorConfig& config)
     : use_sensor_client_(!config.UseLegacyServices()) {
   if (config.grpc_channel != nullptr) {
-    channel_ = config.grpc_channel;
-
-    if (use_sensor_client_) {
-      auto sensor_client = std::make_unique<grpc::Client>(channel_);
-      sensor_clients_.emplace_back(std::move(sensor_client));
-    } else {
-      auto signal_client = std::make_unique<SignalServiceClient>(channel_);
-      signal_clients_.emplace_back(std::move(signal_client));
-    }
+    auto sensor_client = std::make_unique<grpc::Client>(config.grpc_channel, client_ready_, use_sensor_client_);
+    network_control_channel_ = &sensor_client->GetControlMessageChannel();
+    clients_.emplace_back(std::move(sensor_client));
   }
 
   if (config.grpc_channel == nullptr || config.UseStdout()) {
-    if (use_sensor_client_) {
-      auto sensor_client = std::make_unique<log::Client>();
-      sensor_clients_.emplace_back(std::move(sensor_client));
-    } else {
-      auto signal_client = std::make_unique<StdoutSignalServiceClient>();
-      signal_clients_.emplace_back(std::move(signal_client));
-    }
+    auto sensor_client = std::make_unique<log::Client>();
+    clients_.emplace_back(std::move(sensor_client));
   }
-
-  thread_.Start([this] { EstablishGrpcStream(); });
 }
 
-void Output::HandleOutputError() {
-  CLOG(ERROR) << "GRPC stream interrupted";
-  stream_active_.store(false, std::memory_order_release);
-  stream_interrupted_.notify_one();
-}
-
-SignalHandler::Result Output::SensorOutput(const sensor::ProcessSignal& msg) {
-  for (auto& client : sensor_clients_) {
+SignalHandler::Result Output::SendMsg(const MsgToSensor& msg) {
+  for (auto& client : clients_) {
     auto res = client->SendMsg(msg);
-    switch (res) {
-      case SignalHandler::PROCESSED:
-        break;
-
-      case SignalHandler::ERROR:
-        HandleOutputError();
-        return res;
-
-      case SignalHandler::IGNORED:
-      case SignalHandler::NEEDS_REFRESH:
-      case SignalHandler::FINISHED:
-        return res;
+    if (res != SignalHandler::PROCESSED) {
+      return res;
     }
   }
+
   return SignalHandler::PROCESSED;
 }
 
-SignalHandler::Result Output::SignalOutput(const sensor::SignalStreamMessage& msg) {
-  for (auto& client : signal_clients_) {
-    auto res = client->PushSignals(msg);
-    switch (res) {
-      case SignalHandler::PROCESSED:
-        break;
-
-      case SignalHandler::ERROR:
-        HandleOutputError();
-        return res;
-
-      case SignalHandler::IGNORED:
-      case SignalHandler::NEEDS_REFRESH:
-      case SignalHandler::FINISHED:
-        return res;
-    }
-  }
-  return SignalHandler::PROCESSED;
+bool Output::IsReady() {
+  return std::all_of(clients_.begin(), clients_.end(), [](const auto& client) {
+    return client->IsReady();
+  });
 }
 
-SignalHandler::Result Output::SendMsg(const MessageType& msg) {
-  auto visitor = [this](auto&& m) {
-    using T = std::decay_t<decltype(m)>;
-    if constexpr (std::is_same_v<T, sensor::ProcessSignal>) {
-      return SensorOutput(m);
-    } else if constexpr (std::is_same_v<T, sensor::SignalStreamMessage>) {
-      return SignalOutput(m);
-    }
+bool Output::WaitReady(const std::function<bool()>& predicate) {
+  std::unique_lock<std::mutex> lock{wait_mutex_};
+  client_ready_.wait(lock, [this, predicate] {
+    return IsReady() || predicate();
+  });
 
-    // Unknown type
-    return SignalHandler::ERROR;
-  };
-
-  return std::visit(visitor, msg);
-}
-
-void Output::EstablishGrpcStream() {
-  while (EstablishGrpcStreamSingle()) {
-  }
-  CLOG(INFO) << "Service client terminating.";
-}
-
-bool Output::EstablishGrpcStreamSingle() {
-  std::mutex mtx;
-  std::unique_lock<std::mutex> lock(mtx);
-  stream_interrupted_.wait(lock, [this]() { return !stream_active_.load(std::memory_order_acquire) || thread_.should_stop(); });
-  if (thread_.should_stop()) {
-    return false;
-  }
-
-  CLOG(INFO) << "Trying to establish GRPC stream...";
-
-  if (!WaitForChannelReady(channel_, [this]() { return thread_.should_stop(); })) {
-    return false;
-  }
-  if (thread_.should_stop()) {
-    return false;
-  }
-
-  // Refresh all clients
-  bool success = true;
-  for (const auto& client : signal_clients_) {
-    success &= client->Recreate();
-  }
-
-  for (const auto& client : sensor_clients_) {
-    success &= client->Recreate();
-  }
-
-  if (success) {
-    CLOG(INFO) << "Successfully established GRPC stream.";
-    stream_active_.store(true, std::memory_order_release);
-  } else {
-    CLOG(WARNING) << "Failed to establish GRPC stream, retrying...";
-  }
-  return true;
+  return IsReady();
 }
 }  // namespace collector::output
