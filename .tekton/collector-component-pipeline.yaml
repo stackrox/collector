@@ -133,6 +133,9 @@ spec:
   workspaces:
   - name: git-auth
 
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-collector
+
   tasks:
 
   - name: post-metric-start
