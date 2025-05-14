@@ -139,7 +139,7 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 	// See the comment above for the server container endpoint test for more info.
 	assert.Equal(s.T(), 0, len(s.Sensor().Endpoints(s.ClientContainer)))
 
-	networkInfos = s.Sensor().Connections(s.ClientContainer)
+	networkInfos = s.Sensor().GetAllConnections(s.ClientContainer)
 
 	actualClientEndpoint = networkInfos[0].LocalAddress
 	actualServerEndpoint = networkInfos[0].RemoteAddress
