@@ -110,6 +110,9 @@ spec:
     - name: use-trusted-artifact
       computeResources: *ta-resources
 
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-collector
+
   timeouts:
     # The pipeline regularly takes >1h to finish.
     # When changing the value here, make sure to adjust wait-for-images time limit in .github/workflows/konflux-tests.yml
