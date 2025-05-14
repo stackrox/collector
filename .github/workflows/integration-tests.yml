@@ -91,9 +91,6 @@ jobs:
 
   arm64-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: |
-      github.event_name != 'pull_request' || inputs.is-konflux ||
-      contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     strategy:
       # ensure that if one part of the matrix fails, the
       # rest will continue
