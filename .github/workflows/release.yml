@@ -49,6 +49,9 @@ jobs:
           tag=(0 0)
           while read -r line; do
             if [[ "$line" =~ ^([[:digit:]]+)\.([[:digit:]]+)\.x$ ]]; then
+                # If we are doing a release for a specific major
+                # version, we want to limit ourselves to that, so we
+                # ignore newer major versions.
                 if ((tag[0] < BASH_REMATCH[1] && (REQUIRED_MAJOR == 0 || REQUIRED_MAJOR >= BASH_REMATCH[1]))); then
                     tag=("${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}")
                 elif ((tag[0] == BASH_REMATCH[1] && tag[1] < BASH_REMATCH[2])); then
@@ -78,14 +81,12 @@ jobs:
 
           if ((REQUIRED_MAJOR==0)); then
             add_outputs "${LATEST_MAJOR}" "$((LATEST_MINOR+1))" "minor"
+          elif ((REQUIRED_MAJOR > LATEST_MAJOR)); then
+            add_outputs "$((LATEST_MAJOR+1))" "0" "major"
+          elif ((REQUIRED_MAJOR == LATEST_MAJOR && REQUIRED_MINOR > LATEST_MINOR)); then
+            add_outputs "${LATEST_MAJOR}" "$((LATEST_MINOR+1))" "minor"
           else
-            if ((REQUIRED_MAJOR > LATEST_MAJOR)); then
-              add_outputs "$((LATEST_MAJOR+1))" "0" "major"
-            elif ((REQUIRED_MAJOR == LATEST_MAJOR && REQUIRED_MINOR > LATEST_MINOR)); then
-              add_outputs "${LATEST_MAJOR}" "$((LATEST_MINOR+1))" "minor"
-            else
-              add_outputs "${REQUIRED_MAJOR}" "${REQUIRED_MINOR}" "patch"
-            fi
+            add_outputs "${REQUIRED_MAJOR}" "${REQUIRED_MINOR}" "patch"
           fi
 
       - name: Get patch version
