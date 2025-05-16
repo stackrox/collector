@@ -142,6 +142,7 @@ int main(int argc, char** argv) {
   auto& host_info = HostInfo::Instance();
   CLOG(INFO) << "Collector Version: " << GetCollectorVersion();
   CLOG(INFO) << "OS: " << host_info.GetDistro();
+  CLOG(INFO) << "Arch: " << host_info.GetKernelVersion().GetMachine();
   CLOG(INFO) << "Kernel Version: " << host_info.GetKernelVersion().GetRelease();
 
   initialChecks();

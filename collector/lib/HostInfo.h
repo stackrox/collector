@@ -117,6 +117,11 @@ struct KernelVersion {
     return release;
   }
 
+  // Same output as calling `uname -m` in the shell
+  const std::string& GetMachine() {
+    return machine;
+  }
+
   // the kernel version
   int kernel;
   // the kernel major version
