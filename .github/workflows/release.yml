@@ -191,3 +191,22 @@ jobs:
         run: |
           cd falcosecurity-libs/
           git push origin "${RELEASE}.${PATCH}"
+
+      - name: Send message to slack
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_ONCALL_WEBHOOK }}
+          SLACK_CHANNEL: team-acs-collector-oncall
+          SLACK_COLOR: success
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: "New release tagged"
+          SLACKIFY_MARKDOWN: true
+          MSG_MINIMAL: true
+          SLACK_MESSAGE: |
+            @acs-collector-oncall a new release has just been triggered
+            with the following values:
+
+            | Name | Value |
+            | --- | --- |
+            | Version | ${{ env.RELEASE }}.${{ env.PATCH }} |
+            | Release Type | ${{ env.RELEASE_TYPE }} |
