@@ -12,3 +12,4 @@ RELEASED_VERSIONS.unsupported   @stackrox/collector-team
 # pipelines, parameter changes or automated task updates as well as Dockerfile updates.
 **/konflux.*Dockerfile  @stackrox/rhtap-maintainers
 /.tekton/               @stackrox/rhtap-maintainers
+rpms.*                  @stackrox/rhtap-maintainers
