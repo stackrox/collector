@@ -63,7 +63,7 @@ jobs:
           echo "major=${tag[0]}" >> "$GITHUB_OUTPUT"
           echo "minor=${tag[1]}" >> "$GITHUB_OUTPUT"
 
-      - name: Parse required release
+      - name: Determine release type and version
         id: final-values
         env:
           LATEST_MAJOR: ${{ steps.latest-tag.outputs.major }}
@@ -122,7 +122,7 @@ jobs:
           }
 
           BRANCH="master"
-          if [[ "${RELEASE_TYPE}" == "${PATCH}" ]]; then
+          if [[ "${RELEASE_TYPE}" == "patch" ]]; then
             BRANCH="release-${MAJOR}.${MINOR}"
           fi
 
