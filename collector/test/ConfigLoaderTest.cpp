@@ -11,7 +11,7 @@
 
 namespace collector {
 using namespace google::protobuf::util;
-using Direction = CollectorConfig::ExternalIPsConfig::Direction;
+using Direction = ExternalIPsConfig::Direction;
 
 std::string ErrorsToString(const std::vector<ParserError>& errors) {
   std::stringstream ss;

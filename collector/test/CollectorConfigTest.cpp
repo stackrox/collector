@@ -8,7 +8,7 @@
 #include "gtest/gtest.h"
 
 using namespace testing;
-using Direction = collector::CollectorConfig::ExternalIPsConfig::Direction;
+using Direction = collector::ExternalIPsConfig::Direction;
 
 namespace collector {
 
@@ -149,7 +149,7 @@ TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
   external_ips_config->set_enabled(sensor::ExternalIpsEnabled::ENABLED);
   config.SetRuntimeConfig(runtime_config);
 
-  EXPECT_EQ(CollectorConfig::ExternalIPsConfig::Direction::BOTH, config.ExternalIPsConf().GetDirection());
+  EXPECT_EQ(Direction::BOTH, config.ExternalIPsConf().GetDirection());
   EXPECT_TRUE(config.ExternalIPsConf().IsEnabled(Direction::INGRESS));
   EXPECT_TRUE(config.ExternalIPsConf().IsEnabled(Direction::EGRESS));
   EXPECT_TRUE(config.ExternalIPsConf().IsEnabled(Direction::BOTH));

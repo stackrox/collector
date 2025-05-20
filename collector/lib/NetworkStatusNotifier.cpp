@@ -16,8 +16,6 @@ namespace collector {
 
 namespace {
 
-using Direction = CollectorConfig::ExternalIPsConfig::Direction;
-
 storage::L4Protocol TranslateL4Protocol(L4Proto proto) {
   switch (proto) {
     case L4Proto::TCP:
@@ -227,7 +225,7 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
   auto next_scrape = std::chrono::system_clock::now();
   int64_t time_at_last_scrape = NowMicros();
 
-  CollectorConfig::ExternalIPsConfig prevEnableExternalIPs = config_.ExternalIPsConf();
+  ExternalIPsConfig prevEnableExternalIPs = config_.ExternalIPsConf();
 
   while (writer->Sleep(next_scrape)) {
     CLOG(DEBUG) << "Starting network status notification";
@@ -244,12 +242,12 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
     const sensor::NetworkConnectionInfoMessage* msg;
     ConnMap new_conn_state, delta_conn;
     AdvertisedEndpointMap new_cep_state;
-    CollectorConfig::ExternalIPsConfig externalIPsConfig = config_.ExternalIPsConf();
+    ExternalIPsConfig externalIPsConfig = config_.ExternalIPsConf();
 
     WITH_TIMER(CollectorStats::net_fetch_state) {
       conn_tracker_->EnableExternalIPs(
-          externalIPsConfig.IsEnabled(Direction::INGRESS),
-          externalIPsConfig.IsEnabled(Direction::EGRESS));
+          externalIPsConfig.IsEnabled(ExternalIPsConfig::Direction::INGRESS),
+          externalIPsConfig.IsEnabled(ExternalIPsConfig::Direction::EGRESS));
 
       new_conn_state = conn_tracker_->FetchConnState(true, true);
       if (config_.EnableAfterglow()) {
