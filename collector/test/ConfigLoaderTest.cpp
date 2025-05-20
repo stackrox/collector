@@ -319,6 +319,27 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
       {R"(
                   networking:
                     externalIps:
+                      enabled: enabled
+                      direction: ingress
+               )",
+       Direction::INGRESS},
+      {R"(
+                  networking:
+                    externalIps:
+                      enabled: enabled
+                      direction: egress
+               )",
+       Direction::EGRESS},
+      {R"(
+                  networking:
+                    externalIps:
+                      enabled: enabled
+                      direction: both
+               )",
+       Direction::BOTH},
+      {R"(
+                  networking:
+                    externalIps:
                       enabled: DISABLED
                )",
        Direction::NONE},
