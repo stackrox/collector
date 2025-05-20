@@ -18,27 +18,27 @@ arches:
     name: automake
     evr: 1.16.1-8.el8
     sourcerpm: automake-1.16.1-8.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/clang-19.1.7-2.module+el8.10.0+23045+e1f8e80e.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 86104
-    checksum: sha256:656f80e686f7da19ee925dc7432b94930302306741baf85d1ad9ec5a7c1e3b9f
+    size: 93792
+    checksum: sha256:883776a824ccf0d849c297271b01c51df76bdc59722c5cd6c4fa5f3f67a8f556
     name: clang
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/clang-libs-18.1.8-1.module+el8.10.0+22061+3612b2ba.aarch64.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/clang-libs-19.1.7-2.module+el8.10.0+23045+e1f8e80e.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 26341036
-    checksum: sha256:3e7b6e49b364bdb0ad97827e5b4d18e46f9324cf5b3257072098eb6ffe6c9a39
+    size: 29483776
+    checksum: sha256:aea9b9083d4e6530c8a8ee7eb870eb384c7f52e9da617279b10672d6c6727ced
     name: clang-libs
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/clang-resource-filesystem-18.1.8-1.module+el8.10.0+22061+3612b2ba.noarch.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/clang-resource-filesystem-19.1.7-2.module+el8.10.0+23045+e1f8e80e.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 16596
-    checksum: sha256:b1efe65fa87ba753849063e94c744aed8e4fe645b2a1652e5c6adf9601688d1c
+    size: 25888
+    checksum: sha256:fc7877238504f8a24212f47f370fab64c4d29d54d20d9896d2bf7f4e78aa0b70
     name: clang-resource-filesystem
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/cmake-3.26.5-2.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 12405864
@@ -67,13 +67,13 @@ arches:
     name: cmake-rpm-macros
     evr: 3.26.5-2.el8
     sourcerpm: cmake-3.26.5-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/compiler-rt-18.1.8-1.module+el8.10.0+22061+3612b2ba.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/compiler-rt-19.1.7-2.module+el8.10.0+23045+e1f8e80e.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 2926572
-    checksum: sha256:253522807e7f3954ae2006d6e9dd74553cdc9e6e066ad38b6782bdac3c410a83
+    size: 3063684
+    checksum: sha256:c2170f6b77707d414de92f42eddd638746db90a4a6e297b06337356e2302f6d8
     name: compiler-rt
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: compiler-rt-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/c/cpp-8.5.0-26.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 9385032
@@ -95,48 +95,41 @@ arches:
     name: gcc-c++
     evr: 8.5.0-26.el8_10
     sourcerpm: gcc-8.5.0-26.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/g/gcc-toolset-13-binutils-2.40-21.el8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/g/gcc-toolset-14-binutils-2.41-4.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 7733408
-    checksum: sha256:aa0c9a8a1e40de613120f12d1c88c2bae7d4e2a7cabd861c9da1b59b657a8bac
-    name: gcc-toolset-13-binutils
-    evr: 2.40-21.el8
-    sourcerpm: gcc-toolset-13-binutils-2.40-21.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/g/gcc-toolset-13-binutils-gold-2.40-21.el8.aarch64.rpm
+    size: 8231540
+    checksum: sha256:f0c98b4413654c946bbb2c8cfc76fd5a52644633cac44d6ce99e96c861a1b9b5
+    name: gcc-toolset-14-binutils
+    evr: 2.41-4.el8_10
+    sourcerpm: gcc-toolset-14-binutils-2.41-4.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/g/gcc-toolset-14-gcc-14.2.1-7.1.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 1101376
-    checksum: sha256:6dfa8c29de0560d9fa78d21efa407328e4d0549d001c15665285da07a3d6c92b
-    name: gcc-toolset-13-binutils-gold
-    evr: 2.40-21.el8
-    sourcerpm: gcc-toolset-13-binutils-2.40-21.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/g/gcc-toolset-13-gcc-13.3.1-2.2.el8_10.aarch64.rpm
+    size: 46007368
+    checksum: sha256:9d56dd9f92721cd92b4ef2575ec0a056cc4e33d14607b66591e41533ac6a4185
+    name: gcc-toolset-14-gcc
+    evr: 14.2.1-7.1.el8_10
+    sourcerpm: gcc-toolset-14-gcc-14.2.1-7.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/g/gcc-toolset-14-gcc-c++-14.2.1-7.1.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 41143732
-    checksum: sha256:fb3fd78e04ba532c7ef10b3193511cde4f60df898b4027711e36680087696cc5
-    name: gcc-toolset-13-gcc
-    evr: 13.3.1-2.2.el8_10
-    sourcerpm: gcc-toolset-13-gcc-13.3.1-2.2.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/g/gcc-toolset-13-gcc-c++-13.3.1-2.2.el8_10.aarch64.rpm
+    size: 13940100
+    checksum: sha256:5635a679abdc293746c678c0093404ad4e582e14ee1a5350a343c116969ba01d
+    name: gcc-toolset-14-gcc-c++
+    evr: 14.2.1-7.1.el8_10
+    sourcerpm: gcc-toolset-14-gcc-14.2.1-7.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/g/gcc-toolset-14-libstdc++-devel-14.2.1-7.1.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 12471948
-    checksum: sha256:df1d2c07607d19584d8fccb49e5998be83dee7a0f28e15a35c606678eaed52ef
-    name: gcc-toolset-13-gcc-c++
-    evr: 13.3.1-2.2.el8_10
-    sourcerpm: gcc-toolset-13-gcc-13.3.1-2.2.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/g/gcc-toolset-13-libstdc++-devel-13.3.1-2.2.el8_10.aarch64.rpm
+    size: 3968464
+    checksum: sha256:2cd91ea73678bd0cc92d06e60035cec2ee5aa3cf05afe2296c572fcb79764956
+    name: gcc-toolset-14-libstdc++-devel
+    evr: 14.2.1-7.1.el8_10
+    sourcerpm: gcc-toolset-14-gcc-14.2.1-7.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/g/gcc-toolset-14-runtime-14.0-0.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 3834756
-    checksum: sha256:6e80d65edf586f51c8debcbd3835312558d22a9cf7857b76c4afcc441091a7f0
-    name: gcc-toolset-13-libstdc++-devel
-    evr: 13.3.1-2.2.el8_10
-    sourcerpm: gcc-toolset-13-gcc-13.3.1-2.2.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/g/gcc-toolset-13-runtime-13.0-2.el8.aarch64.rpm
-    repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 28912
-    checksum: sha256:743470542e2cf0855ad567a4cb9e7420e2e306adbd471bb6e0f3f1dea14377b1
-    name: gcc-toolset-13-runtime
-    evr: 13.0-2.el8
-    sourcerpm: gcc-toolset-13-13.0-2.el8.src.rpm
+    size: 29012
+    checksum: sha256:8f9a42ccf0b459f412336abd6c793286ea86738d79b0955696a1783a3f3c8ddb
+    name: gcc-toolset-14-runtime
+    evr: 14.0-0.el8_10
+    sourcerpm: gcc-toolset-14-14.0-0.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/g/git-2.43.5-2.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 94584
@@ -172,20 +165,20 @@ arches:
     name: libmpc
     evr: 1.1.0-9.1.el8
     sourcerpm: libmpc-1.1.0-9.1.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/l/libomp-18.1.8-1.module+el8.10.0+22061+3612b2ba.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/l/libomp-19.1.7-2.module+el8.10.0+23045+e1f8e80e.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 680624
-    checksum: sha256:5a7ea1dc8a2399558eec18a4dd9a3f940fa35a1a00425c7f3fe3a0ad1320375a
+    size: 613096
+    checksum: sha256:7bc4d5d72927588132740b1a860fb68d522adf7efffcc7a52e1e5d3c8933d9bd
     name: libomp
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: libomp-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/l/libomp-devel-18.1.8-1.module+el8.10.0+22061+3612b2ba.aarch64.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/l/libomp-devel-19.1.7-2.module+el8.10.0+23045+e1f8e80e.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 553444
-    checksum: sha256:22291fa47fcec6ba46c02539e8460c86517778294b3a215eb42bfe28a66ff4db
+    size: 718472
+    checksum: sha256:0f210517a73bf9422bd6df4546efef1346de18ddb2ae175ade54b9e0b4670a65
     name: libomp-devel
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: libomp-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/l/libstdc++-devel-8.5.0-26.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 2151444
@@ -214,20 +207,27 @@ arches:
     name: libxkbcommon
     evr: 0.9.1-1.el8
     sourcerpm: libxkbcommon-0.9.1-1.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/l/llvm-18.1.8-3.module+el8.10.0+22393+9aa055f1.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/l/llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 28589124
-    checksum: sha256:409ee739edcbef95ca338c8ee7a14537c1d16e02a53dd2345f7315bae915ad0c
+    size: 24327748
+    checksum: sha256:acad8b91f36f0dc3a22c0b8ebbc5d34cf66ed0778c5e677f871b3bb69b1fbc3c
     name: llvm
-    evr: 18.1.8-3.module+el8.10.0+22393+9aa055f1
-    sourcerpm: llvm-18.1.8-3.module+el8.10.0+22393+9aa055f1.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/l/llvm-libs-18.1.8-3.module+el8.10.0+22393+9aa055f1.aarch64.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/l/llvm-libs-19.1.7-2.module+el8.10.0+23045+e1f8e80e.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 28800160
-    checksum: sha256:2ee9cdd918baaba527becff086a504d2d4675967a313f2bd72d1f55e0a2885af
+    size: 31338524
+    checksum: sha256:27d1be99275b208e36f08628ef8a445d39d6bf3d95e1795a080fc4ccbc3fdfd7
     name: llvm-libs
-    evr: 18.1.8-3.module+el8.10.0+22393+9aa055f1
-    sourcerpm: llvm-18.1.8-3.module+el8.10.0+22393+9aa055f1.src.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/m/mpdecimal-2.5.1-3.el8.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 95196
+    checksum: sha256:02fdb7a4c616e2705ee31f6f834fbbb7aed91ca3cedf0ed3d5fd4c771ca46336
+    name: mpdecimal
+    evr: 2.5.1-3.el8
+    sourcerpm: mpdecimal-2.5.1-3.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/perl-Digest-1.17-395.el8.noarch.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 27624
@@ -319,6 +319,27 @@ arches:
     name: pinentry
     evr: 1.1.0-2.el8
     sourcerpm: pinentry-1.1.0-2.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/python3.12-3.12.8-1.el8_10.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 31560
+    checksum: sha256:827dcd466602dfe8b1db364a0bfba2edba85d5a52e9780009b92c178171baf06
+    name: python3.12
+    evr: 3.12.8-1.el8_10
+    sourcerpm: python3.12-3.12.8-1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/python3.12-libs-3.12.8-1.el8_10.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 10243152
+    checksum: sha256:f715ae49b5c3abfc10203a17c28a2ecdd148426564b22311180c15516fdbc055
+    name: python3.12-libs
+    evr: 3.12.8-1.el8_10
+    sourcerpm: python3.12-3.12.8-1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/python3.12-pip-wheel-23.2.1-4.el8.noarch.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 1539820
+    checksum: sha256:c5daaf3d7ef6c52f178ec6c20e49fa9ddb4506f1b0ee5cd1688046c28eb5e1cb
+    name: python3.12-pip-wheel
+    evr: 23.2.1-4.el8
+    sourcerpm: python3.12-pip-23.2.1-4.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/s/scl-utils-2.0.2-16.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 48164
@@ -886,13 +907,13 @@ arches:
     name: kbd-misc
     evr: 2.0.4-11.el8
     sourcerpm: kbd-2.0.4-11.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/k/kernel-headers-4.18.0-553.50.1.el8_10.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/k/kernel-headers-4.18.0-553.52.1.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 12377088
-    checksum: sha256:ab2d4ac022493d253ea6f7ebe751521056886d65c44b969ccb5678753c678ac7
+    size: 12378600
+    checksum: sha256:f7120c8ac83bf82813fd6afae8615eac4752dc4b1f91218ed77bda0e2c149677
     name: kernel-headers
-    evr: 4.18.0-553.50.1.el8_10
-    sourcerpm: kernel-4.18.0-553.50.1.el8_10.src.rpm
+    evr: 4.18.0-553.52.1.el8_10
+    sourcerpm: kernel-4.18.0-553.52.1.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/k/keyutils-libs-1.5.10-9.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
     size: 34656
@@ -2194,42 +2215,30 @@ arches:
     checksum: sha256:9d47ed5ac4aab68cdbd196db251d2658ee03176ec9af6787edf4f16b787f018c
     name: automake
     evr: 1.16.1-8.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/c/clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-    repoid: rhel-8-for-aarch64-appstream-source-rpms
-    size: 25543057
-    checksum: sha256:6ac35cdec541fed15313671f0efe15177c8adc41324f2fb68b21064249d17fd4
-    name: clang
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/c/cmake-3.26.5-2.el8.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
     size: 10702209
     checksum: sha256:1f9724337fffb716f890cd5b92d7694c11a98264c8812c02df8224543a819431
     name: cmake
     evr: 3.26.5-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/c/compiler-rt-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/g/gcc-toolset-14-14.0-0.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
-    size: 2495515
-    checksum: sha256:c88e0f7d67d8f22c4c4011dbadfaae343efe27738285aa85837db21afee8fb28
-    name: compiler-rt
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/g/gcc-toolset-13-13.0-2.el8.src.rpm
+    size: 14222
+    checksum: sha256:1b9d810658599367432adad69bc3ec2fb2fed04d763168b5a1e524e524edd6ee
+    name: gcc-toolset-14
+    evr: 14.0-0.el8_10
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/g/gcc-toolset-14-binutils-2.41-4.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
-    size: 14077
-    checksum: sha256:0ba9089eacae7ed2797bee95d62a847de76289958b302bd2f2ee45f25003dff8
-    name: gcc-toolset-13
-    evr: 13.0-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/g/gcc-toolset-13-binutils-2.40-21.el8.src.rpm
+    size: 27306519
+    checksum: sha256:e28f5951e286b0619f976743ce7d525a12cc1eba1f7150a34a0d7ae8ab1047e5
+    name: gcc-toolset-14-binutils
+    evr: 2.41-4.el8_10
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/g/gcc-toolset-14-gcc-14.2.1-7.1.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
-    size: 25441816
-    checksum: sha256:6d4f6ee38973956098e893efa0bb09a0615938507ac502ace05d3f428371c629
-    name: gcc-toolset-13-binutils
-    evr: 2.40-21.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/g/gcc-toolset-13-gcc-13.3.1-2.2.el8_10.src.rpm
-    repoid: rhel-8-for-aarch64-appstream-source-rpms
-    size: 89347231
-    checksum: sha256:0ca3c5e7fba19ba073619994bad0991ecae5443d4a61e8f87b8cae88f39d1f6f
-    name: gcc-toolset-13-gcc
-    evr: 13.3.1-2.2.el8_10
+    size: 93035496
+    checksum: sha256:4ba88682224df4a0148c83d5cfa0a1407ba661b8bc729512d1a747a26f192be6
+    name: gcc-toolset-14-gcc
+    evr: 14.2.1-7.1.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/g/git-2.43.5-2.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
     size: 7492234
@@ -2248,12 +2257,6 @@ arches:
     checksum: sha256:abc6027ff19edf00eb50dd86e37facba5bd9898da9ccd8aa9cc1f934fbe68e58
     name: libmpc
     evr: 1.1.0-9.1.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/l/libomp-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-    repoid: rhel-8-for-aarch64-appstream-source-rpms
-    size: 1341475
-    checksum: sha256:c638152e9918b8a9ac1b0ef679955673e02d1d24e3b729d15bcedbb47695c373
-    name: libomp
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/l/libuv-1.41.1-2.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
     size: 1297972
@@ -2266,12 +2269,18 @@ arches:
     checksum: sha256:ca72f33bbbdd245bf1d2385e5f934d36b0ebdc9854b242fce7be0bb56bfa8255
     name: libxkbcommon
     evr: 0.9.1-1.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/l/llvm-18.1.8-3.module+el8.10.0+22393+9aa055f1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/l/llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
-    size: 62461419
-    checksum: sha256:5c8b01298a6b36cfc086ce53f73ff61dc67bf7508a67fb01cb366aeac36df193
+    size: 141359786
+    checksum: sha256:3bb83a57fb3dcadca563232f1bd2d5183ccb5b4a1c54e0e8257b182cd1a0b22c
     name: llvm
-    evr: 18.1.8-3.module+el8.10.0+22393+9aa055f1
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/m/mpdecimal-2.5.1-3.el8.src.rpm
+    repoid: rhel-8-for-aarch64-appstream-source-rpms
+    size: 3333112
+    checksum: sha256:36811086e6cf10de04a5cfcbc3599228e073a44e032fac74d72857c970f06cae
+    name: mpdecimal
+    evr: 2.5.1-3.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/p/perl-Digest-1.17-395.el8.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
     size: 22585
@@ -2344,6 +2353,18 @@ arches:
     checksum: sha256:92ffd89c003f55df70a8d0da36e85a6fad8ef8d8799e5d0c8bc278d1d7dae0e0
     name: pinentry
     evr: 1.1.0-2.el8
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/p/python3.12-3.12.8-1.el8_10.src.rpm
+    repoid: rhel-8-for-aarch64-appstream-source-rpms
+    size: 20561351
+    checksum: sha256:4a3d2b0926b117e10f0b5fe98d3c8d482c66e6639fd8cab410b2765c19dbd59d
+    name: python3.12
+    evr: 3.12.8-1.el8_10
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/p/python3.12-pip-23.2.1-4.el8.src.rpm
+    repoid: rhel-8-for-aarch64-appstream-source-rpms
+    size: 9393232
+    checksum: sha256:5661eadc28225da228c8a053fe6606cd2159238a469bc9a55fce9dbebb5e2232
+    name: python3.12-pip
+    evr: 23.2.1-4.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/s/scl-utils-2.0.2-16.el8.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
     size: 64198
@@ -2674,12 +2695,12 @@ arches:
     checksum: sha256:9ccad26b460609bc75dfe8795f72dbdcc9fdd08529de1398a7d2a205d6d20ad3
     name: kbd
     evr: 2.0.4-11.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/k/kernel-4.18.0-553.50.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/k/kernel-4.18.0-553.52.1.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
-    size: 138640153
-    checksum: sha256:76c731729b74d87fea96ed4a0febf39467c99264c16dc2eb4530b8748283d5cb
+    size: 138639275
+    checksum: sha256:7fb5c18e08095675ab535f85bbf8b23da8f84f2589a1ef70b59f43192765eb2e
     name: kernel
-    evr: 4.18.0-553.50.1.el8_10
+    evr: 4.18.0-553.52.1.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/k/keyutils-1.5.10-9.el8.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
     size: 103686
@@ -3407,10 +3428,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/ba7955ce4e805d927bccaeee08e939fc07cfa4ca5d5f89ae990722fd91fbf32a-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/56decd7b7114cb0362a9f7b18f6454c62a3a3e17c0f98e2177643020f6a52079-modules.yaml.gz
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 707212
-    checksum: sha256:ba7955ce4e805d927bccaeee08e939fc07cfa4ca5d5f89ae990722fd91fbf32a
+    size: 711485
+    checksum: sha256:56decd7b7114cb0362a9f7b18f6454c62a3a3e17c0f98e2177643020f6a52079
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -3427,27 +3448,27 @@ arches:
     name: automake
     evr: 1.16.1-8.el8
     sourcerpm: automake-1.16.1-8.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/clang-19.1.7-2.module+el8.10.0+23045+e1f8e80e.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 91552
-    checksum: sha256:b56166ee447f4c1b0bdfbaa51ce79f66a7d03faaea0ab11af81ed1daf7c865b5
+    size: 100216
+    checksum: sha256:7f1fd41abc26eeef4f33ca623f8b79a4322ce9a11761375ff779b587910e9811
     name: clang
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/clang-libs-18.1.8-1.module+el8.10.0+22061+3612b2ba.ppc64le.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/clang-libs-19.1.7-2.module+el8.10.0+23045+e1f8e80e.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 29675428
-    checksum: sha256:3cc38d6180acc4e0da2915dcf1d17798084bcd9dfee46f3c2d3263fe7d4fcca0
+    size: 33459660
+    checksum: sha256:d512442b7f781d910e5c85f73140fd5fad875821e53f0a5dcc3657a93878dd64
     name: clang-libs
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/clang-resource-filesystem-18.1.8-1.module+el8.10.0+22061+3612b2ba.noarch.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/clang-resource-filesystem-19.1.7-2.module+el8.10.0+23045+e1f8e80e.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 16596
-    checksum: sha256:b1efe65fa87ba753849063e94c744aed8e4fe645b2a1652e5c6adf9601688d1c
+    size: 25892
+    checksum: sha256:d8526188e39a99ccd17623f6551a0dc3148b3987941f4d3edda5be7b9e23a233
     name: clang-resource-filesystem
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/cmake-3.26.5-2.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 14001872
@@ -3476,13 +3497,13 @@ arches:
     name: cmake-rpm-macros
     evr: 3.26.5-2.el8
     sourcerpm: cmake-3.26.5-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/compiler-rt-18.1.8-1.module+el8.10.0+22061+3612b2ba.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/compiler-rt-19.1.7-2.module+el8.10.0+23045+e1f8e80e.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 2366004
-    checksum: sha256:bcbcc6f0a6a9426c99401bed26e5a4804a8525aa3f74bd4970f6639bf22b16fe
+    size: 2470164
+    checksum: sha256:b070806c98a1eec92b153d839d2eaa08ce22ca487c6214b613e79c2b6930daaf
     name: compiler-rt
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: compiler-rt-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/c/cpp-8.5.0-26.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 11297080
@@ -3504,48 +3525,41 @@ arches:
     name: gcc-c++
     evr: 8.5.0-26.el8_10
     sourcerpm: gcc-8.5.0-26.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/g/gcc-toolset-13-binutils-2.40-21.el8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/g/gcc-toolset-14-binutils-2.41-4.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 8294700
-    checksum: sha256:03d21c087ae1262ad1ea561b28c09c316de15b14f3bd0c7964138b091616187b
-    name: gcc-toolset-13-binutils
-    evr: 2.40-21.el8
-    sourcerpm: gcc-toolset-13-binutils-2.40-21.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/g/gcc-toolset-13-binutils-gold-2.40-21.el8.ppc64le.rpm
+    size: 8180820
+    checksum: sha256:2e551e308aeda0a2fa89fdfb586613e120fc77288c067eb28ab25fc5a3abada5
+    name: gcc-toolset-14-binutils
+    evr: 2.41-4.el8_10
+    sourcerpm: gcc-toolset-14-binutils-2.41-4.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/g/gcc-toolset-14-gcc-14.2.1-7.1.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 1302684
-    checksum: sha256:db8e1b7f090c6f3650bf8dafe17762383dd89be45cbb5bf2bce8764436042777
-    name: gcc-toolset-13-binutils-gold
-    evr: 2.40-21.el8
-    sourcerpm: gcc-toolset-13-binutils-2.40-21.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/g/gcc-toolset-13-gcc-13.3.1-2.2.el8_10.ppc64le.rpm
+    size: 44179144
+    checksum: sha256:3790987418c3d0f642f94b9859097e42a1658182b41bf9fd65ccdaddcb927b67
+    name: gcc-toolset-14-gcc
+    evr: 14.2.1-7.1.el8_10
+    sourcerpm: gcc-toolset-14-gcc-14.2.1-7.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/g/gcc-toolset-14-gcc-c++-14.2.1-7.1.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 41612468
-    checksum: sha256:5e04fb52eb3e7d91cc7b23a11e4d75d5903c7f392aa64abfeea7315dc0e2d183
-    name: gcc-toolset-13-gcc
-    evr: 13.3.1-2.2.el8_10
-    sourcerpm: gcc-toolset-13-gcc-13.3.1-2.2.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/g/gcc-toolset-13-gcc-c++-13.3.1-2.2.el8_10.ppc64le.rpm
+    size: 13764312
+    checksum: sha256:78a862cdeb054454d323c3e23d286df857761923f117b08cf49e5eca9bbbf99c
+    name: gcc-toolset-14-gcc-c++
+    evr: 14.2.1-7.1.el8_10
+    sourcerpm: gcc-toolset-14-gcc-14.2.1-7.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/g/gcc-toolset-14-libstdc++-devel-14.2.1-7.1.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 13008360
-    checksum: sha256:53ff1847b168fe28789a0e886aa5acc344f51bd55ad3ab81484935798cea6356
-    name: gcc-toolset-13-gcc-c++
-    evr: 13.3.1-2.2.el8_10
-    sourcerpm: gcc-toolset-13-gcc-13.3.1-2.2.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/g/gcc-toolset-13-libstdc++-devel-13.3.1-2.2.el8_10.ppc64le.rpm
+    size: 4438220
+    checksum: sha256:9cf03cabe1159eddcdb3b68bde8dfeafd6ab7b2d755a4cf9360316700ba53102
+    name: gcc-toolset-14-libstdc++-devel
+    evr: 14.2.1-7.1.el8_10
+    sourcerpm: gcc-toolset-14-gcc-14.2.1-7.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/g/gcc-toolset-14-runtime-14.0-0.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 4284324
-    checksum: sha256:b7ae6720e18fbc3c4c09344d4422549812ba3efc5b76df7f874c7981bee5f1e5
-    name: gcc-toolset-13-libstdc++-devel
-    evr: 13.3.1-2.2.el8_10
-    sourcerpm: gcc-toolset-13-gcc-13.3.1-2.2.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/g/gcc-toolset-13-runtime-13.0-2.el8.ppc64le.rpm
-    repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 28928
-    checksum: sha256:1bd92661c2c11fa3d65926934fca9e9fb4873b0565d51a5d13cefe307795aa52
-    name: gcc-toolset-13-runtime
-    evr: 13.0-2.el8
-    sourcerpm: gcc-toolset-13-13.0-2.el8.src.rpm
+    size: 29012
+    checksum: sha256:9c5d6cc9294d86ab31f0963c66ce175568f5e07c24e52dd1715fca34356f3057
+    name: gcc-toolset-14-runtime
+    evr: 14.0-0.el8_10
+    sourcerpm: gcc-toolset-14-14.0-0.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/g/git-2.43.5-2.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 94588
@@ -3581,20 +3595,20 @@ arches:
     name: libmpc
     evr: 1.1.0-9.1.el8
     sourcerpm: libmpc-1.1.0-9.1.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/l/libomp-18.1.8-1.module+el8.10.0+22061+3612b2ba.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/l/libomp-19.1.7-2.module+el8.10.0+23045+e1f8e80e.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 744584
-    checksum: sha256:146f89ec2be251108f06a9224634db58fdc0de7c68b75e38c2e5c8281c1441eb
+    size: 656660
+    checksum: sha256:3674454c0e712c833413c83ac7b947c9af2f36543b007b86414dc9cb960198bb
     name: libomp
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: libomp-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/l/libomp-devel-18.1.8-1.module+el8.10.0+22061+3612b2ba.ppc64le.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/l/libomp-devel-19.1.7-2.module+el8.10.0+23045+e1f8e80e.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 553228
-    checksum: sha256:550729ff0a6b5a3319ed38e6eb87a05fa8ea411ff3957d638822a0f670986181
+    size: 718224
+    checksum: sha256:20ee1b67aea334d8f2514423a3d1d37f88ef5a5a7ac85e7e66b84f49c1a76c41
     name: libomp-devel
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: libomp-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/l/libstdc++-devel-8.5.0-26.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 2159092
@@ -3623,20 +3637,27 @@ arches:
     name: libxkbcommon
     evr: 0.9.1-1.el8
     sourcerpm: libxkbcommon-0.9.1-1.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/l/llvm-18.1.8-3.module+el8.10.0+22393+9aa055f1.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/l/llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 34957456
-    checksum: sha256:d882ec642fa9309f66a8e33c9cabdc1794d7d6a8e6d8282ba56bebda7c943ea4
+    size: 30580688
+    checksum: sha256:aac83ec65e837979519cc352808cd99a94f0819c771b820072bb0a7e592ac59f
     name: llvm
-    evr: 18.1.8-3.module+el8.10.0+22393+9aa055f1
-    sourcerpm: llvm-18.1.8-3.module+el8.10.0+22393+9aa055f1.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/l/llvm-libs-18.1.8-3.module+el8.10.0+22393+9aa055f1.ppc64le.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/l/llvm-libs-19.1.7-2.module+el8.10.0+23045+e1f8e80e.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 31947480
-    checksum: sha256:ee9d56c4c2d46c711b35bb11f5591479d2b14fe583dde4470a5a7e63c538a6c5
+    size: 34701460
+    checksum: sha256:ad07a6667ab62753d8d9b41721f808cd3cb2b3d6eb2f77ab1b9d39a0af1c6883
     name: llvm-libs
-    evr: 18.1.8-3.module+el8.10.0+22393+9aa055f1
-    sourcerpm: llvm-18.1.8-3.module+el8.10.0+22393+9aa055f1.src.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/m/mpdecimal-2.5.1-3.el8.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 107920
+    checksum: sha256:becf9d9d37f87c08958351a21b6e83adb3a80beb1d3e68b4dab4e409e8167dc6
+    name: mpdecimal
+    evr: 2.5.1-3.el8
+    sourcerpm: mpdecimal-2.5.1-3.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/perl-Digest-1.17-395.el8.noarch.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 27624
@@ -3728,6 +3749,27 @@ arches:
     name: pinentry
     evr: 1.1.0-2.el8
     sourcerpm: pinentry-1.1.0-2.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/python3.12-3.12.8-1.el8_10.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 31752
+    checksum: sha256:561f815cc46e959667e979da907559e9bb9475b42162c4516bdb995502e784d2
+    name: python3.12
+    evr: 3.12.8-1.el8_10
+    sourcerpm: python3.12-3.12.8-1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/python3.12-libs-3.12.8-1.el8_10.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 10752828
+    checksum: sha256:d700e5d0979850b89f88c2b7919176b26c87864e28cf4cd6c4d261d448bef1e0
+    name: python3.12-libs
+    evr: 3.12.8-1.el8_10
+    sourcerpm: python3.12-3.12.8-1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/python3.12-pip-wheel-23.2.1-4.el8.noarch.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 1539820
+    checksum: sha256:c5daaf3d7ef6c52f178ec6c20e49fa9ddb4506f1b0ee5cd1688046c28eb5e1cb
+    name: python3.12-pip-wheel
+    evr: 23.2.1-4.el8
+    sourcerpm: python3.12-pip-23.2.1-4.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/s/scl-utils-2.0.2-16.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 51712
@@ -4295,13 +4337,13 @@ arches:
     name: kbd-misc
     evr: 2.0.4-11.el8
     sourcerpm: kbd-2.0.4-11.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/k/kernel-headers-4.18.0-553.50.1.el8_10.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/k/kernel-headers-4.18.0-553.52.1.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
-    size: 12396348
-    checksum: sha256:1359391bb018cc7c418a82fe13a46334a757378307741eaf0ddaadbe87fb5aae
+    size: 12397964
+    checksum: sha256:6fc1e4068a5b67e0ea49b0d75a63e0a92eed0234662d5623667e2b2ba1a930a4
     name: kernel-headers
-    evr: 4.18.0-553.50.1.el8_10
-    sourcerpm: kernel-4.18.0-553.50.1.el8_10.src.rpm
+    evr: 4.18.0-553.52.1.el8_10
+    sourcerpm: kernel-4.18.0-553.52.1.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/k/keyutils-libs-1.5.10-9.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
     size: 35664
@@ -5610,42 +5652,30 @@ arches:
     checksum: sha256:9d47ed5ac4aab68cdbd196db251d2658ee03176ec9af6787edf4f16b787f018c
     name: automake
     evr: 1.16.1-8.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/c/clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-    repoid: rhel-8-for-ppc64le-appstream-source-rpms
-    size: 25543057
-    checksum: sha256:6ac35cdec541fed15313671f0efe15177c8adc41324f2fb68b21064249d17fd4
-    name: clang
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/c/cmake-3.26.5-2.el8.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
     size: 10702209
     checksum: sha256:1f9724337fffb716f890cd5b92d7694c11a98264c8812c02df8224543a819431
     name: cmake
     evr: 3.26.5-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/c/compiler-rt-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/g/gcc-toolset-14-14.0-0.el8_10.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
-    size: 2495515
-    checksum: sha256:c88e0f7d67d8f22c4c4011dbadfaae343efe27738285aa85837db21afee8fb28
-    name: compiler-rt
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/g/gcc-toolset-13-13.0-2.el8.src.rpm
+    size: 14222
+    checksum: sha256:1b9d810658599367432adad69bc3ec2fb2fed04d763168b5a1e524e524edd6ee
+    name: gcc-toolset-14
+    evr: 14.0-0.el8_10
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/g/gcc-toolset-14-binutils-2.41-4.el8_10.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
-    size: 14077
-    checksum: sha256:0ba9089eacae7ed2797bee95d62a847de76289958b302bd2f2ee45f25003dff8
-    name: gcc-toolset-13
-    evr: 13.0-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/g/gcc-toolset-13-binutils-2.40-21.el8.src.rpm
+    size: 27306519
+    checksum: sha256:e28f5951e286b0619f976743ce7d525a12cc1eba1f7150a34a0d7ae8ab1047e5
+    name: gcc-toolset-14-binutils
+    evr: 2.41-4.el8_10
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/g/gcc-toolset-14-gcc-14.2.1-7.1.el8_10.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
-    size: 25441816
-    checksum: sha256:6d4f6ee38973956098e893efa0bb09a0615938507ac502ace05d3f428371c629
-    name: gcc-toolset-13-binutils
-    evr: 2.40-21.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/g/gcc-toolset-13-gcc-13.3.1-2.2.el8_10.src.rpm
-    repoid: rhel-8-for-ppc64le-appstream-source-rpms
-    size: 89347231
-    checksum: sha256:0ca3c5e7fba19ba073619994bad0991ecae5443d4a61e8f87b8cae88f39d1f6f
-    name: gcc-toolset-13-gcc
-    evr: 13.3.1-2.2.el8_10
+    size: 93035496
+    checksum: sha256:4ba88682224df4a0148c83d5cfa0a1407ba661b8bc729512d1a747a26f192be6
+    name: gcc-toolset-14-gcc
+    evr: 14.2.1-7.1.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/g/git-2.43.5-2.el8_10.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
     size: 7492234
@@ -5664,12 +5694,6 @@ arches:
     checksum: sha256:abc6027ff19edf00eb50dd86e37facba5bd9898da9ccd8aa9cc1f934fbe68e58
     name: libmpc
     evr: 1.1.0-9.1.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/l/libomp-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-    repoid: rhel-8-for-ppc64le-appstream-source-rpms
-    size: 1341475
-    checksum: sha256:c638152e9918b8a9ac1b0ef679955673e02d1d24e3b729d15bcedbb47695c373
-    name: libomp
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/l/libuv-1.41.1-2.el8_10.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
     size: 1297972
@@ -5682,12 +5706,18 @@ arches:
     checksum: sha256:ca72f33bbbdd245bf1d2385e5f934d36b0ebdc9854b242fce7be0bb56bfa8255
     name: libxkbcommon
     evr: 0.9.1-1.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/l/llvm-18.1.8-3.module+el8.10.0+22393+9aa055f1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/l/llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
-    size: 62461419
-    checksum: sha256:5c8b01298a6b36cfc086ce53f73ff61dc67bf7508a67fb01cb366aeac36df193
+    size: 141359786
+    checksum: sha256:3bb83a57fb3dcadca563232f1bd2d5183ccb5b4a1c54e0e8257b182cd1a0b22c
     name: llvm
-    evr: 18.1.8-3.module+el8.10.0+22393+9aa055f1
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/m/mpdecimal-2.5.1-3.el8.src.rpm
+    repoid: rhel-8-for-ppc64le-appstream-source-rpms
+    size: 3333112
+    checksum: sha256:36811086e6cf10de04a5cfcbc3599228e073a44e032fac74d72857c970f06cae
+    name: mpdecimal
+    evr: 2.5.1-3.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/p/perl-Digest-1.17-395.el8.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
     size: 22585
@@ -5760,6 +5790,18 @@ arches:
     checksum: sha256:92ffd89c003f55df70a8d0da36e85a6fad8ef8d8799e5d0c8bc278d1d7dae0e0
     name: pinentry
     evr: 1.1.0-2.el8
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/p/python3.12-3.12.8-1.el8_10.src.rpm
+    repoid: rhel-8-for-ppc64le-appstream-source-rpms
+    size: 20561351
+    checksum: sha256:4a3d2b0926b117e10f0b5fe98d3c8d482c66e6639fd8cab410b2765c19dbd59d
+    name: python3.12
+    evr: 3.12.8-1.el8_10
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/p/python3.12-pip-23.2.1-4.el8.src.rpm
+    repoid: rhel-8-for-ppc64le-appstream-source-rpms
+    size: 9393232
+    checksum: sha256:5661eadc28225da228c8a053fe6606cd2159238a469bc9a55fce9dbebb5e2232
+    name: python3.12-pip
+    evr: 23.2.1-4.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/s/scl-utils-2.0.2-16.el8.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
     size: 64198
@@ -6090,12 +6132,12 @@ arches:
     checksum: sha256:9ccad26b460609bc75dfe8795f72dbdcc9fdd08529de1398a7d2a205d6d20ad3
     name: kbd
     evr: 2.0.4-11.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/k/kernel-4.18.0-553.50.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/k/kernel-4.18.0-553.52.1.el8_10.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
-    size: 138640153
-    checksum: sha256:76c731729b74d87fea96ed4a0febf39467c99264c16dc2eb4530b8748283d5cb
+    size: 138639275
+    checksum: sha256:7fb5c18e08095675ab535f85bbf8b23da8f84f2589a1ef70b59f43192765eb2e
     name: kernel
-    evr: 4.18.0-553.50.1.el8_10
+    evr: 4.18.0-553.52.1.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/k/keyutils-1.5.10-9.el8.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
     size: 103686
@@ -6829,10 +6871,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/dac69fc0bb96c5f9567f56eae8c2ad93b090dfb171ea41794974d86d0064d9ef-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/c85e246785cb47e3dfa41691492117caffbccb121b2190975a8612301b985ac4-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 700156
-    checksum: sha256:dac69fc0bb96c5f9567f56eae8c2ad93b090dfb171ea41794974d86d0064d9ef
+    size: 704057
+    checksum: sha256:c85e246785cb47e3dfa41691492117caffbccb121b2190975a8612301b985ac4
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -6849,27 +6891,27 @@ arches:
     name: automake
     evr: 1.16.1-8.el8
     sourcerpm: automake-1.16.1-8.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/clang-19.1.7-2.module+el8.10.0+23045+e1f8e80e.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 86176
-    checksum: sha256:2d039bbdb19f5b3163171f7c9a8a9b4de0269736583378d04ade0b1a913cef87
+    size: 93852
+    checksum: sha256:5723453a304cdf9a104080600d1785e3a79a808f52dac964306e6884aa5522e9
     name: clang
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/clang-libs-18.1.8-1.module+el8.10.0+22061+3612b2ba.s390x.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/clang-libs-19.1.7-2.module+el8.10.0+23045+e1f8e80e.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 26098108
-    checksum: sha256:85ecfbd10737342505682f286e7e911d051857ca33a6314ee53638823700851e
+    size: 29794616
+    checksum: sha256:9131b6a2f515f8cf0f6af259df00f11106c8def756bff6abe753e259faa76145
     name: clang-libs
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/clang-resource-filesystem-18.1.8-1.module+el8.10.0+22061+3612b2ba.noarch.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/clang-resource-filesystem-19.1.7-2.module+el8.10.0+23045+e1f8e80e.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 16596
-    checksum: sha256:b1efe65fa87ba753849063e94c744aed8e4fe645b2a1652e5c6adf9601688d1c
+    size: 25900
+    checksum: sha256:97d7ba5b1e453bfb778f667622aa7bd8b0085b3c4a53a3e0598c2542217079e4
     name: clang-resource-filesystem
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/cmake-3.26.5-2.el8.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 12463484
@@ -6898,13 +6940,13 @@ arches:
     name: cmake-rpm-macros
     evr: 3.26.5-2.el8
     sourcerpm: cmake-3.26.5-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/compiler-rt-18.1.8-1.module+el8.10.0+22061+3612b2ba.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/compiler-rt-19.1.7-2.module+el8.10.0+23045+e1f8e80e.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 2461548
-    checksum: sha256:60482005f56e240ddffdfcc4392d0bd29163da4bf8b8ef57102ada692ae4309f
+    size: 2590640
+    checksum: sha256:53dd426a7894df63fedc7c364946f5c7f93f562330ed718e957749950f223963
     name: compiler-rt
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: compiler-rt-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/c/cpp-8.5.0-26.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 8614664
@@ -6926,48 +6968,41 @@ arches:
     name: gcc-c++
     evr: 8.5.0-26.el8_10
     sourcerpm: gcc-8.5.0-26.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/g/gcc-toolset-13-binutils-2.40-21.el8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/g/gcc-toolset-14-binutils-2.41-4.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 7677760
-    checksum: sha256:a0cc328c4f4f5635b5dbad60420013c1562f7fb883a666b439503d7217f35823
-    name: gcc-toolset-13-binutils
-    evr: 2.40-21.el8
-    sourcerpm: gcc-toolset-13-binutils-2.40-21.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/g/gcc-toolset-13-binutils-gold-2.40-21.el8.s390x.rpm
+    size: 7579128
+    checksum: sha256:2ad8dbb2da325e43dec133de47e33ef3c576d5ac754bcf4cc0ba2aa119bd8ae6
+    name: gcc-toolset-14-binutils
+    evr: 2.41-4.el8_10
+    sourcerpm: gcc-toolset-14-binutils-2.41-4.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/g/gcc-toolset-14-gcc-14.2.1-7.1.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 1173396
-    checksum: sha256:c42ab00bebe643ef8c7759651283d4e0aefa417d31b6b7177aa648c85f02b8eb
-    name: gcc-toolset-13-binutils-gold
-    evr: 2.40-21.el8
-    sourcerpm: gcc-toolset-13-binutils-2.40-21.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/g/gcc-toolset-13-gcc-13.3.1-2.2.el8_10.s390x.rpm
+    size: 42168236
+    checksum: sha256:7ab530956e0f6263736cb53f7cfedcf277f2bf2277c328d4c7a3a68cb14dc818
+    name: gcc-toolset-14-gcc
+    evr: 14.2.1-7.1.el8_10
+    sourcerpm: gcc-toolset-14-gcc-14.2.1-7.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/g/gcc-toolset-14-gcc-c++-14.2.1-7.1.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 38338860
-    checksum: sha256:b72c6ad6b973835d8bd0866fe9ed0e068d2d74e678b5429183473d3c7ea69456
-    name: gcc-toolset-13-gcc
-    evr: 13.3.1-2.2.el8_10
-    sourcerpm: gcc-toolset-13-gcc-13.3.1-2.2.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/g/gcc-toolset-13-gcc-c++-13.3.1-2.2.el8_10.s390x.rpm
+    size: 13354208
+    checksum: sha256:a5cc98f244f325fe304964317c2fc7b48bc34e50923871ac4d96a456d66b2500
+    name: gcc-toolset-14-gcc-c++
+    evr: 14.2.1-7.1.el8_10
+    sourcerpm: gcc-toolset-14-gcc-14.2.1-7.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/g/gcc-toolset-14-libstdc++-devel-14.2.1-7.1.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 12104956
-    checksum: sha256:15da20f1369fa95cef206db137fdfb7f25041df7b9d38acff6df9bc9311f699b
-    name: gcc-toolset-13-gcc-c++
-    evr: 13.3.1-2.2.el8_10
-    sourcerpm: gcc-toolset-13-gcc-13.3.1-2.2.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/g/gcc-toolset-13-libstdc++-devel-13.3.1-2.2.el8_10.s390x.rpm
+    size: 4148416
+    checksum: sha256:47ad9207788f1fd6c1914a0ccb213bc40ff18efc24792d21a110dc5e2ca21593
+    name: gcc-toolset-14-libstdc++-devel
+    evr: 14.2.1-7.1.el8_10
+    sourcerpm: gcc-toolset-14-gcc-14.2.1-7.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/g/gcc-toolset-14-runtime-14.0-0.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 3982056
-    checksum: sha256:85a7cadaad6fdb03575f201f8a51de9c509556467c4c5a3b08d7ecfefa309bb5
-    name: gcc-toolset-13-libstdc++-devel
-    evr: 13.3.1-2.2.el8_10
-    sourcerpm: gcc-toolset-13-gcc-13.3.1-2.2.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/g/gcc-toolset-13-runtime-13.0-2.el8.s390x.rpm
-    repoid: rhel-8-for-s390x-appstream-rpms
-    size: 28936
-    checksum: sha256:ece590a9c7e2056ad69945e1af45f70db9d51693f4cbd3e40c03a6ec059c069f
-    name: gcc-toolset-13-runtime
-    evr: 13.0-2.el8
-    sourcerpm: gcc-toolset-13-13.0-2.el8.src.rpm
+    size: 29008
+    checksum: sha256:e7aebcef971b541b648fcd39a17d86f1a5937a69d222f8b178112eb64da8081e
+    name: gcc-toolset-14-runtime
+    evr: 14.0-0.el8_10
+    sourcerpm: gcc-toolset-14-14.0-0.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/g/git-2.43.5-2.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 94596
@@ -7003,20 +7038,20 @@ arches:
     name: libmpc
     evr: 1.1.0-9.1.el8
     sourcerpm: libmpc-1.1.0-9.1.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/l/libomp-18.1.8-1.module+el8.10.0+22061+3612b2ba.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/l/libomp-19.1.7-2.module+el8.10.0+23045+e1f8e80e.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 452592
-    checksum: sha256:439e1acef6f943a940838d1c3ea437d603375245efe2e579387217aff58db4f5
+    size: 667384
+    checksum: sha256:af364f6e380380e214847686d2ad80d5976522980bdcc18fb0ab698bc7248a4a
     name: libomp
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: libomp-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/l/libomp-devel-18.1.8-1.module+el8.10.0+22061+3612b2ba.s390x.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/l/libomp-devel-19.1.7-2.module+el8.10.0+23045+e1f8e80e.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 552080
-    checksum: sha256:eef25c8acee1de1f5600156d35ea4f64ccc5d6d40395517be1050e519e5743e4
+    size: 717988
+    checksum: sha256:ae9e7892bd845bdc4c320006f66073330793a4465ac54df19a13a388c79f7995
     name: libomp-devel
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: libomp-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/l/libstdc++-devel-8.5.0-26.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 2139208
@@ -7045,20 +7080,27 @@ arches:
     name: libxkbcommon
     evr: 0.9.1-1.el8
     sourcerpm: libxkbcommon-0.9.1-1.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/l/llvm-18.1.8-3.module+el8.10.0+22393+9aa055f1.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/l/llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 29192008
-    checksum: sha256:db73a4c6493aaf951793b36c19b8728762c1e797450bec3e7142937f6a4733d5
+    size: 25053712
+    checksum: sha256:d6c07d99b84088e7b22b8aade9055df8872f727b38e4890e36e0ac6f2b930ea2
     name: llvm
-    evr: 18.1.8-3.module+el8.10.0+22393+9aa055f1
-    sourcerpm: llvm-18.1.8-3.module+el8.10.0+22393+9aa055f1.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/l/llvm-libs-18.1.8-3.module+el8.10.0+22393+9aa055f1.s390x.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/l/llvm-libs-19.1.7-2.module+el8.10.0+23045+e1f8e80e.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 29313324
-    checksum: sha256:424de2e7c130492254d710d9fdcd3ded1df40273f1adbf755c33d7eb1328f614
+    size: 32265764
+    checksum: sha256:77bbaedea1588a4f286d4870bcf07e8ed324d11c9dd37f78570eb3b0c025c663
     name: llvm-libs
-    evr: 18.1.8-3.module+el8.10.0+22393+9aa055f1
-    sourcerpm: llvm-18.1.8-3.module+el8.10.0+22393+9aa055f1.src.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/m/mpdecimal-2.5.1-3.el8.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 97316
+    checksum: sha256:68089fe2afcbc5ce486d6e233de53df547052182afc88ac47c539d2841d55dab
+    name: mpdecimal
+    evr: 2.5.1-3.el8
+    sourcerpm: mpdecimal-2.5.1-3.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/perl-Digest-1.17-395.el8.noarch.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 27624
@@ -7150,6 +7192,27 @@ arches:
     name: pinentry
     evr: 1.1.0-2.el8
     sourcerpm: pinentry-1.1.0-2.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/python3.12-3.12.8-1.el8_10.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 31300
+    checksum: sha256:a57ef4dd4a43e4eae85b1b8fbd645de5ff891342749ecfb8b2881f91fc1a6837
+    name: python3.12
+    evr: 3.12.8-1.el8_10
+    sourcerpm: python3.12-3.12.8-1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/python3.12-libs-3.12.8-1.el8_10.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 10181896
+    checksum: sha256:627410e98034d3a69683564cd6c95784c7b1d6f6e1adb9b991351cb572409e79
+    name: python3.12-libs
+    evr: 3.12.8-1.el8_10
+    sourcerpm: python3.12-3.12.8-1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/python3.12-pip-wheel-23.2.1-4.el8.noarch.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 1539820
+    checksum: sha256:c5daaf3d7ef6c52f178ec6c20e49fa9ddb4506f1b0ee5cd1688046c28eb5e1cb
+    name: python3.12-pip-wheel
+    evr: 23.2.1-4.el8
+    sourcerpm: python3.12-pip-23.2.1-4.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/s/scl-utils-2.0.2-16.el8.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 47792
@@ -7654,13 +7717,13 @@ arches:
     name: json-c
     evr: 0.13.1-3.el8
     sourcerpm: json-c-0.13.1-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/k/kernel-headers-4.18.0-553.50.1.el8_10.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/k/kernel-headers-4.18.0-553.52.1.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
-    size: 12404076
-    checksum: sha256:5b0f4631d36fbc3da9008e57073644ad43ea835ede99c47e3878e4f4669de55f
+    size: 12405156
+    checksum: sha256:728d9fc8dc9e7022e66a2a52145f1ce243e40786e951e512ee079edbf1ff6ad3
     name: kernel-headers
-    evr: 4.18.0-553.50.1.el8_10
-    sourcerpm: kernel-4.18.0-553.50.1.el8_10.src.rpm
+    evr: 4.18.0-553.52.1.el8_10
+    sourcerpm: kernel-4.18.0-553.52.1.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/k/keyutils-libs-1.5.10-9.el8.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
     size: 34356
@@ -8927,42 +8990,30 @@ arches:
     checksum: sha256:9d47ed5ac4aab68cdbd196db251d2658ee03176ec9af6787edf4f16b787f018c
     name: automake
     evr: 1.16.1-8.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/c/clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-    repoid: rhel-8-for-s390x-appstream-source-rpms
-    size: 25543057
-    checksum: sha256:6ac35cdec541fed15313671f0efe15177c8adc41324f2fb68b21064249d17fd4
-    name: clang
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/c/cmake-3.26.5-2.el8.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
     size: 10702209
     checksum: sha256:1f9724337fffb716f890cd5b92d7694c11a98264c8812c02df8224543a819431
     name: cmake
     evr: 3.26.5-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/c/compiler-rt-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/g/gcc-toolset-14-14.0-0.el8_10.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
-    size: 2495515
-    checksum: sha256:c88e0f7d67d8f22c4c4011dbadfaae343efe27738285aa85837db21afee8fb28
-    name: compiler-rt
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/g/gcc-toolset-13-13.0-2.el8.src.rpm
+    size: 14222
+    checksum: sha256:1b9d810658599367432adad69bc3ec2fb2fed04d763168b5a1e524e524edd6ee
+    name: gcc-toolset-14
+    evr: 14.0-0.el8_10
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/g/gcc-toolset-14-binutils-2.41-4.el8_10.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
-    size: 14077
-    checksum: sha256:0ba9089eacae7ed2797bee95d62a847de76289958b302bd2f2ee45f25003dff8
-    name: gcc-toolset-13
-    evr: 13.0-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/g/gcc-toolset-13-binutils-2.40-21.el8.src.rpm
+    size: 27306519
+    checksum: sha256:e28f5951e286b0619f976743ce7d525a12cc1eba1f7150a34a0d7ae8ab1047e5
+    name: gcc-toolset-14-binutils
+    evr: 2.41-4.el8_10
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/g/gcc-toolset-14-gcc-14.2.1-7.1.el8_10.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
-    size: 25441816
-    checksum: sha256:6d4f6ee38973956098e893efa0bb09a0615938507ac502ace05d3f428371c629
-    name: gcc-toolset-13-binutils
-    evr: 2.40-21.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/g/gcc-toolset-13-gcc-13.3.1-2.2.el8_10.src.rpm
-    repoid: rhel-8-for-s390x-appstream-source-rpms
-    size: 89347231
-    checksum: sha256:0ca3c5e7fba19ba073619994bad0991ecae5443d4a61e8f87b8cae88f39d1f6f
-    name: gcc-toolset-13-gcc
-    evr: 13.3.1-2.2.el8_10
+    size: 93035496
+    checksum: sha256:4ba88682224df4a0148c83d5cfa0a1407ba661b8bc729512d1a747a26f192be6
+    name: gcc-toolset-14-gcc
+    evr: 14.2.1-7.1.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/g/git-2.43.5-2.el8_10.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
     size: 7492234
@@ -8981,12 +9032,6 @@ arches:
     checksum: sha256:abc6027ff19edf00eb50dd86e37facba5bd9898da9ccd8aa9cc1f934fbe68e58
     name: libmpc
     evr: 1.1.0-9.1.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/l/libomp-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-    repoid: rhel-8-for-s390x-appstream-source-rpms
-    size: 1341475
-    checksum: sha256:c638152e9918b8a9ac1b0ef679955673e02d1d24e3b729d15bcedbb47695c373
-    name: libomp
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/l/libuv-1.41.1-2.el8_10.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
     size: 1297972
@@ -8999,12 +9044,18 @@ arches:
     checksum: sha256:ca72f33bbbdd245bf1d2385e5f934d36b0ebdc9854b242fce7be0bb56bfa8255
     name: libxkbcommon
     evr: 0.9.1-1.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/l/llvm-18.1.8-3.module+el8.10.0+22393+9aa055f1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/l/llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
-    size: 62461419
-    checksum: sha256:5c8b01298a6b36cfc086ce53f73ff61dc67bf7508a67fb01cb366aeac36df193
+    size: 141359786
+    checksum: sha256:3bb83a57fb3dcadca563232f1bd2d5183ccb5b4a1c54e0e8257b182cd1a0b22c
     name: llvm
-    evr: 18.1.8-3.module+el8.10.0+22393+9aa055f1
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/m/mpdecimal-2.5.1-3.el8.src.rpm
+    repoid: rhel-8-for-s390x-appstream-source-rpms
+    size: 3333112
+    checksum: sha256:36811086e6cf10de04a5cfcbc3599228e073a44e032fac74d72857c970f06cae
+    name: mpdecimal
+    evr: 2.5.1-3.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/p/perl-Digest-1.17-395.el8.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
     size: 22585
@@ -9077,6 +9128,18 @@ arches:
     checksum: sha256:92ffd89c003f55df70a8d0da36e85a6fad8ef8d8799e5d0c8bc278d1d7dae0e0
     name: pinentry
     evr: 1.1.0-2.el8
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/p/python3.12-3.12.8-1.el8_10.src.rpm
+    repoid: rhel-8-for-s390x-appstream-source-rpms
+    size: 20561351
+    checksum: sha256:4a3d2b0926b117e10f0b5fe98d3c8d482c66e6639fd8cab410b2765c19dbd59d
+    name: python3.12
+    evr: 3.12.8-1.el8_10
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/p/python3.12-pip-23.2.1-4.el8.src.rpm
+    repoid: rhel-8-for-s390x-appstream-source-rpms
+    size: 9393232
+    checksum: sha256:5661eadc28225da228c8a053fe6606cd2159238a469bc9a55fce9dbebb5e2232
+    name: python3.12-pip
+    evr: 23.2.1-4.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/s/scl-utils-2.0.2-16.el8.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
     size: 64198
@@ -9377,12 +9440,12 @@ arches:
     checksum: sha256:f68a400c6a103bf4c37e1c43c2716386beb087519b21204b8b2dd1f85392d528
     name: json-c
     evr: 0.13.1-3.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/k/kernel-4.18.0-553.50.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/k/kernel-4.18.0-553.52.1.el8_10.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
-    size: 138640153
-    checksum: sha256:76c731729b74d87fea96ed4a0febf39467c99264c16dc2eb4530b8748283d5cb
+    size: 138639275
+    checksum: sha256:7fb5c18e08095675ab535f85bbf8b23da8f84f2589a1ef70b59f43192765eb2e
     name: kernel
-    evr: 4.18.0-553.50.1.el8_10
+    evr: 4.18.0-553.52.1.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/k/keyutils-1.5.10-9.el8.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
     size: 103686
@@ -10092,10 +10155,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/3d18d1d13efd7781d2ae9b7f3be73181cd8c302d02894ab291b3612c4ef9cd46-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/f53d268a46d06177b697263f4e699d5dc053b84a9032526595e4f81d030c063b-modules.yaml.gz
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 702216
-    checksum: sha256:3d18d1d13efd7781d2ae9b7f3be73181cd8c302d02894ab291b3612c4ef9cd46
+    size: 705771
+    checksum: sha256:f53d268a46d06177b697263f4e699d5dc053b84a9032526595e4f81d030c063b
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -10112,27 +10175,27 @@ arches:
     name: automake
     evr: 1.16.1-8.el8
     sourcerpm: automake-1.16.1-8.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/clang-19.1.7-2.module+el8.10.0+23045+e1f8e80e.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 89248
-    checksum: sha256:e3d4d733730b0bf0925adf8fbf159c1ef9384aa98a49c47ad7c3adb1fd113145
+    size: 101288
+    checksum: sha256:1c3303ed1c7abe5fff88170a266f382f23c3e1fe09456a7a6d7a73f07b520b39
     name: clang
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/clang-libs-18.1.8-1.module+el8.10.0+22061+3612b2ba.x86_64.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/clang-libs-19.1.7-2.module+el8.10.0+23045+e1f8e80e.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 28682524
-    checksum: sha256:12840ff563009144c538eb36eb7955fab0570689b886ad7f17bcbad45d8ecb27
+    size: 33677608
+    checksum: sha256:da9b2bfc04adc88f001ec0015e61c1cb73c22f61b4b7098685b3e727715305ef
     name: clang-libs
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/clang-resource-filesystem-18.1.8-1.module+el8.10.0+22061+3612b2ba.noarch.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/clang-resource-filesystem-19.1.7-2.module+el8.10.0+23045+e1f8e80e.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 16596
-    checksum: sha256:b1efe65fa87ba753849063e94c744aed8e4fe645b2a1652e5c6adf9601688d1c
+    size: 25908
+    checksum: sha256:7cf23fba8ce9ff688a727dd06ef84fd777989b565082ec79cd2f1256198dca9c
     name: clang-resource-filesystem
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/cmake-3.26.5-2.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 14287692
@@ -10161,13 +10224,13 @@ arches:
     name: cmake-rpm-macros
     evr: 3.26.5-2.el8
     sourcerpm: cmake-3.26.5-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/compiler-rt-18.1.8-1.module+el8.10.0+22061+3612b2ba.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/compiler-rt-19.1.7-2.module+el8.10.0+23045+e1f8e80e.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 3566768
-    checksum: sha256:8450cbd67cab1b58043b22f7cadcba6efba973fe99cc960571531f41a3523c19
+    size: 4204592
+    checksum: sha256:091541251d3a5b338c06bbb8cea83fc547e910dcd319778cbc6f5e74ad6e19f1
     name: compiler-rt
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: compiler-rt-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/c/cpp-8.5.0-26.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 10931332
@@ -10189,48 +10252,41 @@ arches:
     name: gcc-c++
     evr: 8.5.0-26.el8_10
     sourcerpm: gcc-8.5.0-26.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/g/gcc-toolset-13-binutils-2.40-21.el8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/g/gcc-toolset-14-binutils-2.41-4.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 7391064
-    checksum: sha256:b8ff4cc2b9fe6c6c68fa088af37530ad8d8aae87152162012a660f43f4ad4236
-    name: gcc-toolset-13-binutils
-    evr: 2.40-21.el8
-    sourcerpm: gcc-toolset-13-binutils-2.40-21.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/g/gcc-toolset-13-binutils-gold-2.40-21.el8.x86_64.rpm
+    size: 7955476
+    checksum: sha256:9080afc0bc11d10e759a00e99ffcf10c0721e01a295e81096dfb613d3b8acbd1
+    name: gcc-toolset-14-binutils
+    evr: 2.41-4.el8_10
+    sourcerpm: gcc-toolset-14-binutils-2.41-4.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/g/gcc-toolset-14-gcc-14.2.1-7.1.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 1006840
-    checksum: sha256:4d3174ef3a690585c7d75ce2170e11d29dfbb3c88516ce0c785406e9ef8c8695
-    name: gcc-toolset-13-binutils-gold
-    evr: 2.40-21.el8
-    sourcerpm: gcc-toolset-13-binutils-2.40-21.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/g/gcc-toolset-13-gcc-13.3.1-2.2.el8_10.x86_64.rpm
+    size: 52911352
+    checksum: sha256:28d8a7d1595a71d05bb92a3406866bd6c6e5ab6f54f4ea86703c2e9933b98c6a
+    name: gcc-toolset-14-gcc
+    evr: 14.2.1-7.1.el8_10
+    sourcerpm: gcc-toolset-14-gcc-14.2.1-7.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/g/gcc-toolset-14-gcc-c++-14.2.1-7.1.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 48555856
-    checksum: sha256:e9bb8e4c205cb5d672e2ccd9e919f669da231d7509eb57bec402fccb11e5d959
-    name: gcc-toolset-13-gcc
-    evr: 13.3.1-2.2.el8_10
-    sourcerpm: gcc-toolset-13-gcc-13.3.1-2.2.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/g/gcc-toolset-13-gcc-c++-13.3.1-2.2.el8_10.x86_64.rpm
+    size: 16063592
+    checksum: sha256:7bf24636df6c0cf633d764ac8dc75d71115e2cc44c2d3b467aa6e2fec7156b64
+    name: gcc-toolset-14-gcc-c++
+    evr: 14.2.1-7.1.el8_10
+    sourcerpm: gcc-toolset-14-gcc-14.2.1-7.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/g/gcc-toolset-14-libstdc++-devel-14.2.1-7.1.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 14689760
-    checksum: sha256:6ecd59c614e7b13a007a3ca547c785517f7ae451963139b62ca034cdd427504f
-    name: gcc-toolset-13-gcc-c++
-    evr: 13.3.1-2.2.el8_10
-    sourcerpm: gcc-toolset-13-gcc-13.3.1-2.2.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/g/gcc-toolset-13-libstdc++-devel-13.3.1-2.2.el8_10.x86_64.rpm
+    size: 3970852
+    checksum: sha256:0f9cf426d2e4fb78e226e49349f7b3e5a8f5a6b893b0230927a210a87f0740ad
+    name: gcc-toolset-14-libstdc++-devel
+    evr: 14.2.1-7.1.el8_10
+    sourcerpm: gcc-toolset-14-gcc-14.2.1-7.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/g/gcc-toolset-14-runtime-14.0-0.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 3824636
-    checksum: sha256:54dd41c39c2448f012cb6f9ed2e5448b40a1d544d29631ecd432bac8643033d4
-    name: gcc-toolset-13-libstdc++-devel
-    evr: 13.3.1-2.2.el8_10
-    sourcerpm: gcc-toolset-13-gcc-13.3.1-2.2.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/g/gcc-toolset-13-runtime-13.0-2.el8.x86_64.rpm
-    repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 28940
-    checksum: sha256:6466ffea737bd373af85d1642d70c066e4ebc4e0c518cc5028972665904996bd
-    name: gcc-toolset-13-runtime
-    evr: 13.0-2.el8
-    sourcerpm: gcc-toolset-13-13.0-2.el8.src.rpm
+    size: 29044
+    checksum: sha256:7bcfc63c0e9ede2e2f5c2230aaaf523056b6e9f3a1824552a7cd2c3054bd6cd5
+    name: gcc-toolset-14-runtime
+    evr: 14.0-0.el8_10
+    sourcerpm: gcc-toolset-14-14.0-0.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/g/git-2.43.5-2.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 94608
@@ -10266,20 +10322,20 @@ arches:
     name: libmpc
     evr: 1.1.0-9.1.el8
     sourcerpm: libmpc-1.1.0-9.1.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/l/libomp-18.1.8-1.module+el8.10.0+22061+3612b2ba.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/l/libomp-19.1.7-2.module+el8.10.0+23045+e1f8e80e.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 750212
-    checksum: sha256:3630915f83bbd5a91ad143815c32c3a12e2b8960393c661054b6efff858e4df9
+    size: 691932
+    checksum: sha256:e4c60bc5bb83deedf65f28501411d07c2975c9861051f0d0de7e5cd09d643b56
     name: libomp
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: libomp-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/l/libomp-devel-18.1.8-1.module+el8.10.0+22061+3612b2ba.x86_64.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/l/libomp-devel-19.1.7-2.module+el8.10.0+23045+e1f8e80e.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 553248
-    checksum: sha256:2dde87eb128a7339beb1cbc391e98a32929e9c756dca99e53f1adeff75e4b4e7
+    size: 718276
+    checksum: sha256:26c2caf29661289a629f84da3fdcada5c7cbbc6a1b550cfbff40cdd880a03cc5
     name: libomp-devel
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-    sourcerpm: libomp-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/l/libstdc++-devel-8.5.0-26.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 2152232
@@ -10308,20 +10364,27 @@ arches:
     name: libxkbcommon
     evr: 0.9.1-1.el8
     sourcerpm: libxkbcommon-0.9.1-1.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/l/llvm-18.1.8-3.module+el8.10.0+22393+9aa055f1.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/l/llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 31268144
-    checksum: sha256:b13222574d97774f71be0933afd8356c1a6747a5d8efd10417fe069a15071464
+    size: 27486972
+    checksum: sha256:49b02e436ba24744b914fe8f7fb5a691fa118a2bff3f19ded9fb584cfc8d884d
     name: llvm
-    evr: 18.1.8-3.module+el8.10.0+22393+9aa055f1
-    sourcerpm: llvm-18.1.8-3.module+el8.10.0+22393+9aa055f1.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/l/llvm-libs-18.1.8-3.module+el8.10.0+22393+9aa055f1.x86_64.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/l/llvm-libs-19.1.7-2.module+el8.10.0+23045+e1f8e80e.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 31718280
-    checksum: sha256:5b73f81286678c7bd1f8b6154b0a17f3dbfe8c2e5aa137ff4298a0dd644dc83e
+    size: 35652540
+    checksum: sha256:38ae02847ab061c36ce93502b9bc4d67ed89163ef45eeeda3c33e87fee79b769
     name: llvm-libs
-    evr: 18.1.8-3.module+el8.10.0+22393+9aa055f1
-    sourcerpm: llvm-18.1.8-3.module+el8.10.0+22393+9aa055f1.src.rpm
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+    sourcerpm: llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/m/mpdecimal-2.5.1-3.el8.x86_64.rpm
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 95204
+    checksum: sha256:fd75319ca80fbfbf4ef5abe886033586aed718ed10e56ec42a345f56c1ca72b6
+    name: mpdecimal
+    evr: 2.5.1-3.el8
+    sourcerpm: mpdecimal-2.5.1-3.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/perl-Digest-1.17-395.el8.noarch.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 27624
@@ -10413,6 +10476,27 @@ arches:
     name: pinentry
     evr: 1.1.0-2.el8
     sourcerpm: pinentry-1.1.0-2.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/python3.12-3.12.8-1.el8_10.x86_64.rpm
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 31344
+    checksum: sha256:a8eb06fdc35d3464e0d453cada46ea86b2ca306d9b084e50ce679d1016ae4e35
+    name: python3.12
+    evr: 3.12.8-1.el8_10
+    sourcerpm: python3.12-3.12.8-1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/python3.12-libs-3.12.8-1.el8_10.x86_64.rpm
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 10478048
+    checksum: sha256:424d3eb8ea8bcb7d71d2e50cc6359f85f63a79a26e7a1c72ceda148dded056e9
+    name: python3.12-libs
+    evr: 3.12.8-1.el8_10
+    sourcerpm: python3.12-3.12.8-1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/python3.12-pip-wheel-23.2.1-4.el8.noarch.rpm
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 1539820
+    checksum: sha256:c5daaf3d7ef6c52f178ec6c20e49fa9ddb4506f1b0ee5cd1688046c28eb5e1cb
+    name: python3.12-pip-wheel
+    evr: 23.2.1-4.el8
+    sourcerpm: python3.12-pip-23.2.1-4.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/s/scl-utils-2.0.2-16.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 48428
@@ -10980,13 +11064,13 @@ arches:
     name: kbd-misc
     evr: 2.0.4-11.el8
     sourcerpm: kbd-2.0.4-11.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/k/kernel-headers-4.18.0-553.50.1.el8_10.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/k/kernel-headers-4.18.0-553.52.1.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
-    size: 12408768
-    checksum: sha256:297476ad550a106bd48efeb9486063e5730053903f40ff6f8bf83c3e57bd0a84
+    size: 12410376
+    checksum: sha256:a5cf156241df44525bc01fec8b67a0ff8cf7e40b61edfdb56a9491b3c2a853e7
     name: kernel-headers
-    evr: 4.18.0-553.50.1.el8_10
-    sourcerpm: kernel-4.18.0-553.50.1.el8_10.src.rpm
+    evr: 4.18.0-553.52.1.el8_10
+    sourcerpm: kernel-4.18.0-553.52.1.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/k/keyutils-libs-1.5.10-9.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
     size: 34816
@@ -11064,6 +11148,13 @@ arches:
     name: libassuan
     evr: 2.5.1-3.el8
     sourcerpm: libassuan-2.5.1-3.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/libatomic-8.5.0-26.el8_10.x86_64.rpm
+    repoid: rhel-8-for-x86_64-baseos-rpms
+    size: 26872
+    checksum: sha256:8fab972cf0dee48ee4cea43a66b473ebed2e1f2b3be2a84ba7179ef7abec0780
+    name: libatomic
+    evr: 8.5.0-26.el8_10
+    sourcerpm: gcc-8.5.0-26.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/libattr-2.4.48-3.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
     size: 27572
@@ -12267,42 +12358,30 @@ arches:
     checksum: sha256:9d47ed5ac4aab68cdbd196db251d2658ee03176ec9af6787edf4f16b787f018c
     name: automake
     evr: 1.16.1-8.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/c/clang-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-    repoid: rhel-8-for-x86_64-appstream-source-rpms
-    size: 25543057
-    checksum: sha256:6ac35cdec541fed15313671f0efe15177c8adc41324f2fb68b21064249d17fd4
-    name: clang
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/c/cmake-3.26.5-2.el8.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
     size: 10702209
     checksum: sha256:1f9724337fffb716f890cd5b92d7694c11a98264c8812c02df8224543a819431
     name: cmake
     evr: 3.26.5-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/c/compiler-rt-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/g/gcc-toolset-14-14.0-0.el8_10.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
-    size: 2495515
-    checksum: sha256:c88e0f7d67d8f22c4c4011dbadfaae343efe27738285aa85837db21afee8fb28
-    name: compiler-rt
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/g/gcc-toolset-13-13.0-2.el8.src.rpm
+    size: 14222
+    checksum: sha256:1b9d810658599367432adad69bc3ec2fb2fed04d763168b5a1e524e524edd6ee
+    name: gcc-toolset-14
+    evr: 14.0-0.el8_10
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/g/gcc-toolset-14-binutils-2.41-4.el8_10.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
-    size: 14077
-    checksum: sha256:0ba9089eacae7ed2797bee95d62a847de76289958b302bd2f2ee45f25003dff8
-    name: gcc-toolset-13
-    evr: 13.0-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/g/gcc-toolset-13-binutils-2.40-21.el8.src.rpm
+    size: 27306519
+    checksum: sha256:e28f5951e286b0619f976743ce7d525a12cc1eba1f7150a34a0d7ae8ab1047e5
+    name: gcc-toolset-14-binutils
+    evr: 2.41-4.el8_10
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/g/gcc-toolset-14-gcc-14.2.1-7.1.el8_10.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
-    size: 25441816
-    checksum: sha256:6d4f6ee38973956098e893efa0bb09a0615938507ac502ace05d3f428371c629
-    name: gcc-toolset-13-binutils
-    evr: 2.40-21.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/g/gcc-toolset-13-gcc-13.3.1-2.2.el8_10.src.rpm
-    repoid: rhel-8-for-x86_64-appstream-source-rpms
-    size: 89347231
-    checksum: sha256:0ca3c5e7fba19ba073619994bad0991ecae5443d4a61e8f87b8cae88f39d1f6f
-    name: gcc-toolset-13-gcc
-    evr: 13.3.1-2.2.el8_10
+    size: 93035496
+    checksum: sha256:4ba88682224df4a0148c83d5cfa0a1407ba661b8bc729512d1a747a26f192be6
+    name: gcc-toolset-14-gcc
+    evr: 14.2.1-7.1.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/g/git-2.43.5-2.el8_10.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
     size: 7492234
@@ -12321,12 +12400,6 @@ arches:
     checksum: sha256:abc6027ff19edf00eb50dd86e37facba5bd9898da9ccd8aa9cc1f934fbe68e58
     name: libmpc
     evr: 1.1.0-9.1.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/l/libomp-18.1.8-1.module+el8.10.0+22061+3612b2ba.src.rpm
-    repoid: rhel-8-for-x86_64-appstream-source-rpms
-    size: 1341475
-    checksum: sha256:c638152e9918b8a9ac1b0ef679955673e02d1d24e3b729d15bcedbb47695c373
-    name: libomp
-    evr: 18.1.8-1.module+el8.10.0+22061+3612b2ba
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/l/libuv-1.41.1-2.el8_10.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
     size: 1297972
@@ -12339,12 +12412,18 @@ arches:
     checksum: sha256:ca72f33bbbdd245bf1d2385e5f934d36b0ebdc9854b242fce7be0bb56bfa8255
     name: libxkbcommon
     evr: 0.9.1-1.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/l/llvm-18.1.8-3.module+el8.10.0+22393+9aa055f1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/l/llvm-19.1.7-2.module+el8.10.0+23045+e1f8e80e.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
-    size: 62461419
-    checksum: sha256:5c8b01298a6b36cfc086ce53f73ff61dc67bf7508a67fb01cb366aeac36df193
+    size: 141359786
+    checksum: sha256:3bb83a57fb3dcadca563232f1bd2d5183ccb5b4a1c54e0e8257b182cd1a0b22c
     name: llvm
-    evr: 18.1.8-3.module+el8.10.0+22393+9aa055f1
+    evr: 19.1.7-2.module+el8.10.0+23045+e1f8e80e
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/m/mpdecimal-2.5.1-3.el8.src.rpm
+    repoid: rhel-8-for-x86_64-appstream-source-rpms
+    size: 3333112
+    checksum: sha256:36811086e6cf10de04a5cfcbc3599228e073a44e032fac74d72857c970f06cae
+    name: mpdecimal
+    evr: 2.5.1-3.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/p/perl-Digest-1.17-395.el8.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
     size: 22585
@@ -12417,6 +12496,18 @@ arches:
     checksum: sha256:92ffd89c003f55df70a8d0da36e85a6fad8ef8d8799e5d0c8bc278d1d7dae0e0
     name: pinentry
     evr: 1.1.0-2.el8
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/p/python3.12-3.12.8-1.el8_10.src.rpm
+    repoid: rhel-8-for-x86_64-appstream-source-rpms
+    size: 20561351
+    checksum: sha256:4a3d2b0926b117e10f0b5fe98d3c8d482c66e6639fd8cab410b2765c19dbd59d
+    name: python3.12
+    evr: 3.12.8-1.el8_10
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/p/python3.12-pip-23.2.1-4.el8.src.rpm
+    repoid: rhel-8-for-x86_64-appstream-source-rpms
+    size: 9393232
+    checksum: sha256:5661eadc28225da228c8a053fe6606cd2159238a469bc9a55fce9dbebb5e2232
+    name: python3.12-pip
+    evr: 23.2.1-4.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/s/scl-utils-2.0.2-16.el8.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
     size: 64198
@@ -12747,12 +12838,12 @@ arches:
     checksum: sha256:9ccad26b460609bc75dfe8795f72dbdcc9fdd08529de1398a7d2a205d6d20ad3
     name: kbd
     evr: 2.0.4-11.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/k/kernel-4.18.0-553.50.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/k/kernel-4.18.0-553.52.1.el8_10.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
-    size: 138640153
-    checksum: sha256:76c731729b74d87fea96ed4a0febf39467c99264c16dc2eb4530b8748283d5cb
+    size: 138639275
+    checksum: sha256:7fb5c18e08095675ab535f85bbf8b23da8f84f2589a1ef70b59f43192765eb2e
     name: kernel
-    evr: 4.18.0-553.50.1.el8_10
+    evr: 4.18.0-553.52.1.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/k/keyutils-1.5.10-9.el8.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
     size: 103686
@@ -13480,7 +13571,7 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/9309fe60f0773f7fe7faa2d89fc8cda4b4b7f325af0fb1972e5d004c23749bec-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/7013966999b1266c30c75de652ed2c7798594aa40b460a3a4350d794ee7c7a5d-modules.yaml.gz
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 727191
-    checksum: sha256:9309fe60f0773f7fe7faa2d89fc8cda4b4b7f325af0fb1972e5d004c23749bec
+    size: 730550
+    checksum: sha256:7013966999b1266c30c75de652ed2c7798594aa40b460a3a4350d794ee7c7a5d
