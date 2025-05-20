@@ -544,38 +544,54 @@ std::pair<option::ArgStatus, std::string> CollectorConfig::CheckConfiguration(co
   return std::make_pair(ARG_OK, "");
 }
 
-CollectorConfig::ExternalIPsConfig::ExternalIPsConfig(std::optional<sensor::CollectorConfig> runtime_config, bool default_enabled)
-    : direction_enabled_(Direction::NONE) {
-  if (runtime_config.has_value()) {
-    if (runtime_config.value().networking().external_ips().enabled() == sensor::ExternalIpsEnabled::ENABLED) {
-      switch (runtime_config.value().networking().external_ips().direction()) {
-        case sensor::ExternalIpsDirection::INGRESS:
-          direction_enabled_ = Direction::INGRESS;
-          break;
-        case sensor::ExternalIpsDirection::EGRESS:
-          direction_enabled_ = Direction::EGRESS;
-          break;
-        default:
-          direction_enabled_ = Direction::BOTH;
-          break;
-      }
-    }
-  } else if (default_enabled) {
-    direction_enabled_ = Direction::BOTH;
+CollectorConfig::ExternalIPsConfig::ExternalIPsConfig(std::optional<sensor::CollectorConfig> runtime_config, bool default_enabled) {
+  if (!runtime_config.has_value()) {
+    direction_enabled_ = default_enabled ? Direction::BOTH : Direction::NONE;
+    return;
+  }
+
+  // At this point we know runtime_config has a value, we can access it directly
+  const auto& external_ips = runtime_config->networking().external_ips();
+  if (external_ips.enabled() != sensor::ExternalIpsEnabled::ENABLED) {
+    direction_enabled_ = Direction::NONE;
+    return;
+  }
+
+  switch (external_ips.direction()) {
+    case sensor::ExternalIpsDirection::INGRESS:
+      direction_enabled_ = Direction::INGRESS;
+      break;
+    case sensor::ExternalIpsDirection::EGRESS:
+      direction_enabled_ = Direction::EGRESS;
+      break;
+    default:
+      direction_enabled_ = Direction::BOTH;
+      break;
   }
 }
 
 std::ostream& operator<<(std::ostream& os, const collector::CollectorConfig::ExternalIPsConfig& config) {
-  static std::unordered_map<collector::CollectorConfig::ExternalIPsConfig::Direction, std::string> mapping = {
-      {CollectorConfig::ExternalIPsConfig::Direction::NONE, "NONE"},
-      {CollectorConfig::ExternalIPsConfig::Direction::INGRESS, "INGRESS"},
-      {CollectorConfig::ExternalIPsConfig::Direction::EGRESS, "EGRESS"},
-      {CollectorConfig::ExternalIPsConfig::Direction::BOTH, "BOTH"},
-  };
+  os << "direction(";
 
-  auto str = mapping.find(config.GetDirection());
+  switch (config.GetDirection()) {
+    case CollectorConfig::ExternalIPsConfig::Direction::NONE:
+      os << "NONE";
+      break;
+    case CollectorConfig::ExternalIPsConfig::Direction::INGRESS:
+      os << "INGRESS";
+      break;
+    case CollectorConfig::ExternalIPsConfig::Direction::EGRESS:
+      os << "EGRESS";
+      break;
+    case CollectorConfig::ExternalIPsConfig::Direction::BOTH:
+      os << "BOTH";
+      break;
+    default:
+      os << "invalid";
+      break;
+  }
 
-  return os << "direction(" << ((str == mapping.end()) ? "invalid" : (*str).second) << ")";
+  return os << ")";
 }
 
 }  // namespace collector
