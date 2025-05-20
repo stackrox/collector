@@ -245,9 +245,7 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
     ExternalIPsConfig externalIPsConfig = config_.ExternalIPsConf();
 
     WITH_TIMER(CollectorStats::net_fetch_state) {
-      conn_tracker_->EnableExternalIPs(
-          externalIPsConfig.IsEnabled(ExternalIPsConfig::Direction::INGRESS),
-          externalIPsConfig.IsEnabled(ExternalIPsConfig::Direction::EGRESS));
+      conn_tracker_->SetExternalIPsConfig(externalIPsConfig);
 
       new_conn_state = conn_tracker_->FetchConnState(true, true);
       if (config_.EnableAfterglow()) {

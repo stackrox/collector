@@ -158,12 +158,12 @@ void ConnectionTracker::CloseExternalUnnormalizedConnections(bool is_server, Con
 }
 
 void ConnectionTracker::CloseConnectionsOnRuntimeConfigChange(ConnMap* old_conn_state, ConnMap* delta_conn) {
-  if (enable_external_ips_egress_) {
+  if (external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::EGRESS)) {
     CloseNormalizedConnections(/* egress is when we are not server */ false, old_conn_state, delta_conn);
   } else {
     CloseExternalUnnormalizedConnections(/* egress is when we are not server */ false, old_conn_state, delta_conn);
   }
-  if (enable_external_ips_ingress_) {
+  if (external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::INGRESS)) {
     CloseNormalizedConnections(/* ingress is when we are server */ true, old_conn_state, delta_conn);
   } else {
     CloseExternalUnnormalizedConnections(/* ingress is when we are server */ true, old_conn_state, delta_conn);
@@ -182,11 +182,11 @@ Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) 
   if (is_server) {
     // If this is the server, only the local port is relevant, while the remote port does not matter.
     local = Endpoint(IPNet(Address()), conn.local().port());
-    remote = Endpoint(NormalizeAddressNoLock(conn.remote().address(), enable_external_ips_ingress_), 0);
+    remote = Endpoint(NormalizeAddressNoLock(conn.remote().address(), external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::INGRESS)), 0);
   } else {
     // If this is the client, the local port and address are not relevant.
     local = Endpoint();
-    remote = Endpoint(NormalizeAddressNoLock(remote.address(), enable_external_ips_egress_), remote.port());
+    remote = Endpoint(NormalizeAddressNoLock(remote.address(), external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::EGRESS)), remote.port());
   }
 
   return Connection(conn.container(), local, remote, conn.l4proto(), is_server);

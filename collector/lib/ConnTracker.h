@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Containers.h"
+#include "ExternalIPsConfig.h"
 #include "Hash.h"
 #include "NRadix.h"
 #include "NetworkConnection.h"
@@ -131,10 +132,7 @@ class ConnectionTracker {
 
   void UpdateKnownPublicIPs(UnorderedSet<Address>&& known_public_ips);
   void UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks);
-  void EnableExternalIPs(bool enable_ingress, bool enable_egress) {
-    enable_external_ips_ingress_ = enable_ingress;
-    enable_external_ips_egress_ = enable_egress;
-  }
+  void SetExternalIPsConfig(ExternalIPsConfig config) { external_IPs_config_ = config; }
   void UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair>&& ignored_l4proto_port_pairs);
   void UpdateIgnoredNetworks(const std::vector<IPNet>& network_list);
   void UpdateNonAggregatedNetworks(const std::vector<IPNet>& network_list);
@@ -205,8 +203,7 @@ class ConnectionTracker {
 
   UnorderedSet<Address> known_public_ips_;
   NRadixTree known_ip_networks_;
-  bool enable_external_ips_ingress_ = false;
-  bool enable_external_ips_egress_ = false;
+  ExternalIPsConfig external_IPs_config_;
   UnorderedMap<Address::Family, bool> known_private_networks_exists_;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
   NRadixTree ignored_networks_;

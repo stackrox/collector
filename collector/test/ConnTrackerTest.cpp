@@ -415,7 +415,7 @@ TEST(ConnTrackerTest, TestNormalizedEnableExternalIPs) {
   int64_t time_micros = 1000;
 
   ConnectionTracker tracker;
-  tracker.EnableExternalIPs(true, true);
+  tracker.SetExternalIPsConfig(ExternalIPsConfig(std::nullopt, true));
 
   UnorderedMap<Address::Family, std::vector<IPNet>> known_networks = {{Address::Family::IPV4, {IPNet(Address(35, 127, 1, 0), 24)}}};
   tracker.UpdateKnownIPNetworks(std::move(known_networks));
