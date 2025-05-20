@@ -37,7 +37,7 @@ jobs:
             echo "major=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
             echo "minor=${BASH_REMATCH[2]}" >> "$GITHUB_OUTPUT"
           else
-            echo >&2 "Invalid version ${{ inputs.version }}"
+            echo >&2 "Invalid version ${{ inputs.version }}. The expected format is <Major>.<minor>"
             exit 1
           fi
 
@@ -133,6 +133,26 @@ jobs:
             notice "Master tag" "${MAJOR}.${MINOR}.x"
             notice "Release branch" "release-${MAJOR}.${MINOR}"
           fi
+
+      - name: Mismatched versions
+        if: steps.required-release.outputs.major != 0 && (
+              steps.required-release.outputs.major != steps.final-values.outputs.major ||
+              steps.required-release.outputs.minor != steps.final-values.outputs.minor
+            )
+        env:
+          REQUIRED_MAJOR: ${{ steps.required-release.outputs.major }}
+          REQUIRED_MINOR: ${{ steps.required-release.outputs.minor }}
+          CALCULATED_MAJOR: ${{ steps.final-values.outputs.major }}
+          CALCULATED_MINOR: ${{ steps.final-values.outputs.minor }}
+        run: |
+          cat << EOF >&2
+          ::error title='Version mismatch'::The required version did not match the one calculated. REQUIRED: ${REQUIRED_MAJOR}.${REQUIRED_MINOR}, GOT: ${CALCULATED_MAJOR}.${CALCULATED_MINOR}
+
+          Please review the input and retrigger the workflow.
+          EOF
+
+          # Fail the workflow
+          exit 1
 
   release:
     runs-on: ubuntu-24.04
