@@ -71,9 +71,9 @@ spec:
       # use-/create-trusted-artifact gets OOM-killed when a cluster is loaded. Bigger mem limits==request should help.
       computeResources: &ta-resources
         limits:
-          memory: 3Gi
+          memory: 4Gi
         requests:
-          memory: 3Gi
+          memory: 4Gi
 
   - pipelineTaskName: clone-repository
     stepSpecs:
@@ -89,6 +89,14 @@ spec:
       computeResources: *ta-resources
     - name: create-trusted-artifact
       computeResources: *ta-resources
+    - name: prefetch-dependencies
+      # We saw prefetch-dependencies _step_ also OOMKill-ed, therefore bumping its memory compared to default.
+      computeResources:
+        limits:
+          memory: 4Gi
+        requests:
+          cpu: "1"
+          memory: 4Gi
   - pipelineTaskName: build-container-s390x
     stepSpecs:
     - name: use-trusted-artifact
@@ -102,6 +110,14 @@ spec:
     - name: use-trusted-artifact
       computeResources: *ta-resources
   - pipelineTaskName: build-source-image
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: sast-shell-check
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: sast-unicode-check
     stepSpecs:
     - name: use-trusted-artifact
       computeResources: *ta-resources
