@@ -91,7 +91,6 @@ constexpr const char* CollectorConfig::kSyscalls[];
 constexpr bool CollectorConfig::kEnableProcessesListeningOnPorts;
 
 const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = {{L4Proto::UDP, 9}};
-;
 
 CollectorConfig::CollectorConfig() {
   // Set default configuration values
@@ -439,7 +438,7 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << ", set_import_users:" << c.ImportUsers()
          << ", collect_connection_status:" << c.CollectConnectionStatus()
          << ", enable_detailed_metrics:" << c.EnableDetailedMetrics()
-         << ", enable_external_ips:" << c.EnableExternalIPs()
+         << ", external_ips:" << c.ExternalIPsConf()
          << ", track_send_recv:" << c.TrackingSendRecv();
 }
 
@@ -543,6 +542,40 @@ std::pair<option::ArgStatus, std::string> CollectorConfig::CheckConfiguration(co
   }
 
   return std::make_pair(ARG_OK, "");
+}
+
+CollectorConfig::ExternalIPsConfig::ExternalIPsConfig(std::optional<sensor::CollectorConfig> runtime_config, bool default_enabled)
+    : direction_enabled_(Direction::NONE) {
+  if (runtime_config.has_value()) {
+    if (runtime_config.value().networking().external_ips().enabled() == sensor::ExternalIpsEnabled::ENABLED) {
+      switch (runtime_config.value().networking().external_ips().direction()) {
+        case sensor::ExternalIpsDirection::INGRESS:
+          direction_enabled_ = Direction::INGRESS;
+          break;
+        case sensor::ExternalIpsDirection::EGRESS:
+          direction_enabled_ = Direction::EGRESS;
+          break;
+        default:
+          direction_enabled_ = Direction::BOTH;
+          break;
+      }
+    }
+  } else if (default_enabled) {
+    direction_enabled_ = Direction::BOTH;
+  }
+}
+
+std::ostream& operator<<(std::ostream& os, const collector::CollectorConfig::ExternalIPsConfig& config) {
+  static std::unordered_map<collector::CollectorConfig::ExternalIPsConfig::Direction, std::string> mapping = {
+      {CollectorConfig::ExternalIPsConfig::Direction::NONE, "NONE"},
+      {CollectorConfig::ExternalIPsConfig::Direction::INGRESS, "INGRESS"},
+      {CollectorConfig::ExternalIPsConfig::Direction::EGRESS, "EGRESS"},
+      {CollectorConfig::ExternalIPsConfig::Direction::BOTH, "BOTH"},
+  };
+
+  auto str = mapping.find(config.GetDirection());
+
+  return os << "direction(" << ((str == mapping.end()) ? "invalid" : (*str).second) << ")";
 }
 
 }  // namespace collector

@@ -8,6 +8,7 @@
 #include "gtest/gtest.h"
 
 using namespace testing;
+using Direction = collector::CollectorConfig::ExternalIPsConfig::Direction;
 
 namespace collector {
 
@@ -115,11 +116,11 @@ TEST(CollectorConfigTest, TestEnableExternalIpsFeatureFlag) {
 
   config.MockSetEnableExternalIPs(false);
 
-  EXPECT_FALSE(config.EnableExternalIPs());
+  EXPECT_EQ(Direction::NONE, config.ExternalIPsConf().GetDirection());
 
   config.MockSetEnableExternalIPs(true);
 
-  EXPECT_TRUE(config.EnableExternalIPs());
+  EXPECT_EQ(Direction::BOTH, config.ExternalIPsConf().GetDirection());
 }
 
 TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
@@ -138,14 +139,20 @@ TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
 
   config.SetRuntimeConfig(runtime_config);
 
-  EXPECT_FALSE(config.EnableExternalIPs());
+  EXPECT_EQ(Direction::NONE, config.ExternalIPsConf().GetDirection());
+  EXPECT_FALSE(config.ExternalIPsConf().IsEnabled(Direction::INGRESS));
+  EXPECT_FALSE(config.ExternalIPsConf().IsEnabled(Direction::EGRESS));
+  EXPECT_FALSE(config.ExternalIPsConf().IsEnabled(Direction::BOTH));
 
   config.MockSetEnableExternalIPs(false);
 
   external_ips_config->set_enabled(sensor::ExternalIpsEnabled::ENABLED);
   config.SetRuntimeConfig(runtime_config);
 
-  EXPECT_TRUE(config.EnableExternalIPs());
+  EXPECT_EQ(CollectorConfig::ExternalIPsConfig::Direction::BOTH, config.ExternalIPsConf().GetDirection());
+  EXPECT_TRUE(config.ExternalIPsConf().IsEnabled(Direction::INGRESS));
+  EXPECT_TRUE(config.ExternalIPsConf().IsEnabled(Direction::EGRESS));
+  EXPECT_TRUE(config.ExternalIPsConf().IsEnabled(Direction::BOTH));
 }
 
 }  // namespace collector

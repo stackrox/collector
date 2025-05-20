@@ -415,7 +415,7 @@ TEST(ConnTrackerTest, TestNormalizedEnableExternalIPs) {
   int64_t time_micros = 1000;
 
   ConnectionTracker tracker;
-  tracker.EnableExternalIPs(true);
+  tracker.EnableExternalIPs(true, true);
 
   UnorderedMap<Address::Family, std::vector<IPNet>> known_networks = {{Address::Family::IPV4, {IPNet(Address(35, 127, 1, 0), 24)}}};
   tracker.UpdateKnownIPNetworks(std::move(known_networks));
@@ -1664,7 +1664,7 @@ TEST(ConnTrackerTest, TestCloseNormalizedConnections) {
   ConnMap delta;
   ConnMap expected_delta = {{conn, ConnStatus(connection_time, false)}};
 
-  tracker.CloseNormalizedConnections(&old_state, &delta);
+  tracker.CloseNormalizedConnections(true, &old_state, &delta);
 
   EXPECT_THAT(old_state, IsEmpty());
   EXPECT_THAT(delta, expected_delta);
@@ -1683,7 +1683,7 @@ TEST(CloseNormalizedConnectionsTest, UnnormalizedConnectionsAreKept) {
   ConnMap delta;
   ConnMap expected_old_state = {{conn, ConnStatus(connection_time, true)}};
 
-  tracker.CloseNormalizedConnections(&old_state, &delta);
+  tracker.CloseNormalizedConnections(true, &old_state, &delta);
 
   EXPECT_THAT(old_state, expected_old_state);
   EXPECT_THAT(delta, IsEmpty());
@@ -1702,7 +1702,7 @@ TEST(ConnTrackerTest, TestCloseExternalUnnormalizedConnections) {
   ConnMap delta;
   ConnMap expected_delta = {{conn, ConnStatus(connection_time, false)}};
 
-  tracker.CloseExternalUnnormalizedConnections(&old_state, &delta);
+  tracker.CloseExternalUnnormalizedConnections(true, &old_state, &delta);
 
   EXPECT_THAT(old_state, IsEmpty());
   EXPECT_THAT(delta, expected_delta);
@@ -1721,7 +1721,7 @@ TEST(CloseExternalUnnormalizedConnectionsTest, InternalConnectionsAreKept) {
   ConnMap delta;
   ConnMap expected_old_state = {{conn, ConnStatus(connection_time, true)}};
 
-  tracker.CloseExternalUnnormalizedConnections(&old_state, &delta);
+  tracker.CloseExternalUnnormalizedConnections(true, &old_state, &delta);
 
   EXPECT_THAT(old_state, expected_old_state);
   EXPECT_THAT(delta, IsEmpty());

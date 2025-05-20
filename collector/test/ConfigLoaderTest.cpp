@@ -11,6 +11,7 @@
 
 namespace collector {
 using namespace google::protobuf::util;
+using Direction = CollectorConfig::ExternalIPsConfig::Direction;
 
 std::string ErrorsToString(const std::vector<ParserError>& errors) {
   std::stringstream ss;
@@ -308,29 +309,28 @@ TEST(TestParserYaml, ValidationMode) {
  */
 
 TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
-  std::vector<std::pair<std::string, bool>> tests = {
+  std::vector<std::pair<std::string, Direction>> tests = {
       {R"(
                   networking:
                     externalIps:
                       enabled: enabled
                )",
-       true},
+       Direction::BOTH},
       {R"(
                   networking:
                     externalIps:
                       enabled: DISABLED
                )",
-       false},
+       Direction::NONE},
       {R"(
                   networking:
                     externalIps:
                )",
-       false},
-      {
-          R"(
+       Direction::NONE},
+      {R"(
                   networking:
                )",
-          false},
+       Direction::NONE},
   };
 
   for (const auto& [yamlStr, expected] : tests) {
@@ -342,12 +342,7 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
 
     EXPECT_TRUE(runtime_config.has_value());
 
-    bool enabled = runtime_config.value()
-                       .networking()
-                       .external_ips()
-                       .enabled() == sensor::ExternalIpsEnabled::ENABLED;
-    EXPECT_EQ(enabled, expected);
-    EXPECT_EQ(config.EnableExternalIPs(), expected);
+    EXPECT_EQ(config.ExternalIPsConf().GetDirection(), expected);
   }
 }
 
