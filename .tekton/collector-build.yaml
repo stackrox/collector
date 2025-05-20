@@ -105,6 +105,14 @@ spec:
     stepSpecs:
     - name: use-trusted-artifact
       computeResources: *ta-resources
+  - pipelineTaskName: sast-shell-check
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: sast-unicode-check
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
   - pipelineTaskName: sast-snyk-check
     stepSpecs:
     - name: use-trusted-artifact
