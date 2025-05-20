@@ -89,6 +89,14 @@ spec:
       computeResources: *ta-resources
     - name: create-trusted-artifact
       computeResources: *ta-resources
+    - name: prefetch-dependencies
+      # We saw prefetch-dependencies _step_ also OOMKill-ed, therefore bumping its memory compared to default.
+      computeResources:
+        limits:
+          memory: 4Gi
+        requests:
+          cpu: "1"
+          memory: 4Gi
   - pipelineTaskName: build-container-s390x
     stepSpecs:
     - name: use-trusted-artifact
