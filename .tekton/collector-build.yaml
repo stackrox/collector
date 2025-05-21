@@ -125,6 +125,10 @@ spec:
     stepSpecs:
     - name: use-trusted-artifact
       computeResources: *ta-resources
+  - pipelineTaskName: push-dockerfile
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
 
   taskRunTemplate:
     serviceAccountName: build-pipeline-collector
