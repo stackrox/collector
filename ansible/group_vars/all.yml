@@ -98,6 +98,8 @@ virtual_machines:
     project: cos-cloud
     families:
       - cos-arm64-stable
+      - cos-arm64-beta
+      - cos-arm64-dev
 
   sles:
     project: suse-cloud
