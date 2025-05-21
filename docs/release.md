@@ -14,9 +14,11 @@ A workflow for automated releases can be found in the 'Actions' tab of
 GitHub. Once in said tab, look for the `Tag a new release` workflow in
 the side bar, select it and use the `Run workflow` button on the far
 right to trigger the tagging process, setting the `<Major>.<minor>`
-version for the release in the menu that pops up. The workflow will
-check the version input and adjust the major, minor and patch versions
-to be used before creating any necessary branches and tags.
+version for the release in the menu that pops up or leaving it as 0.0.
+The workflow will check the version input and adjust the major, minor
+and patch versions to be used before creating any necessary branches
+and tags. If left with the default value of 0.0, the workflow will
+create a new minor release.
 
 The recommended workflow is to first run in dry-mode and check the tags
 and branches that will be used are correct in the `Summary` section of
