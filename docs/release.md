@@ -1,14 +1,38 @@
 # Release Process
 
 
-### Considerations
+## Considerations
 
 - All tags created during a release should *not* be annotated. The ref to an
   annotated tag (e.g. `refs/tags/tagname`) does not refer to the tagged commit,
   instead referring to a non-commit object representing the annoation. This can
   cause complications in CI builds on remote VMs.
 
-**Create the collector image release branch**
+## Automated release
+
+A workflow for automated releases can be found in the 'Actions' tab of
+GitHub. Once in said tab, look for the `Tag a new release` workflow in
+the side bar, select it and use the `Run workflow` button on the far
+right to trigger the tagging process, setting the `<Major>.<minor>`
+version for the release in the menu that pops up or leaving it as 0.0.
+The workflow will check the version input and adjust the major, minor
+and patch versions to be used before creating any necessary branches
+and tags. If left with the default value of 0.0, the workflow will
+create a new minor release.
+
+The recommended workflow is to first run in dry-mode and check the tags
+and branches that will be used are correct in the `Summary` section of
+the triggered workflow, then run it again without dry-mode to create
+the actual release. With the tag pushed, the workflow for creating the
+new version of collector should be triggered on its own.
+
+## Manual release
+
+**Note**: This release process should only be used if the automated
+process fails.
+---
+
+### Create the collector image release branch
 
 1. Navigate to the local stackrox/collector git repository directory on the master branch and ensure the local checked out version is up to date.
 
@@ -62,7 +86,7 @@ git tag "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
 git push origin "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
 ```
 
-**Patch releases**
+### Patch releases
 
 There is a script at utilities/tag-bumper.py for creating new tags for patch releases.
 That script is out of date and will be updated.
