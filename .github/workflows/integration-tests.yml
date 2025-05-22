@@ -32,8 +32,6 @@ on:
       is-konflux:
         description: |
           Marker for workflows triggered for a konflux build.
-          These builds don't support multiarch, so it should only run x86
-          tests
         type: boolean
         default: false
       large-box:
