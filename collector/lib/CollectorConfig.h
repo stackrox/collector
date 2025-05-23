@@ -14,6 +14,7 @@
 #include <internalapi/sensor/collector.pb.h>
 
 #include "CollectionMethod.h"
+#include "ExternalIPsConfig.h"
 #include "HostConfig.h"
 #include "Logging.h"
 #include "NetworkConnection.h"
@@ -97,15 +98,10 @@ class CollectorConfig {
   // EnableExternalIPs will check for the existence
   // of a runtime configuration, and defer to that value
   // otherwise, we rely on the feature flag (env var)
-  bool EnableExternalIPs() const {
+  ExternalIPsConfig ExternalIPsConf() const {
     auto lock = ReadLock();
-    if (runtime_config_.has_value()) {
-      return runtime_config_.value()
-                 .networking()
-                 .external_ips()
-                 .enabled() == sensor::ExternalIpsEnabled::ENABLED;
-    }
-    return enable_external_ips_;
+
+    return ExternalIPsConfig(runtime_config_, enable_external_ips_);
   }
 
   void RuntimeConfigHeuristics() {
