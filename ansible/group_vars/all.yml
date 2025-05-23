@@ -92,6 +92,15 @@ virtual_machines:
       - cos-beta
       - cos-dev
 
+  cos-arm64:
+    arch: arm64
+    machine_type: t2a-standard-2
+    project: cos-cloud
+    families:
+      - cos-arm64-stable
+      - cos-arm64-beta
+      - cos-arm64-dev
+
   sles:
     project: suse-cloud
     families:
