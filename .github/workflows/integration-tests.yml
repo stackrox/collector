@@ -95,7 +95,6 @@ jobs:
       fail-fast: false
       matrix:
         vm_type:
-
           - rhcos-arm64
           - cos-arm64
           - rhel-arm64
