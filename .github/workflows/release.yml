@@ -1,0 +1,233 @@
+name: Tag a new release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: |
+          The release version in <Major>.<minor> format.
+          0.0 means new minor version on the latest major version.
+        default: '0.0'
+        type: string
+      dry-run:
+        description: Do not push anything
+        default: true
+        type: boolean
+
+jobs:
+  determine-version:
+    runs-on: ubuntu-24.04
+
+    outputs:
+      major: ${{ steps.final-values.outputs.major }}
+      minor: ${{ steps.final-values.outputs.minor }}
+      patch: ${{ steps.patch-version.outputs.value || '0' }}
+      release-type: ${{ steps.final-values.outputs.type }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+
+      - name: Parse required release
+        id: required-release
+        run: |
+          if [[ "${{ inputs.version }}" =~ ^([[:digit:]]+)\.([[:digit:]]+)$ ]]; then
+            echo "major=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+            echo "minor=${BASH_REMATCH[2]}" >> "$GITHUB_OUTPUT"
+          else
+            echo >&2 "Invalid version ${{ inputs.version }}. The expected format is <Major>.<minor>"
+            exit 1
+          fi
+
+      - name: Get closest tag to master
+        id: latest-tag
+        env:
+          REQUIRED_MAJOR: ${{ steps.required-release.outputs.major }}
+        run: |
+          tag=(0 0)
+          while read -r line; do
+            if [[ "$line" =~ ^([[:digit:]]+)\.([[:digit:]]+)\.x$ ]]; then
+                # If we are doing a release for a specific major
+                # version, we want to limit ourselves to that, so we
+                # ignore newer major versions.
+                if ((tag[0] < BASH_REMATCH[1] && (REQUIRED_MAJOR == 0 || REQUIRED_MAJOR >= BASH_REMATCH[1]))); then
+                    tag=("${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}")
+                elif ((tag[0] == BASH_REMATCH[1] && tag[1] < BASH_REMATCH[2])); then
+                    tag=("${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}")
+                fi
+            fi
+          done < <(git tag --merged)
+
+          echo "major=${tag[0]}" >> "$GITHUB_OUTPUT"
+          echo "minor=${tag[1]}" >> "$GITHUB_OUTPUT"
+
+      - name: Determine release type and version
+        id: final-values
+        env:
+          LATEST_MAJOR: ${{ steps.latest-tag.outputs.major }}
+          LATEST_MINOR: ${{ steps.latest-tag.outputs.minor }}
+          REQUIRED_MAJOR: ${{ steps.required-release.outputs.major }}
+          REQUIRED_MINOR: ${{ steps.required-release.outputs.minor }}
+        run: |
+          function add_outputs() {
+            cat << EOF >> "$GITHUB_OUTPUT"
+          major=$1
+          minor=$2
+          type=$3
+          EOF
+          }
+
+          if ((REQUIRED_MAJOR==0)); then
+            add_outputs "${LATEST_MAJOR}" "$((LATEST_MINOR+1))" "minor"
+          elif ((REQUIRED_MAJOR > LATEST_MAJOR)); then
+            add_outputs "$((LATEST_MAJOR+1))" "0" "major"
+          elif ((REQUIRED_MAJOR == LATEST_MAJOR && REQUIRED_MINOR > LATEST_MINOR)); then
+            add_outputs "${LATEST_MAJOR}" "$((LATEST_MINOR+1))" "minor"
+          else
+            add_outputs "${REQUIRED_MAJOR}" "${REQUIRED_MINOR}" "patch"
+          fi
+
+      - name: Get patch version
+        id: patch-version
+        if: steps.final-values.outputs.type == 'patch'
+        env:
+          MAJOR: ${{ steps.final-values.outputs.major }}
+          MINOR: ${{ steps.final-values.outputs.minor }}
+        run: |
+          git checkout "release-${MAJOR}.${MINOR}"
+          git pull --ff-only
+
+          patch=0
+          while read -r line; do
+            if [[ "$line" =~ ^${MAJOR}.${MINOR}.([[:digit:]]+)$ ]]; then
+              if ((BASH_REMATCH[1] > patch)); then
+                patch="${BASH_REMATCH[1]}"
+              fi
+            fi
+          done < <(git tag --merged)
+
+          echo "value=$((patch+1))" >> "$GITHUB_OUTPUT"
+
+      - name: Notify tags and branches
+        env:
+          MAJOR: ${{ steps.final-values.outputs.major }}
+          MINOR: ${{ steps.final-values.outputs.minor }}
+          PATCH: ${{ steps.patch-version.outputs.value || '0' }}
+          RELEASE_TYPE: ${{ steps.final-values.outputs.type }}
+        run: |
+          function notice() {
+            echo "::notice title=$1:: $2"
+          }
+
+          BRANCH="master"
+          if [[ "${RELEASE_TYPE}" == "patch" ]]; then
+            BRANCH="release-${MAJOR}.${MINOR}"
+          fi
+
+          notice "Release type" "${RELEASE_TYPE}"
+          notice "Tag" "${MAJOR}.${MINOR}.${PATCH}"
+          notice "Base branch" "${BRANCH}"
+          if [[ "${BRANCH}" == "master" ]]; then
+            notice "Master tag" "${MAJOR}.${MINOR}.x"
+            notice "Release branch" "release-${MAJOR}.${MINOR}"
+          fi
+
+      - name: Mismatched versions
+        if: steps.required-release.outputs.major != 0 && (
+              steps.required-release.outputs.major != steps.final-values.outputs.major ||
+              steps.required-release.outputs.minor != steps.final-values.outputs.minor
+            )
+        env:
+          REQUIRED_MAJOR: ${{ steps.required-release.outputs.major }}
+          REQUIRED_MINOR: ${{ steps.required-release.outputs.minor }}
+          CALCULATED_MAJOR: ${{ steps.final-values.outputs.major }}
+          CALCULATED_MINOR: ${{ steps.final-values.outputs.minor }}
+        run: |
+          cat << EOF >&2
+          ::error title='Version mismatch'::The required version did not match the one calculated. REQUIRED: ${REQUIRED_MAJOR}.${REQUIRED_MINOR}, GOT: ${CALCULATED_MAJOR}.${CALCULATED_MINOR}
+
+          Please review the input and retrigger the workflow.
+          EOF
+
+          # Fail the workflow
+          exit 1
+
+  release:
+    runs-on: ubuntu-24.04
+    if: ${{ !inputs.dry-run }}
+    needs:
+    - determine-version
+    env:
+      RELEASE: ${{ needs.determine-version.outputs.major }}.${{ needs.determine-version.outputs.minor }}
+      RELEASE_TYPE: ${{ needs.determine-version.outputs.release-type }}
+      PATCH: ${{ needs.determine-version.outputs.patch }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+
+      - name: Initialize mandatory git config
+        run: |
+          git config user.name "${{ github.event.sender.login }}"
+          git config user.email noreply@github.com
+
+      - name: Create release branch
+        if: needs.determine-version.outputs.release-type != 'patch'
+        run: |
+          git checkout master
+          git pull --ff-only
+          git tag "${RELEASE}.x"
+          git checkout -b "release-${RELEASE}"
+          git commit --no-verify --allow-empty -m "Empty commit to diverge ${RELEASE} from master"
+
+      - name: Push release branch
+        if: needs.determine-version.outputs.release-type != 'patch'
+        run: |
+          git push origin "${RELEASE}.x"
+          git push --set-upstream origin "release-${RELEASE}"
+
+      - name: Create release tag
+        run: |
+          git checkout "release-${RELEASE}"
+          if [[ "${RELEASE_TYPE}" == "patch" ]]; then
+            git pull --ff-only
+          fi
+          git tag "${RELEASE}.${PATCH}"
+
+      - name: Push release tag
+        run: |
+          git push origin "${RELEASE}.${PATCH}"
+
+      - name: Create tag in falcosecurity-libs
+        run: |
+          git submodule update --init falcosecurity-libs
+          cd falcosecurity-libs/
+          git tag "${RELEASE}.${PATCH}"
+
+      - name: Push tag in falcosecurity-libs
+        run: |
+          cd falcosecurity-libs/
+          git push origin "${RELEASE}.${PATCH}"
+
+      - name: Send message to slack
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_ONCALL_WEBHOOK }}
+          SLACK_CHANNEL: team-acs-collector-oncall
+          SLACK_COLOR: success
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: "New release tagged"
+          SLACKIFY_MARKDOWN: true
+          MSG_MINIMAL: true
+          SLACK_MESSAGE: |
+            @acs-collector-oncall a new release has just been triggered
+            with the following values:
+
+            | Name | Value |
+            | --- | --- |
+            | Version | ${{ env.RELEASE }}.${{ env.PATCH }} |
+            | Release Type | ${{ env.RELEASE_TYPE }} |

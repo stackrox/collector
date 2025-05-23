@@ -32,8 +32,6 @@ on:
       is-konflux:
         description: |
           Marker for workflows triggered for a konflux build.
-          These builds don't support multiarch, so it should only run x86
-          tests
         type: boolean
         default: false
       large-box:
@@ -91,16 +89,15 @@ jobs:
 
   arm64-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
-    if: |
-      github.event_name != 'pull_request' || inputs.is-konflux ||
-      contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')
     strategy:
       # ensure that if one part of the matrix fails, the
       # rest will continue
       fail-fast: false
       matrix:
         vm_type:
+
           - rhcos-arm64
+          - cos-arm64
           - rhel-arm64
           - ubuntu-arm
           - sles-arm64
