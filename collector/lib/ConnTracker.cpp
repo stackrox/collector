@@ -157,16 +157,22 @@ void ConnectionTracker::CloseExternalUnnormalizedConnections(bool is_server, Con
   });
 }
 
-void ConnectionTracker::CloseConnectionsOnRuntimeConfigChange(ConnMap* old_conn_state, ConnMap* delta_conn) {
-  if (external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::EGRESS)) {
-    CloseNormalizedConnections(/* egress is when we are not server */ false, old_conn_state, delta_conn);
-  } else {
-    CloseExternalUnnormalizedConnections(/* egress is when we are not server */ false, old_conn_state, delta_conn);
+void ConnectionTracker::CloseConnectionsOnRuntimeConfigChange(ExternalIPsConfig prev_config, ConnMap* old_conn_state, ConnMap* delta_conn) {
+  if (prev_config.IsEnabled(ExternalIPsConfig::Direction::EGRESS) !=
+      external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::EGRESS)) {
+    if (external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::EGRESS)) {
+      CloseNormalizedConnections(/* egress is when we are not server */ false, old_conn_state, delta_conn);
+    } else {
+      CloseExternalUnnormalizedConnections(/* egress is when we are not server */ false, old_conn_state, delta_conn);
+    }
   }
-  if (external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::INGRESS)) {
-    CloseNormalizedConnections(/* ingress is when we are server */ true, old_conn_state, delta_conn);
-  } else {
-    CloseExternalUnnormalizedConnections(/* ingress is when we are server */ true, old_conn_state, delta_conn);
+  if (prev_config.IsEnabled(ExternalIPsConfig::Direction::INGRESS) !=
+      external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::INGRESS)) {
+    if (external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::INGRESS)) {
+      CloseNormalizedConnections(/* ingress is when we are server */ true, old_conn_state, delta_conn);
+    } else {
+      CloseExternalUnnormalizedConnections(/* ingress is when we are server */ true, old_conn_state, delta_conn);
+    }
   }
 }
 
