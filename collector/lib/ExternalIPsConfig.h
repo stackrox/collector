@@ -11,7 +11,7 @@ namespace collector {
 class ExternalIPsConfig {
  public:
   enum Direction {
-    NONE = 0,
+    NONE = 1 << 2,
     INGRESS = 1 << 0,
     EGRESS = 1 << 1,
     BOTH = INGRESS | EGRESS,

@@ -4,6 +4,7 @@
 
 #include "CollectorArgs.h"
 #include "CollectorConfig.h"
+#include "ConfigLoader.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -153,6 +154,97 @@ TEST(CollectorConfigTest, TestEnableExternalIpsRuntimeConfig) {
   EXPECT_TRUE(config.ExternalIPsConf().IsEnabled(Direction::INGRESS));
   EXPECT_TRUE(config.ExternalIPsConf().IsEnabled(Direction::EGRESS));
   EXPECT_TRUE(config.ExternalIPsConf().IsEnabled(Direction::BOTH));
+}
+
+TEST(CollectorConfigTest, TestIsEnabledIngress) {
+  std::string yamlStr = R"(
+                networking:
+                  externalIps:
+                    enabled: enabled
+                    direction: ingress
+             )";
+
+  YAML::Node yamlNode = YAML::Load(yamlStr);
+  CollectorConfig config;
+  ASSERT_EQ(ConfigLoader(config).LoadConfiguration(yamlNode), ConfigLoader::SUCCESS) << "Input: " << yamlStr;
+
+  auto runtime_config = config.GetRuntimeConfig();
+
+  EXPECT_TRUE(runtime_config.has_value());
+
+  EXPECT_EQ(Direction::INGRESS, config.ExternalIPsConf().GetDirection());
+  EXPECT_TRUE(config.ExternalIPsConf().IsEnabled(Direction::INGRESS));
+  EXPECT_FALSE(config.ExternalIPsConf().IsEnabled(Direction::EGRESS));
+  EXPECT_FALSE(config.ExternalIPsConf().IsEnabled(Direction::BOTH));
+  EXPECT_FALSE(config.ExternalIPsConf().IsEnabled(Direction::NONE));
+}
+
+TEST(CollectorConfigTest, TestIsEnabledEgress) {
+  std::string yamlStr = R"(
+                networking:
+                  externalIps:
+                    enabled: enabled
+                    direction: egress
+             )";
+
+  YAML::Node yamlNode = YAML::Load(yamlStr);
+  CollectorConfig config;
+  ASSERT_EQ(ConfigLoader(config).LoadConfiguration(yamlNode), ConfigLoader::SUCCESS) << "Input: " << yamlStr;
+
+  auto runtime_config = config.GetRuntimeConfig();
+
+  EXPECT_TRUE(runtime_config.has_value());
+
+  EXPECT_EQ(Direction::EGRESS, config.ExternalIPsConf().GetDirection());
+  EXPECT_FALSE(config.ExternalIPsConf().IsEnabled(Direction::INGRESS));
+  EXPECT_TRUE(config.ExternalIPsConf().IsEnabled(Direction::EGRESS));
+  EXPECT_FALSE(config.ExternalIPsConf().IsEnabled(Direction::BOTH));
+  EXPECT_FALSE(config.ExternalIPsConf().IsEnabled(Direction::NONE));
+}
+
+TEST(CollectorConfigTest, TestIsEnabledBoth) {
+  std::string yamlStr = R"(
+                networking:
+                  externalIps:
+                    enabled: enabled
+                    direction: both
+             )";
+
+  YAML::Node yamlNode = YAML::Load(yamlStr);
+  CollectorConfig config;
+  ASSERT_EQ(ConfigLoader(config).LoadConfiguration(yamlNode), ConfigLoader::SUCCESS) << "Input: " << yamlStr;
+
+  auto runtime_config = config.GetRuntimeConfig();
+
+  EXPECT_TRUE(runtime_config.has_value());
+
+  EXPECT_EQ(Direction::BOTH, config.ExternalIPsConf().GetDirection());
+  EXPECT_TRUE(config.ExternalIPsConf().IsEnabled(Direction::INGRESS));
+  EXPECT_TRUE(config.ExternalIPsConf().IsEnabled(Direction::EGRESS));
+  EXPECT_TRUE(config.ExternalIPsConf().IsEnabled(Direction::BOTH));
+  EXPECT_FALSE(config.ExternalIPsConf().IsEnabled(Direction::NONE));
+}
+
+TEST(CollectorConfigTest, TestIsEnabledNone) {
+  std::string yamlStr = R"(
+                networking:
+                  externalIps:
+                    enabled: disabled
+             )";
+
+  YAML::Node yamlNode = YAML::Load(yamlStr);
+  CollectorConfig config;
+  ASSERT_EQ(ConfigLoader(config).LoadConfiguration(yamlNode), ConfigLoader::SUCCESS) << "Input: " << yamlStr;
+
+  auto runtime_config = config.GetRuntimeConfig();
+
+  EXPECT_TRUE(runtime_config.has_value());
+
+  EXPECT_EQ(Direction::NONE, config.ExternalIPsConf().GetDirection());
+  EXPECT_FALSE(config.ExternalIPsConf().IsEnabled(Direction::INGRESS));
+  EXPECT_FALSE(config.ExternalIPsConf().IsEnabled(Direction::EGRESS));
+  EXPECT_FALSE(config.ExternalIPsConf().IsEnabled(Direction::BOTH));
+  EXPECT_TRUE(config.ExternalIPsConf().IsEnabled(Direction::NONE));
 }
 
 }  // namespace collector
