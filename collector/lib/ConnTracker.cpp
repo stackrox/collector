@@ -182,15 +182,17 @@ Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) 
   }
 
   Endpoint local, remote = conn.remote();
+  bool extIPs_ingress = external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::INGRESS);
+  bool extIPs_egress = external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::EGRESS);
 
   if (is_server) {
     // If this is the server, only the local port is relevant, while the remote port does not matter.
     local = Endpoint(IPNet(Address()), conn.local().port());
-    remote = Endpoint(NormalizeAddressNoLock(conn.remote().address(), external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::INGRESS)), 0);
+    remote = Endpoint(NormalizeAddressNoLock(conn.remote().address(), extIPs_ingress), 0);
   } else {
     // If this is the client, the local port and address are not relevant.
     local = Endpoint();
-    remote = Endpoint(NormalizeAddressNoLock(remote.address(), external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::EGRESS)), remote.port());
+    remote = Endpoint(NormalizeAddressNoLock(remote.address(), extIPs_egress), remote.port());
   }
 
   return Connection(conn.container(), local, remote, conn.l4proto(), is_server);
