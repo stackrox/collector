@@ -5,7 +5,8 @@ import (
 )
 
 type ExternalIpsConfig struct {
-	Enabled string `yaml:"enabled"`
+	Enabled   string `yaml:"enabled"`
+	Direction string `yaml:"direction,omitempty"`
 }
 
 type NetworkConfig struct {
@@ -29,12 +30,12 @@ func (n *RuntimeConfig) Equal(other RuntimeConfig) bool {
 	return n.Networking.ExternalIps.Enabled == other.Networking.ExternalIps.Enabled
 }
 
-func (n *RuntimeConfig) GetRuntimeConfigStr() (string, error) {
+func (n *RuntimeConfig) String() string {
 	yamlBytes, err := yaml.Marshal(n)
 
 	if err != nil {
-		return "", err
+		panic(err)
 	}
 
-	return string(yamlBytes), err
+	return string(yamlBytes)
 }
