@@ -1651,80 +1651,143 @@ TEST(ConnTrackerTest, TestConnectionStats) {
   EXPECT_EQ(stats.outbound.public_, 4);
 }
 
-TEST(ConnTrackerTest, TestCloseNormalizedConnections) {
-  ConnectionTracker tracker;
+TEST(ConnTrackerTest, TestExternalIPsConfigChangeEnableEgress) {
+  Endpoint ingress_local(IPNet(Address()), 80);
+  Endpoint ingress_remote(Address(223, 42, 0, 1), 0);
+  Endpoint ingress_remote_normalized(Address(255, 255, 255, 255), 0);
 
-  Endpoint a(Address(192, 168, 0, 1), 80);
-  Endpoint b(Address(255, 255, 255, 255), 9999);
+  Endpoint egress_local = Endpoint();
+  Endpoint egress_remote(Address(223, 42, 0, 2), 443);
+  Endpoint egress_remote_normalized(Address(255, 255, 255, 255), 443);
 
-  Connection conn("xyz", a, b, L4Proto::TCP, true);
+  Connection conn_ingress("xyz", ingress_local, ingress_remote, L4Proto::TCP, true);
+  Connection conn_ingress_normalized("xyz", ingress_local, ingress_remote_normalized, L4Proto::TCP, true);
+  Connection conn_egress("xyz", egress_local, egress_remote, L4Proto::TCP, false);
+  Connection conn_egress_normalized("xyz", egress_local, egress_remote_normalized, L4Proto::TCP, false);
+
   int64_t connection_time = 990;
 
-  ConnMap old_state = {{conn, ConnStatus(connection_time, true)}};
-  ConnMap delta;
-  ConnMap expected_delta = {{conn, ConnStatus(connection_time, false)}};
+  struct TestStep {
+    ExternalIPsConfig::Direction previous_direction;
+    ExternalIPsConfig::Direction new_direction;
+    ConnMap old_state;
+    ConnMap resulting_old_state;
+    ConnMap expected_delta;
+  } testSteps[] = {
+      {// No change (enabled)
+       .previous_direction = ExternalIPsConfig::Direction::BOTH,
+       .new_direction = ExternalIPsConfig::Direction::BOTH,
+       .old_state = {
+           {conn_ingress, ConnStatus(connection_time, true)},
+           {conn_ingress_normalized, ConnStatus(connection_time, true)},
+           {conn_egress, ConnStatus(connection_time, true)},
+           {conn_egress_normalized, ConnStatus(connection_time, true)},
+       },
+       .resulting_old_state = {
+           {conn_ingress, ConnStatus(connection_time, true)},
+           {conn_ingress_normalized, ConnStatus(connection_time, true)},
+           {conn_egress, ConnStatus(connection_time, true)},
+           {conn_egress_normalized, ConnStatus(connection_time, true)},
+       },
+       .expected_delta = {}},
+      {// No change (disabled)
+       .previous_direction = ExternalIPsConfig::Direction::NONE,
+       .new_direction = ExternalIPsConfig::Direction::NONE,
+       .old_state = {
+           {conn_ingress, ConnStatus(connection_time, true)},
+           {conn_ingress_normalized, ConnStatus(connection_time, true)},
+           {conn_egress, ConnStatus(connection_time, true)},
+           {conn_egress_normalized, ConnStatus(connection_time, true)},
+       },
+       .resulting_old_state = {
+           {conn_ingress, ConnStatus(connection_time, true)},
+           {conn_ingress_normalized, ConnStatus(connection_time, true)},
+           {conn_egress, ConnStatus(connection_time, true)},
+           {conn_egress_normalized, ConnStatus(connection_time, true)},
+       },
+       .expected_delta = {}},
+      {// Enable EGRESS
+       .previous_direction = ExternalIPsConfig::Direction::NONE,
+       .new_direction = ExternalIPsConfig::Direction::EGRESS,
+       .old_state = {
+           {conn_ingress, ConnStatus(connection_time, true)},
+           {conn_ingress_normalized, ConnStatus(connection_time, true)},
+           {conn_egress, ConnStatus(connection_time, true)},
+           {conn_egress_normalized, ConnStatus(connection_time, true)} /* closed */,
+       },
+       .resulting_old_state = {
+           {conn_ingress, ConnStatus(connection_time, true)},
+           {conn_ingress_normalized, ConnStatus(connection_time, true)},
+           {conn_egress, ConnStatus(connection_time, true)},
+       },
+       .expected_delta = {
+           {conn_egress_normalized, ConnStatus(connection_time, false)},
+       }},
+      {// Enable INGRESS
+       .previous_direction = ExternalIPsConfig::Direction::NONE,
+       .new_direction = ExternalIPsConfig::Direction::INGRESS,
+       .old_state = {
+           {conn_ingress, ConnStatus(connection_time, true)},
+           {conn_ingress_normalized, ConnStatus(connection_time, true)} /* closed */,
+           {conn_egress, ConnStatus(connection_time, true)},
+           {conn_egress_normalized, ConnStatus(connection_time, true)},
+       },
+       .resulting_old_state = {
+           {conn_ingress, ConnStatus(connection_time, true)},
+           {conn_egress, ConnStatus(connection_time, true)},
+           {conn_egress_normalized, ConnStatus(connection_time, true)},
+       },
+       .expected_delta = {
+           {conn_ingress_normalized, ConnStatus(connection_time, false)},
+       }},
+      {// Disable EGRESS
+       .previous_direction = ExternalIPsConfig::Direction::BOTH,
+       .new_direction = ExternalIPsConfig::Direction::INGRESS,
+       .old_state = {
+           {conn_ingress, ConnStatus(connection_time, true)},
+           {conn_ingress_normalized, ConnStatus(connection_time, true)},
+           {conn_egress, ConnStatus(connection_time, true)} /* closed */,
+           {conn_egress_normalized, ConnStatus(connection_time, true)},
+       },
+       .resulting_old_state = {
+           {conn_ingress, ConnStatus(connection_time, true)},
+           {conn_ingress_normalized, ConnStatus(connection_time, true)},
+           {conn_egress_normalized, ConnStatus(connection_time, true)},
+       },
+       .expected_delta = {
+           {conn_egress, ConnStatus(connection_time, false)},
+       }},
+      {// Disable INGRESS
+       .previous_direction = ExternalIPsConfig::Direction::BOTH,
+       .new_direction = ExternalIPsConfig::Direction::EGRESS,
+       .old_state = {
+           {conn_ingress, ConnStatus(connection_time, true)} /* closed */,
+           {conn_ingress_normalized, ConnStatus(connection_time, true)},
+           {conn_egress, ConnStatus(connection_time, true)},
+           {conn_egress_normalized, ConnStatus(connection_time, true)},
+       },
+       .resulting_old_state = {
+           {conn_ingress_normalized, ConnStatus(connection_time, true)},
+           {conn_egress, ConnStatus(connection_time, true)},
+           {conn_egress_normalized, ConnStatus(connection_time, true)},
+       },
+       .expected_delta = {
+           {conn_ingress, ConnStatus(connection_time, false)},
+       }}};
 
-  tracker.CloseNormalizedConnections(true, &old_state, &delta);
+  for (auto step : testSteps) {
+    ConnectionTracker tracker;
+    ConnMap delta;
 
-  EXPECT_THAT(old_state, IsEmpty());
-  EXPECT_THAT(delta, expected_delta);
-}
+    tracker.SetExternalIPsConfig(step.new_direction);
+    tracker.CloseConnectionsOnExternalIPsConfigChange(
+        step.previous_direction,
+        &step.old_state,
+        &delta);
 
-TEST(CloseNormalizedConnectionsTest, UnnormalizedConnectionsAreKept) {
-  ConnectionTracker tracker;
-
-  Endpoint a(Address(192, 168, 0, 1), 80);
-  Endpoint b(Address(192, 168, 1, 10), 9999);
-
-  Connection conn("xyz", a, b, L4Proto::TCP, true);
-  int64_t connection_time = 990;
-
-  ConnMap old_state = {{conn, ConnStatus(connection_time, true)}};
-  ConnMap delta;
-  ConnMap expected_old_state = {{conn, ConnStatus(connection_time, true)}};
-
-  tracker.CloseNormalizedConnections(true, &old_state, &delta);
-
-  EXPECT_THAT(old_state, expected_old_state);
-  EXPECT_THAT(delta, IsEmpty());
-}
-
-TEST(ConnTrackerTest, TestCloseExternalUnnormalizedConnections) {
-  ConnectionTracker tracker;
-
-  Endpoint a(Address(192, 168, 0, 1), 80);
-  Endpoint b(Address(11, 168, 1, 10), 9999);
-
-  Connection conn("xyz", a, b, L4Proto::TCP, true);
-  int64_t connection_time = 990;
-
-  ConnMap old_state = {{conn, ConnStatus(connection_time, true)}};
-  ConnMap delta;
-  ConnMap expected_delta = {{conn, ConnStatus(connection_time, false)}};
-
-  tracker.CloseExternalUnnormalizedConnections(true, &old_state, &delta);
-
-  EXPECT_THAT(old_state, IsEmpty());
-  EXPECT_THAT(delta, expected_delta);
-}
-
-TEST(CloseExternalUnnormalizedConnectionsTest, InternalConnectionsAreKept) {
-  ConnectionTracker tracker;
-
-  Endpoint a(Address(192, 168, 0, 1), 80);
-  Endpoint b(Address(192, 168, 1, 10), 9999);
-
-  Connection conn("xyz", a, b, L4Proto::TCP, true);
-  int64_t connection_time = 990;
-
-  ConnMap old_state = {{conn, ConnStatus(connection_time, true)}};
-  ConnMap delta;
-  ConnMap expected_old_state = {{conn, ConnStatus(connection_time, true)}};
-
-  tracker.CloseExternalUnnormalizedConnections(true, &old_state, &delta);
-
-  EXPECT_THAT(old_state, expected_old_state);
-  EXPECT_THAT(delta, IsEmpty());
+    EXPECT_THAT(step.old_state, step.resulting_old_state);
+    EXPECT_THAT(delta, step.expected_delta);
+  }
 }
 
 TEST(ConnTrackerTest, TestShouldNormalizeConnection) {

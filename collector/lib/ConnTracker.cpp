@@ -136,43 +136,41 @@ void ConnectionTracker::CloseConnections(ConnMap* old_conn_state, ConnMap* delta
   }
 }
 
-/**
- * Closes connections that have the 255.255.255.255 external IP address
- * Affects only connections with a matching is_server property
- */
-void ConnectionTracker::CloseNormalizedConnections(bool is_server, ConnMap* old_conn_state, ConnMap* delta_conn) {
-  CloseConnections(old_conn_state, delta_conn, [is_server](const Connection* conn) {
-    return conn->is_server() == is_server && Address::IsCanonicalExternalIp(conn->remote().address());
-  });
-}
+void ConnectionTracker::CloseConnectionsOnExternalIPsConfigChange(ExternalIPsConfig prev_config, ConnMap* old_conn_state, ConnMap* delta_conn) const {
+  bool ingress = external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::INGRESS);
+  bool egress = external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::EGRESS);
 
-/**
- * Closes unnormalized connections that would be normalized to the canonical external
- * IP address if external IPs was enabled
- * Affects only connections with a matching is_server property
- */
-void ConnectionTracker::CloseExternalUnnormalizedConnections(bool is_server, ConnMap* old_conn_state, ConnMap* delta_conn) {
-  CloseConnections(old_conn_state, delta_conn, [this, is_server](const Connection* conn) {
-    return conn->is_server() == is_server && ShouldNormalizeConnection(conn) && !Address::IsCanonicalExternalIp(conn->remote().address());
-  });
-}
+  if (egress != prev_config.IsEnabled(ExternalIPsConfig::Direction::EGRESS)) {
+    CloseConnections(old_conn_state, delta_conn, [this, egress](const Connection* conn) -> bool {
+      /* egress is when we are not server */
+      if (conn->is_server()) {
+        return false;
+      }
 
-void ConnectionTracker::CloseConnectionsOnRuntimeConfigChange(ExternalIPsConfig prev_config, ConnMap* old_conn_state, ConnMap* delta_conn) {
-  if (prev_config.IsEnabled(ExternalIPsConfig::Direction::EGRESS) !=
-      external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::EGRESS)) {
-    if (external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::EGRESS)) {
-      CloseNormalizedConnections(/* egress is when we are not server */ false, old_conn_state, delta_conn);
-    } else {
-      CloseExternalUnnormalizedConnections(/* egress is when we are not server */ false, old_conn_state, delta_conn);
-    }
+      if (egress) {
+        // Enabling: Close connections previously normalized
+        return Address::IsCanonicalExternalIp(conn->remote().address());
+      } else {
+        // Disabling: Close connections that should now be normalized
+        return !Address::IsCanonicalExternalIp(conn->remote().address()) && ShouldNormalizeConnection(conn);
+      }
+    });
   }
-  if (prev_config.IsEnabled(ExternalIPsConfig::Direction::INGRESS) !=
-      external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::INGRESS)) {
-    if (external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::INGRESS)) {
-      CloseNormalizedConnections(/* ingress is when we are server */ true, old_conn_state, delta_conn);
-    } else {
-      CloseExternalUnnormalizedConnections(/* ingress is when we are server */ true, old_conn_state, delta_conn);
-    }
+  if (ingress != prev_config.IsEnabled(ExternalIPsConfig::Direction::INGRESS)) {
+    CloseConnections(old_conn_state, delta_conn, [this, ingress](const Connection* conn) -> bool {
+      /* ingress is when we are server */
+      if (!conn->is_server()) {
+        return false;
+      }
+
+      if (ingress) {
+        // Enabling: Close connections previously normalized
+        return Address::IsCanonicalExternalIp(conn->remote().address());
+      } else {
+        // Disabling: Close connections that should now be normalized
+        return !Address::IsCanonicalExternalIp(conn->remote().address()) && ShouldNormalizeConnection(conn);
+      }
+    });
   }
 }
 

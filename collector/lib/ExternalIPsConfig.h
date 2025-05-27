@@ -29,7 +29,7 @@ class ExternalIPsConfig {
   // 'runtime_config' should be locked prior to calling.
   ExternalIPsConfig(std::optional<sensor::CollectorConfig> runtime_config, bool default_enabled);
 
-  ExternalIPsConfig() : direction_enabled_(Direction::NONE) {}
+  ExternalIPsConfig(Direction direction = Direction::NONE) : direction_enabled_(direction) {}
 
  private:
   Direction direction_enabled_;
