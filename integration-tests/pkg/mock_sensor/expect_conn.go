@@ -33,7 +33,7 @@ loop:
 		case <-timer:
 			// we know they don't match at this point, but by using
 			// ElementsMatch we get much better logging about the differences
-			return assert.ElementsMatch(t, expected, s.GetAllConnections(containerID), "timed out waiting for network connections")
+			return assert.ElementsMatch(t, expected, s.Connections(containerID), "timed out waiting for network connections")
 		case network := <-s.LiveConnections():
 			if network.GetContainerId() != containerID {
 				continue loop
@@ -58,8 +58,8 @@ loop:
 // It does not consider the content of the events, just that a certain number
 // have been received
 func (s *MockSensor) ExpectConnectionsN(t *testing.T, containerID string, timeout time.Duration, n int) []types.NetworkInfo {
-	if len(s.GetAllConnections(containerID)) == n {
-		return s.GetAllConnections(containerID)
+	if len(s.Connections(containerID)) == n {
+		return s.Connections(containerID)
 	}
 
 	timer := time.After(timeout)
@@ -67,13 +67,13 @@ loop:
 	for {
 		select {
 		case <-timer:
-			assert.FailNowf(t, "timed out", "found %d connections (expected %d)", len(s.GetAllConnections(containerID)), n)
+			assert.FailNowf(t, "timed out", "found %d connections (expected %d)", len(s.Connections(containerID)), n)
 		case conn := <-s.LiveConnections():
 			if conn.GetContainerId() != containerID {
 				continue loop
 			}
-			if len(s.GetAllConnections(containerID)) == n {
-				return s.GetAllConnections(containerID)
+			if len(s.Connections(containerID)) == n {
+				return s.Connections(containerID)
 			}
 		}
 	}
@@ -89,7 +89,7 @@ func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID str
 		return c1.Equal(c2)
 	}
 
-	connections := s.GetAllConnections(containerID)
+	connections := s.Connections(containerID)
 	if collectorAssert.ElementsMatchFunc(expected, connections, equal) {
 		return true
 	}
@@ -99,13 +99,13 @@ func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID str
 	for {
 		select {
 		case <-timer:
-			connections := s.GetAllConnections(containerID)
+			connections := s.Connections(containerID)
 			return collectorAssert.AssertElementsMatchFunc(t, expected, connections, equal)
 		case conn := <-s.LiveConnections():
 			if conn.GetContainerId() != containerID {
 				continue
 			}
-			connections := s.GetAllConnections(containerID)
+			connections := s.Connections(containerID)
 			if collectorAssert.ElementsMatchFunc(expected, connections, equal) {
 				return true
 			}
@@ -131,7 +131,7 @@ func (s *MockSensor) ExpectSameElementsConnectionsScrapes(t *testing.T, containe
 		return true
 	}
 
-	connections := s.Connections(containerID)
+	connections := s.GetConnectionsInBatches(containerID)
 	if collectorAssert.ElementsMatchFunc(expected, connections, equal) {
 		return true
 	}
@@ -141,13 +141,13 @@ func (s *MockSensor) ExpectSameElementsConnectionsScrapes(t *testing.T, containe
 	for {
 		select {
 		case <-timer:
-			connections := s.Connections(containerID)
+			connections := s.GetConnectionsInBatches(containerID)
 			return collectorAssert.AssertElementsMatchFunc(t, expected, connections, equal)
 		case conn := <-s.LiveConnections():
 			if conn.GetContainerId() != containerID {
 				continue
 			}
-			connections := s.Connections(containerID)
+			connections := s.GetConnectionsInBatches(containerID)
 			if collectorAssert.ElementsMatchFunc(expected, connections, equal) {
 				return true
 			}

@@ -149,7 +149,7 @@ func (m *MockSensor) LiveConnections() <-chan *sensorAPI.NetworkConnection {
 
 // Connections returns a list of all connections that have been received for
 // a given container ID
-func (m *MockSensor) Connections(containerID string) []types.NetworkInfoBatch {
+func (m *MockSensor) GetConnectionsInBatches(containerID string) []types.NetworkInfoBatch {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
@@ -167,7 +167,7 @@ func (m *MockSensor) Connections(containerID string) []types.NetworkInfoBatch {
 
 // Connections returns a list of all connections that have been received for
 // a given container ID
-func (m *MockSensor) GetAllConnections(containerID string) []types.NetworkInfo {
+func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
@@ -189,7 +189,7 @@ func (m *MockSensor) GetAllConnections(containerID string) []types.NetworkInfo {
 // HasConnection returns whether a given connection has been seen for a given
 // container ID
 func (m *MockSensor) HasConnection(containerID string, conn types.NetworkInfo) bool {
-	conns := m.GetAllConnections(containerID)
+	conns := m.Connections(containerID)
 	if len(conns) > 0 {
 		return slices.ContainsFunc(conns, func(c types.NetworkInfo) bool {
 			return c.Equal(conn)
