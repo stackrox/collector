@@ -27,7 +27,8 @@ static const std::string PROMETHEUS_PORT = "9090";
 CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlValue>* control,
                                    const std::atomic<int>* signum)
     : config_(config),
-      system_inspector_(config_),
+      output_(config),
+      system_inspector_(config, &output_),
       control_(control),
       signum_(*signum),
       server_(OPTIONS),

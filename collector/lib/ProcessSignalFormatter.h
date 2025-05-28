@@ -5,11 +5,11 @@
 #include <gtest/gtest_prod.h>
 
 #include "api/v1/signal.pb.h"
+#include "internalapi/sensor/collector_iservice.pb.h"
 #include "internalapi/sensor/signal_iservice.pb.h"
 #include "storage/process_indicator.pb.h"
 
 #include "CollectorConfig.h"
-#include "CollectorStats.h"
 #include "ContainerMetadata.h"
 #include "EventNames.h"
 #include "ProtoSignalFormatter.h"
@@ -17,11 +17,10 @@
 // forward definitions
 class sinsp;
 class sinsp_threadinfo;
-namespace collector {
-namespace system_inspector {
+
+namespace collector::system_inspector {
 class EventExtractor;
 }
-}  // namespace collector
 
 namespace collector {
 
@@ -35,7 +34,7 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
   using LineageInfo = storage::ProcessSignal_LineageInfo;
 
   const sensor::SignalStreamMessage* ToProtoMessage(sinsp_evt* event) override;
-  const sensor::SignalStreamMessage* ToProtoMessage(sinsp_threadinfo* tinfo);
+  const sensor::SignalStreamMessage* ToProtoMessage(sinsp_threadinfo* tinfo) override;
 
   void GetProcessLineage(sinsp_threadinfo* tinfo, std::vector<LineageInfo>& lineage);
 
