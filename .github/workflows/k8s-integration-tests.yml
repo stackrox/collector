@@ -3,6 +3,11 @@ name: K8S based integration tests
 on:
   workflow_call:
    inputs:
+      collector-repo:
+        description: |
+          Optional repository to use for the collector image
+        type: string
+        default: "quay.io/rhacs-eng/collector"
       collector-tag:
         description: |
           Tag used for running the integration tests
@@ -22,7 +27,7 @@ on:
 env:
   ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
   COLLECTOR_TESTS_IMAGE: quay.io/rhacs-eng/qa-multi-arch:${{ inputs.collector-tests-tag }}
-  COLLECTOR_IMAGE: quay.io/rhacs-eng/collector:${{ inputs.collector-tag }}
+  COLLECTOR_IMAGE: ${{ inputs.collector-repo }}:${{ inputs.collector-tag }}
 
 jobs:
   k8s-integration-tests:
