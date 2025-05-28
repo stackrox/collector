@@ -164,7 +164,7 @@ Default value: `DISABLED`
 
 * `networking.externalIPs.direction: INGRESS | EGRESS | BOTH`: when external-IPs are enabled,
 this attribute can restrict the direction in which it is effective. For instance, using `EGRESS`
-will aggregate all the incoming connections and give all details for the outgoing ones. This can
+will give all details for all the outgoing connections and aggregate the incoming ones. This can
 be particularly useful to limit the load resulting from enabling external-IPs.
 Default value: `BOTH`
 
