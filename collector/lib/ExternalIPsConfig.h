@@ -1,5 +1,6 @@
 #pragma once
 
+#include <assert.h>
 #include <optional>
 #include <ostream>
 
@@ -18,7 +19,10 @@ class ExternalIPsConfig {
   };
 
   // Are External-IPs enabled in the provided direction ?
-  bool IsEnabled(Direction direction) const { return (direction & direction_enabled_) == direction; }
+  bool IsEnabled(Direction direction) const {
+    assert(direction != Direction::NONE);
+    return (direction & direction_enabled_) == direction;
+  }
 
   // Direction in which External-IPs are enabled
   Direction GetDirection() const { return direction_enabled_; }
