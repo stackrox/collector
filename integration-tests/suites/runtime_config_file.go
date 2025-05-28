@@ -40,7 +40,7 @@ var (
 		RemoteAddress:  fmt.Sprintf("%s:%d", normalizedIp, serverPort),
 		Role:           "ROLE_CLIENT",
 		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-		CloseTimestamp: "Not nill time",
+		CloseTimestamp: types.NotNilTimestamp,
 	}
 
 	inactiveUnnormalizedConnectionEgress = types.NetworkInfo{
@@ -48,12 +48,15 @@ var (
 		RemoteAddress:  fmt.Sprintf("%s:%d", externalIp, serverPort),
 		Role:           "ROLE_CLIENT",
 		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-		CloseTimestamp: "Not nill time",
+		CloseTimestamp: types.NotNilTimestamp,
 	}
 
 	runtimeConfigDir  = "/tmp/collector-test"
 	runtimeConfigFile = filepath.Join(runtimeConfigDir, "/runtime_config.yaml")
 	collectorIP       = "localhost"
+
+	ingressIP   = "223.42.0.1"
+	ingressPort = 1337
 )
 
 type RuntimeConfigFileTestSuite struct {
@@ -72,47 +75,42 @@ func (s *RuntimeConfigFileTestSuite) setRuntimeConfig(config types.RuntimeConfig
 	s.writeRuntimeConfig(runtimeConfigFile, config.String())
 }
 
-func (s *RuntimeConfigFileTestSuite) runBerserkerContainers() (client, server string) {
-	containerID, err := s.Executor().StartContainer(
-		config.ContainerStartConfig{
-			Name:        "external-connection-ingress-client",
-			Image:       config.Images().QaImageByKey("performance-berserker"),
-			Privileged:  true,
-			NetworkMode: "host",
-			Entrypoint: []string{
-				"/scripts/init.sh",
-			},
-			Env: map[string]string{
-				"RUST_LOG":  "DEBUG",
-				"IS_CLIENT": "true",
-			},
-		},
-	)
-	s.Require().NoError(err)
-	client = common.ContainerShortID(containerID)
+func (s *RuntimeConfigFileTestSuite) runNetworkDirectionContainers() (client, server string) {
 
-	containerID, err = s.Executor().StartContainer(
+	serverCmd := fmt.Sprintf("/scripts/prepare-tap.sh -a %s -o && nc -lk %s %d", ingressIP, ingressIP, ingressPort)
+	containerID, err := s.Executor().StartContainer(
 		config.ContainerStartConfig{
 			Name:        "external-connection-ingress-server",
 			Image:       config.Images().QaImageByKey("performance-berserker"),
 			Privileged:  true,
 			NetworkMode: "host",
 			Entrypoint: []string{
-				"/scripts/init.sh",
-			},
-			Env: map[string]string{
-				"RUST_LOG":  "DEBUG",
-				"IS_CLIENT": "false",
+				"sh", "-c", serverCmd,
 			},
 		},
 	)
 	s.Require().NoError(err)
 	server = common.ContainerShortID(containerID)
 
+	clientCmd := fmt.Sprintf("sleep 10; while true; do nc -zv %s %d; sleep 60; done", ingressIP, ingressPort)
+	containerID, err = s.Executor().StartContainer(
+		config.ContainerStartConfig{
+			Name:        "external-connection-ingress-client",
+			Image:       config.Images().QaImageByKey("performance-berserker"),
+			Privileged:  true,
+			NetworkMode: "host",
+			Entrypoint: []string{
+				"sh", "-c", clientCmd,
+			},
+		},
+	)
+	s.Require().NoError(err)
+	client = common.ContainerShortID(containerID)
+
 	return client, server
 }
 
-func (s *RuntimeConfigFileTestSuite) teardownBerserkerContainers() {
+func (s *RuntimeConfigFileTestSuite) teardownNetworkDirectionContainers() {
 	s.cleanupContainers("external-connection-ingress-server", "external-connection-ingress-client")
 }
 
@@ -254,12 +252,8 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileInvalid() {
 }
 
 func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigNetworkIngress() {
-	client, server := s.runBerserkerContainers()
-	defer s.teardownBerserkerContainers()
-
-	//	assert.AssertNoRuntimeConfig(s.T(), collectorIP)
-	//	expectedConnections := []types.NetworkInfo{activeNormalizedConnectionEgress}
-	//	s.Require().True(s.Sensor().ExpectSameElementsConnections(s.T(), server, 10*time.Second, expectedConnections...))
+	client, server := s.runNetworkDirectionContainers()
+	defer s.teardownNetworkDirectionContainers()
 
 	s.setRuntimeConfig(types.RuntimeConfig{
 		Networking: types.NetworkConfig{
@@ -270,22 +264,51 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigNetworkIngress() {
 		},
 	})
 
-	common.Sleep(45 * time.Second)
+	// Expect both open and close events for the non-aggregated
+	// ingress connection. If Collector is aggregating to 255.255.255.255
+	// this will fail.
+	// We are not concerned with event ordering in this test.
+	expectedIngressConnections := []types.NetworkInfo{
+		{
+			LocalAddress:   fmt.Sprintf(":%d", ingressPort),
+			RemoteAddress:  ingressIP,
+			Role:           "ROLE_SERVER",
+			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			CloseTimestamp: types.NotNilTimestamp,
+		},
+		{
+			LocalAddress:   fmt.Sprintf(":%d", ingressPort),
+			RemoteAddress:  ingressIP,
+			Role:           "ROLE_SERVER",
+			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			CloseTimestamp: types.NilTimestamp,
+		},
+	}
 
-	fmt.Println(s.Sensor().Connections(client))
-	fmt.Println("===========")
-	fmt.Println(s.Sensor().Connections(server))
+	expectedEgressConnections := []types.NetworkInfo{
+		{
+			LocalAddress:   "",
+			RemoteAddress:  fmt.Sprintf("%s:%d", normalizedIp, ingressPort),
+			Role:           "ROLE_CLIENT",
+			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			CloseTimestamp: types.NotNilTimestamp,
+		},
+		{
+			LocalAddress:   "",
+			RemoteAddress:  fmt.Sprintf("%s:%d", normalizedIp, ingressPort),
+			Role:           "ROLE_CLIENT",
+			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			CloseTimestamp: types.NilTimestamp,
+		},
+	}
 
-	// assert.AssertExternalIps(s.T(), "ENABLED", collectorIP)
-	// expectedConnections = append(expectedConnections, activeUnnormalizedConnectionEgress, inactiveNormalizedConnectionEgress)
-	// common.Sleep(3 * time.Second) // Sleep so that collector has a chance to report connections
-	// s.Require().True(s.Sensor().ExpectSameElementsConnections(s.T(), client, 10*time.Second, expectedConnections...))
+	s.Sensor().ExpectConnections(s.T(), client, 30*time.Second, expectedEgressConnections...)
+	s.Sensor().ExpectConnections(s.T(), server, 30*time.Second, expectedIngressConnections...)
 }
 
 func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigNetworkEgress() {
-	assert.AssertNoRuntimeConfig(s.T(), collectorIP)
-	expectedConnections := []types.NetworkInfo{activeNormalizedConnectionEgress}
-	s.Require().True(s.Sensor().ExpectSameElementsConnections(s.T(), s.EgressClientContainer, 10*time.Second, expectedConnections...))
+	client, server := s.runNetworkDirectionContainers()
+	defer s.teardownNetworkDirectionContainers()
 
 	s.setRuntimeConfig(types.RuntimeConfig{
 		Networking: types.NetworkConfig{
@@ -296,12 +319,99 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigNetworkEgress() {
 		},
 	})
 
-	assert.AssertExternalIps(s.T(), "ENABLED", collectorIP)
-	expectedConnections = append(expectedConnections, activeUnnormalizedConnectionEgress, inactiveNormalizedConnectionEgress)
-	common.Sleep(3 * time.Second) // Sleep so that collector has a chance to report connections
-	s.Require().True(s.Sensor().ExpectSameElementsConnections(s.T(), s.EgressClientContainer, 10*time.Second, expectedConnections...))
+	// Expect both open and close events for the non-aggregated
+	// egress connection. If Collector is aggregating to 255.255.255.255
+	// this will fail.
+	// We are not concerned with event ordering in this test.
+	expectedEgressConnections := []types.NetworkInfo{
+		{
+			LocalAddress:   "",
+			RemoteAddress:  fmt.Sprintf("%s:%d", ingressIP, ingressPort),
+			Role:           "ROLE_CLIENT",
+			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			CloseTimestamp: types.NotNilTimestamp,
+		},
+		{
+			LocalAddress:   "",
+			RemoteAddress:  fmt.Sprintf("%s:%d", ingressIP, ingressPort),
+			Role:           "ROLE_CLIENT",
+			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			CloseTimestamp: types.NilTimestamp,
+		},
+	}
+
+	expectedIngressConnections := []types.NetworkInfo{
+		{
+			LocalAddress:   fmt.Sprintf(":%d", ingressPort),
+			RemoteAddress:  normalizedIp,
+			Role:           "ROLE_SERVER",
+			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			CloseTimestamp: types.NotNilTimestamp,
+		},
+		{
+			LocalAddress:   fmt.Sprintf(":%d", ingressPort),
+			RemoteAddress:  normalizedIp,
+			Role:           "ROLE_SERVER",
+			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			CloseTimestamp: types.NilTimestamp,
+		},
+	}
+
+	s.Require().True(s.Sensor().ExpectConnections(s.T(), client, 30*time.Second, expectedEgressConnections...))
+	s.Require().True(s.Sensor().ExpectConnections(s.T(), server, 30*time.Second, expectedIngressConnections...))
 }
 
 func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigNetworkBoth() {
+	client, server := s.runNetworkDirectionContainers()
+	defer s.teardownNetworkDirectionContainers()
 
+	s.setRuntimeConfig(types.RuntimeConfig{
+		Networking: types.NetworkConfig{
+			ExternalIps: types.ExternalIpsConfig{
+				Enabled:   "ENABLED",
+				Direction: "BOTH",
+			},
+		},
+	})
+
+	// Expect both open and close events for the non-aggregated
+	// egress and ingress connections. If Collector is aggregating to 255.255.255.255
+	// this will fail.
+	// We are not concerned with event ordering in this test.
+	expectedEgressConnections := []types.NetworkInfo{
+		{
+			LocalAddress:   "",
+			RemoteAddress:  fmt.Sprintf("%s:%d", ingressIP, ingressPort),
+			Role:           "ROLE_CLIENT",
+			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			CloseTimestamp: types.NotNilTimestamp,
+		},
+		{
+			LocalAddress:   "",
+			RemoteAddress:  fmt.Sprintf("%s:%d", ingressIP, ingressPort),
+			Role:           "ROLE_CLIENT",
+			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			CloseTimestamp: types.NilTimestamp,
+		},
+	}
+
+	expectedIngressConnections := []types.NetworkInfo{
+		{
+			LocalAddress:   fmt.Sprintf(":%d", ingressPort),
+			RemoteAddress:  ingressIP,
+			Role:           "ROLE_SERVER",
+			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			CloseTimestamp: types.NotNilTimestamp,
+		},
+		{
+			LocalAddress:   fmt.Sprintf(":%d", ingressPort),
+			RemoteAddress:  ingressIP,
+			Role:           "ROLE_SERVER",
+			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
+			CloseTimestamp: types.NilTimestamp,
+		},
+	}
+
+	s.Require().True(s.Sensor().ExpectConnections(s.T(), client, 30*time.Second, expectedEgressConnections...))
+	s.Require().True(s.Sensor().ExpectConnections(s.T(), server, 30*time.Second, expectedIngressConnections...))
 }
