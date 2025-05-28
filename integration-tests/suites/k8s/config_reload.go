@@ -18,20 +18,13 @@ var (
 )
 
 func init() {
-	var err error
 	var runtimeConfig types.RuntimeConfig
 	runtimeConfig.Networking.ExternalIps.Enabled = "ENABLED"
 
-	EXT_IP_ENABLE, err = runtimeConfig.GetRuntimeConfigStr()
-	if err != nil {
-		panic(err)
-	}
-
+	EXT_IP_ENABLE = runtimeConfig.String()
 	runtimeConfig.Networking.ExternalIps.Enabled = "DISABLED"
-	EXT_IP_DISABLE, err = runtimeConfig.GetRuntimeConfigStr()
-	if err != nil {
-		panic(err)
-	}
+
+	EXT_IP_DISABLE = runtimeConfig.String()
 }
 
 type K8sConfigReloadTestSuite struct {
