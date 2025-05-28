@@ -4,7 +4,6 @@ on:
   schedule:
     - cron: '0 6 * * *'
   pull_request:
-  workflow_dispatch:
 
 jobs:
   run-bumper:
