@@ -1,6 +1,6 @@
 FROM  quay.io/rhacs-eng/qa:berserker-1.0-79-g617ec32386
 
-RUN sudo dnf install -y which netcat iproute bpftool procps iptables
+RUN dnf install -y which netcat iproute bpftool procps iptables
 
 COPY workloads/ /etc/berserker/
 COPY prepare-tap.sh /scripts/
