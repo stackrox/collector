@@ -137,8 +137,8 @@ void ConnectionTracker::CloseConnections(ConnMap* old_conn_state, ConnMap* delta
 }
 
 void ConnectionTracker::CloseConnectionsOnExternalIPsConfigChange(ExternalIPsConfig prev_config, ConnMap* old_conn_state, ConnMap* delta_conn) const {
-  bool ingress = external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::INGRESS);
-  bool egress = external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::EGRESS);
+  bool ingress = external_ips_config_.IsEnabled(ExternalIPsConfig::Direction::INGRESS);
+  bool egress = external_ips_config_.IsEnabled(ExternalIPsConfig::Direction::EGRESS);
 
   auto should_close = [this](const Connection* conn, bool enabling_extIPs) {
     if (enabling_extIPs) {
@@ -172,8 +172,8 @@ Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) 
   }
 
   Endpoint local, remote = conn.remote();
-  bool extIPs_ingress = external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::INGRESS);
-  bool extIPs_egress = external_IPs_config_.IsEnabled(ExternalIPsConfig::Direction::EGRESS);
+  bool extIPs_ingress = external_ips_config_.IsEnabled(ExternalIPsConfig::Direction::INGRESS);
+  bool extIPs_egress = external_ips_config_.IsEnabled(ExternalIPsConfig::Direction::EGRESS);
 
   if (is_server) {
     // If this is the server, only the local port is relevant, while the remote port does not matter.

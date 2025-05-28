@@ -132,7 +132,7 @@ class ConnectionTracker {
 
   void UpdateKnownPublicIPs(UnorderedSet<Address>&& known_public_ips);
   void UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks);
-  void SetExternalIPsConfig(ExternalIPsConfig config) { external_IPs_config_ = config; }
+  void SetExternalIPsConfig(ExternalIPsConfig config) { external_ips_config_ = config; }
   void UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair>&& ignored_l4proto_port_pairs);
   void UpdateIgnoredNetworks(const std::vector<IPNet>& network_list);
   void UpdateNonAggregatedNetworks(const std::vector<IPNet>& network_list);
@@ -203,7 +203,7 @@ class ConnectionTracker {
 
   UnorderedSet<Address> known_public_ips_;
   NRadixTree known_ip_networks_;
-  ExternalIPsConfig external_IPs_config_;
+  ExternalIPsConfig external_ips_config_;
   UnorderedMap<Address::Family, bool> known_private_networks_exists_;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
   NRadixTree ignored_networks_;
