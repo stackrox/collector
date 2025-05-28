@@ -363,7 +363,7 @@ TEST(CollectorConfigTest, TestYamlConfigToConfigMultiple) {
 
     EXPECT_TRUE(runtime_config.has_value());
 
-    EXPECT_EQ(config.ExternalIPsConf().GetDirection(), expected);
+    EXPECT_EQ(config.GetExternalIPsConf().GetDirection(), expected);
   }
 }
 

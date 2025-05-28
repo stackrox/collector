@@ -438,7 +438,7 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << ", set_import_users:" << c.ImportUsers()
          << ", collect_connection_status:" << c.CollectConnectionStatus()
          << ", enable_detailed_metrics:" << c.EnableDetailedMetrics()
-         << ", external_ips:" << c.ExternalIPsConf()
+         << ", external_ips:" << c.GetExternalIPsConf()
          << ", track_send_recv:" << c.TrackingSendRecv();
 }
 

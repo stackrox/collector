@@ -95,10 +95,10 @@ class CollectorConfig {
   bool ImportUsers() const { return import_users_; }
   bool CollectConnectionStatus() const { return collect_connection_status_; }
 
-  // EnableExternalIPs will check for the existence
+  // GetEnableExternalIPs will check for the existence
   // of a runtime configuration, and defer to that value
   // otherwise, we rely on the feature flag (env var)
-  ExternalIPsConfig ExternalIPsConf() const {
+  ExternalIPsConfig GetExternalIPsConf() const {
     auto lock = ReadLock();
 
     return ExternalIPsConfig(runtime_config_, enable_external_ips_);

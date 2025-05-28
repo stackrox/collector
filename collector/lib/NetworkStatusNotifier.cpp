@@ -225,7 +225,7 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
   auto next_scrape = std::chrono::system_clock::now();
   int64_t time_at_last_scrape = NowMicros();
 
-  ExternalIPsConfig prevEnableExternalIPs = config_.ExternalIPsConf();
+  ExternalIPsConfig prevEnableExternalIPs = config_.GetExternalIPsConf();
 
   while (writer->Sleep(next_scrape)) {
     CLOG(DEBUG) << "Starting network status notification";
@@ -242,7 +242,7 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
     const sensor::NetworkConnectionInfoMessage* msg;
     ConnMap new_conn_state, delta_conn;
     AdvertisedEndpointMap new_cep_state;
-    ExternalIPsConfig externalIPsConfig = config_.ExternalIPsConf();
+    ExternalIPsConfig externalIPsConfig = config_.GetExternalIPsConf();
 
     WITH_TIMER(CollectorStats::net_fetch_state) {
       conn_tracker_->SetExternalIPsConfig(externalIPsConfig);
