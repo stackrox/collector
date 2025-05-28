@@ -10,7 +10,7 @@
       when: build_multi_arch
 
     - set_fact:
-        platforms: "linux/amd64"
+        platforms: "linux/amd64,linux/arm64"
       when: not build_multi_arch
 
     - set_fact:
