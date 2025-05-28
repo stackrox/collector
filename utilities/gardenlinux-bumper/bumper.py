@@ -3,16 +3,24 @@
 import argparse
 import os
 import re
+from typing import NamedTuple
+
+from bs4 import BeautifulSoup
 
 # gfm stands for Github Flavoured Markdown
 from marko.ext.gfm import gfm
 
-from bs4 import BeautifulSoup
-
 import requests
 
-# Type alias for the garden version
-GardenVersion = tuple[str, int, int, str]
+
+class GardenVersion(NamedTuple):
+    """
+    Type alias for the garden version
+    """
+    checksum: str
+    major: int
+    minor: int
+    commit: str
 
 
 def get_latest_release() -> GardenVersion:
@@ -65,12 +73,8 @@ def get_latest_release() -> GardenVersion:
         raise RuntimeError(
             'Failed to find the GCP VM image: Version did not match')
 
-    checksum = match[1]
-    major = int(match[2])
-    minor = int(match[3])
-    commit = match[4]
-
-    return (checksum, major, minor, commit)
+    checksum, major, minor, commit = match.groups()
+    return GardenVersion(checksum, int(major), int(minor), commit)
 
 
 def get_current_version(image_file: str) -> GardenVersion:
@@ -88,7 +92,7 @@ def get_current_version(image_file: str) -> GardenVersion:
         minor = int(match[3])
         commit = match[4]
 
-        return (checksum, major, minor, commit)
+        return GardenVersion(checksum, major, minor, commit)
 
 
 def get_gardenlinux_image(version_data: GardenVersion) -> str:
