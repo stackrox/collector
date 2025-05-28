@@ -1740,6 +1740,40 @@ TEST(ConnTrackerTest, TestExternalIPsConfigChangeEnableEgress) {
        .expected_delta = {
            {conn_ingress_normalized, ConnStatus(connection_time, false)},
        }},
+      {// Disable EGRESS enable INGRESS
+       .previous_direction = ExternalIPsConfig::Direction::EGRESS,
+       .new_direction = ExternalIPsConfig::Direction::INGRESS,
+       .old_state = {
+           {conn_ingress, ConnStatus(connection_time, true)},
+           {conn_ingress_normalized, ConnStatus(connection_time, true)}, /* closed */
+           {conn_egress, ConnStatus(connection_time, true)} /* closed */,
+           {conn_egress_normalized, ConnStatus(connection_time, true)},
+       },
+       .resulting_old_state = {
+           {conn_ingress, ConnStatus(connection_time, true)},
+           {conn_egress_normalized, ConnStatus(connection_time, true)},
+       },
+       .expected_delta = {
+           {conn_ingress_normalized, ConnStatus(connection_time, false)},
+           {conn_egress, ConnStatus(connection_time, false)},
+       }},
+      {// Disable INGRESS enable EGRESS
+       .previous_direction = ExternalIPsConfig::Direction::INGRESS,
+       .new_direction = ExternalIPsConfig::Direction::EGRESS,
+       .old_state = {
+           {conn_ingress, ConnStatus(connection_time, true)} /* closed */,
+           {conn_ingress_normalized, ConnStatus(connection_time, true)},
+           {conn_egress, ConnStatus(connection_time, true)},
+           {conn_egress_normalized, ConnStatus(connection_time, true)} /* closed */,
+       },
+       .resulting_old_state = {
+           {conn_ingress_normalized, ConnStatus(connection_time, true)},
+           {conn_egress, ConnStatus(connection_time, true)},
+       },
+       .expected_delta = {
+           {conn_ingress, ConnStatus(connection_time, false)},
+           {conn_egress_normalized, ConnStatus(connection_time, false)},
+       }},
       {// Disable EGRESS
        .previous_direction = ExternalIPsConfig::Direction::BOTH,
        .new_direction = ExternalIPsConfig::Direction::INGRESS,
