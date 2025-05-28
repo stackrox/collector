@@ -26,6 +26,8 @@ jobs:
           ${{ github.workspace }}/utilities/gardenlinux-bumper/bumper.py \
             ${{ github.workspace }}/ansible/group_vars/gardenlinux-image.txt
 
+          git diff
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
