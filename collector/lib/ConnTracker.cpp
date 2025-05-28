@@ -112,7 +112,7 @@ IPNet ConnectionTracker::NormalizeAddressNoLock(const Address& address, bool ena
 }
 
 bool ConnectionTracker::ShouldNormalizeConnection(const Connection* conn) const {
-  Endpoint local, remote = conn->remote();
+  Endpoint remote = conn->remote();
   IPNet ipnet = NormalizeAddressNoLock(remote.address(), false);
 
   return Address::IsCanonicalExternalIp(ipnet.address());
@@ -136,30 +136,31 @@ void ConnectionTracker::CloseConnections(ConnMap* old_conn_state, ConnMap* delta
   }
 }
 
-/**
- * Closes connections that have the 255.255.255.255 external IP address
- */
-void ConnectionTracker::CloseNormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn) {
-  CloseConnections(old_conn_state, delta_conn, [](const Connection* conn) {
-    return Address::IsCanonicalExternalIp(conn->remote().address());
-  });
-}
+void ConnectionTracker::CloseConnectionsOnExternalIPsConfigChange(ExternalIPsConfig prev_config, ConnMap* old_conn_state, ConnMap* delta_conn) const {
+  bool ingress = external_ips_config_.IsEnabled(ExternalIPsConfig::Direction::INGRESS);
+  bool egress = external_ips_config_.IsEnabled(ExternalIPsConfig::Direction::EGRESS);
 
-/**
- * Closes unnormalized connections that would be normalized to the canonical external
- * IP address if external IPs was enabled
- */
-void ConnectionTracker::CloseExternalUnnormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn) {
-  CloseConnections(old_conn_state, delta_conn, [this](const Connection* conn) {
-    return ShouldNormalizeConnection(conn) && !Address::IsCanonicalExternalIp(conn->remote().address());
-  });
-}
+  auto should_close = [this](const Connection* conn, bool enabling_extIPs) {
+    if (enabling_extIPs) {
+      // Enabling: Close connections previously normalized
+      return Address::IsCanonicalExternalIp(conn->remote().address());
+    } else {
+      // Disabling: Close connections that should now be normalized
+      return !Address::IsCanonicalExternalIp(conn->remote().address()) && ShouldNormalizeConnection(conn);
+    }
+  };
 
-void ConnectionTracker::CloseConnectionsOnRuntimeConfigChange(ConnMap* old_conn_state, ConnMap* delta_conn, bool enableExternalIPs) {
-  if (enableExternalIPs) {
-    CloseNormalizedConnections(old_conn_state, delta_conn);
-  } else {
-    CloseExternalUnnormalizedConnections(old_conn_state, delta_conn);
+  if (egress != prev_config.IsEnabled(ExternalIPsConfig::Direction::EGRESS)) {
+    CloseConnections(old_conn_state, delta_conn, [egress, should_close](const Connection* conn) -> bool {
+      /* egress is when we are not server */
+      return !conn->is_server() && should_close(conn, egress);
+    });
+  }
+  if (ingress != prev_config.IsEnabled(ExternalIPsConfig::Direction::INGRESS)) {
+    CloseConnections(old_conn_state, delta_conn, [ingress, should_close](const Connection* conn) -> bool {
+      /* ingress is when we are server */
+      return conn->is_server() && should_close(conn, ingress);
+    });
   }
 }
 
@@ -171,15 +172,17 @@ Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) 
   }
 
   Endpoint local, remote = conn.remote();
+  bool extIPs_ingress = external_ips_config_.IsEnabled(ExternalIPsConfig::Direction::INGRESS);
+  bool extIPs_egress = external_ips_config_.IsEnabled(ExternalIPsConfig::Direction::EGRESS);
 
   if (is_server) {
     // If this is the server, only the local port is relevant, while the remote port does not matter.
     local = Endpoint(IPNet(Address()), conn.local().port());
-    remote = Endpoint(NormalizeAddressNoLock(conn.remote().address(), enable_external_ips_), 0);
+    remote = Endpoint(NormalizeAddressNoLock(conn.remote().address(), extIPs_ingress), 0);
   } else {
     // If this is the client, the local port and address are not relevant.
     local = Endpoint();
-    remote = Endpoint(NormalizeAddressNoLock(remote.address(), enable_external_ips_), remote.port());
+    remote = Endpoint(NormalizeAddressNoLock(remote.address(), extIPs_egress), remote.port());
   }
 
   return Connection(conn.container(), local, remote, conn.l4proto(), is_server);

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Containers.h"
+#include "ExternalIPsConfig.h"
 #include "Hash.h"
 #include "NRadix.h"
 #include "NetworkConnection.h"
@@ -100,10 +101,10 @@ class ConnectionTracker {
   template <typename T>
   static void UpdateOldState(UnorderedMap<T, ConnStatus>* old_state, const UnorderedMap<T, ConnStatus>& new_state, int64_t time_micros, int64_t afterglow_period_micros);
 
-  void CloseConnections(ConnMap* old_conn_state, ConnMap* delta_conn, std::function<bool(const Connection*)> predicate);
-  void CloseNormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn);
-  void CloseExternalUnnormalizedConnections(ConnMap* old_conn_state, ConnMap* delta_conn);
-  void CloseConnectionsOnRuntimeConfigChange(ConnMap* old_conn_state, ConnMap* delta_conn, bool enableExternalIPs);
+  // Mark all matching connections as closed
+  static void CloseConnections(ConnMap* old_conn_state, ConnMap* delta_conn, std::function<bool(const Connection*)> predicate);
+  // Detect a change in the External-IPs config and report connections as closed if their representation is affected
+  void CloseConnectionsOnExternalIPsConfigChange(ExternalIPsConfig prev_config, ConnMap* old_conn_state, ConnMap* delta_conn) const;
 
   // ComputeDelta computes a diff between new_state and old_state
   template <typename T>
@@ -131,7 +132,7 @@ class ConnectionTracker {
 
   void UpdateKnownPublicIPs(UnorderedSet<Address>&& known_public_ips);
   void UpdateKnownIPNetworks(UnorderedMap<Address::Family, std::vector<IPNet>>&& known_ip_networks);
-  void EnableExternalIPs(bool enable) { enable_external_ips_ = enable; }
+  void SetExternalIPsConfig(ExternalIPsConfig config) { external_ips_config_ = config; }
   void UpdateIgnoredL4ProtoPortPairs(UnorderedSet<L4ProtoPortPair>&& ignored_l4proto_port_pairs);
   void UpdateIgnoredNetworks(const std::vector<IPNet>& network_list);
   void UpdateNonAggregatedNetworks(const std::vector<IPNet>& network_list);
@@ -202,7 +203,7 @@ class ConnectionTracker {
 
   UnorderedSet<Address> known_public_ips_;
   NRadixTree known_ip_networks_;
-  bool enable_external_ips_ = false;
+  ExternalIPsConfig external_ips_config_;
   UnorderedMap<Address::Family, bool> known_private_networks_exists_;
   UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs_;
   NRadixTree ignored_networks_;

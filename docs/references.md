@@ -151,6 +151,36 @@ Whenever the configuration file is updated or created, collector will update
 the configuration. If the configuration file is deleted the configuration will revert
 to the default. The configuration file can be created after collector start up.
 
+### Runtime-configuration
+
+When Collector is provided with a runtime configuration file as described in the previous
+section, it is able to reconfigure itself dynamically (without a need for restart) if the
+content of the file changes.
+
+The following attributes can be set using the runtime-configuration file :
+
+* `networking.externalIPs.enabled: ENABLED | DISABLED`: enable/disable the external-IPs feature.
+Default value: `DISABLED`
+
+* `networking.externalIPs.direction: INGRESS | EGRESS | BOTH`: when external-IPs are enabled,
+this attribute can restrict the direction in which it is effective. For instance, using `EGRESS`
+will give all details for all the outgoing connections and aggregate the incoming ones. This can
+be particularly useful to limit the load resulting from enabling external-IPs.
+Default value: `BOTH`
+
+* `networking.maxConnectionsPerMinute: <int>`: set a limit on the number of connections that can
+be reported per container and per minute.
+Default value: 2048
+
+Here is an example of runtime-configuration to enable external-IPs for `EGRESS` only:
+
+```
+networking:
+  externalIps:
+    enabled: ENABLED
+    direction: EGRESS
+```
+
 ### Other arguments
 
 * `--collection-method`: Which technology to use for data gathering. Either

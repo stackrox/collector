@@ -91,7 +91,6 @@ constexpr const char* CollectorConfig::kSyscalls[];
 constexpr bool CollectorConfig::kEnableProcessesListeningOnPorts;
 
 const UnorderedSet<L4ProtoPortPair> CollectorConfig::kIgnoredL4ProtoPortPairs = {{L4Proto::UDP, 9}};
-;
 
 CollectorConfig::CollectorConfig() {
   // Set default configuration values
@@ -439,7 +438,7 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << ", set_import_users:" << c.ImportUsers()
          << ", collect_connection_status:" << c.CollectConnectionStatus()
          << ", enable_detailed_metrics:" << c.EnableDetailedMetrics()
-         << ", enable_external_ips:" << c.EnableExternalIPs()
+         << ", external_ips:" << c.GetExternalIPsConf()
          << ", track_send_recv:" << c.TrackingSendRecv();
 }
 
