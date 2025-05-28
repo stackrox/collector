@@ -11,7 +11,6 @@ import (
 	"time"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
-	utils "github.com/stackrox/rox/pkg/net"
 
 	"github.com/stackrox/rox/generated/storage"
 	"google.golang.org/grpc"
@@ -350,21 +349,15 @@ func (m *MockSensor) PushSignals(stream sensorAPI.SignalService_PushSignalsServe
 }
 
 func (m *MockSensor) convertConnection(connection *sensorAPI.NetworkConnection) types.NetworkInfo {
-	m.logger.Printf("NetworkInfo: %s %s|%s|%s|%s|%s\n",
-		connection.GetContainerId(),
-		m.translateAddress(connection.GetLocalAddress()),
-		m.translateAddress(connection.GetRemoteAddress()),
-		connection.GetRole().String(),
-		connection.GetSocketFamily().String(),
-		connection.GetCloseTimestamp().String())
-
 	conn := types.NetworkInfo{
-		LocalAddress:   m.translateAddress(connection.LocalAddress),
-		RemoteAddress:  m.translateAddress(connection.RemoteAddress),
+		LocalAddress:   types.TranslateAddress(connection.LocalAddress),
+		RemoteAddress:  types.TranslateAddress(connection.RemoteAddress),
 		Role:           connection.GetRole().String(),
 		SocketFamily:   connection.GetSocketFamily().String(),
 		CloseTimestamp: connection.GetCloseTimestamp().String(),
 	}
+
+	m.logger.Printf("NetworkInfo: %s, %s\n", connection.GetContainerId(), conn)
 
 	return conn
 }
@@ -526,36 +519,6 @@ func (m *MockSensor) pushEndpoint(containerID string, endpoint *sensorAPI.Networ
 		endpoints := EndpointMap{ep: true}
 		m.endpoints[containerID] = endpoints
 	}
-}
-
-// translateAddress is a helper function for converting binary representations
-// of network addresses (in the signals) to usable forms for testing
-func (m *MockSensor) translateAddress(addr *sensorAPI.NetworkAddress) string {
-	peerId := utils.NetworkPeerID{Port: uint16(addr.GetPort())}
-	addressData := addr.GetAddressData()
-	if len(addressData) > 0 {
-		peerId.Address = utils.IPFromBytes(addressData)
-		return peerId.String()
-	}
-
-	// If there is no address data, this is either the source address or
-	// IpNetwork should be set and represent a CIDR block or external IP address.
-	ipNetworkData := addr.GetIpNetwork()
-	if len(ipNetworkData) == 0 {
-		return peerId.String()
-	}
-
-	ipNetwork := utils.IPNetworkFromCIDRBytes(ipNetworkData)
-	prefixLen := ipNetwork.PrefixLen()
-	// If this is IPv4 and the prefix length is 32 or this is IPv6 and the prefix length
-	// is 128 this is a regular IP address and not a CIDR block
-	if (ipNetwork.Family() == utils.IPv4 && prefixLen == byte(32)) ||
-		(ipNetwork.Family() == utils.IPv6 && prefixLen == byte(128)) {
-		peerId.Address = ipNetwork.IP()
-	} else {
-		peerId.IPNetwork = ipNetwork
-	}
-	return peerId.String()
 }
 
 func (m *MockSensor) SetTestName(testName string) {
