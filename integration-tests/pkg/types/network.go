@@ -16,6 +16,8 @@ type NetworkInfo struct {
 	CloseTimestamp string
 }
 
+type NetworkInfoBatch []NetworkInfo
+
 func (n *NetworkInfo) IsActive() bool {
 	// no close timestamp means the connection is open, and active
 	return n.CloseTimestamp == NilTimestamp

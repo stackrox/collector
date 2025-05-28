@@ -116,7 +116,7 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileEnable() {
 	// Default configuration is external IPs disabled.
 	// We expect normalized connections.
 	assert.AssertNoRuntimeConfig(s.T(), collectorIP)
-	expectedConnections := [][]types.NetworkInfo{{activeNormalizedConnection}}
+	expectedConnections := []types.NetworkInfoBatch{[]types.NetworkInfo{activeNormalizedConnection}}
 	connectionSuccess := s.Sensor().ExpectSameElementsConnectionsScrapes(s.T(), s.ClientContainer, 10*time.Second, expectedConnections)
 	s.Require().True(connectionSuccess)
 
