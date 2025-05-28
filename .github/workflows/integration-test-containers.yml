@@ -48,6 +48,7 @@ jobs:
               - integration-tests/images.yml
               - integration-tests/Dockerfile
               - .github/workflows/integration-test-containers.yml
+              - ansible/ci-build-tests.yml
 
   build-test-image:
     name: Build the integration test image
