@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
@@ -17,25 +18,35 @@ import (
 
 var (
 	runtimeConfigErrorMsg = "Runtime configuration was not updated"
+
+	tickTime = 1 * time.Second
+	timeout  = 3 * time.Minute
 )
 
-func AssertExternalIps(t *testing.T, enabled string, collectorIP string) {
-	tickTime := 1 * time.Second
-	timeout := 3 * time.Minute
-	AssertRepeated(t, tickTime, timeout, runtimeConfigErrorMsg, func() bool {
-		body, err := collector.IntrospectionQuery(collectorIP, "/state/runtime-config")
-		assert.NoError(t, err)
-		var response types.RuntimeConfig
-		err = json.Unmarshal(body, &response)
-		assert.NoError(t, err)
+func getCollectorRuntimeConfig(t *testing.T, collectorIP string) types.RuntimeConfig {
+	body, err := collector.IntrospectionQuery(collectorIP, "/state/runtime-config")
+	assert.NoError(t, err)
+	var response types.RuntimeConfig
+	err = json.Unmarshal(body, &response)
+	assert.NoError(t, err)
+	return response
+}
 
-		return response.Networking.ExternalIps.Enabled == enabled
+func AssertRuntimeConfig(t *testing.T, collectorIP string, config types.RuntimeConfig) {
+	AssertRepeated(t, tickTime, timeout, runtimeConfigErrorMsg, func() bool {
+		collectorConfig := getCollectorRuntimeConfig(t, collectorIP)
+		return cmp.Equal(config, collectorConfig)
+	})
+}
+
+func AssertExternalIps(t *testing.T, enabled string, collectorIP string) {
+	AssertRepeated(t, tickTime, timeout, runtimeConfigErrorMsg, func() bool {
+		collectorConfig := getCollectorRuntimeConfig(t, collectorIP)
+		return collectorConfig.Networking.ExternalIps.Enabled == enabled
 	})
 }
 
 func AssertNoRuntimeConfig(t *testing.T, collectorIP string) {
-	tickTime := 1 * time.Second
-	timeout := 3 * time.Minute
 	AssertRepeated(t, tickTime, timeout, runtimeConfigErrorMsg, func() bool {
 		body, err := collector.IntrospectionQuery(collectorIP, "/state/runtime-config")
 		assert.NoError(t, err)

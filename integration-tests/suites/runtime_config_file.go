@@ -61,9 +61,7 @@ var (
 
 type RuntimeConfigFileTestSuite struct {
 	IntegrationTestSuiteBase
-	EgressClientContainer  string
-	IngressClientContainer string
-	IngressServerContainer string
+	EgressClientContainer string
 }
 
 func (s *RuntimeConfigFileTestSuite) writeRuntimeConfig(runtimeConfigFile string, configStr string) {
@@ -76,7 +74,6 @@ func (s *RuntimeConfigFileTestSuite) setRuntimeConfig(config types.RuntimeConfig
 }
 
 func (s *RuntimeConfigFileTestSuite) runNetworkDirectionContainers() (client, server string) {
-
 	serverCmd := fmt.Sprintf("/scripts/prepare-tap.sh -a %s -o && nc -lk %s %d", ingressIP, ingressIP, ingressPort)
 	containerID, err := s.Executor().StartContainer(
 		config.ContainerStartConfig{
@@ -92,7 +89,7 @@ func (s *RuntimeConfigFileTestSuite) runNetworkDirectionContainers() (client, se
 	s.Require().NoError(err)
 	server = common.ContainerShortID(containerID)
 
-	clientCmd := fmt.Sprintf("sleep 10; while true; do nc -zv %s %d; sleep 60; done", ingressIP, ingressPort)
+	clientCmd := fmt.Sprintf("sleep 20; while true; do nc -zv %s %d; sleep 60; done", ingressIP, ingressPort)
 	containerID, err = s.Executor().StartContainer(
 		config.ContainerStartConfig{
 			Name:        "external-connection-ingress-client",
@@ -255,14 +252,17 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigNetworkIngress() {
 	client, server := s.runNetworkDirectionContainers()
 	defer s.teardownNetworkDirectionContainers()
 
-	s.setRuntimeConfig(types.RuntimeConfig{
+	config := types.RuntimeConfig{
 		Networking: types.NetworkConfig{
 			ExternalIps: types.ExternalIpsConfig{
 				Enabled:   "ENABLED",
 				Direction: "INGRESS",
 			},
 		},
-	})
+	}
+
+	s.setRuntimeConfig(config)
+	assert.AssertRuntimeConfig(s.T(), collectorIP, config)
 
 	// Expect both open and close events for the non-aggregated
 	// ingress connection. If Collector is aggregating to 255.255.255.255
@@ -310,14 +310,17 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigNetworkEgress() {
 	client, server := s.runNetworkDirectionContainers()
 	defer s.teardownNetworkDirectionContainers()
 
-	s.setRuntimeConfig(types.RuntimeConfig{
+	config := types.RuntimeConfig{
 		Networking: types.NetworkConfig{
 			ExternalIps: types.ExternalIpsConfig{
 				Enabled:   "ENABLED",
 				Direction: "EGRESS",
 			},
 		},
-	})
+	}
+
+	s.setRuntimeConfig(config)
+	assert.AssertRuntimeConfig(s.T(), collectorIP, config)
 
 	// Expect both open and close events for the non-aggregated
 	// egress connection. If Collector is aggregating to 255.255.255.255
@@ -365,14 +368,17 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigNetworkBoth() {
 	client, server := s.runNetworkDirectionContainers()
 	defer s.teardownNetworkDirectionContainers()
 
-	s.setRuntimeConfig(types.RuntimeConfig{
+	config := types.RuntimeConfig{
 		Networking: types.NetworkConfig{
 			ExternalIps: types.ExternalIpsConfig{
 				Enabled:   "ENABLED",
 				Direction: "BOTH",
 			},
 		},
-	})
+	}
+
+	s.setRuntimeConfig(config)
+	assert.AssertRuntimeConfig(s.T(), collectorIP, config)
 
 	// Expect both open and close events for the non-aggregated
 	// egress and ingress connections. If Collector is aggregating to 255.255.255.255
