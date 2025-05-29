@@ -113,6 +113,48 @@ func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID str
 	}
 }
 
+func (s *MockSensor) ExpectSameElementsConnectionsScrapes(t *testing.T, containerID string, timeout time.Duration, expected []types.NetworkInfoBatch) bool {
+	equal := func(c1, c2 types.NetworkInfoBatch) bool {
+		if len(c1) != len(c2) {
+			return false
+		}
+
+		types.SortConnections(c1)
+		types.SortConnections(c2)
+
+		for i := range c2 {
+			if !c1[i].Equal(c2[i]) {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	connections := s.GetConnectionsInBatches(containerID)
+	if collectorAssert.ElementsMatchFunc(expected, connections, equal) {
+		return true
+	}
+
+	timer := time.After(timeout)
+
+	for {
+		select {
+		case <-timer:
+			connections := s.GetConnectionsInBatches(containerID)
+			return collectorAssert.AssertElementsMatchFunc(t, expected, connections, equal)
+		case conn := <-s.LiveConnections():
+			if conn.GetContainerId() != containerID {
+				continue
+			}
+			connections := s.GetConnectionsInBatches(containerID)
+			if collectorAssert.ElementsMatchFunc(expected, connections, equal) {
+				return true
+			}
+		}
+	}
+}
+
 // ExpectEndpoints waits up to the timeout for the gRPC server to receive
 // the list of expected Endpoints. It will first check to see if the endpoints
 // have been received already, and then monitor the live feed of endpoints

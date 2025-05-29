@@ -116,8 +116,8 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileEnable() {
 	// Default configuration is external IPs disabled.
 	// We expect normalized connections.
 	assert.AssertNoRuntimeConfig(s.T(), collectorIP)
-	expectedConnections := []types.NetworkInfo{activeNormalizedConnection}
-	connectionSuccess := s.Sensor().ExpectSameElementsConnections(s.T(), s.ClientContainer, 10*time.Second, expectedConnections...)
+	expectedConnections := []types.NetworkInfoBatch{[]types.NetworkInfo{activeNormalizedConnection}}
+	connectionSuccess := s.Sensor().ExpectSameElementsConnectionsScrapes(s.T(), s.ClientContainer, 10*time.Second, expectedConnections)
 	s.Require().True(connectionSuccess)
 
 	// External IPs enabled.
@@ -125,23 +125,23 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileEnable() {
 	// Unnormalized connection will now be reported.
 	s.setExternalIpsEnabled(runtimeConfigFile, "ENABLED")
 	assert.AssertExternalIps(s.T(), "ENABLED", collectorIP)
-	expectedConnections = append(expectedConnections, activeUnnormalizedConnection, inactiveNormalizedConnection)
-	connectionSuccess = s.Sensor().ExpectSameElementsConnections(s.T(), s.ClientContainer, 10*time.Second, expectedConnections...)
+	expectedConnections = append(expectedConnections, []types.NetworkInfo{activeUnnormalizedConnection, inactiveNormalizedConnection})
+	connectionSuccess = s.Sensor().ExpectSameElementsConnectionsScrapes(s.T(), s.ClientContainer, 10*time.Second, expectedConnections)
 	s.Require().True(connectionSuccess)
 
 	// The runtime config file is deleted. This disables external IPs. The normalized connection should be active
 	// and the unnormalized connection shoul be inactive.
 	s.deleteFile(runtimeConfigFile)
 	assert.AssertNoRuntimeConfig(s.T(), collectorIP)
-	expectedConnections = append(expectedConnections, activeNormalizedConnection, inactiveUnnormalizedConnection)
-	connectionSuccess = s.Sensor().ExpectSameElementsConnections(s.T(), s.ClientContainer, 10*time.Second, expectedConnections...)
+	expectedConnections = append(expectedConnections, []types.NetworkInfo{activeNormalizedConnection, inactiveUnnormalizedConnection})
+	connectionSuccess = s.Sensor().ExpectSameElementsConnectionsScrapes(s.T(), s.ClientContainer, 10*time.Second, expectedConnections)
 	s.Require().True(connectionSuccess)
 
 	// Back to having external IPs enabled.
 	s.setExternalIpsEnabled(runtimeConfigFile, "ENABLED")
 	assert.AssertExternalIps(s.T(), "ENABLED", collectorIP)
-	expectedConnections = append(expectedConnections, activeUnnormalizedConnection, inactiveNormalizedConnection)
-	connectionSuccess = s.Sensor().ExpectSameElementsConnections(s.T(), s.ClientContainer, 10*time.Second, expectedConnections...)
+	expectedConnections = append(expectedConnections, []types.NetworkInfo{activeUnnormalizedConnection, inactiveNormalizedConnection})
+	connectionSuccess = s.Sensor().ExpectSameElementsConnectionsScrapes(s.T(), s.ClientContainer, 10*time.Second, expectedConnections)
 	s.Require().True(connectionSuccess)
 }
 

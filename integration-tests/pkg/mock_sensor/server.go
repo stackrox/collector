@@ -11,7 +11,6 @@ import (
 	"time"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
-	utils "github.com/stackrox/rox/pkg/net"
 
 	"github.com/stackrox/rox/generated/storage"
 	"google.golang.org/grpc"
@@ -47,7 +46,7 @@ type MockSensor struct {
 	processLineages map[string]LineageMap
 	processMutex    sync.Mutex
 
-	connections  map[string][]types.NetworkInfo
+	connections  map[string][]types.NetworkInfoBatch
 	endpoints    map[string]EndpointMap
 	networkMutex sync.Mutex
 
@@ -65,7 +64,7 @@ func NewMockSensor(test string) *MockSensor {
 		testName:        test,
 		processes:       make(map[string]ProcessMap),
 		processLineages: make(map[string]LineageMap),
-		connections:     make(map[string][]types.NetworkInfo),
+		connections:     make(map[string][]types.NetworkInfoBatch),
 		endpoints:       make(map[string]EndpointMap),
 	}
 }
@@ -150,15 +149,39 @@ func (m *MockSensor) LiveConnections() <-chan *sensorAPI.NetworkConnection {
 
 // Connections returns a list of all connections that have been received for
 // a given container ID
-func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
+func (m *MockSensor) GetConnectionsInBatches(containerID string) []types.NetworkInfoBatch {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
 	if connections, ok := m.connections[containerID]; ok {
-		conns := make([]types.NetworkInfo, len(connections))
+		conns := make([]types.NetworkInfoBatch, len(connections))
 		copy(conns, connections)
-		types.SortConnections(conns)
+		for _, conn := range conns {
+			types.SortConnections(conn)
+		}
+
 		return conns
+	}
+	return make([]types.NetworkInfoBatch, 0)
+}
+
+// Connections returns a list of all connections that have been received for
+// a given container ID
+func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
+	m.networkMutex.Lock()
+	defer m.networkMutex.Unlock()
+
+	allConns := make([]types.NetworkInfo, 0)
+	if connections, ok := m.connections[containerID]; ok {
+		conns := make([]types.NetworkInfoBatch, len(connections))
+		copy(conns, connections)
+		for _, conn := range conns {
+			allConns = append(allConns, conn...)
+		}
+
+		types.SortConnections(allConns)
+
+		return allConns
 	}
 	return make([]types.NetworkInfo, 0)
 }
@@ -166,10 +189,8 @@ func (m *MockSensor) Connections(containerID string) []types.NetworkInfo {
 // HasConnection returns whether a given connection has been seen for a given
 // container ID
 func (m *MockSensor) HasConnection(containerID string, conn types.NetworkInfo) bool {
-	m.networkMutex.Lock()
-	defer m.networkMutex.Unlock()
-
-	if conns, ok := m.connections[containerID]; ok {
+	conns := m.Connections(containerID)
+	if len(conns) > 0 {
 		return slices.ContainsFunc(conns, func(c types.NetworkInfo) bool {
 			return c.Equal(conn)
 		})
@@ -271,7 +292,7 @@ func (m *MockSensor) Stop() {
 
 	m.processes = make(map[string]ProcessMap)
 	m.processLineages = make(map[string]LineageMap)
-	m.connections = make(map[string][]types.NetworkInfo)
+	m.connections = make(map[string][]types.NetworkInfoBatch)
 	m.endpoints = make(map[string]EndpointMap)
 
 	m.processChannel.Stop()
@@ -327,6 +348,36 @@ func (m *MockSensor) PushSignals(stream sensorAPI.SignalService_PushSignalsServe
 	}
 }
 
+func (m *MockSensor) convertConnection(connection *sensorAPI.NetworkConnection) types.NetworkInfo {
+	conn := types.NetworkInfo{
+		LocalAddress:   types.TranslateAddress(connection.LocalAddress),
+		RemoteAddress:  types.TranslateAddress(connection.RemoteAddress),
+		Role:           connection.GetRole().String(),
+		SocketFamily:   connection.GetSocketFamily().String(),
+		CloseTimestamp: connection.GetCloseTimestamp().String(),
+	}
+
+	m.logger.Printf("NetworkInfo: %s, %s\n", connection.GetContainerId(), conn)
+
+	return conn
+}
+
+func (m *MockSensor) convertToContainerConnsMap(connections []*sensorAPI.NetworkConnection) map[string][]types.NetworkInfo {
+	containerConnsMap := make(map[string][]types.NetworkInfo)
+	for _, connection := range connections {
+		conn := m.convertConnection(connection)
+		containerID := connection.GetContainerId()
+
+		if c, ok := containerConnsMap[containerID]; ok {
+			containerConnsMap[containerID] = append(c, conn)
+		} else {
+			containerConnsMap[containerID] = []types.NetworkInfo{conn}
+		}
+	}
+
+	return containerConnsMap
+}
+
 // PushNetworkConnectionInfo conforms to the Sensor API. It is here that networking
 // events (connections and endpoints) are handled and stored/sent to the relevant channel
 func (m *MockSensor) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
@@ -345,8 +396,9 @@ func (m *MockSensor) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnectio
 			m.endpointChannel.Write(endpoint)
 		}
 
+		containerConnsMap := m.convertToContainerConnsMap(connections)
+		m.pushConnections(containerConnsMap)
 		for _, connection := range connections {
-			m.pushConnection(connection.GetContainerId(), connection)
 			m.connectionChannel.Write(connection)
 		}
 	}
@@ -410,32 +462,16 @@ func (m *MockSensor) pushLineage(containerID string, process *storage.ProcessSig
 	}
 }
 
-// pushConnection converts a connection event into the test's own structure
-// and stores it
-func (m *MockSensor) pushConnection(containerID string, connection *sensorAPI.NetworkConnection) {
+func (m *MockSensor) pushConnections(containerConnsMap map[string][]types.NetworkInfo) {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
-	m.logger.Printf("NetworkInfo: %s %s|%s|%s|%s|%s\n",
-		connection.GetContainerId(),
-		m.translateAddress(connection.GetLocalAddress()),
-		m.translateAddress(connection.GetRemoteAddress()),
-		connection.GetRole().String(),
-		connection.GetSocketFamily().String(),
-		connection.GetCloseTimestamp().String())
-
-	conn := types.NetworkInfo{
-		LocalAddress:   m.translateAddress(connection.LocalAddress),
-		RemoteAddress:  m.translateAddress(connection.RemoteAddress),
-		Role:           connection.GetRole().String(),
-		SocketFamily:   connection.GetSocketFamily().String(),
-		CloseTimestamp: connection.GetCloseTimestamp().String(),
-	}
-
-	if c, ok := m.connections[containerID]; ok {
-		m.connections[containerID] = append(c, conn)
-	} else {
-		m.connections[containerID] = []types.NetworkInfo{conn}
+	for containerID, connections := range containerConnsMap {
+		if c, ok := m.connections[containerID]; ok {
+			m.connections[containerID] = append(c, connections)
+		} else {
+			m.connections[containerID] = []types.NetworkInfoBatch{connections}
+		}
 	}
 }
 
@@ -483,36 +519,6 @@ func (m *MockSensor) pushEndpoint(containerID string, endpoint *sensorAPI.Networ
 		endpoints := EndpointMap{ep: true}
 		m.endpoints[containerID] = endpoints
 	}
-}
-
-// translateAddress is a helper function for converting binary representations
-// of network addresses (in the signals) to usable forms for testing
-func (m *MockSensor) translateAddress(addr *sensorAPI.NetworkAddress) string {
-	peerId := utils.NetworkPeerID{Port: uint16(addr.GetPort())}
-	addressData := addr.GetAddressData()
-	if len(addressData) > 0 {
-		peerId.Address = utils.IPFromBytes(addressData)
-		return peerId.String()
-	}
-
-	// If there is no address data, this is either the source address or
-	// IpNetwork should be set and represent a CIDR block or external IP address.
-	ipNetworkData := addr.GetIpNetwork()
-	if len(ipNetworkData) == 0 {
-		return peerId.String()
-	}
-
-	ipNetwork := utils.IPNetworkFromCIDRBytes(ipNetworkData)
-	prefixLen := ipNetwork.PrefixLen()
-	// If this is IPv4 and the prefix length is 32 or this is IPv6 and the prefix length
-	// is 128 this is a regular IP address and not a CIDR block
-	if (ipNetwork.Family() == utils.IPv4 && prefixLen == byte(32)) ||
-		(ipNetwork.Family() == utils.IPv6 && prefixLen == byte(128)) {
-		peerId.Address = ipNetwork.IP()
-	} else {
-		peerId.IPNetwork = ipNetwork
-	}
-	return peerId.String()
 }
 
 func (m *MockSensor) SetTestName(testName string) {
