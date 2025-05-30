@@ -23,7 +23,7 @@
 
 - set_fact:
     collector_image: "{{ lookup('env', 'COLLECTOR_IMAGE', default='quay.io/rhacs-eng/collector:' +  collector_tag_result.stdout) }}"
-    integration_tests_image: "{{ lookup('env', 'TEST_IMAGE', default='quay.io/rhacs-eng/qa-multi-arch:collector-tests-' + collector_tag_result.stdout) }}"
+    integration_tests_image: "{{ lookup('env', 'TEST_IMAGE', default='quay.io/rhacs-eng/collector-tests:' + collector_tag_result.stdout) }}"
 
 - set_fact:
     run_args: -test.run {{ collector_test }} -test.timeout 60m -test.count=1
