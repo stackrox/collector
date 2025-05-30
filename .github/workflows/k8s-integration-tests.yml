@@ -26,7 +26,7 @@ on:
 
 env:
   ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
-  COLLECTOR_TESTS_IMAGE: quay.io/rhacs-eng/qa-multi-arch:${{ inputs.collector-tests-tag }}
+  COLLECTOR_TESTS_IMAGE: quay.io/rhacs-eng/collector-tests:${{ inputs.collector-tests-tag }}
   COLLECTOR_IMAGE: ${{ inputs.collector-repo }}:${{ inputs.collector-tag }}
 
 jobs:

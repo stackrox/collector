@@ -33,7 +33,7 @@
   ansible.builtin.set_fact:
     logs_root: "{{ collector_root }}/integration-tests/container-logs"
     collector_image: "{{ lookup('env', 'COLLECTOR_IMAGE', default='quay.io/rhacs-eng/collector:' +  collector_tag_result.stdout) }}"
-    integration_tests_image: "{{ lookup('env', 'TEST_IMAGE', default='quay.io/rhacs-eng/qa-multi-arch:collector-tests-' + collector_tag_result.stdout) }}"
+    integration_tests_image: "{{ lookup('env', 'TEST_IMAGE', default='quay.io/rhacs-eng/collector-tests:' + collector_tag_result.stdout) }}"
 
 - name: Default args
   ansible.builtin.set_fact:
