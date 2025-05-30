@@ -170,6 +170,7 @@ jobs:
         with:
           submodules: false
           fetch-depth: 0
+          token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
 
       - name: Initialize mandatory git config
         run: |
