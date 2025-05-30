@@ -168,7 +168,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: false
+          submodules: true
           fetch-depth: 0
           token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
 
