@@ -47,7 +47,7 @@ jobs:
     env:
       COLLECTOR_IMAGE: ${{ inputs.collector-repo }}:${{ inputs.collector-tag }}
       COLLECTOR_QA_TAG: ${{ inputs.collector-qa-tag }}
-      TEST_IMAGE: quay.io/rhacs-eng/qa-multi-arch:${{ inputs.collector-tests-tag }}
+      TEST_IMAGE: quay.io/rhacs-eng/collector-tests:${{ inputs.collector-tests-tag }}
     steps:
       - uses: actions/checkout@v4
 

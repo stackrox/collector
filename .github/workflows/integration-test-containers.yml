@@ -23,7 +23,7 @@ on:
     outputs:
       collector-tests-tag:
         description: The tag used for the integration test image
-        value: ${{ jobs.build-test-image.outputs.collector-tests-tag || 'collector-tests-master' }}
+        value: ${{ jobs.build-test-image.outputs.collector-tests-tag || 'master' }}
 
 jobs:
   should-build-test-image:
@@ -62,7 +62,7 @@ jobs:
       collector-tests-tag: ${{ steps.tests-tag.outputs.collector-tests-tag }}
 
     env:
-      DEFAULT_TESTS_TAG: collector-tests-master
+      DEFAULT_TESTS_TAG: master
 
     steps:
       - uses: actions/checkout@v4
@@ -92,7 +92,7 @@ jobs:
           if [[ "${{ github.event_name }}" == 'pull_request' || \
                 "${{ github.ref_type }}" == 'tag' || \
                 "${{ github.ref_name }}" =~ ^release- ]]; then
-            COLLECTOR_TESTS_TAG="collector-tests-${{ inputs.collector-tag }}"
+            COLLECTOR_TESTS_TAG="${{ inputs.collector-tag }}"
           fi
 
           echo "COLLECTOR_TESTS_TAG=${COLLECTOR_TESTS_TAG}" >> "$GITHUB_ENV"
@@ -127,7 +127,7 @@ jobs:
           # build_multi_arch passed in as json to ensure boolean type
           ansible-playbook \
             --connection local -i localhost, --limit localhost \
-            -e test_image="quay.io/rhacs-eng/qa-multi-arch:${COLLECTOR_TESTS_TAG}" \
+            -e test_image="quay.io/rhacs-eng/collector-tests:${COLLECTOR_TESTS_TAG}" \
             -e "{\"build_multi_arch\": $BUILD_MULTI_ARCH}" \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-tests.yml
