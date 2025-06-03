@@ -73,11 +73,6 @@ jobs:
               - collector/lib/*.h
               - collector/test/*.cpp
 
-      - name: Install clang-tidy
-        if: steps.changed.outputs.collector
-        run: |
-          dnf install -y clang-tools-extra
-
       - name: Run clang-tidy
         if: steps.changed.outputs.collector
         run: |
