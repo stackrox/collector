@@ -77,7 +77,7 @@ jobs:
         if: steps.changed.outputs.collector
         run: |
           mkdir -p cmake-build/
-          cmake -S . -B cmake-build/ -DDISABLE_PROFILING=ON
+          cmake -S . -B cmake-build/ -DDISABLE_PROFILING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
           # rox-proto generates some files required for clang-tidy to fully work
           make -C cmake-build/ rox-proto
           clang-tidy -p cmake-build/ ${{ steps.changed.outputs.collector_files }}
