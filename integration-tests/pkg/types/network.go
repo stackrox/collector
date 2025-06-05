@@ -10,6 +10,12 @@ import (
 
 const (
 	NilTimestamp = "<nil>"
+
+	// This sentinel value can be used for expected network infos
+	// where the timestamp is not known ahead of time, but is expected
+	// to be non-nil for the purposes of assertions (e.g. compared to
+	// NilTimestamp as seen in IsActive() below)
+	NotNilTimestamp = "Not Nil"
 )
 
 type NetworkInfo struct {
