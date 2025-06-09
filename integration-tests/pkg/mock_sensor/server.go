@@ -10,7 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
+	utils "github.com/stackrox/rox/pkg/net"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
@@ -56,16 +58,22 @@ type MockSensor struct {
 	lineageChannel    RingChan[*sensorAPI.ProcessSignal_LineageInfo]
 	connectionChannel RingChan[*sensorAPI.NetworkConnection]
 	endpointChannel   RingChan[*sensorAPI.NetworkEndpoint]
+
+	legacyServer *legacyNetworkServer
 }
 
 func NewMockSensor(test string) *MockSensor {
-	return &MockSensor{
+	mockSensor := &MockSensor{
 		testName:        test,
 		processes:       make(map[string]ProcessMap),
 		processLineages: make(map[string]LineageMap),
 		connections:     make(map[string][]types.NetworkInfoBatch),
 		endpoints:       make(map[string]EndpointMap),
 	}
+
+	mockSensor.legacyServer = newLegacyServer(mockSensor)
+
+	return mockSensor
 }
 
 // LiveProcesses returns a channel that can be used to read live
@@ -267,7 +275,7 @@ func (m *MockSensor) Start() {
 	)
 
 	sensorAPI.RegisterCollectorServiceServer(m.grpcServer, m)
-	sensorAPI.RegisterNetworkConnectionInfoServiceServer(m.grpcServer, m)
+	sensorAPI.RegisterNetworkConnectionInfoServiceServer(m.grpcServer, m.legacyServer)
 
 	m.processChannel = NewRingChan[*sensorAPI.ProcessSignal](gDefaultRingSize)
 	m.lineageChannel = NewRingChan[*sensorAPI.ProcessSignal_LineageInfo](gDefaultRingSize)
@@ -330,23 +338,15 @@ func (m *MockSensor) convertToContainerConnsMap(connections []*sensorAPI.Network
 	return containerConnsMap
 }
 
-// Communicate conforms to the Sensor API. It is here that process signals and
+// PushProcesses conforms to the Sensor API. It is here that process signals and
 // process lineage information is handled and stored/sent to the relevant channel
-func (m *MockSensor) Communicate(stream sensorAPI.CollectorService_CommunicateServer) error {
+func (m *MockSensor) PushProcesses(stream sensorAPI.CollectorService_PushProcessesServer) error {
 	for {
 		signal, err := stream.Recv()
 		if err != nil {
 			return err
 		}
-
-		switch signal.GetMsg().(type) {
-		case *sensorAPI.MsgFromCollector_ProcessSignal:
-			m.pushSignal(signal.GetProcessSignal())
-		case *sensorAPI.MsgFromCollector_Register:
-			// Ignored event
-		case *sensorAPI.MsgFromCollector_Info:
-			// Unimplemented event
-		}
+		m.pushSignal(signal)
 	}
 }
 
@@ -391,27 +391,30 @@ func (m *MockSensor) pushSignal(signal *sensorAPI.ProcessSignal) error {
 
 // PushNetworkConnectionInfo conforms to the Sensor API. It is here that networking
 // events (connections and endpoints) are handled and stored/sent to the relevant channel
-func (m *MockSensor) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
+func (m *MockSensor) PushNetworkConnectionInfo(stream sensorAPI.CollectorService_PushNetworkConnectionInfoServer) error {
 	for {
-		signal, err := stream.Recv()
+		networkConnInfo, err := stream.Recv()
 		if err != nil {
 			return err
 		}
 
-		networkConnInfo := signal.GetInfo()
-		connections := networkConnInfo.GetUpdatedConnections()
-		endpoints := networkConnInfo.GetUpdatedEndpoints()
+		m.pushNetworkConnectionInfo(networkConnInfo)
+	}
+}
 
-		for _, endpoint := range endpoints {
-			m.pushEndpoint(endpoint.GetContainerId(), endpoint)
-			m.endpointChannel.Write(endpoint)
-		}
+func (m *MockSensor) pushNetworkConnectionInfo(msg *sensor.NetworkConnectionInfo) {
+	connections := msg.GetUpdatedConnections()
+	endpoints := msg.GetUpdatedEndpoints()
 
-		containerConnsMap := m.convertToContainerConnsMap(connections)
-		m.pushConnections(containerConnsMap)
-		for _, connection := range connections {
-			m.connectionChannel.Write(connection)
-		}
+	for _, endpoint := range endpoints {
+		m.pushEndpoint(endpoint.GetContainerId(), endpoint)
+		m.endpointChannel.Write(endpoint)
+	}
+
+	containerConnsMap := m.convertToContainerConnsMap(connections)
+	m.pushConnections(containerConnsMap)
+	for _, connection := range connections {
+		m.connectionChannel.Write(connection)
 	}
 }
 
@@ -530,6 +533,36 @@ func (m *MockSensor) pushEndpoint(containerID string, endpoint *sensorAPI.Networ
 		endpoints := EndpointMap{ep: true}
 		m.endpoints[containerID] = endpoints
 	}
+}
+
+// translateAddress is a helper function for converting binary representations
+// of network addresses (in the signals) to usable forms for testing
+func translateAddress(addr *sensorAPI.NetworkAddress) string {
+	peerId := utils.NetworkPeerID{Port: uint16(addr.GetPort())}
+	addressData := addr.GetAddressData()
+	if len(addressData) > 0 {
+		peerId.Address = utils.IPFromBytes(addressData)
+		return peerId.String()
+	}
+
+	// If there is no address data, this is either the source address or
+	// IpNetwork should be set and represent a CIDR block or external IP address.
+	ipNetworkData := addr.GetIpNetwork()
+	if len(ipNetworkData) == 0 {
+		return peerId.String()
+	}
+
+	ipNetwork := utils.IPNetworkFromCIDRBytes(ipNetworkData)
+	prefixLen := ipNetwork.PrefixLen()
+	// If this is IPv4 and the prefix length is 32 or this is IPv6 and the prefix length
+	// is 128 this is a regular IP address and not a CIDR block
+	if (ipNetwork.Family() == utils.IPv4 && prefixLen == byte(32)) ||
+		(ipNetwork.Family() == utils.IPv6 && prefixLen == byte(128)) {
+		peerId.Address = ipNetwork.IP()
+	} else {
+		peerId.IPNetwork = ipNetwork
+	}
+	return peerId.String()
 }
 
 func (m *MockSensor) SetTestName(testName string) {

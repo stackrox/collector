@@ -5,7 +5,7 @@
 namespace collector {
 bool SensorClient::Recreate() {
   context_ = std::make_unique<grpc::ClientContext>();
-  writer_ = DuplexClient::CreateWithReadsIgnored(&sensor::CollectorService::Stub::AsyncCommunicate, channel_, context_.get());
+  writer_ = DuplexClient::CreateWithReadsIgnored(&sensor::CollectorService::Stub::AsyncPushProcesses, channel_, context_.get());
   if (!writer_->WaitUntilStarted(std::chrono::seconds(30))) {
     CLOG(ERROR) << "Signal stream not ready after 30 seconds. Retrying ...";
     CLOG(ERROR) << "Error message: " << writer_->FinishNow().error_message();
@@ -18,14 +18,14 @@ bool SensorClient::Recreate() {
   return true;
 }
 
-SignalHandler::Result SensorClient::SendMsg(const sensor::MsgFromCollector& msg) {
+SignalHandler::Result SensorClient::SendMsg(const sensor::ProcessSignal& msg) {
   if (!stream_active_.load(std::memory_order_acquire)) {
     CLOG_THROTTLED(ERROR, std::chrono::seconds(10))
         << "GRPC stream is not established";
     return SignalHandler::ERROR;
   }
 
-  if (first_write_ && msg.has_process_signal()) {
+  if (first_write_) {
     first_write_ = false;
     return SignalHandler::NEEDS_REFRESH;
   }
