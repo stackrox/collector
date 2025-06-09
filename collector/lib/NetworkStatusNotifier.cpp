@@ -57,15 +57,12 @@ std::vector<IPNet> readNetworks(const std::string& networks, Address::Family fam
   return ip_nets;
 }
 
-void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg) {
-  if (!msg) {
-    return;
+void NetworkStatusNotifier::OnRecvControlMessage(const sensor::NetworkFlowsControlMessage& msg) {
+  if (msg.has_public_ip_addresses()) {
+    ReceivePublicIPs(msg.public_ip_addresses());
   }
-  if (msg->has_ip_networks()) {
-    ReceivePublicIPs(msg->public_ip_addresses());
-  }
-  if (msg->has_ip_networks()) {
-    ReceiveIPNetworks(msg->ip_networks());
+  if (msg.has_ip_networks()) {
+    ReceiveIPNetworks(msg.ip_networks());
   }
 }
 
@@ -111,28 +108,12 @@ void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& netwo
 
 void NetworkStatusNotifier::Run() {
   Profiler::RegisterCPUThread();
-  auto next_attempt = std::chrono::system_clock::now();
 
-  while (thread_.PauseUntil(next_attempt)) {
-    comm_->ResetClientContext();
-
-    if (!comm_->WaitForConnectionReady([this] { return thread_.should_stop(); })) {
-      break;
-    }
-
-    auto client_writer = comm_->PushNetworkConnectionInfoOpenStream([this](const sensor::NetworkFlowsControlMessage* msg) { OnRecvControlMessage(msg); });
-
-    RunSingle(client_writer.get());
+  while (output_->WaitReady([this] { return thread_.should_stop(); })) {
+    RunSingle();
     if (thread_.should_stop()) {
       return;
     }
-    auto status = client_writer->Finish(std::chrono::seconds(5));
-    if (status.ok()) {
-      CLOG(ERROR) << "Error streaming network connection info: server hung up unexpectedly";
-    } else {
-      CLOG(ERROR) << "Error streaming network connection info: " << status.error_message();
-    }
-    next_attempt = std::chrono::system_clock::now() + std::chrono::seconds(10);
   }
 
   CLOG(INFO) << "Stopped network status notifier.";
@@ -140,11 +121,12 @@ void NetworkStatusNotifier::Run() {
 
 void NetworkStatusNotifier::Start() {
   thread_.Start([this] { Run(); });
+  receiver_.Start();
   CLOG(INFO) << "Started network status notifier.";
 }
 
 void NetworkStatusNotifier::Stop() {
-  comm_->TryCancel();
+  receiver_.Stop();
   thread_.Stop();
 }
 
@@ -217,9 +199,7 @@ bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
   return true;
 }
 
-void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
-  WaitUntilWriterStarted(writer, 10);
-
+void NetworkStatusNotifier::RunSingle() {
   ConnMap old_conn_state;
   AdvertisedEndpointMap old_cep_state;
   auto next_scrape = std::chrono::system_clock::now();
@@ -227,7 +207,12 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
 
   ExternalIPsConfig prevEnableExternalIPs = config_.GetExternalIPsConf();
 
-  while (writer->Sleep(next_scrape)) {
+  while (thread_.PauseUntil(next_scrape)) {
+    // Check output is ready before attempting to send a network update
+    if (!output_->IsReady()) {
+      return;
+    }
+
     CLOG(DEBUG) << "Starting network status notification";
     next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(config_.ScrapeInterval());
 
@@ -280,7 +265,7 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
     }
 
     WITH_TIMER(CollectorStats::net_write_message) {
-      if (!writer->Write(*msg, next_scrape)) {
+      if (output_->SendMsg(*msg) != SignalHandler::PROCESSED) {
         CLOG(ERROR) << "Failed to write network connection info";
         return;
       }

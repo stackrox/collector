@@ -49,6 +49,7 @@ jobs:
               - integration-tests/Dockerfile
               - .github/workflows/integration-test-containers.yml
               - ansible/ci-build-tests.yml
+              - collector/proto/third_party/stackrox
 
   build-test-image:
     name: Build the integration test image
