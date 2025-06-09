@@ -1,12 +1,11 @@
 #pragma once
 
-#include <memory>
-
 #include <grpcpp/channel.h>
 
 #include "CollectorConfig.h"
 #include "ProcessSignalFormatter.h"
 #include "RateLimit.h"
+#include "SensorClientFormatter.h"
 #include "SignalHandler.h"
 #include "system-inspector/Service.h"
 
@@ -21,13 +20,13 @@ class ProcessSignalHandler : public SignalHandler {
  public:
   ProcessSignalHandler(
       sinsp* inspector,
-      ISignalServiceClient* client,
+      CollectorOutput* client,
       system_inspector::Stats* stats,
       const CollectorConfig& config)
       : client_(client),
-        formatter_(inspector, config),
-        stats_(stats),
-        config_(config) {}
+        signal_formatter_(inspector, config),
+        sensor_formatter_(inspector, config),
+        stats_(stats) {}
 
   ProcessSignalHandler(const ProcessSignalHandler&) = delete;
   ProcessSignalHandler(ProcessSignalHandler&&) = delete;
@@ -35,20 +34,25 @@ class ProcessSignalHandler : public SignalHandler {
   ProcessSignalHandler& operator=(ProcessSignalHandler&&) = delete;
   ~ProcessSignalHandler() override = default;
 
-  bool Start() override;
-  bool Stop() override;
   Result HandleSignal(sinsp_evt* evt) override;
   Result HandleExistingProcess(sinsp_threadinfo* tinfo) override;
   std::string GetName() override { return "ProcessSignalHandler"; }
   std::vector<std::string> GetRelevantEvents() override;
 
  private:
-  ISignalServiceClient* client_;
-  ProcessSignalFormatter formatter_;
+  // Handlers for the old service
+  Result HandleProcessSignal(sinsp_evt* evt);
+  Result HandleExistingProcessSignal(sinsp_threadinfo* tinfo);
+
+  // Handlers for the new service
+  Result HandleSensorSignal(sinsp_evt* evt);
+  Result HandleExistingProcessSensor(sinsp_threadinfo* tinfo);
+
+  CollectorOutput* client_;
+  ProcessSignalFormatter signal_formatter_;
+  SensorClientFormatter sensor_formatter_;
   system_inspector::Stats* stats_;
   RateLimitCache rate_limiter_;
-
-  const CollectorConfig& config_;
 };
 
 }  // namespace collector
