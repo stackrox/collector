@@ -6,12 +6,12 @@
 #include "libsinsp/sinsp.h"
 
 #include "CollectorStats.h"
-#include "SensorClientFormatter.h"
 #include "Utility.h"
+#include "output/Formatter.h"
 
-namespace collector {
+namespace collector::output {
 
-using LineageInfo = SensorClientFormatter::LineageInfo;
+using LineageInfo = Formatter::LineageInfo;
 
 struct ThreadInfoParams {
   int64_t pid;
@@ -21,6 +21,15 @@ struct ThreadInfoParams {
   int64_t uid;
   std::string container_id;
   std::string exepath;
+};
+
+class MockCollectorConfig : public CollectorConfig {
+ public:
+  MockCollectorConfig() = default;
+
+  void SetDisableProcessArguments(bool value) {
+    disable_process_arguments_ = value;
+  }
 };
 
 #define EXPECT_STATS_COUNTER(index, expected) \
@@ -47,13 +56,13 @@ class SensorClientFormatterTest : public testing::Test {
   }
 
   std::unique_ptr<sinsp> inspector;
-  CollectorConfig config;
-  SensorClientFormatter formatter;
+  MockCollectorConfig config;
+  Formatter formatter;
 };
 
 TEST_F(SensorClientFormatterTest, NoProcessTest) {
   sinsp_threadinfo* tinfo = nullptr;
-  auto lineage = SensorClientFormatter::GetProcessLineage(tinfo);
+  auto lineage = Formatter::GetProcessLineage(tinfo);
 
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 0);
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 0);
@@ -66,7 +75,7 @@ TEST_F(SensorClientFormatterTest, NoProcessTest) {
 TEST_F(SensorClientFormatterTest, ProcessWithoutParentTest) {
   // {pid, tid, ptid, vpid, uid, container_id, exepath},
   inspector->add_thread(build_threadinfo({0, 0, -1, 2, 7, "", "qwerty"}));
-  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(0).get());
+  auto lineage = Formatter::GetProcessLineage(inspector->get_thread_ref(0).get());
 
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 0);
@@ -87,7 +96,7 @@ TEST_F(SensorClientFormatterTest, ProcessWithParentTest) {
     inspector->add_thread(build_threadinfo(params));
   }
 
-  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(1).get());
+  auto lineage = Formatter::GetProcessLineage(inspector->get_thread_ref(1).get());
 
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 1);
@@ -111,7 +120,7 @@ TEST_F(SensorClientFormatterTest, ProcessWithParentWithPid0Test) {
     inspector->add_thread(build_threadinfo(params));
   }
 
-  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(1).get());
+  auto lineage = Formatter::GetProcessLineage(inspector->get_thread_ref(1).get());
 
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 0);
@@ -132,7 +141,7 @@ TEST_F(SensorClientFormatterTest, ProcessWithParentWithSameNameTest) {
     inspector->add_thread(build_threadinfo(params));
   }
 
-  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(1).get());
+  auto lineage = Formatter::GetProcessLineage(inspector->get_thread_ref(1).get());
 
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 1);
@@ -157,7 +166,7 @@ TEST_F(SensorClientFormatterTest, ProcessWithTwoParentsTest) {
     inspector->add_thread(build_threadinfo(params));
   }
 
-  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(4).get());
+  auto lineage = Formatter::GetProcessLineage(inspector->get_thread_ref(4).get());
 
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 2);
@@ -185,7 +194,7 @@ TEST_F(SensorClientFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
     inspector->add_thread(build_threadinfo(params));
   }
 
-  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(4).get());
+  auto lineage = Formatter::GetProcessLineage(inspector->get_thread_ref(4).get());
 
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 1);
@@ -211,7 +220,7 @@ TEST_F(SensorClientFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
     inspector->add_thread(build_threadinfo(params));
   }
 
-  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(5).get());
+  auto lineage = Formatter::GetProcessLineage(inspector->get_thread_ref(5).get());
 
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 1);
@@ -236,7 +245,7 @@ TEST_F(SensorClientFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   for (const auto& params : tinfo_params) {
     inspector->add_thread(build_threadinfo(params));
   }
-  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(5).get());
+  auto lineage = Formatter::GetProcessLineage(inspector->get_thread_ref(5).get());
 
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 2);
@@ -265,7 +274,7 @@ TEST_F(SensorClientFormatterTest, ProcessWithUnrelatedProcessTest) {
     inspector->add_thread(build_threadinfo(params));
   }
 
-  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(4).get());
+  auto lineage = Formatter::GetProcessLineage(inspector->get_thread_ref(4).get());
 
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 1);
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 2);
@@ -284,11 +293,11 @@ TEST_F(SensorClientFormatterTest, ProcessWithUnrelatedProcessTest) {
 TEST_F(SensorClientFormatterTest, CountTwoCounterCallsTest) {
   // {pid, tid, ptid, vpid, uid, container_id, exepath},
   inspector->add_thread(build_threadinfo({1, 1, 555, 10, 9, "", "jkl;"}));
-  auto lineage = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(1).get());
+  auto lineage = Formatter::GetProcessLineage(inspector->get_thread_ref(1).get());
 
   // {pid, tid, ptid, vpid, uid, container_id, exepath},
   inspector->add_thread(build_threadinfo({2, 2, 555, 10, 9, "", "jkl;"}));
-  auto lineage2 = SensorClientFormatter::GetProcessLineage(inspector->get_thread_ref(2).get());
+  auto lineage2 = Formatter::GetProcessLineage(inspector->get_thread_ref(2).get());
 
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_counts, 2);
   EXPECT_STATS_COUNTER(CollectorStats::process_lineage_total, 0);
@@ -317,7 +326,7 @@ TEST_F(SensorClientFormatterTest, ProcessArguments) {
 }
 
 TEST_F(SensorClientFormatterTest, NoProcessArguments) {
-  config.disable_process_arguments_ = true;
+  config.SetDisableProcessArguments(true);
 
   // {pid, tid, ptid, vpid, uid, container_id, exepath},
   auto tinfo = build_threadinfo({3, 3, -1, 0, 42, "", "qwerty"});
@@ -336,4 +345,4 @@ TEST_F(SensorClientFormatterTest, NoProcessArguments) {
   EXPECT_TRUE(signal->args().empty());
 }
 
-}  // namespace collector
+}  // namespace collector::output

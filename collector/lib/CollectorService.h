@@ -5,12 +5,12 @@
 
 #include "CivetWrapper.h"
 #include "CollectorConfig.h"
-#include "CollectorOutput.h"
 #include "CollectorStatsExporter.h"
 #include "ConfigLoader.h"
 #include "Control.h"
 #include "NetworkStatusInspector.h"
 #include "NetworkStatusNotifier.h"
+#include "output/Output.h"
 #include "system-inspector/Service.h"
 
 namespace collector {
@@ -33,7 +33,7 @@ class CollectorService {
   bool WaitForGRPCServer();
 
   CollectorConfig& config_;
-  CollectorOutput output_;
+  output::Output output_;
   system_inspector::Service system_inspector_;
 
   std::atomic<ControlValue>* control_;
