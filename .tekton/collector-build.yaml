@@ -79,6 +79,10 @@ spec:
     stepSpecs:
     - name: create-trusted-artifact
       computeResources: *ta-resources
+  - pipelineTaskName: determine-image-expiration
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
   - pipelineTaskName: determine-image-tag
     stepSpecs:
     - name: use-trusted-artifact
