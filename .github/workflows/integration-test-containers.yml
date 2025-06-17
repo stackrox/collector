@@ -54,9 +54,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - should-build-test-image
-#     if: |
-#       (github.event_name != 'pull_request' || needs.should-build-test-image.outputs.build-image == 'true') &&
-#       !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests')
+    if: |
+      (github.event_name != 'pull_request' || needs.should-build-test-image.outputs.build-image == 'true') &&
+      !contains(github.event.pull_request.labels.*.name, 'skip-integration-tests')
 
     outputs:
       collector-tests-tag: ${{ steps.tests-tag.outputs.collector-tests-tag }}
