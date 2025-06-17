@@ -14,6 +14,7 @@ RUN dnf -y update \
         ca-certificates \
         clang-19.1.5 \
         llvm-19.1.5 \
+        clang-tools-extra-19.1.5 \
         cmake \
         cracklib-dicts \
         diffutils \
