@@ -10,10 +10,7 @@ metadata:
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "pull_request" || (
-        event == "push" && (
-          target_branch.startsWith("release-") ||
-          target_branch.startsWith("refs/tags/")
-        )
+        event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")
       )
   labels:
     appstudio.openshift.io/application: acs-4-6
@@ -27,24 +24,21 @@ spec:
   - name: dockerfile
     value: collector/container/konflux.Dockerfile
   - name: git-url
-    value: '{{repo_url}}'
+    value: '{{source_url}}'
   - name: image-expires-after
-    # TODO(ROX-24530): return expiration for non-released images to 13w
-    value: '52w'
+    value: '13w'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/collector
+    value: quay.io/rhacs-eng/release-collector
   - name: path-context
     value: .
   - name: revision
     value: '{{revision}}'
   - name: rebuild
     value: 'true'
-  # TODO(ROX-20234): Enable hermetic builds
-  # - name: hermetic
-  #   value: "true"
-  # No language dependencies are required for collector image.
+  - name: hermetic
+    value: "true"
   - name: prefetch-input
-    value: ''
+    value: '{ "type": "rpm", "path": "." }'
   - name: clone-depth
     value: '0'
   - name: clone-fetch-tags
@@ -77,13 +71,17 @@ spec:
       # use-/create-trusted-artifact gets OOM-killed when a cluster is loaded. Bigger mem limits==request should help.
       computeResources: &ta-resources
         limits:
-          memory: 3Gi
+          memory: 6Gi
         requests:
-          memory: 3Gi
+          memory: 6Gi
 
   - pipelineTaskName: clone-repository
     stepSpecs:
     - name: create-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: determine-image-expiration
+    stepSpecs:
+    - name: use-trusted-artifact
       computeResources: *ta-resources
   - pipelineTaskName: determine-image-tag
     stepSpecs:
@@ -95,6 +93,14 @@ spec:
       computeResources: *ta-resources
     - name: create-trusted-artifact
       computeResources: *ta-resources
+    - name: prefetch-dependencies
+      # We saw prefetch-dependencies _step_ also OOMKill-ed, therefore bumping its memory compared to default.
+      computeResources:
+        limits:
+          memory: 6Gi
+        requests:
+          cpu: "1"
+          memory: 6Gi
   - pipelineTaskName: build-container-s390x
     stepSpecs:
     - name: use-trusted-artifact
@@ -111,10 +117,25 @@ spec:
     stepSpecs:
     - name: use-trusted-artifact
       computeResources: *ta-resources
+  - pipelineTaskName: sast-shell-check
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: sast-unicode-check
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
   - pipelineTaskName: sast-snyk-check
     stepSpecs:
     - name: use-trusted-artifact
       computeResources: *ta-resources
+  - pipelineTaskName: push-dockerfile
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-collector
 
   timeouts:
     # The pipeline regularly takes >1h to finish.
