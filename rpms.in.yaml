@@ -1,0 +1,37 @@
+# This rpms.in.yaml and other rpms.* files define how to make RPM packages available for Konflux image builds.
+# See our docs here: https://spaces.redhat.com/display/StackRox/How+to+prefetch+RPMs+for+ACS+Konflux+builds
+
+packages:
+# builder stage in collector/container/konflux.Dockerfile
+- make
+- wget
+- unzip
+- clang
+- llvm
+- cmake
+- gcc-c++
+- openssl-devel
+- ncurses-devel
+- curl-devel
+- libuuid-devel
+- libcap-ng-devel
+- autoconf
+- libtool
+- git
+- elfutils-libelf-devel
+- tbb-devel
+- c-ares-devel
+- patch
+- systemtap-sdt-devel
+# final stage in collector/container/konflux.Dockerfile
+- tbb
+- c-ares
+contentOrigin:
+  repofiles: [ "rpms.rhel.repo" ]
+context:
+  bare: true
+arches:
+- aarch64
+- ppc64le
+- s390x
+- x86_64
