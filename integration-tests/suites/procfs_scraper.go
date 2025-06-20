@@ -27,8 +27,6 @@ type ProcfsScraperTestSuite struct {
 func (s *ProcfsScraperTestSuite) SetupSuite() {
 	s.RegisterCleanup("nginx")
 
-	s.StartContainerStats()
-
 	collectorOptions := collector.StartupOptions{
 		Env: map[string]string{
 			"ROX_PROCESSES_LISTENING_ON_PORT": strconv.FormatBool(s.RoxProcessesListeningOnPort),
