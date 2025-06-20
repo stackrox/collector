@@ -1,6 +1,7 @@
 package suites
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -42,17 +43,13 @@ type IntegrationTestSuiteBase struct {
 	collector collector.Manager
 	sensor    *mock_sensor.MockSensor
 	metrics   map[string]float64
-	stats     []ContainerStat
-	start     time.Time
-	stop      time.Time
-}
 
-type ContainerStat struct {
-	Timestamp string
-	Id        string
-	Name      string
-	Mem       string
-	Cpu       float64
+	stats       []executor.ContainerStat
+	statsCtx    context.Context
+	statsCancel context.CancelFunc
+
+	start time.Time
+	stop  time.Time
 }
 
 type PerformanceResult struct {
@@ -61,7 +58,7 @@ type PerformanceResult struct {
 	VmConfig         string
 	CollectionMethod string
 	Metrics          map[string]float64
-	ContainerStats   []ContainerStat
+	ContainerStats   []executor.ContainerStat
 	LoadStartTs      string
 	LoadStopTs       string
 }
@@ -187,33 +184,23 @@ func (s *IntegrationTestSuiteBase) RegisterCleanup(containers ...string) {
 	})
 }
 
-func (s *IntegrationTestSuiteBase) GetContainerStats() []ContainerStat {
+func (s *IntegrationTestSuiteBase) GetContainerStats() {
 	if s.stats == nil {
-		s.stats = make([]ContainerStat, 0)
-
-		logs, err := s.containerLogs(containerStatsName)
-		if err != nil {
-			assert.FailNow(s.T(), "container-stats failure")
-			return nil
-		}
-
-		logLines := strings.Split(logs.Stderr, "\n")
-		for i, line := range logLines {
-			var stat ContainerStat
-
-			_ = json.Unmarshal([]byte(line), &stat)
-
-			if stat.Name != "" {
-				s.stats = append(s.stats, stat)
-			} else {
-				log.Warn("missing name for stat line %d of %d", i, len(logLines))
-			}
-		}
-
-		s.cleanupContainers(containerStatsName)
+		s.stats = make([]executor.ContainerStat, 0)
 	}
 
-	return s.stats
+	stat, err := s.Executor().GetContainerStats(s.Collector().ContainerID())
+	if err != nil {
+		assert.FailNowf(s.T(), "fail to get container stats", "%v", err)
+		return
+	}
+
+	if stat == nil {
+		log.Info("No ContainerStats found")
+		return
+	}
+
+	s.stats = append(s.stats, *stat)
 }
 
 // Convert memory string from docker stats into numeric value in MiB
@@ -245,13 +232,9 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats() {
 	cpuStats := map[string][]float64{}
 	memStats := map[string][]float64{}
 
-	for _, stat := range s.GetContainerStats() {
-		cpuStats[stat.Name] = append(cpuStats[stat.Name], stat.Cpu)
-
-		memValue, err := Mem2Numeric(stat.Mem)
-		s.Require().NoError(err)
-
-		memStats[stat.Name] = append(memStats[stat.Name], memValue)
+	for _, stat := range s.stats {
+		cpuStats[stat.Name] = append(cpuStats[stat.Name], float64(stat.Cpu))
+		memStats[stat.Name] = append(memStats[stat.Name], float64(stat.Mem))
 	}
 
 	for name, cpu := range cpuStats {
@@ -272,6 +255,7 @@ func (s *IntegrationTestSuiteBase) PrintContainerStats() {
 }
 
 func (s *IntegrationTestSuiteBase) WritePerfResults() {
+	s.statsCancel()
 	s.PrintContainerStats()
 
 	perf := PerformanceResult{
@@ -280,7 +264,7 @@ func (s *IntegrationTestSuiteBase) WritePerfResults() {
 		VmConfig:         config.VMInfo().Config,
 		CollectionMethod: config.CollectionMethod(),
 		Metrics:          s.metrics,
-		ContainerStats:   s.GetContainerStats(),
+		ContainerStats:   s.stats,
 		LoadStartTs:      s.start.Format("2006-01-02 15:04:05"),
 		LoadStopTs:       s.stop.Format("2006-01-02 15:04:05"),
 	}
@@ -439,15 +423,19 @@ func (s *IntegrationTestSuiteBase) getPort(containerName string) (string, error)
 }
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {
-	image := config.Images().QaImageByKey("performance-stats")
-	err := s.Executor().PullImage(image)
-	s.Require().NoError(err)
+	tick := time.Tick(defaultWaitTickSeconds)
+	s.statsCtx, s.statsCancel = context.WithCancel(context.Background())
 
-	_, err = s.executor.StartContainer(config.ContainerStartConfig{
-		Name:   containerStatsName,
-		Image:  image,
-		Mounts: map[string]string{"/var/run/docker.sock": config.RuntimeInfo().Socket}})
-	s.Require().NoError(err)
+	go func() {
+		for {
+			select {
+			case <-tick:
+				s.GetContainerStats()
+			case <-s.statsCtx.Done():
+				return
+			}
+		}
+	}()
 }
 
 func (s *IntegrationTestSuiteBase) execShellCommand(command string) error {
