@@ -79,6 +79,10 @@ spec:
     stepSpecs:
     - name: create-trusted-artifact
       computeResources: *ta-resources
+  - pipelineTaskName: determine-image-expiration
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
   - pipelineTaskName: determine-image-tag
     stepSpecs:
     - name: use-trusted-artifact
@@ -93,10 +97,10 @@ spec:
       # We saw prefetch-dependencies _step_ also OOMKill-ed, therefore bumping its memory compared to default.
       computeResources:
         limits:
-          memory: 4Gi
+          memory: 6Gi
         requests:
           cpu: "1"
-          memory: 4Gi
+          memory: 6Gi
   - pipelineTaskName: build-container-s390x
     stepSpecs:
     - name: use-trusted-artifact
