@@ -3,6 +3,7 @@ package executor
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -91,6 +92,33 @@ func (d *dockerAPIExecutor) GetContainerHealthCheck(containerID string) (string,
 	return strings.Join(inspectResp.Config.Healthcheck.Test, " "), nil
 }
 
+func (d *dockerAPIExecutor) GetContainerStats(containerID string) (
+	*ContainerStat, error) {
+
+	var stats container.StatsResponse
+	ctx := context.Background()
+
+	statsResp, err := d.client.ContainerStatsOneShot(ctx, containerID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting container stats: %w", err)
+	}
+
+	decoder := json.NewDecoder(statsResp.Body)
+	if err := decoder.Decode(&stats); err == io.EOF {
+		return nil, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("error decoding container stats: %w", err)
+	}
+
+	return &ContainerStat{
+		Timestamp: stats.Read,
+		Id:        stats.ID,
+		Name:      stats.Name,
+		Mem:       stats.MemoryStats.Usage,
+		Cpu:       stats.CPUStats.CPUUsage.TotalUsage,
+	}, nil
+}
+
 func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConfig) (string, error) {
 	ctx := context.Background()
 	var binds []string
@@ -159,7 +187,7 @@ func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConf
 
 func (d *dockerAPIExecutor) ExecContainer(opts *ExecOptions) (string, error) {
 	ctx := context.Background()
-	execConfig := types.ExecConfig{
+	execConfig := container.ExecOptions{
 		AttachStdout: true,
 		AttachStderr: true,
 		Cmd:          opts.Command,
@@ -170,7 +198,7 @@ func (d *dockerAPIExecutor) ExecContainer(opts *ExecOptions) (string, error) {
 		return "", fmt.Errorf("error creating Exec: %w", err)
 	}
 
-	execStartCheck := types.ExecStartCheck{Detach: false, Tty: false}
+	execStartCheck := container.ExecAttachOptions{Detach: false, Tty: false}
 	attachResp, err := d.client.ContainerExecAttach(ctx, resp.ID, execStartCheck)
 	if err != nil {
 		return "", fmt.Errorf("error attaching to Exec: %w", err)
