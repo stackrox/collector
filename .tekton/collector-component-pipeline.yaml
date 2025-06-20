@@ -186,7 +186,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:a2477a53bfb4159cb6fa0d15acd736153e1844a193b6c91f8f2a6672d90e3d12
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:89302003552261668238d70e0bde61153eabbae965cd46f9c10a6ecb7c417688
       - name: kind
         value: task
       resolver: bundles
