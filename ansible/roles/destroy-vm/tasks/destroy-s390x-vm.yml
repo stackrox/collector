@@ -1,14 +1,7 @@
-- name: Get host name
-  shell: hostname
-  register: hostname
-
-- debug:
-    var: hostname
-
 - name: Check for existing VSI
   delegate_to: localhost
   ibm.cloudcollection.ibm_is_instance_info:
-    name: "{{ hostname.stdout }}"
+    name: "{{ inventory_hostname }}"
   failed_when:
     - vsi.rc != 0
     - '"No Instance found" not in vsi.stderr'
@@ -31,7 +24,7 @@
 - name: Check for existing floating IP
   delegate_to: localhost
   ibm.cloudcollection.ibm_is_floating_ip_info:
-    name: "{{ hostname.stdout }}-fip"
+    name: "{{ inventory_hostname }}-fip"
   failed_when:
     - fip.rc != 0
     - '"No floatingIP found" not in fip.stderr'
