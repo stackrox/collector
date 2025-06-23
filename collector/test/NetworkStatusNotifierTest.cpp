@@ -190,7 +190,7 @@ class NetworkConnectionInfoMessageParser {
 class NetworkStatusNotifierTest : public testing::Test {
  public:
   NetworkStatusNotifierTest()
-      : inspector(config),
+      : inspector(config, nullptr),
         conn_tracker(std::make_shared<ConnectionTracker>()),
         conn_scraper(std::make_unique<MockConnScraper>()),
         comm(std::make_unique<MockNetworkConnectionInfoServiceComm>()),
