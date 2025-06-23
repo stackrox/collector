@@ -46,7 +46,7 @@ func (s *ProcfsScraperTestSuite) SetupSuite() {
 func (s *ProcfsScraperTestSuite) launchNginx() {
 	image := config.Images().ImageByKey("nginx")
 
-	err := s.executor.PullImage(image)
+	err := s.Executor().PullImage(image)
 	s.Require().NoError(err)
 
 	// invokes default nginx
