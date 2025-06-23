@@ -115,8 +115,8 @@ func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID str
 	}
 }
 
-func (s *MockSensor) ExpectSameElementsConnectionsScrapes(t *testing.T, containerID string, timeout time.Duration, expected []types.NetworkInfoBatch) bool {
-	equal := func(c1, c2 types.NetworkInfoBatch) bool {
+func (s *MockSensor) ExpectSameElementsConnectionsScrapes(t *testing.T, containerID string, timeout time.Duration, expected []types.NetworkConnectionBatch) bool {
+	equal := func(c1, c2 types.NetworkConnectionBatch) bool {
 		if len(c1) != len(c2) {
 			return false
 		}

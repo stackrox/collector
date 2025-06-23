@@ -46,7 +46,7 @@ type MockSensor struct {
 	processLineages map[string]LineageMap
 	processMutex    sync.Mutex
 
-	connections  map[string][]types.NetworkInfoBatch
+	connections  map[string][]types.NetworkConnectionBatch
 	endpoints    map[string]EndpointMap
 	networkMutex sync.Mutex
 
@@ -64,7 +64,7 @@ func NewMockSensor(test string) *MockSensor {
 		testName:        test,
 		processes:       make(map[string]ProcessMap),
 		processLineages: make(map[string]LineageMap),
-		connections:     make(map[string][]types.NetworkInfoBatch),
+		connections:     make(map[string][]types.NetworkConnectionBatch),
 		endpoints:       make(map[string]EndpointMap),
 	}
 }
@@ -149,12 +149,12 @@ func (m *MockSensor) LiveConnections() <-chan *sensorAPI.NetworkConnection {
 
 // Connections returns a list of all connections that have been received for
 // a given container ID
-func (m *MockSensor) GetConnectionsInBatches(containerID string) []types.NetworkInfoBatch {
+func (m *MockSensor) GetConnectionsInBatches(containerID string) []types.NetworkConnectionBatch {
 	m.networkMutex.Lock()
 	defer m.networkMutex.Unlock()
 
 	if connections, ok := m.connections[containerID]; ok {
-		conns := make([]types.NetworkInfoBatch, len(connections))
+		conns := make([]types.NetworkConnectionBatch, len(connections))
 		copy(conns, connections)
 		for _, conn := range conns {
 			types.SortConnections(conn)
@@ -162,7 +162,7 @@ func (m *MockSensor) GetConnectionsInBatches(containerID string) []types.Network
 
 		return conns
 	}
-	return make([]types.NetworkInfoBatch, 0)
+	return make([]types.NetworkConnectionBatch, 0)
 }
 
 // Connections returns a list of all connections that have been received for
@@ -173,7 +173,7 @@ func (m *MockSensor) Connections(containerID string) []*sensorAPI.NetworkConnect
 
 	allConns := make([]*sensorAPI.NetworkConnection, 0)
 	if connections, ok := m.connections[containerID]; ok {
-		conns := make([]types.NetworkInfoBatch, len(connections))
+		conns := make([]types.NetworkConnectionBatch, len(connections))
 		copy(conns, connections)
 		for _, conn := range conns {
 			allConns = append(allConns, conn...)
@@ -292,7 +292,7 @@ func (m *MockSensor) Stop() {
 
 	m.processes = make(map[string]ProcessMap)
 	m.processLineages = make(map[string]LineageMap)
-	m.connections = make(map[string][]types.NetworkInfoBatch)
+	m.connections = make(map[string][]types.NetworkConnectionBatch)
 	m.endpoints = make(map[string]EndpointMap)
 
 	m.processChannel.Stop()
@@ -455,7 +455,7 @@ func (m *MockSensor) pushConnections(containerConnsMap map[string][]*sensorAPI.N
 		if c, ok := m.connections[containerID]; ok {
 			m.connections[containerID] = append(c, connections)
 		} else {
-			m.connections[containerID] = []types.NetworkInfoBatch{connections}
+			m.connections[containerID] = []types.NetworkConnectionBatch{connections}
 		}
 	}
 }

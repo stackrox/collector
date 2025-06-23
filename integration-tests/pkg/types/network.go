@@ -12,7 +12,7 @@ const (
 	NilTimestamp = "<nil>"
 )
 
-type NetworkInfoBatch []*sensorAPI.NetworkConnection
+type NetworkConnectionBatch []*sensorAPI.NetworkConnection
 
 // TranslateAddress is a helper function for converting binary representations
 // of network addresses (in the signals) to usable forms for testing
