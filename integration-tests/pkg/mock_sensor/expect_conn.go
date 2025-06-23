@@ -21,7 +21,7 @@ func (s *MockSensor) ExpectConnections(t *testing.T, containerID string, timeout
 
 	to_find := funk.Filter(expected, func(x *sensorAPI.NetworkConnection) bool {
 		return !s.HasConnection(containerID, x)
-	}).([]types.NetworkInfo)
+	}).([]*sensorAPI.NetworkConnection)
 
 	if len(to_find) == 0 {
 		return true
@@ -43,7 +43,7 @@ loop:
 
 			to_find = funk.Filter(expected, func(x *sensorAPI.NetworkConnection) bool {
 				return !s.HasConnection(containerID, x)
-			}).([]types.NetworkInfo)
+			}).([]*sensorAPI.NetworkConnection)
 
 			if len(to_find) == 0 {
 				return true

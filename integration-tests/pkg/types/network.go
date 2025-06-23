@@ -12,14 +12,6 @@ const (
 	NilTimestamp = "<nil>"
 )
 
-type NetworkInfo struct {
-	LocalAddress   string
-	RemoteAddress  string
-	Role           string
-	SocketFamily   string
-	CloseTimestamp string
-}
-
 type NetworkInfoBatch []*sensorAPI.NetworkConnection
 
 // TranslateAddress is a helper function for converting binary representations
