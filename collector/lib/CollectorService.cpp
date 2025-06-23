@@ -27,13 +27,14 @@ static const std::string PROMETHEUS_PORT = "9090";
 CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlValue>* control,
                                    const std::atomic<int>* signum)
     : config_(config),
-      system_inspector_(config_),
+      system_inspector_(config_, event_dispatcher_),
       control_(control),
       signum_(*signum),
       server_(OPTIONS),
       exposer_(PROMETHEUS_PORT),
       exporter_(&config_, &system_inspector_),
-      config_loader_(config_) {
+      config_loader_(config_),
+      event_dispatcher_(process_handler_) {
   CLOG(INFO) << "Config: " << config_;
 
   // Network tracking

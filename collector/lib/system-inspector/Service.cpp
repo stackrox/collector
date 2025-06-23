@@ -28,19 +28,21 @@
 #include "SelfChecks.h"
 #include "TimeUtil.h"
 #include "Utility.h"
+#include "events/Dispatcher.h"
 #include "logger.h"
 
 namespace collector::system_inspector {
 
 Service::~Service() = default;
 
-Service::Service(const CollectorConfig& config)
+Service::Service(const CollectorConfig& config, collector::events::EventDispatcher& dispatcher)
     : inspector_(std::make_unique<sinsp>(true)),
       container_metadata_inspector_(std::make_unique<ContainerMetadata>(inspector_.get())),
       default_formatter_(std::make_unique<sinsp_evt_formatter>(
           inspector_.get(),
           DEFAULT_OUTPUT_STR,
-          EventExtractor::FilterList())) {
+          EventExtractor::FilterList())),
+      dispatcher_(dispatcher) {
   // Setup the inspector.
   // peeking into arguments has a big overhead, so we prevent it from happening
   inspector_->set_snaplen(0);
@@ -241,6 +243,10 @@ void LogUnreasonableEventTime(int64_t time_micros, sinsp_evt* evt) {
   }
 }
 
+events::IEventPtr to_ievt(sinsp_evt* evt) {
+  return std::make_shared<events::ProcessStartEvent>();
+}
+
 void Service::Run(const std::atomic<ControlValue>& control) {
   if (!inspector_) {
     throw CollectorException("Invalid state: system inspector was not initialized");
@@ -253,6 +259,9 @@ void Service::Run(const std::atomic<ControlValue>& control) {
     if (!evt) {
       continue;
     }
+
+    auto ievt = to_ievt(evt);
+    dispatcher_.Dispatch(*ievt);
 
     auto process_start = NowMicros();
     for (auto it = signal_handlers_.begin(); it != signal_handlers_.end(); it++) {
