@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"time"
 
+	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
+
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
@@ -29,7 +31,7 @@ type UdpNetworkFlow struct {
 type containerData struct {
 	id   string
 	ip   string
-	port uint16
+	port uint32
 }
 
 func (c *containerData) String() string {
@@ -88,7 +90,7 @@ func (s *UdpNetworkFlow) TestUdpNetorkflow() {
 	recvSyscalls := []string{"recvfrom", "recvmsg", "recvmmsg"}
 	image := config.Images().QaImageByKey("qa-udp")
 
-	port := uint16(9090)
+	port := uint32(9090)
 	for _, send := range sendSyscalls {
 		for _, recv := range recvSyscalls {
 			testName := fmt.Sprintf("%s_%s", send, recv)
@@ -101,7 +103,7 @@ func (s *UdpNetworkFlow) TestUdpNetorkflow() {
 	}
 }
 
-func (s *UdpNetworkFlow) runTest(image, recv, send string, port uint16) {
+func (s *UdpNetworkFlow) runTest(image, recv, send string, port uint32) {
 	server := s.runServer(config.ContainerStartConfig{
 		Name:    UDP_SERVER,
 		Image:   image,
@@ -115,22 +117,21 @@ func (s *UdpNetworkFlow) runTest(image, recv, send string, port uint16) {
 	})
 	log.Info("Server: %s - Client: %s\n", server.String(), client.String())
 
-	// Expected client connection
-	clientConnection := types.NetworkInfo{
-		LocalAddress:   "",
-		RemoteAddress:  fmt.Sprintf("%s:%d", server.ip, server.port),
-		Role:           "ROLE_CLIENT",
-		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-		CloseTimestamp: types.NilTimestamp,
+	clientConnection := &sensorAPI.NetworkConnection{
+		LocalAddress:   types.CreateNetworkAddress("", "", 0),
+		RemoteAddress:  types.CreateNetworkAddress(server.ip, "", server.port),
+		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+		SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+		CloseTimestamp: nil,
 	}
 
 	// Expected server connection
-	serverConnection := types.NetworkInfo{
-		LocalAddress:   fmt.Sprintf(":%d", server.port),
-		RemoteAddress:  client.ip,
-		Role:           "ROLE_SERVER",
-		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-		CloseTimestamp: types.NilTimestamp,
+	serverConnection := &sensorAPI.NetworkConnection{
+		LocalAddress:   types.CreateNetworkAddress("", "", server.port),
+		RemoteAddress:  types.CreateNetworkAddress(client.ip, "", 0),
+		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+		SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+		CloseTimestamp: nil,
 	}
 
 	s.Sensor().ExpectConnections(s.T(), client.id, 5*time.Second, clientConnection)
@@ -141,10 +142,10 @@ func (s *UdpNetworkFlow) TestMultipleDestinations() {
 	image := config.Images().QaImageByKey("qa-udp")
 
 	servers := make([]containerData, CONTAINER_COUNT)
-	clientConnections := make([]types.NetworkInfo, CONTAINER_COUNT)
+	clientConnections := make([]*sensorAPI.NetworkConnection, CONTAINER_COUNT)
 	for i := 0; i < CONTAINER_COUNT; i++ {
 		name := fmt.Sprintf("%s-%d", UDP_SERVER, i)
-		port := uint16(9000 + i)
+		port := uint32(9000 + i)
 		servers[i] = s.runServer(config.ContainerStartConfig{
 			Name:    name,
 			Image:   image,
@@ -153,12 +154,12 @@ func (s *UdpNetworkFlow) TestMultipleDestinations() {
 		log.Info("Server: %s\n", servers[i].String())
 
 		// Load the client connection collector has to send for this server.
-		clientConnections[i] = types.NetworkInfo{
-			LocalAddress:   "",
-			RemoteAddress:  fmt.Sprintf("%s:%d", servers[i].ip, servers[i].port),
-			Role:           "ROLE_CLIENT",
-			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-			CloseTimestamp: types.NilTimestamp,
+		clientConnections[i] = &sensorAPI.NetworkConnection{
+			LocalAddress:   types.CreateNetworkAddress("", "", 0),
+			RemoteAddress:  types.CreateNetworkAddress(servers[i].ip, "", servers[i].port),
+			Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+			CloseTimestamp: nil,
 		}
 	}
 
@@ -174,12 +175,12 @@ func (s *UdpNetworkFlow) TestMultipleDestinations() {
 	log.Info("Client: %s\n", client.String())
 
 	for _, server := range servers {
-		serverConnection := types.NetworkInfo{
-			LocalAddress:   fmt.Sprintf(":%d", server.port),
-			RemoteAddress:  client.ip,
-			Role:           "ROLE_SERVER",
-			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-			CloseTimestamp: types.NilTimestamp,
+		serverConnection := &sensorAPI.NetworkConnection{
+			LocalAddress:   types.CreateNetworkAddress("", "", server.port),
+			RemoteAddress:  types.CreateNetworkAddress(client.ip, "", 0),
+			Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+			CloseTimestamp: nil,
 		}
 		s.Sensor().ExpectConnections(s.T(), server.id, 5*time.Second, serverConnection)
 	}
@@ -188,7 +189,7 @@ func (s *UdpNetworkFlow) TestMultipleDestinations() {
 
 func (s *UdpNetworkFlow) TestMultipleSources() {
 	image := config.Images().QaImageByKey("qa-udp")
-	port := uint16(9100)
+	port := uint32(9100)
 
 	server := s.runServer(config.ContainerStartConfig{
 		Name:    UDP_SERVER,
@@ -198,7 +199,7 @@ func (s *UdpNetworkFlow) TestMultipleSources() {
 	log.Info("Server: %s\n", server.String())
 
 	clients := make([]containerData, CONTAINER_COUNT)
-	serverConnections := make([]types.NetworkInfo, CONTAINER_COUNT)
+	serverConnections := make([]*sensorAPI.NetworkConnection, CONTAINER_COUNT)
 	for i := 0; i < CONTAINER_COUNT; i++ {
 		name := fmt.Sprintf("%s-%d", UDP_CLIENT, i)
 		clients[i] = s.runClient(config.ContainerStartConfig{
@@ -210,21 +211,21 @@ func (s *UdpNetworkFlow) TestMultipleSources() {
 		log.Info("Client: %s\n", clients[i].String())
 
 		// Load the server connection collector has to send for this client.
-		serverConnections[i] = types.NetworkInfo{
-			LocalAddress:   fmt.Sprintf(":%d", server.port),
-			RemoteAddress:  clients[i].ip,
-			Role:           "ROLE_SERVER",
-			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-			CloseTimestamp: types.NilTimestamp,
+		serverConnections[i] = &sensorAPI.NetworkConnection{
+			LocalAddress:   types.CreateNetworkAddress("", "", server.port),
+			RemoteAddress:  types.CreateNetworkAddress(clients[i].ip, "", 0),
+			Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+			CloseTimestamp: nil,
 		}
 	}
 
-	clientConnection := types.NetworkInfo{
-		LocalAddress:   "",
-		RemoteAddress:  fmt.Sprintf("%s:%d", server.ip, server.port),
-		Role:           "ROLE_CLIENT",
-		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-		CloseTimestamp: types.NilTimestamp,
+	clientConnection := &sensorAPI.NetworkConnection{
+		LocalAddress:   types.CreateNetworkAddress("", "", 0),
+		RemoteAddress:  types.CreateNetworkAddress(server.ip, "", server.port),
+		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+		SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+		CloseTimestamp: nil,
 	}
 
 	for _, client := range clients {
@@ -233,14 +234,14 @@ func (s *UdpNetworkFlow) TestMultipleSources() {
 	s.Sensor().ExpectConnections(s.T(), server.id, 5*time.Second, serverConnections...)
 }
 
-func newServerCmd(recv string, port uint16) []string {
+func newServerCmd(recv string, port uint32) []string {
 	return []string{
 		"--syscall", recv,
 		"--port", strconv.FormatUint(uint64(port), 10),
 	}
 }
 
-func (s *UdpNetworkFlow) runServer(cfg config.ContainerStartConfig, port uint16) containerData {
+func (s *UdpNetworkFlow) runServer(cfg config.ContainerStartConfig, port uint32) containerData {
 	return s.runContainer(cfg, port)
 }
 
@@ -269,7 +270,7 @@ func (s *UdpNetworkFlow) runClient(cfg config.ContainerStartConfig) containerDat
 	return s.runContainer(cfg, 0)
 }
 
-func (s *UdpNetworkFlow) runContainer(cfg config.ContainerStartConfig, port uint16) containerData {
+func (s *UdpNetworkFlow) runContainer(cfg config.ContainerStartConfig, port uint32) containerData {
 	id, err := s.Executor().StartContainer(cfg)
 	s.Require().NoError(err)
 

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +21,7 @@ type RepeatedNetworkFlowTestSuite struct {
 	ClientIP               string
 	ServerContainer        string
 	ServerIP               string
-	ServerPort             string
+	ServerPort             uint32
 	EnableAfterglow        bool
 	AfterglowPeriod        int
 	ScrapeInterval         int
@@ -114,7 +115,7 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 	observedInactive := 0
 
 	for _, info := range networkInfos {
-		if info.IsActive() {
+		if types.IsActive(info) {
 			observedActive++
 		} else {
 			observedInactive++

@@ -1,7 +1,7 @@
 package types
 
 import (
-	"fmt"
+	"net"
 	"sort"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
@@ -20,7 +20,7 @@ type NetworkInfo struct {
 	CloseTimestamp string
 }
 
-type NetworkInfoBatch []NetworkInfo
+type NetworkInfoBatch []*sensorAPI.NetworkConnection
 
 // TranslateAddress is a helper function for converting binary representations
 // of network addresses (in the signals) to usable forms for testing
@@ -52,52 +52,127 @@ func TranslateAddress(addr *sensorAPI.NetworkAddress) string {
 	return peerId.String()
 }
 
-func (n *NetworkInfo) String() string {
-	return fmt.Sprintf("%s|%s|%s|%s|%s",
-		n.LocalAddress,
-		n.RemoteAddress,
-		n.Role,
-		n.SocketFamily,
-		n.CloseTimestamp)
-}
-
-func (n *NetworkInfo) IsActive() bool {
+func IsActive(conn *sensorAPI.NetworkConnection) bool {
 	// no close timestamp means the connection is open, and active
-	return n.CloseTimestamp == NilTimestamp
+	return conn.GetCloseTimestamp() == nil
 }
 
-func (n *NetworkInfo) Equal(other NetworkInfo) bool {
-	return n.LocalAddress == other.LocalAddress &&
-		n.RemoteAddress == other.RemoteAddress &&
-		n.Role == other.Role &&
-		n.SocketFamily == other.SocketFamily &&
-		n.IsActive() == other.IsActive()
+func Equal(conn1 *sensorAPI.NetworkConnection, conn2 *sensorAPI.NetworkConnection) bool {
+	return EqualNetworkAddress(conn1.LocalAddress, conn2.LocalAddress) &&
+		EqualNetworkAddress(conn1.RemoteAddress, conn2.RemoteAddress) &&
+		conn1.Role == conn2.Role &&
+		conn1.SocketFamily == conn2.SocketFamily &&
+		IsActive(conn1) == IsActive(conn2)
 }
 
-func (n *NetworkInfo) Less(other NetworkInfo) bool {
-	if n.LocalAddress != other.LocalAddress {
-		return n.LocalAddress < other.LocalAddress
+func CompareBytes(b1 []byte, b2 []byte) int {
+	if len(b1) != len(b2) {
+		if len(b1) < len(b2) {
+			return -1
+		} else {
+			return 1
+		}
 	}
 
-	if n.RemoteAddress != other.RemoteAddress {
-		return n.RemoteAddress < other.RemoteAddress
+	for i := range b1 {
+		if b1[i] != b2[i] {
+			if b1[i] < b2[i] {
+				return -1
+			} else {
+				return 1
+			}
+		}
 	}
 
-	if n.Role != other.Role {
-		return n.Role < other.Role
+	return 0
+}
+
+func EqualNetworkAddress(addr1 *sensorAPI.NetworkAddress, addr2 *sensorAPI.NetworkAddress) bool {
+	comp := CompareBytes(addr1.GetAddressData(), addr2.GetAddressData())
+
+	if comp != 0 {
+		return false
 	}
 
-	if n.SocketFamily != other.SocketFamily {
-		return n.SocketFamily < other.SocketFamily
+	comp = CompareBytes(addr1.GetIpNetwork(), addr2.GetIpNetwork())
+
+	if comp != 0 {
+		return false
 	}
 
-	if n.IsActive() != other.IsActive() {
-		return n.IsActive()
+	return addr1.GetPort() == addr2.GetPort()
+}
+
+func LessNetworkAddress(addr1 *sensorAPI.NetworkAddress, addr2 *sensorAPI.NetworkAddress) bool {
+	comp := CompareBytes(addr1.GetAddressData(), addr2.GetAddressData())
+
+	if comp != 0 {
+		return comp < 0
+	}
+
+	comp = CompareBytes(addr1.GetIpNetwork(), addr2.GetIpNetwork())
+
+	if comp != 0 {
+		return comp < 0
+	}
+
+	return addr1.GetPort() < addr2.GetPort()
+}
+
+func LessNetworkConnection(conn1 *sensorAPI.NetworkConnection, conn2 *sensorAPI.NetworkConnection) bool {
+	if !EqualNetworkAddress(conn1.LocalAddress, conn2.LocalAddress) {
+		return LessNetworkAddress(conn1.GetLocalAddress(), conn2.GetLocalAddress())
+	}
+
+	if !EqualNetworkAddress(conn1.RemoteAddress, conn2.RemoteAddress) {
+		return LessNetworkAddress(conn1.GetRemoteAddress(), conn2.GetRemoteAddress())
+	}
+
+	if conn1.Role != conn2.Role {
+		return conn1.Role < conn2.Role
+	}
+
+	if conn1.SocketFamily != conn2.SocketFamily {
+		return conn1.SocketFamily < conn2.SocketFamily
+	}
+
+	if IsActive(conn1) != IsActive(conn2) {
+		return IsActive(conn1)
 	}
 
 	return false
 }
 
-func SortConnections(connections []NetworkInfo) {
-	sort.Slice(connections, func(i, j int) bool { return connections[i].Less(connections[j]) })
+func stringToIPBytes(ipStr string) []byte {
+	ip := net.ParseIP(ipStr)
+
+	if ip == nil {
+		return nil
+	}
+
+	return ip.To4()
+
+}
+
+func stringToIPNetworkBytes(ipStr string) []byte {
+	ip := net.ParseIP(ipStr)
+
+	if ip == nil {
+		return nil
+	}
+
+	return append(ip.To4(), 32)
+}
+
+func CreateNetworkAddress(ipAddress string, ipNetwork string, port uint32) *sensorAPI.NetworkAddress {
+
+	return &sensorAPI.NetworkAddress{
+		AddressData: stringToIPBytes(ipAddress),
+		IpNetwork:   stringToIPNetworkBytes(ipNetwork),
+		Port:        port,
+	}
+}
+
+func SortConnections(connections []*sensorAPI.NetworkConnection) {
+	sort.Slice(connections, func(i, j int) bool { return LessNetworkConnection(connections[i], connections[j]) })
 }

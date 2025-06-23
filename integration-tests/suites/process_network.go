@@ -7,6 +7,8 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
+
+	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 )
 
 type ProcessNetworkTestSuite struct {
@@ -15,7 +17,7 @@ type ProcessNetworkTestSuite struct {
 	clientIP        string
 	serverContainer string
 	serverIP        string
-	serverPort      string
+	serverPort      uint32
 }
 
 // Launches collector
@@ -147,22 +149,22 @@ func (s *ProcessNetworkTestSuite) TestProcessLineageInfo() {
 
 func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 	s.Sensor().ExpectConnections(s.T(), s.serverContainer, 10*time.Second,
-		types.NetworkInfo{
-			LocalAddress:   fmt.Sprintf(":%s", s.serverPort),
-			RemoteAddress:  s.clientIP,
-			Role:           "ROLE_SERVER",
-			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-			CloseTimestamp: types.NilTimestamp,
+		&sensorAPI.NetworkConnection{
+			LocalAddress:   types.CreateNetworkAddress("", "", s.serverPort),
+			RemoteAddress:  types.CreateNetworkAddress(s.clientIP, "", s.serverPort),
+			Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
+			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+			CloseTimestamp: nil,
 		},
 	)
 
 	s.Sensor().ExpectConnections(s.T(), s.clientContainer, 10*time.Second,
-		types.NetworkInfo{
-			LocalAddress:   "",
-			RemoteAddress:  fmt.Sprintf("%s:%s", s.serverIP, s.serverPort),
-			Role:           "ROLE_CLIENT",
-			SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-			CloseTimestamp: types.NilTimestamp,
+		&sensorAPI.NetworkConnection{
+			LocalAddress:   types.CreateNetworkAddress("", "", 0),
+			RemoteAddress:  types.CreateNetworkAddress(s.clientIP, "", s.serverPort),
+			Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+			CloseTimestamp: nil,
 		},
 	)
 }
