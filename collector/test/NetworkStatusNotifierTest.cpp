@@ -195,7 +195,7 @@ class NetworkStatusNotifierTest : public testing::Test {
         conn_scraper(std::make_unique<MockConnScraper>()),
         comm(std::make_unique<MockNetworkConnectionInfoServiceComm>()),
         net_status_notifier(conn_tracker, config, &inspector, nullptr),
-        dispatcher_(process_handler_) {
+        dispatcher_() {
   }
 
  protected:

@@ -34,7 +34,7 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
       exposer_(PROMETHEUS_PORT),
       exporter_(&config_, &system_inspector_),
       config_loader_(config_),
-      event_dispatcher_(process_handler_) {
+      event_dispatcher_() {
   CLOG(INFO) << "Config: " << config_;
 
   // Network tracking
