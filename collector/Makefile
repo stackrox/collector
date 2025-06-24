@@ -56,7 +56,7 @@ connscrape: build-connscrape-test
 
 unittest: collector
 	docker exec $(COLLECTOR_BUILDER_NAME) \
-		ctest -V --test-dir $(CMAKE_DIR)
+		ctest --no-tests=error -V --test-dir $(CMAKE_DIR)
 
 .PHONY: txt-files
 txt-files:
