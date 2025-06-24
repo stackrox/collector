@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type ProcessNetworkTestSuite struct {
@@ -74,7 +75,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	s.serverPort, err = s.getPort("nginx")
 	s.Require().NoError(err)
 
-	_, err = s.execContainer("nginx-curl", []string{"curl", fmt.Sprintf("%s:%s", s.serverIP, s.serverPort)}, false)
+	_, err = s.execContainer("nginx-curl", []string{"curl", fmt.Sprintf("%s:%d", s.serverIP, s.serverPort)}, false)
 	s.Require().NoError(err)
 
 	s.clientIP, err = s.getIPAddress("nginx-curl")
@@ -151,7 +152,8 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 	s.Sensor().ExpectConnections(s.T(), s.serverContainer, 10*time.Second,
 		&sensorAPI.NetworkConnection{
 			LocalAddress:   types.CreateNetworkAddress("", "", s.serverPort),
-			RemoteAddress:  types.CreateNetworkAddress(s.clientIP, "", s.serverPort),
+			RemoteAddress:  types.CreateNetworkAddress(s.clientIP, "", 0),
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 			Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
 			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
 			CloseTimestamp: nil,
@@ -161,7 +163,8 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 	s.Sensor().ExpectConnections(s.T(), s.clientContainer, 10*time.Second,
 		&sensorAPI.NetworkConnection{
 			LocalAddress:   types.CreateNetworkAddress("", "", 0),
-			RemoteAddress:  types.CreateNetworkAddress(s.clientIP, "", s.serverPort),
+			RemoteAddress:  types.CreateNetworkAddress(s.serverIP, "", s.serverPort),
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 			Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
 			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
 			CloseTimestamp: nil,
