@@ -1,5 +1,6 @@
 // clang-format off
 #include <Utility.h>
+#include <thread>
 #include "libsinsp/sinsp.h"
 // clang-format on
 
@@ -54,15 +55,15 @@ TEST(ProcessSignalFormatterTest, ProcessWithoutParentTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
-  auto tinfo = inspector->build_threadinfo();
+  auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 0;
   tinfo->m_tid = 0;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 2;
-  tinfo->m_user.set_uid(7);
+  tinfo->m_uid = 7;
   tinfo->m_exepath = "qwerty";
 
-  inspector->add_thread(std::move(tinfo));
+  inspector->m_thread_manager->add_thread(std::move(tinfo), false);
   std::vector<LineageInfo> lineage;
 
   processSignalFormatter.GetProcessLineage(inspector->get_thread_ref(0).get(), lineage);
@@ -89,22 +90,23 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
-  auto tinfo = inspector->build_threadinfo();
+  auto threadinfo_factory = inspector->get_threadinfo_factory();
+  auto tinfo = threadinfo_factory.create();
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.set_uid(42);
+  tinfo->m_uid = 42;
   tinfo->m_exepath = "asdf";
-  auto tinfo2 = inspector->build_threadinfo();
+  auto tinfo2 = threadinfo_factory.create();
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.set_uid(7);
+  tinfo2->m_uid = 7;
   tinfo2->m_exepath = "qwerty";
-  inspector->add_thread(std::move(tinfo));
-  inspector->add_thread(std::move(tinfo2));
+  inspector->m_thread_manager->add_thread(std::move(tinfo), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo2), false);
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(inspector->get_thread_ref(1).get(), lineage);
@@ -134,20 +136,21 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithPid0Test) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
-  auto tinfo = inspector->build_threadinfo();
+  auto threadinfo_factory = inspector->get_threadinfo_factory();
+  auto tinfo = threadinfo_factory.create();
   tinfo->m_pid = 0;
   tinfo->m_tid = 0;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
   tinfo->m_exepath = "asdf";
-  auto tinfo2 = inspector->build_threadinfo();
+  auto tinfo2 = threadinfo_factory.create();
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 0;
   tinfo2->m_vpid = 2;
   tinfo2->m_exepath = "qwerty";
-  inspector->add_thread(std::move(tinfo));
-  inspector->add_thread(std::move(tinfo2));
+  inspector->m_thread_manager->add_thread(std::move(tinfo), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo2), false);
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(inspector->get_thread_ref(1).get(), lineage);
@@ -174,22 +177,23 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithSameNameTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
-  auto tinfo = inspector->build_threadinfo();
+  auto threadinfo_factory = inspector->get_threadinfo_factory();
+  auto tinfo = threadinfo_factory.create();
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.set_uid(43);
+  tinfo->m_uid = 43;
   tinfo->m_exepath = "asdf";
-  auto tinfo2 = inspector->build_threadinfo();
+  auto tinfo2 = threadinfo_factory.create();
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.set_uid(42);
+  tinfo2->m_uid = 42;
   tinfo2->m_exepath = "asdf";
-  inspector->add_thread(std::move(tinfo));
-  inspector->add_thread(std::move(tinfo2));
+  inspector->m_thread_manager->add_thread(std::move(tinfo), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo2), false);
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(inspector->get_thread_ref(1).get(), lineage);
@@ -219,33 +223,34 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
-  auto tinfo = inspector->build_threadinfo();
+  auto threadinfo_factory = inspector->get_threadinfo_factory();
+  auto tinfo = threadinfo_factory.create();
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.set_uid(42);
+  tinfo->m_uid = 42;
   tinfo->m_exepath = "asdf";
 
-  auto tinfo2 = inspector->build_threadinfo();
+  auto tinfo2 = threadinfo_factory.create();
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.set_uid(7);
+  tinfo2->m_uid = 7;
   tinfo2->m_exepath = "qwerty";
 
-  auto tinfo3 = inspector->build_threadinfo();
+  auto tinfo3 = threadinfo_factory.create();
   tinfo3->m_pid = 4;
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 9;
-  tinfo3->m_user.set_uid(8);
+  tinfo3->m_uid = 8;
   tinfo3->m_exepath = "uiop";
 
-  inspector->add_thread(std::move(tinfo));
-  inspector->add_thread(std::move(tinfo2));
-  inspector->add_thread(std::move(tinfo3));
+  inspector->m_thread_manager->add_thread(std::move(tinfo), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo2), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo3), false);
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(inspector->get_thread_ref(4).get(), lineage);
@@ -278,33 +283,34 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
-  auto tinfo = inspector->build_threadinfo();
+  auto threadinfo_factory = inspector->get_threadinfo_factory();
+  auto tinfo = threadinfo_factory.create();
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.set_uid(42);
+  tinfo->m_uid = 42;
   tinfo->m_exepath = "asdf";
 
-  auto tinfo2 = inspector->build_threadinfo();
+  auto tinfo2 = threadinfo_factory.create();
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.set_uid(7);
+  tinfo2->m_uid = 7;
   tinfo2->m_exepath = "asdf";
 
-  auto tinfo3 = inspector->build_threadinfo();
+  auto tinfo3 = threadinfo_factory.create();
   tinfo3->m_pid = 4;
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 9;
-  tinfo3->m_user.set_uid(8);
+  tinfo3->m_uid = 8;
   tinfo3->m_exepath = "asdf";
 
-  inspector->add_thread(std::move(tinfo));
-  inspector->add_thread(std::move(tinfo2));
-  inspector->add_thread(std::move(tinfo3));
+  inspector->m_thread_manager->add_thread(std::move(tinfo), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo2), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo3), false);
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(inspector->get_thread_ref(4).get(), lineage);
@@ -334,42 +340,43 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
-  auto tinfo = inspector->build_threadinfo();
+  auto threadinfo_factory = inspector->get_threadinfo_factory();
+  auto tinfo = threadinfo_factory.create();
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.set_uid(42);
+  tinfo->m_uid = 42;
   tinfo->m_exepath = "asdf";
 
-  auto tinfo2 = inspector->build_threadinfo();
+  auto tinfo2 = threadinfo_factory.create();
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.set_uid(7);
+  tinfo2->m_uid = 7;
   tinfo2->m_exepath = "asdf";
 
-  auto tinfo3 = inspector->build_threadinfo();
+  auto tinfo3 = threadinfo_factory.create();
   tinfo3->m_pid = 4;
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 9;
-  tinfo3->m_user.set_uid(8);
+  tinfo3->m_uid = 8;
   tinfo3->m_exepath = "asdf";
 
-  auto tinfo4 = inspector->build_threadinfo();
+  auto tinfo4 = threadinfo_factory.create();
   tinfo4->m_pid = 5;
   tinfo4->m_tid = 5;
   tinfo4->m_ptid = 4;
   tinfo4->m_vpid = 10;
-  tinfo4->m_user.set_uid(9);
+  tinfo4->m_uid = 9;
   tinfo4->m_exepath = "qwerty";
 
-  inspector->add_thread(std::move(tinfo));
-  inspector->add_thread(std::move(tinfo2));
-  inspector->add_thread(std::move(tinfo3));
-  inspector->add_thread(std::move(tinfo4));
+  inspector->m_thread_manager->add_thread(std::move(tinfo), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo2), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo3), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo4), false);
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(inspector->get_thread_ref(5).get(), lineage);
@@ -399,42 +406,43 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
-  auto tinfo = inspector->build_threadinfo();
+  auto threadinfo_factory = inspector->get_threadinfo_factory();
+  auto tinfo = threadinfo_factory.create();
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.set_uid(42);
+  tinfo->m_uid = 42;
   tinfo->m_exepath = "qwerty";
 
-  auto tinfo2 = inspector->build_threadinfo();
+  auto tinfo2 = threadinfo_factory.create();
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.set_uid(7);
+  tinfo2->m_uid = 7;
   tinfo2->m_exepath = "asdf";
 
-  auto tinfo3 = inspector->build_threadinfo();
+  auto tinfo3 = threadinfo_factory.create();
   tinfo3->m_pid = 4;
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 9;
-  tinfo3->m_user.set_uid(8);
+  tinfo3->m_uid = 8;
   tinfo3->m_exepath = "asdf";
 
-  auto tinfo4 = inspector->build_threadinfo();
+  auto tinfo4 = threadinfo_factory.create();
   tinfo4->m_pid = 5;
   tinfo4->m_tid = 5;
   tinfo4->m_ptid = 4;
   tinfo4->m_vpid = 10;
-  tinfo4->m_user.set_uid(9);
+  tinfo4->m_uid = 9;
   tinfo4->m_exepath = "asdf";
 
-  inspector->add_thread(std::move(tinfo));
-  inspector->add_thread(std::move(tinfo2));
-  inspector->add_thread(std::move(tinfo3));
-  inspector->add_thread(std::move(tinfo4));
+  inspector->m_thread_manager->add_thread(std::move(tinfo), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo2), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo3), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo4), false);
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(inspector->get_thread_ref(5).get(), lineage);
@@ -467,42 +475,43 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
-  auto tinfo = inspector->build_threadinfo();
+  auto threadinfo_factory = inspector->get_threadinfo_factory();
+  auto tinfo = threadinfo_factory.create();
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 1;
-  tinfo->m_user.set_uid(42);
+  tinfo->m_uid = 42;
   tinfo->m_exepath = "qwerty";
 
-  auto tinfo2 = inspector->build_threadinfo();
+  auto tinfo2 = threadinfo_factory.create();
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 2;
-  tinfo2->m_user.set_uid(7);
+  tinfo2->m_uid = 7;
   tinfo2->m_exepath = "asdf";
 
-  auto tinfo3 = inspector->build_threadinfo();
+  auto tinfo3 = threadinfo_factory.create();
   tinfo3->m_pid = 4;
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 9;
-  tinfo3->m_user.set_uid(8);
+  tinfo3->m_uid = 8;
   tinfo3->m_exepath = "uiop";
 
-  auto tinfo4 = inspector->build_threadinfo();
+  auto tinfo4 = threadinfo_factory.create();
   tinfo4->m_pid = 5;
   tinfo4->m_tid = 5;
   tinfo4->m_ptid = 555;
   tinfo4->m_vpid = 10;
-  tinfo4->m_user.set_uid(9);
+  tinfo4->m_uid = 9;
   tinfo4->m_exepath = "jkl;";
 
-  inspector->add_thread(std::move(tinfo));
-  inspector->add_thread(std::move(tinfo2));
-  inspector->add_thread(std::move(tinfo3));
-  inspector->add_thread(std::move(tinfo4));
+  inspector->m_thread_manager->add_thread(std::move(tinfo), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo2), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo3), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo4), false);
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(inspector->get_thread_ref(4).get(), lineage);
@@ -535,28 +544,29 @@ TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
-  auto tinfo = inspector->build_threadinfo();
+  auto threadinfo_factory = inspector->get_threadinfo_factory();
+  auto tinfo = threadinfo_factory.create();
   tinfo->m_pid = 1;
   tinfo->m_tid = 1;
   tinfo->m_ptid = 555;
   tinfo->m_vpid = 10;
-  tinfo->m_user.set_uid(9);
+  tinfo->m_uid = 9;
   tinfo->m_exepath = "jkl;";
 
-  inspector->add_thread(std::move(tinfo));
+  inspector->m_thread_manager->add_thread(std::move(tinfo), false);
   std::vector<LineageInfo> lineage;
 
   processSignalFormatter.GetProcessLineage(inspector->get_thread_ref(1).get(), lineage);
 
-  auto tinfo2 = inspector->build_threadinfo();
+  auto tinfo2 = threadinfo_factory.create();
   tinfo2->m_pid = 2;
   tinfo2->m_tid = 2;
   tinfo2->m_ptid = 555;
   tinfo2->m_vpid = 10;
-  tinfo2->m_user.set_uid(9);
+  tinfo2->m_uid = 9;
   tinfo2->m_exepath = "jkl;";
 
-  inspector->add_thread(std::move(tinfo2));
+  inspector->m_thread_manager->add_thread(std::move(tinfo2), false);
   std::vector<LineageInfo> lineage2;
 
   processSignalFormatter.GetProcessLineage(inspector->get_thread_ref(2).get(), lineage2);
@@ -583,36 +593,36 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
-  auto tinfo = inspector->build_threadinfo();
+  auto threadinfo_factory = inspector->get_threadinfo_factory();
+  auto tinfo = threadinfo_factory.create();
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 0;
-  tinfo->m_user.set_uid(42);
-  tinfo->m_container_id = "";
+  tinfo->m_uid = 42;
   tinfo->m_exepath = "qwerty";
 
-  auto tinfo2 = inspector->build_threadinfo();
+  auto tinfo2 = threadinfo_factory.create();
   tinfo2->m_pid = 1;
   tinfo2->m_tid = 1;
   tinfo2->m_ptid = 3;
   tinfo2->m_vpid = 0;
-  tinfo2->m_user.set_uid(7);
-  tinfo2->m_container_id = "id";
+  tinfo2->m_uid = 7;
+  tinfo2->set_cgroups(sinsp_threadinfo::cgroups_t{{"mock", "/0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}});
   tinfo2->m_exepath = "asdf";
 
-  auto tinfo3 = inspector->build_threadinfo();
+  auto tinfo3 = threadinfo_factory.create();
   tinfo3->m_pid = 4;
   tinfo3->m_tid = 4;
   tinfo3->m_ptid = 1;
   tinfo3->m_vpid = 0;
-  tinfo3->m_user.set_uid(8);
-  tinfo3->m_container_id = "id";
+  tinfo3->m_uid = 8;
+  tinfo3->set_cgroups(sinsp_threadinfo::cgroups_t{{"mock", "/0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}});
   tinfo3->m_exepath = "uiop";
 
-  inspector->add_thread(std::move(tinfo));
-  inspector->add_thread(std::move(tinfo2));
-  inspector->add_thread(std::move(tinfo3));
+  inspector->m_thread_manager->add_thread(std::move(tinfo), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo2), false);
+  inspector->m_thread_manager->add_thread(std::move(tinfo3), false);
 
   std::vector<ProcessSignalFormatter::LineageInfo> lineage;
   processSignalFormatter.GetProcessLineage(inspector->get_thread_ref(4).get(), lineage);
@@ -641,13 +651,12 @@ TEST(ProcessSignalFormatterTest, ProcessArguments) {
 
   ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
-  auto tinfo = inspector->build_threadinfo();
+  auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 0;
-  tinfo->m_user.set_uid(42);
-  tinfo->m_container_id = "";
+  tinfo->m_uid = 42;
   tinfo->m_exepath = "qwerty";
 
   std::vector<std::string> args = {std::string("args")};
@@ -671,13 +680,12 @@ TEST(ProcessSignalFormatterTest, NoProcessArguments) {
   config.SetDisableProcessArguments(true);
   ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
-  auto tinfo = inspector->build_threadinfo();
+  auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 3;
   tinfo->m_tid = 3;
   tinfo->m_ptid = -1;
   tinfo->m_vpid = 0;
-  tinfo->m_user.set_uid(42);
-  tinfo->m_container_id = "";
+  tinfo->m_uid = 42;
   tinfo->m_exepath = "qwerty";
 
   std::vector<std::string> args = {std::string("args")};

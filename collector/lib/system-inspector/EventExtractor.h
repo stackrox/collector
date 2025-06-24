@@ -7,6 +7,8 @@
 #include "libsinsp/sinsp.h"
 
 #include "Logging.h"
+#include "Utility.h"
+#include "threadinfo.h"
 
 namespace collector::system_inspector {
 
@@ -129,16 +131,11 @@ class EventExtractor {
   //
   // ADD ANY NEW FIELDS BELOW THIS LINE
 
-  // Container related fields
-  TINFO_FIELD(container_id);
-
   // Process related fields
   TINFO_FIELD(comm);
   TINFO_FIELD(exe);
   TINFO_FIELD(exepath);
   TINFO_FIELD(pid);
-  TINFO_FIELD_RAW_GETTER(uid, m_user.uid, uint32_t);
-  TINFO_FIELD_RAW_GETTER(gid, m_group.gid, uint32_t);
   FIELD_CSTR(proc_args, "proc.args");
 
   // General event information
@@ -148,15 +145,57 @@ class EventExtractor {
   FIELD_RAW_SAFE(client_port, "fd.cport", uint16_t);
   FIELD_RAW_SAFE(server_port, "fd.sport", uint16_t);
 
-  // k8s metadata
-  FIELD_CSTR(k8s_namespace, "k8s.ns.name");
-
 #undef TINFO_FIELD
 #undef FIELD_RAW
 #undef FIELD_CSTR
 #undef EVT_ARG
 #undef EVT_ARG_RAW
 #undef DECLARE_FILTER_CHECK
+
+ public:
+  static std::optional<std::string_view> get_container_id(const sinsp_threadinfo* tinfo) {
+    for (const auto& [_, cgroup] : tinfo->cgroups()) {
+      auto container_id = ExtractContainerIDFromCgroup(cgroup);
+      if (container_id) {
+        return container_id;
+      }
+    }
+
+    return {};
+  }
+
+  static std::optional<std::string_view> get_container_id(const sinsp_evt* evt) {
+    const auto* tinfo = evt->get_tinfo();
+    if (tinfo == nullptr) {
+      return {};
+    }
+
+    return get_container_id(tinfo);
+  }
+
+  static std::optional<uint32_t> get_uid(sinsp_threadinfo* tinfo) {
+    return tinfo->m_uid;
+  }
+
+  static std::optional<uint32_t> get_uid(sinsp_evt* evt) {
+    auto* tinfo = evt->get_tinfo();
+    if (tinfo == nullptr) {
+      return {};
+    }
+    return get_uid(tinfo);
+  }
+
+  static std::optional<uint32_t> get_gid(sinsp_threadinfo* tinfo) {
+    return tinfo->m_gid;
+  }
+
+  static std::optional<uint32_t> get_gid(sinsp_evt* evt) {
+    auto* tinfo = evt->get_tinfo();
+    if (tinfo == nullptr) {
+      return {};
+    }
+    return get_gid(tinfo);
+  }
 };
 
 }  // namespace collector::system_inspector
