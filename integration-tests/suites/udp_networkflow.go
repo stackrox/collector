@@ -6,6 +6,7 @@ import (
 	"time"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/common"
@@ -129,7 +130,7 @@ func (s *UdpNetworkFlow) runTest(image, recv, send string, port uint32) {
 	serverConnection := &sensorAPI.NetworkConnection{
 		LocalAddress:   types.CreateNetworkAddress("", "", server.port),
 		RemoteAddress:  types.CreateNetworkAddress(client.ip, "", 0),
-		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+		Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
 		SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
 		CloseTimestamp: nil,
 	}
@@ -157,6 +158,7 @@ func (s *UdpNetworkFlow) TestMultipleDestinations() {
 		clientConnections[i] = &sensorAPI.NetworkConnection{
 			LocalAddress:   types.CreateNetworkAddress("", "", 0),
 			RemoteAddress:  types.CreateNetworkAddress(servers[i].ip, "", servers[i].port),
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 			Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
 			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
 			CloseTimestamp: nil,
@@ -178,7 +180,8 @@ func (s *UdpNetworkFlow) TestMultipleDestinations() {
 		serverConnection := &sensorAPI.NetworkConnection{
 			LocalAddress:   types.CreateNetworkAddress("", "", server.port),
 			RemoteAddress:  types.CreateNetworkAddress(client.ip, "", 0),
-			Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
+			Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
 			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
 			CloseTimestamp: nil,
 		}
@@ -214,7 +217,8 @@ func (s *UdpNetworkFlow) TestMultipleSources() {
 		serverConnections[i] = &sensorAPI.NetworkConnection{
 			LocalAddress:   types.CreateNetworkAddress("", "", server.port),
 			RemoteAddress:  types.CreateNetworkAddress(clients[i].ip, "", 0),
-			Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
+			Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
 			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
 			CloseTimestamp: nil,
 		}
@@ -223,6 +227,7 @@ func (s *UdpNetworkFlow) TestMultipleSources() {
 	clientConnection := &sensorAPI.NetworkConnection{
 		LocalAddress:   types.CreateNetworkAddress("", "", 0),
 		RemoteAddress:  types.CreateNetworkAddress(server.ip, "", server.port),
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
 		SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
 		CloseTimestamp: nil,
