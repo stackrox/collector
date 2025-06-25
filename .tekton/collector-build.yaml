@@ -135,7 +135,7 @@ spec:
       computeResources: *ta-resources
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-collector
+    serviceAccountName: build-pipeline-collector-4-6
 
   timeouts:
     # The pipeline regularly takes >1h to finish.
