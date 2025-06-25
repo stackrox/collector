@@ -87,7 +87,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.ServerPort, err = s.getPort("nginx")
 	s.Require().NoError(err)
 
-	serverAddress := fmt.Sprintf("%s:%s", s.ServerIP, s.ServerPort)
+	serverAddress := fmt.Sprintf("%s:%d", s.ServerIP, s.ServerPort)
 
 	numMetaIter := strconv.Itoa(s.NumMetaIter)
 	numIter := strconv.Itoa(s.NumIter)
@@ -131,8 +131,11 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 	actualClientEndpoint := networkInfos[0].RemoteAddress
 
 	// From server perspective, network connection info only has local port and remote IP
-	assert.Equal(s.T(), fmt.Sprintf(":%s", s.ServerPort), actualServerEndpoint)
-	assert.Equal(s.T(), s.ClientIP, actualClientEndpoint)
+	expectedServerEndpoint := types.CreateNetworkAddress("", "", s.ServerPort)
+	expectedClientEndpoint := types.CreateNetworkAddress(s.ClientIP, "", 0)
+
+	assert.True(s.T(), types.EqualNetworkAddress(expectedServerEndpoint, actualServerEndpoint))
+	assert.True(s.T(), types.EqualNetworkAddress(expectedClientEndpoint, actualClientEndpoint))
 
 	// client side checks
 
