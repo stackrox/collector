@@ -13,3 +13,4 @@ RELEASED_VERSIONS.unsupported   @stackrox/collector-team
 **/konflux.*Dockerfile  @stackrox/rhtap-maintainers
 /.tekton/               @stackrox/rhtap-maintainers
 rpms.*                  @stackrox/rhtap-maintainers
+.github/renovate.json5  @stackrox/rhtap-maintainers
