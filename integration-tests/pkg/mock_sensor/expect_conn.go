@@ -1,7 +1,6 @@
 package mock_sensor
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
