@@ -121,6 +121,7 @@ func (s *UdpNetworkFlow) runTest(image, recv, send string, port uint32) {
 	clientConnection := &sensorAPI.NetworkConnection{
 		LocalAddress:   types.CreateNetworkAddress("", "", 0),
 		RemoteAddress:  types.CreateNetworkAddress(server.ip, "", server.port),
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
 		SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
 		CloseTimestamp: nil,
@@ -130,6 +131,7 @@ func (s *UdpNetworkFlow) runTest(image, recv, send string, port uint32) {
 	serverConnection := &sensorAPI.NetworkConnection{
 		LocalAddress:   types.CreateNetworkAddress("", "", server.port),
 		RemoteAddress:  types.CreateNetworkAddress(client.ip, "", 0),
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 		Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
 		SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
 		CloseTimestamp: nil,

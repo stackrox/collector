@@ -192,7 +192,7 @@ func (m *MockSensor) HasConnection(containerID string, conn *sensorAPI.NetworkCo
 	conns := m.Connections(containerID)
 	if len(conns) > 0 {
 		return slices.ContainsFunc(conns, func(c *sensorAPI.NetworkConnection) bool {
-			return types.Equal(c, conn)
+			return types.EqualNetworkConnection(c, conn)
 		})
 	}
 

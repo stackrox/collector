@@ -49,9 +49,10 @@ func IsActive(conn *sensorAPI.NetworkConnection) bool {
 	return conn.GetCloseTimestamp() == nil
 }
 
-func Equal(conn1 *sensorAPI.NetworkConnection, conn2 *sensorAPI.NetworkConnection) bool {
+func EqualNetworkConnection(conn1 *sensorAPI.NetworkConnection, conn2 *sensorAPI.NetworkConnection) bool {
 	return EqualNetworkAddress(conn1.LocalAddress, conn2.LocalAddress) &&
 		EqualNetworkAddress(conn1.RemoteAddress, conn2.RemoteAddress) &&
+		conn1.Protocol == conn2.Protocol &&
 		conn1.Role == conn2.Role &&
 		conn1.SocketFamily == conn2.SocketFamily &&
 		IsActive(conn1) == IsActive(conn2)
