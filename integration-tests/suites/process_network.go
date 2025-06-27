@@ -24,7 +24,6 @@ type ProcessNetworkTestSuite struct {
 // Execs into nginx and does a sleep
 func (s *ProcessNetworkTestSuite) SetupSuite() {
 	s.RegisterCleanup("nginx", "nginx-curl")
-	s.StartContainerStats()
 	s.StartCollector(false, nil)
 
 	image_store := config.Images()

@@ -32,7 +32,6 @@ func (s *DuplicateEndpointsTestSuite) killSocatProcess(port int) {
 
 func (s *DuplicateEndpointsTestSuite) SetupSuite() {
 	s.RegisterCleanup("socat")
-	s.StartContainerStats()
 
 	collectorOptions := collector.StartupOptions{
 		Config: map[string]any{

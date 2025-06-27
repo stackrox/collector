@@ -23,7 +23,6 @@ type ProcessListeningOnPortTestSuite struct {
 
 func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	s.RegisterCleanup("process-ports")
-	s.StartContainerStats()
 
 	collectorOptions := collector.StartupOptions{
 		Config: map[string]any{

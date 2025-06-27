@@ -30,7 +30,6 @@ type ConnectionsAndEndpointsTestSuite struct {
 
 func (s *ConnectionsAndEndpointsTestSuite) SetupSuite() {
 	s.RegisterCleanup(s.Server.Name, s.Client.Name)
-	s.StartContainerStats()
 
 	collectorOptions := collector.StartupOptions{
 		Env: map[string]string{

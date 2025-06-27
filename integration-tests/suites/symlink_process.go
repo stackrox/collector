@@ -18,7 +18,6 @@ type SymbolicLinkProcessTestSuite struct {
 
 func (s *SymbolicLinkProcessTestSuite) SetupSuite() {
 	s.RegisterCleanup("process-ports")
-	s.StartContainerStats()
 
 	collectorOptions := collector.StartupOptions{
 		Config: map[string]any{

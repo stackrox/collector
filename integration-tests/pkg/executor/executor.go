@@ -1,7 +1,9 @@
 package executor
 
 import (
+	"context"
 	"os/exec"
+	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 )
@@ -14,6 +16,14 @@ type ContainerFilter struct {
 type ContainerLogs struct {
 	Stdout string
 	Stderr string
+}
+
+type ContainerStat struct {
+	Timestamp time.Time
+	Id        string
+	Name      string
+	Mem       uint64
+	Cpu       uint64
 }
 
 func (c *ContainerLogs) Empty() bool {
@@ -47,6 +57,7 @@ type Executor interface {
 	StopContainer(name string) (string, error)
 	StartContainer(config config.ContainerStartConfig) (string, error)
 	GetContainerHealthCheck(containerID string) (string, error)
+	GetContainerStats(ctx context.Context, containerID string) (*ContainerStat, error)
 	GetContainerIP(containerID string) (string, error)
 	GetContainerLogs(containerID string) (ContainerLogs, error)
 	CaptureLogs(testName, containerName string) (string, error)

@@ -78,8 +78,6 @@ func (s *RuntimeConfigFileTestSuite) setExternalIpsEnabled(runtimeConfigFile str
 func (s *RuntimeConfigFileTestSuite) SetupTest() {
 	s.RegisterCleanup("external-connection")
 
-	s.StartContainerStats()
-
 	containerID, err := s.Executor().StartContainer(
 		config.ContainerStartConfig{
 			Name:    "external-connection",

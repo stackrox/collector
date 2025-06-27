@@ -141,7 +141,6 @@ func (b *BenchmarkTestSuiteBase) StopPerfTools() {
 func (s *BenchmarkCollectorTestSuite) SetupSuite() {
 	s.RegisterCleanup("perf", "bcc", "bpftrace", "init",
 		"benchmark-processes", "benchmark-endpoints")
-	s.StartContainerStats()
 
 	s.StartPerfTools()
 
@@ -210,7 +209,6 @@ func (s *BenchmarkCollectorTestSuite) TearDownSuite() {
 
 func (s *BenchmarkBaselineTestSuite) SetupSuite() {
 	s.RegisterCleanup("benchmark-processes", "benchmark-endpoints")
-	s.StartContainerStats()
 	s.StartPerfTools()
 }
 

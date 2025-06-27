@@ -45,7 +45,6 @@ func (s *UdpNetworkFlow) SetupSuite() {
 	// The network needs to be removed after the containers, so its
 	// the first cleanup we register.
 	s.RegisterCleanup(UDP_CLIENT, UDP_SERVER)
-	s.StartContainerStats()
 	collectorOptions := collector.StartupOptions{
 		Env: map[string]string{
 			"ROX_COLLECTOR_TRACK_SEND_RECV": "true",

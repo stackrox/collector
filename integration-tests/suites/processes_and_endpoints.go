@@ -22,7 +22,6 @@ type ProcessesAndEndpointsTestSuite struct {
 
 func (s *ProcessesAndEndpointsTestSuite) SetupSuite() {
 	s.RegisterCleanup(s.ContainerName)
-	s.StartContainerStats()
 
 	collectorOptions := collector.StartupOptions{
 		Env: map[string]string{

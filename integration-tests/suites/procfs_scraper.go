@@ -27,8 +27,6 @@ type ProcfsScraperTestSuite struct {
 func (s *ProcfsScraperTestSuite) SetupSuite() {
 	s.RegisterCleanup("nginx")
 
-	s.StartContainerStats()
-
 	collectorOptions := collector.StartupOptions{
 		Env: map[string]string{
 			"ROX_PROCESSES_LISTENING_ON_PORT": strconv.FormatBool(s.RoxProcessesListeningOnPort),
@@ -48,7 +46,7 @@ func (s *ProcfsScraperTestSuite) SetupSuite() {
 func (s *ProcfsScraperTestSuite) launchNginx() {
 	image := config.Images().ImageByKey("nginx")
 
-	err := s.executor.PullImage(image)
+	err := s.Executor().PullImage(image)
 	s.Require().NoError(err)
 
 	// invokes default nginx

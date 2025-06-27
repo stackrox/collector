@@ -33,7 +33,6 @@ type AsyncConnectionTestSuite struct {
  */
 func (s *AsyncConnectionTestSuite) SetupSuite() {
 	s.RegisterCleanup("server", "client")
-	s.StartContainerStats()
 
 	collectorOptions := collector.StartupOptions{
 		Env: map[string]string{
