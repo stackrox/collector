@@ -187,7 +187,7 @@ func (s *IntegrationTestSuiteBase) RegisterCleanup(containers ...string) {
 	})
 }
 
-func (s *IntegrationTestSuiteBase) GetContainerStats() {
+func (s *IntegrationTestSuiteBase) SnapshotContainerStats() {
 	if s.stats == nil {
 		s.stats = make([]executor.ContainerStat, 0)
 	}
@@ -436,7 +436,7 @@ func (s *IntegrationTestSuiteBase) StartContainerStats() {
 		for {
 			select {
 			case <-tick:
-				s.GetContainerStats()
+				s.SnapshotContainerStats()
 			case <-s.statsCtx.Done():
 				return
 			}
