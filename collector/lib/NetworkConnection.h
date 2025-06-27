@@ -380,8 +380,8 @@ std::ostream& operator<<(std::ostream& os, const ContainerEndpoint& container_en
 class Connection {
  public:
   Connection() : flags_(0) {}
-  Connection(std::string container, const Endpoint& local, const Endpoint& remote, L4Proto l4proto, bool is_server)
-      : container_(std::move(container)), local_(local), remote_(remote), flags_((static_cast<uint8_t>(l4proto) << 1) | ((is_server) ? 1 : 0)) {}
+  Connection(std::string_view container, const Endpoint& local, const Endpoint& remote, L4Proto l4proto, bool is_server)
+      : container_(container), local_(local), remote_(remote), flags_((static_cast<uint8_t>(l4proto) << 1) | ((is_server) ? 1 : 0)) {}
 
   const std::string& container() const { return container_; }
   const Endpoint& local() const { return local_; }

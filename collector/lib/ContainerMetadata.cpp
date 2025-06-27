@@ -11,8 +11,7 @@ ContainerMetadata::ContainerMetadata(sinsp* inspector) : event_extractor_(std::m
 }
 
 std::string ContainerMetadata::GetNamespace(sinsp_evt* event) {
-  const char* ns = event_extractor_->get_k8s_namespace(event);
-  return ns != nullptr ? ns : "";
+  return "";
 }
 
 std::string ContainerMetadata::GetNamespace(const std::string& container_id) {
@@ -20,19 +19,7 @@ std::string ContainerMetadata::GetNamespace(const std::string& container_id) {
 }
 
 std::string ContainerMetadata::GetContainerLabel(const std::string& container_id, const std::string& label) {
-  auto containers = inspector_->m_container_manager.get_containers();
-  const auto& container = containers->find(container_id);
-  if (container == containers->end()) {
-    return "";
-  }
-
-  const auto& labels = container->second->m_labels;
-  const auto& label_it = labels.find(label);
-  if (label_it == labels.end()) {
-    return "";
-  }
-
-  return label_it->second;
+  return "";
 }
 
 }  // namespace collector

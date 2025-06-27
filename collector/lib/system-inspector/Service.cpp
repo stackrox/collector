@@ -6,7 +6,6 @@
 
 #include <linux/ioctl.h>
 
-#include "libsinsp/container_engine/sinsp_container_type.h"
 #include "libsinsp/parsers.h"
 #include "libsinsp/sinsp.h"
 
@@ -15,7 +14,6 @@
 #include "CollectionMethod.h"
 #include "CollectorException.h"
 #include "CollectorStats.h"
-#include "ContainerEngine.h"
 #include "ContainerMetadata.h"
 #include "EventExtractor.h"
 #include "EventNames.h"
@@ -50,7 +48,7 @@ Service::Service(const CollectorConfig& config)
   inspector_->disable_log_timestamps();
   inspector_->set_log_callback(logging::InspectorLogCallback);
 
-  inspector_->set_import_users(config.ImportUsers(), false);
+  inspector_->set_import_users(config.ImportUsers());
   inspector_->set_thread_timeout_s(30);
   inspector_->set_auto_threads_purging_interval_s(60);
   inspector_->m_thread_manager->set_max_thread_table_size(config.GetSinspThreadCacheSize());
@@ -62,6 +60,7 @@ Service::Service(const CollectorConfig& config)
     inspector_->get_parser()->set_track_connection_status(true);
   }
 
+  /*
   if (config.EnableRuntimeConfig()) {
     uint64_t mask = 1 << CT_CRI |
                     1 << CT_CRIO |
@@ -87,6 +86,7 @@ Service::Service(const CollectorConfig& config)
   }
 
   inspector_->set_filter("container.id != 'host'");
+  */
 
   // The self-check handlers should only operate during start up,
   // so they are added to the handler list first, so they have access
@@ -157,6 +157,12 @@ sinsp_evt* Service::GetNext() {
   // tracepoints rather than a targeted approach, which we currently only do
   // on RHEL7 with backported eBPF
   if (host_info.IsRHEL76() && !global_event_filter_[event->get_type()]) {
+    return nullptr;
+  }
+
+  // If there is no container id, this is an event from the host.
+  // We ignore these for now.
+  if (!EventExtractor::get_container_id(event)) {
     return nullptr;
   }
 
@@ -296,7 +302,8 @@ bool Service::SendExistingProcesses(SignalHandler* handler) {
   }
 
   return threads->loop([&](sinsp_threadinfo& tinfo) {
-    if (!tinfo.m_container_id.empty() && tinfo.is_main_thread()) {
+    auto container_id = EventExtractor::get_container_id(&tinfo);
+    if (container_id && tinfo.is_main_thread()) {
       auto result = handler->HandleExistingProcess(&tinfo);
       if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
         CLOG(WARNING) << "Failed to write existing process signal: " << &tinfo;
