@@ -95,6 +95,8 @@ func (d *dockerAPIExecutor) GetContainerHealthCheck(containerID string) (string,
 func (d *dockerAPIExecutor) GetContainerStats(ctx context.Context, containerID string) (
 	*ContainerStat, error) {
 
+	// ContainerStatsOneShot add "one-shot" parameter to the API query, which
+	// instructs the server to get a single stat, rather than waiting for more.
 	statsResp, err := d.client.ContainerStatsOneShot(ctx, containerID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting container stats: %w", err)
