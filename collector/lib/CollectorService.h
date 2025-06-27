@@ -10,6 +10,8 @@
 #include "Control.h"
 #include "NetworkStatusInspector.h"
 #include "NetworkStatusNotifier.h"
+#include "events/Dispatcher.h"
+#include "events/handlers/ProcessHandler.h"
 #include "system-inspector/Service.h"
 
 namespace collector {
@@ -52,6 +54,9 @@ class CollectorService {
   std::unique_ptr<NetworkStatusNotifier> net_status_notifier_;
   std::shared_ptr<ProcessStore> process_store_;
   std::shared_ptr<NetworkConnectionInfoServiceComm> network_connection_info_service_comm_;
+
+  collector::events::EventDispatcher event_dispatcher_;
+  collector::events::handler::ProcessHandler process_handler_;
 };
 
 }  // namespace collector
