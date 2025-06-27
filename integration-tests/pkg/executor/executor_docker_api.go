@@ -95,14 +95,14 @@ func (d *dockerAPIExecutor) GetContainerHealthCheck(containerID string) (string,
 func (d *dockerAPIExecutor) GetContainerStats(ctx context.Context, containerID string) (
 	*ContainerStat, error) {
 
-	var stats container.StatsResponse
-
 	statsResp, err := d.client.ContainerStatsOneShot(ctx, containerID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting container stats: %w", err)
 	}
 
+	var stats container.StatsResponse
 	decoder := json.NewDecoder(statsResp.Body)
+
 	if err := decoder.Decode(&stats); err == io.EOF {
 		return nil, nil
 	} else if err != nil {
