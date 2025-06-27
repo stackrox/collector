@@ -136,6 +136,8 @@ class EventExtractor {
   TINFO_FIELD(exe);
   TINFO_FIELD(exepath);
   TINFO_FIELD(pid);
+  TINFO_FIELD_RAW(uid, m_uid, uint32_t);
+  TINFO_FIELD_RAW(gid, m_gid, uint32_t);
   FIELD_CSTR(proc_args, "proc.args");
 
   // General event information
@@ -171,30 +173,6 @@ class EventExtractor {
     }
 
     return get_container_id(tinfo);
-  }
-
-  static std::optional<uint32_t> get_uid(sinsp_threadinfo* tinfo) {
-    return tinfo->m_uid;
-  }
-
-  static std::optional<uint32_t> get_uid(sinsp_evt* evt) {
-    auto* tinfo = evt->get_tinfo();
-    if (tinfo == nullptr) {
-      return {};
-    }
-    return get_uid(tinfo);
-  }
-
-  static std::optional<uint32_t> get_gid(sinsp_threadinfo* tinfo) {
-    return tinfo->m_gid;
-  }
-
-  static std::optional<uint32_t> get_gid(sinsp_evt* evt) {
-    auto* tinfo = evt->get_tinfo();
-    if (tinfo == nullptr) {
-      return {};
-    }
-    return get_gid(tinfo);
   }
 };
 

@@ -165,10 +165,10 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   }
 
   // set user and group id credentials
-  if (auto uid = EventExtractor::get_uid(event)) {
+  if (const uint32_t* uid = event_extractor_->get_uid(event)) {
     signal->set_uid(*uid);
   }
-  if (auto gid = EventExtractor::get_gid(event)) {
+  if (const uint32_t* gid = event_extractor_->get_uid(event)) {
     signal->set_gid(*gid);
   }
 
@@ -234,14 +234,8 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   signal->set_pid(tinfo->m_pid);
 
   // set user and group id credentials
-  auto uid = EventExtractor::get_uid(tinfo);
-  if (uid) {
-    signal->set_uid(*uid);
-  }
-  auto gid = EventExtractor::get_gid(tinfo);
-  if (gid) {
-    signal->set_gid(*gid);
-  }
+  signal->set_uid(tinfo->m_uid);
+  signal->set_gid(tinfo->m_gid);
 
   // set time
   auto timestamp = Allocate<Timestamp>();
@@ -372,10 +366,7 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     // Collapse parent child processes that have the same path
     if (lineage.empty() || (lineage.back().parent_exec_file_path() != pt->m_exepath)) {
       LineageInfo info;
-      auto uid = EventExtractor::get_uid(pt);
-      if (uid) {
-        info.set_parent_uid(*uid);
-      }
+      info.set_parent_uid(pt->m_uid);
       info.set_parent_exec_file_path(pt->m_exepath);
       lineage.push_back(info);
     }
