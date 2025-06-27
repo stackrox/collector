@@ -96,9 +96,8 @@ func (d *dockerAPIExecutor) GetContainerStats(containerID string) (
 	*ContainerStat, error) {
 
 	var stats container.StatsResponse
-	ctx := context.Background()
 
-	statsResp, err := d.client.ContainerStatsOneShot(ctx, containerID)
+	statsResp, err := d.client.ContainerStatsOneShot(context.Background(), containerID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting container stats: %w", err)
 	}
