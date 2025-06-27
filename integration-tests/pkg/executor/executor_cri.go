@@ -292,10 +292,7 @@ func (c *criExecutor) GetContainerHealthCheck(containerID string) (string, error
 func (c *criExecutor) GetContainerStats(containerID string) (
 	*ContainerStat, error) {
 
-	var stats *pb.ContainerStats
-	ctx := context.Background()
-
-	stats, err := c.runtimeService.ContainerStats(ctx, containerID)
+	stats, err := c.runtimeService.ContainerStats(context.Background(), containerID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting container stats: %w", err)
 	}
