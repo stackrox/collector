@@ -289,10 +289,10 @@ func (c *criExecutor) GetContainerHealthCheck(containerID string) (string, error
 	return "", fmt.Errorf("Unsupported")
 }
 
-func (c *criExecutor) GetContainerStats(containerID string) (
+func (c *criExecutor) GetContainerStats(ctx context.Context, containerID string) (
 	*ContainerStat, error) {
 
-	stats, err := c.runtimeService.ContainerStats(context.Background(), containerID)
+	stats, err := c.runtimeService.ContainerStats(ctx, containerID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting container stats: %w", err)
 	}

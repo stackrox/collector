@@ -192,7 +192,11 @@ func (s *IntegrationTestSuiteBase) GetContainerStats() {
 		s.stats = make([]executor.ContainerStat, 0)
 	}
 
-	stat, err := s.Executor().GetContainerStats(s.Collector().ContainerID())
+	if s.statsCtx == nil {
+		s.statsCtx, s.statsCancel = context.WithCancel(context.Background())
+	}
+
+	stat, err := s.Executor().GetContainerStats(s.statsCtx, s.Collector().ContainerID())
 	if err != nil {
 		assert.FailNowf(s.T(), "fail to get container stats", "%v", err)
 		return

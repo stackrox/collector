@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"context"
 	"os/exec"
 	"time"
 
@@ -56,7 +57,7 @@ type Executor interface {
 	StopContainer(name string) (string, error)
 	StartContainer(config config.ContainerStartConfig) (string, error)
 	GetContainerHealthCheck(containerID string) (string, error)
-	GetContainerStats(containerID string) (*ContainerStat, error)
+	GetContainerStats(ctx context.Context, containerID string) (*ContainerStat, error)
 	GetContainerIP(containerID string) (string, error)
 	GetContainerLogs(containerID string) (ContainerLogs, error)
 	CaptureLogs(testName, containerName string) (string, error)

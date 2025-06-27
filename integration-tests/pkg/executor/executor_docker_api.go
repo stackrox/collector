@@ -92,12 +92,12 @@ func (d *dockerAPIExecutor) GetContainerHealthCheck(containerID string) (string,
 	return strings.Join(inspectResp.Config.Healthcheck.Test, " "), nil
 }
 
-func (d *dockerAPIExecutor) GetContainerStats(containerID string) (
+func (d *dockerAPIExecutor) GetContainerStats(ctx context.Context, containerID string) (
 	*ContainerStat, error) {
 
 	var stats container.StatsResponse
 
-	statsResp, err := d.client.ContainerStatsOneShot(context.Background(), containerID)
+	statsResp, err := d.client.ContainerStatsOneShot(ctx, containerID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting container stats: %w", err)
 	}
