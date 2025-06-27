@@ -87,7 +87,7 @@ class Service : public SystemInspector {
   // [ ( pid, callback ), ( pid, callback ), ... ]
   std::list<std::pair<uint64_t, ProcessInfoCallbackRef>> pending_process_requests_;
 
-  collector::events::EventDispatcher dispatcher_;
+  collector::events::EventDispatcher& dispatcher_;
 };
 
 }  // namespace collector::system_inspector

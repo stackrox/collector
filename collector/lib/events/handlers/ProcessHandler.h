@@ -2,10 +2,17 @@
 
 #include <queue>
 
+// clang-format: off
+#include "events/pipeline/nodes/Debug.h"
+// clang-format: on
+
 #include "events/IEvent.h"
 #include "events/handlers/Handler.h"
+#include "events/pipeline/Pipeline.h"
 
 namespace collector::events::handler {
+
+using ProcessPipeline = collector::pipeline::Pipeline<pipeline::DebugNode<ProcessStartEvent>>;
 
 class ProcessHandler : public EventHandler<ProcessHandler, ProcessStartEvent> {
  public:
@@ -14,11 +21,11 @@ class ProcessHandler : public EventHandler<ProcessHandler, ProcessStartEvent> {
   ProcessHandler() {}
 
   void HandleImpl(const ProcessStartEvent& event) const {
-    queue_->push(event);
+    process_pipeline_.Push(event);
   }
 
  private:
-  std::shared_ptr<std::queue<ProcessStartEvent>> queue_;
+  ProcessPipeline process_pipeline_;
 };
 
 }  // namespace collector::events::handler
