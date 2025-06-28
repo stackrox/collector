@@ -124,6 +124,7 @@ func (s *UdpNetworkFlow) runTest(image, recv, send string, port uint32) {
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
 		SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+		ContainerId:    client.id,
 		CloseTimestamp: nil,
 	}
 
@@ -134,6 +135,7 @@ func (s *UdpNetworkFlow) runTest(image, recv, send string, port uint32) {
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 		Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
 		SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+		ContainerId:    server.id,
 		CloseTimestamp: nil,
 	}
 
@@ -155,16 +157,6 @@ func (s *UdpNetworkFlow) TestMultipleDestinations() {
 			Command: newServerCmd("recvfrom", port),
 		}, port)
 		log.Info("Server: %s\n", servers[i].String())
-
-		// Load the client connection collector has to send for this server.
-		clientConnections[i] = &sensorAPI.NetworkConnection{
-			LocalAddress:   types.CreateNetworkAddress("", "", 0),
-			RemoteAddress:  types.CreateNetworkAddress(servers[i].ip, "", servers[i].port),
-			Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
-			Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
-			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
-			CloseTimestamp: nil,
-		}
 	}
 
 	// We give a big period here to ensure the syscall happens just once
@@ -178,6 +170,20 @@ func (s *UdpNetworkFlow) TestMultipleDestinations() {
 	})
 	log.Info("Client: %s\n", client.String())
 
+	for i := 0; i < CONTAINER_COUNT; i++ {
+		// Load the client connection collector has to send for this server.
+		clientConnections[i] = &sensorAPI.NetworkConnection{
+			//LocalAddress:   nil,
+			LocalAddress:   types.CreateNetworkAddress("", "", 0),
+			RemoteAddress:  types.CreateNetworkAddress(servers[i].ip, "", servers[i].port),
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
+			Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+			ContainerId:    client.id,
+			CloseTimestamp: nil,
+		}
+	}
+
 	for _, server := range servers {
 		serverConnection := &sensorAPI.NetworkConnection{
 			LocalAddress:   types.CreateNetworkAddress("", "", server.port),
@@ -185,6 +191,7 @@ func (s *UdpNetworkFlow) TestMultipleDestinations() {
 			Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 			Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
 			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+			ContainerId:    server.id,
 			CloseTimestamp: nil,
 		}
 		s.Sensor().ExpectConnections(s.T(), server.id, 5*time.Second, serverConnection)
@@ -205,6 +212,7 @@ func (s *UdpNetworkFlow) TestMultipleSources() {
 
 	clients := make([]containerData, CONTAINER_COUNT)
 	serverConnections := make([]*sensorAPI.NetworkConnection, CONTAINER_COUNT)
+	clientConnections := make([]*sensorAPI.NetworkConnection, CONTAINER_COUNT)
 	for i := 0; i < CONTAINER_COUNT; i++ {
 		name := fmt.Sprintf("%s-%d", UDP_CLIENT, i)
 		clients[i] = s.runClient(config.ContainerStartConfig{
@@ -221,22 +229,23 @@ func (s *UdpNetworkFlow) TestMultipleSources() {
 			RemoteAddress:  types.CreateNetworkAddress(clients[i].ip, "", 0),
 			Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 			Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
+			ContainerId:    server.id,
 			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+			CloseTimestamp: nil,
+		}
+		clientConnections[i] = &sensorAPI.NetworkConnection{
+			LocalAddress:   types.CreateNetworkAddress("", "", 0),
+			RemoteAddress:  types.CreateNetworkAddress(server.ip, "", server.port),
+			Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
+			Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+			ContainerId:    clients[i].id,
 			CloseTimestamp: nil,
 		}
 	}
 
-	clientConnection := &sensorAPI.NetworkConnection{
-		LocalAddress:   types.CreateNetworkAddress("", "", 0),
-		RemoteAddress:  types.CreateNetworkAddress(server.ip, "", server.port),
-		Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
-		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
-		SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
-		CloseTimestamp: nil,
-	}
-
-	for _, client := range clients {
-		s.Sensor().ExpectConnections(s.T(), client.id, 5*time.Second, clientConnection)
+	for i, client := range clients {
+		s.Sensor().ExpectConnections(s.T(), client.id, 5*time.Second, clientConnections[i])
 	}
 	s.Sensor().ExpectConnections(s.T(), server.id, 5*time.Second, serverConnections...)
 }

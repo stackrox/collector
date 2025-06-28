@@ -98,6 +98,11 @@ func (s *RuntimeConfigFileTestSuite) SetupTest() {
 	s.Require().NoError(err)
 	s.ClientContainer = common.ContainerShortID(containerID)
 
+	activeNormalizedConnection.ContainerId = s.ClientContainer
+	inactiveNormalizedConnection.ContainerId = s.ClientContainer
+	activeUnnormalizedConnection.ContainerId = s.ClientContainer
+	inactiveUnnormalizedConnection.ContainerId = s.ClientContainer
+
 	collectorOptions := collector.StartupOptions{
 		Env: map[string]string{
 			"ROX_AFTERGLOW_PERIOD":               "6",

@@ -88,7 +88,7 @@ func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID str
 	types.SortConnections(expected)
 
 	equal := func(c1, c2 *sensorAPI.NetworkConnection) bool {
-		return types.EqualNetworkConnection(c1, c2)
+		return types.EqualNetworkConnection(*c1, *c2)
 	}
 
 	connections := s.Connections(containerID)
@@ -125,7 +125,7 @@ func (s *MockSensor) ExpectSameElementsConnectionsScrapes(t *testing.T, containe
 		types.SortConnections(c2)
 
 		for i := range c2 {
-			if !types.EqualNetworkConnection(c1[i], c2[i]) {
+			if !types.EqualNetworkConnection(*c1[i], *c2[i]) {
 				return false
 			}
 		}

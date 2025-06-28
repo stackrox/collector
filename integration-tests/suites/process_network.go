@@ -156,6 +156,7 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 			Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
 			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+			ContainerId:    s.serverContainer,
 			CloseTimestamp: nil,
 		},
 	)
@@ -167,6 +168,7 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 			Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
 			SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+			ContainerId:    s.clientContainer,
 			CloseTimestamp: nil,
 		},
 	)

@@ -3,59 +3,66 @@ package types
 import (
 	"net"
 	"sort"
+	"time"
+
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
-	utils "github.com/stackrox/rox/pkg/net"
 )
 
 const (
 	NilTimestamp = "<nil>"
 )
 
+var (
+	nilTimestamp    = timestamppb.New(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC))
+	notNilTimestamp = timestamppb.New(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
+)
+
 type NetworkConnectionBatch []*sensorAPI.NetworkConnection
-
-// TranslateAddress is a helper function for converting binary representations
-// of network addresses (in the signals) to usable forms for testing
-func TranslateAddress(addr *sensorAPI.NetworkAddress) string {
-	peerId := utils.NetworkPeerID{Port: uint16(addr.GetPort())}
-	addressData := addr.GetAddressData()
-	if len(addressData) > 0 {
-		peerId.Address = utils.IPFromBytes(addressData)
-		return peerId.String()
-	}
-
-	// If there is no address data, this is either the source address or
-	// IpNetwork should be set and represent a CIDR block or external IP address.
-	ipNetworkData := addr.GetIpNetwork()
-	if len(ipNetworkData) == 0 {
-		return peerId.String()
-	}
-
-	ipNetwork := utils.IPNetworkFromCIDRBytes(ipNetworkData)
-	prefixLen := ipNetwork.PrefixLen()
-	// If this is IPv4 and the prefix length is 32 or this is IPv6 and the prefix length
-	// is 128 this is a regular IP address and not a CIDR block
-	if (ipNetwork.Family() == utils.IPv4 && prefixLen == byte(32)) ||
-		(ipNetwork.Family() == utils.IPv6 && prefixLen == byte(128)) {
-		peerId.Address = ipNetwork.IP()
-	} else {
-		peerId.IPNetwork = ipNetwork
-	}
-	return peerId.String()
-}
 
 func IsActive(conn *sensorAPI.NetworkConnection) bool {
 	// no close timestamp means the connection is open, and active
 	return conn.GetCloseTimestamp() == nil
 }
 
-func EqualNetworkConnection(conn1 *sensorAPI.NetworkConnection, conn2 *sensorAPI.NetworkConnection) bool {
-	return EqualNetworkAddress(conn1.LocalAddress, conn2.LocalAddress) &&
-		EqualNetworkAddress(conn1.RemoteAddress, conn2.RemoteAddress) &&
-		conn1.Protocol == conn2.Protocol &&
-		conn1.Role == conn2.Role &&
-		conn1.SocketFamily == conn2.SocketFamily &&
-		IsActive(conn1) == IsActive(conn2)
+// The EqualVT method for NetworkAddress returns false if both of them are nil. That is not what
+// we want, so replace nil addr with a default NetworkAddress.
+func adjustNetworkAddressForComparison(addr *sensorAPI.NetworkAddress) *sensorAPI.NetworkAddress {
+	if addr == nil {
+		return CreateNetworkAddress("", "", 0)
+	}
+
+	return addr
+}
+
+// The EqualVT method for NetworkConnection returns false if both CloseTimestamps
+// are nil. Same goes for LocalAddress and Remote Address. That is not the desired
+// result. Also EqualVT returns false if the CloseTimestamp are different non-nil
+// timestamps. We want the equal function to return true if neither of them are nil
+// or both of them are nil. This function adjusts the fields so that the comparison
+// works the way we want it to.
+func adjustNetworkConnectionForComparison(conn *sensorAPI.NetworkConnection) {
+	conn.LocalAddress = adjustNetworkAddressForComparison(conn.LocalAddress)
+	conn.RemoteAddress = adjustNetworkAddressForComparison(conn.RemoteAddress)
+
+	if conn.CloseTimestamp == nil {
+		conn.CloseTimestamp = nilTimestamp
+	}
+
+	if conn.CloseTimestamp != nil {
+		conn.CloseTimestamp = notNilTimestamp
+	}
+}
+
+// EqualVT is not called directly because it returns false in cases that we don't want it to, for example
+// when both CloseTimestamp are nil, or when they have different non-nil values.
+func EqualNetworkConnection(conn1 sensorAPI.NetworkConnection, conn2 sensorAPI.NetworkConnection) bool {
+	adjustNetworkConnectionForComparison(&conn1)
+	adjustNetworkConnectionForComparison(&conn2)
+
+	return conn1.EqualVT(&conn2)
+
 }
 
 func CompareBytes(b1 []byte, b2 []byte) int {
@@ -81,19 +88,10 @@ func CompareBytes(b1 []byte, b2 []byte) int {
 }
 
 func EqualNetworkAddress(addr1 *sensorAPI.NetworkAddress, addr2 *sensorAPI.NetworkAddress) bool {
-	comp := CompareBytes(addr1.GetAddressData(), addr2.GetAddressData())
+	ad1 := adjustNetworkAddressForComparison(addr1)
+	ad2 := adjustNetworkAddressForComparison(addr2)
 
-	if comp != 0 {
-		return false
-	}
-
-	comp = CompareBytes(addr1.GetIpNetwork(), addr2.GetIpNetwork())
-
-	if comp != 0 {
-		return false
-	}
-
-	return addr1.GetPort() == addr2.GetPort()
+	return ad1.EqualVT(ad2)
 }
 
 func LessNetworkAddress(addr1 *sensorAPI.NetworkAddress, addr2 *sensorAPI.NetworkAddress) bool {

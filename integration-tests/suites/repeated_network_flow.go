@@ -109,12 +109,12 @@ func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
 }
 
 func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
-	networkInfos := s.Sensor().ExpectConnectionsN(s.T(), s.ServerContainer, 10*time.Second, s.ExpectedActive+s.ExpectedInactive)
+	networkConnections := s.Sensor().ExpectConnectionsN(s.T(), s.ServerContainer, 10*time.Second, s.ExpectedActive+s.ExpectedInactive)
 
 	observedActive := 0
 	observedInactive := 0
 
-	for _, info := range networkInfos {
+	for _, info := range networkConnections {
 		if types.IsActive(info) {
 			observedActive++
 		} else {
@@ -127,8 +127,8 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 
 	// Server side checks
 
-	actualServerEndpoint := networkInfos[0].LocalAddress
-	actualClientEndpoint := networkInfos[0].RemoteAddress
+	actualServerEndpoint := networkConnections[0].LocalAddress
+	actualClientEndpoint := networkConnections[0].RemoteAddress
 
 	// From server perspective, network connection info only has local port and remote IP
 	expectedServerEndpoint := types.CreateNetworkAddress("", "", s.ServerPort)
@@ -143,8 +143,8 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 	// See the comment above for the server container endpoint test for more info.
 	assert.Equal(s.T(), 0, len(s.Sensor().Endpoints(s.ClientContainer)))
 
-	networkInfos = s.Sensor().Connections(s.ClientContainer)
+	networkConnections = s.Sensor().Connections(s.ClientContainer)
 
-	actualClientEndpoint = networkInfos[0].LocalAddress
-	actualServerEndpoint = networkInfos[0].RemoteAddress
+	actualClientEndpoint = networkConnections[0].LocalAddress
+	actualServerEndpoint = networkConnections[0].RemoteAddress
 }
