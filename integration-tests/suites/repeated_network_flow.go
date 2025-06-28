@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +21,7 @@ type RepeatedNetworkFlowTestSuite struct {
 	ClientIP               string
 	ServerContainer        string
 	ServerIP               string
-	ServerPort             string
+	ServerPort             uint32
 	EnableAfterglow        bool
 	AfterglowPeriod        int
 	ScrapeInterval         int
@@ -86,7 +87,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.ServerPort, err = s.getPort("nginx")
 	s.Require().NoError(err)
 
-	serverAddress := fmt.Sprintf("%s:%s", s.ServerIP, s.ServerPort)
+	serverAddress := fmt.Sprintf("%s:%d", s.ServerIP, s.ServerPort)
 
 	numMetaIter := strconv.Itoa(s.NumMetaIter)
 	numIter := strconv.Itoa(s.NumIter)
@@ -108,13 +109,13 @@ func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
 }
 
 func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
-	networkInfos := s.Sensor().ExpectConnectionsN(s.T(), s.ServerContainer, 10*time.Second, s.ExpectedActive+s.ExpectedInactive)
+	networkConnections := s.Sensor().ExpectConnectionsN(s.T(), s.ServerContainer, 10*time.Second, s.ExpectedActive+s.ExpectedInactive)
 
 	observedActive := 0
 	observedInactive := 0
 
-	for _, info := range networkInfos {
-		if info.IsActive() {
+	for _, info := range networkConnections {
+		if types.IsActive(info) {
 			observedActive++
 		} else {
 			observedInactive++
@@ -126,12 +127,15 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 
 	// Server side checks
 
-	actualServerEndpoint := networkInfos[0].LocalAddress
-	actualClientEndpoint := networkInfos[0].RemoteAddress
+	actualServerEndpoint := networkConnections[0].LocalAddress
+	actualClientEndpoint := networkConnections[0].RemoteAddress
 
 	// From server perspective, network connection info only has local port and remote IP
-	assert.Equal(s.T(), fmt.Sprintf(":%s", s.ServerPort), actualServerEndpoint)
-	assert.Equal(s.T(), s.ClientIP, actualClientEndpoint)
+	expectedServerEndpoint := types.CreateNetworkAddress("", "", s.ServerPort)
+	expectedClientEndpoint := types.CreateNetworkAddress(s.ClientIP, "", 0)
+
+	assert.True(s.T(), types.EqualNetworkAddress(expectedServerEndpoint, actualServerEndpoint))
+	assert.True(s.T(), types.EqualNetworkAddress(expectedClientEndpoint, actualClientEndpoint))
 
 	// client side checks
 
@@ -139,8 +143,8 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 	// See the comment above for the server container endpoint test for more info.
 	assert.Equal(s.T(), 0, len(s.Sensor().Endpoints(s.ClientContainer)))
 
-	networkInfos = s.Sensor().Connections(s.ClientContainer)
+	networkConnections = s.Sensor().Connections(s.ClientContainer)
 
-	actualClientEndpoint = networkInfos[0].LocalAddress
-	actualServerEndpoint = networkInfos[0].RemoteAddress
+	actualClientEndpoint = networkConnections[0].LocalAddress
+	actualServerEndpoint = networkConnections[0].RemoteAddress
 }

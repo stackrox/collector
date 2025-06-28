@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
+
 	"github.com/stretchr/testify/suite"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
@@ -166,13 +168,13 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 		Server: suites.Container{
 			Name: "socat-server-0",
 			Cmd:  "socat TCP4-LISTEN:40,reuseaddr,fork - &",
-			ExpectedNetwork: []types.NetworkInfo{
+			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   ":40",
-					RemoteAddress:  "CLIENT_IP",
-					Role:           "ROLE_SERVER",
-					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: types.NilTimestamp,
+					LocalAddress:   types.CreateNetworkAddress("", "", 40),
+					RemoteAddress:  types.CreateNetworkAddress("", "", 0),
+					Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
+					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+					CloseTimestamp: nil,
 				},
 			},
 			ExpectedEndpoints: []types.EndpointInfo{
@@ -189,13 +191,13 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-0",
 			Cmd:  "echo hello | socat - TCP4:SERVER_IP:40",
-			ExpectedNetwork: []types.NetworkInfo{
+			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   "",
-					RemoteAddress:  "SERVER_IP:40",
-					Role:           "ROLE_CLIENT",
-					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: types.NilTimestamp,
+					LocalAddress:   types.CreateNetworkAddress("", "", 0),
+					RemoteAddress:  types.CreateNetworkAddress("", "", 40),
+					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+					CloseTimestamp: nil,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -211,13 +213,13 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 		Server: suites.Container{
 			Name: "socat-server-1",
 			Cmd:  "socat TCP4-LISTEN:40000,reuseaddr,fork - &",
-			ExpectedNetwork: []types.NetworkInfo{
+			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   ":40000",
-					RemoteAddress:  "CLIENT_IP",
-					Role:           "ROLE_SERVER",
-					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: types.NilTimestamp,
+					LocalAddress:   types.CreateNetworkAddress("", "", 40000),
+					RemoteAddress:  types.CreateNetworkAddress("", "", 0),
+					Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
+					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+					CloseTimestamp: nil,
 				},
 			},
 			ExpectedEndpoints: []types.EndpointInfo{
@@ -234,13 +236,13 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-1",
 			Cmd:  "echo hello | socat - TCP4:SERVER_IP:40000,sourceport=10000",
-			ExpectedNetwork: []types.NetworkInfo{
+			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   "",
-					RemoteAddress:  "SERVER_IP:40000",
-					Role:           "ROLE_CLIENT",
-					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: types.NilTimestamp,
+					LocalAddress:   types.CreateNetworkAddress("", "", 0),
+					RemoteAddress:  types.CreateNetworkAddress("", "", 40000),
+					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+					CloseTimestamp: nil,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -256,13 +258,13 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 		Server: suites.Container{
 			Name: "socat-server-2",
 			Cmd:  "socat TCP4-LISTEN:60999,reuseaddr,fork - &",
-			ExpectedNetwork: []types.NetworkInfo{
+			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   ":60999",
-					RemoteAddress:  "CLIENT_IP",
-					Role:           "ROLE_SERVER",
-					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: types.NilTimestamp,
+					LocalAddress:   types.CreateNetworkAddress("", "", 60999),
+					RemoteAddress:  types.CreateNetworkAddress("", "", 0),
+					Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
+					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+					CloseTimestamp: nil,
 				},
 			},
 			ExpectedEndpoints: []types.EndpointInfo{
@@ -279,13 +281,13 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-2",
 			Cmd:  "echo hello | socat - TCP4:SERVER_IP:60999",
-			ExpectedNetwork: []types.NetworkInfo{
+			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   "",
-					RemoteAddress:  "SERVER_IP:60999",
-					Role:           "ROLE_CLIENT",
-					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: types.NilTimestamp,
+					LocalAddress:   types.CreateNetworkAddress("", "", 0),
+					RemoteAddress:  types.CreateNetworkAddress("", "", 60999),
+					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+					CloseTimestamp: nil,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -301,13 +303,13 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 		Server: suites.Container{
 			Name: "socat-server-1",
 			Cmd:  "socat TCP4-LISTEN:10000,reuseaddr,fork - &",
-			ExpectedNetwork: []types.NetworkInfo{
+			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   ":10000",
-					RemoteAddress:  "CLIENT_IP",
-					Role:           "ROLE_SERVER",
-					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: types.NilTimestamp,
+					LocalAddress:   types.CreateNetworkAddress("", "", 10000),
+					RemoteAddress:  types.CreateNetworkAddress("", "", 0),
+					Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
+					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+					CloseTimestamp: nil,
 				},
 			},
 			ExpectedEndpoints: []types.EndpointInfo{
@@ -324,13 +326,13 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-1",
 			Cmd:  "echo hello | socat - TCP4:SERVER_IP:10000,sourceport=40000",
-			ExpectedNetwork: []types.NetworkInfo{
+			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   "",
-					RemoteAddress:  "SERVER_IP:10000",
-					Role:           "ROLE_CLIENT",
-					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: types.NilTimestamp,
+					LocalAddress:   types.CreateNetworkAddress("", "", 0),
+					RemoteAddress:  types.CreateNetworkAddress("", "", 10000),
+					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+					CloseTimestamp: nil,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -362,13 +364,13 @@ func TestConnectionsAndEndpointsUDPNormal(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-udp",
 			Cmd:  "echo hello | socat - UDP:SERVER_IP:53",
-			ExpectedNetwork: []types.NetworkInfo{
+			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   "",
-					RemoteAddress:  "SERVER_IP:53",
-					Role:           "ROLE_CLIENT",
-					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: types.NilTimestamp,
+					LocalAddress:   types.CreateNetworkAddress("", "", 0),
+					RemoteAddress:  types.CreateNetworkAddress("", "", 53),
+					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+					CloseTimestamp: nil,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -400,13 +402,13 @@ func TestConnectionsAndEndpointsUDPNoReuseaddr(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-udp",
 			Cmd:  "echo hello | socat - UDP:SERVER_IP:53",
-			ExpectedNetwork: []types.NetworkInfo{
+			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   "",
-					RemoteAddress:  "SERVER_IP:53",
-					Role:           "ROLE_CLIENT",
-					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: types.NilTimestamp,
+					LocalAddress:   types.CreateNetworkAddress("", "", 0),
+					RemoteAddress:  types.CreateNetworkAddress("", "", 53),
+					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+					CloseTimestamp: nil,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -438,13 +440,13 @@ func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
 		Client: suites.Container{
 			Name: "socat-client-udp",
 			Cmd:  "echo hello | socat - UDP:SERVER_IP:53",
-			ExpectedNetwork: []types.NetworkInfo{
+			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   "",
-					RemoteAddress:  "SERVER_IP:53",
-					Role:           "ROLE_CLIENT",
-					SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-					CloseTimestamp: types.NilTimestamp,
+					LocalAddress:   types.CreateNetworkAddress("", "", 0),
+					RemoteAddress:  types.CreateNetworkAddress("", "", 53),
+					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+					CloseTimestamp: nil,
 				},
 			},
 			ExpectedEndpoints: nil,
