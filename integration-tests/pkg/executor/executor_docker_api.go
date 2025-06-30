@@ -99,7 +99,7 @@ func (d *dockerAPIExecutor) GetContainerStats(ctx context.Context, containerID s
 	// instructs the server to get a single stat, rather than waiting for more.
 	statsResp, err := d.client.ContainerStatsOneShot(ctx, containerID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting container stats: %w", err)
+		return nil, err
 	}
 
 	var stats container.StatsResponse
@@ -108,7 +108,7 @@ func (d *dockerAPIExecutor) GetContainerStats(ctx context.Context, containerID s
 	if err := decoder.Decode(&stats); err == io.EOF {
 		return nil, nil
 	} else if err != nil {
-		return nil, fmt.Errorf("error decoding container stats: %w", err)
+		return nil, err
 	}
 
 	return &ContainerStat{

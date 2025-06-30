@@ -197,7 +197,10 @@ func (s *IntegrationTestSuiteBase) SnapshotContainerStats() {
 	}
 
 	stat, err := s.Executor().GetContainerStats(s.statsCtx, s.Collector().ContainerID())
-	if err != nil {
+
+	// The stats context will be canceled at the end of the test. If it happens
+	// while the request is in flight, ignore the error.
+	if err != nil && !errors.Is(err, context.Canceled) {
 		assert.FailNowf(s.T(), "fail to get container stats", "%v", err)
 		return
 	}

@@ -294,7 +294,7 @@ func (c *criExecutor) GetContainerStats(ctx context.Context, containerID string)
 
 	stats, err := c.runtimeService.ContainerStats(ctx, containerID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting container stats: %w", err)
+		return nil, err
 	}
 
 	return &ContainerStat{
