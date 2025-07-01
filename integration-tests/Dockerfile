@@ -1,5 +1,6 @@
 FROM alpine:3.18
 
+ARG TARGETARCH
 ARG TEST_ROOT="/tests"
 
 RUN apk add docker && \
