@@ -135,7 +135,6 @@ jobs:
           ansible-playbook \
             --connection local -i localhost, --limit localhost \
             -e test_image="quay.io/rhacs-eng/collector-tests:${COLLECTOR_TESTS_TAG}" \
-            -e "{\"build_multi_arch\": $BUILD_MULTI_ARCH}" \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-tests.yml
 

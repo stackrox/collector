@@ -28,7 +28,7 @@
         #   - we can push the images and manifest in a single command. The make
         #     target can be used for local development and testing.
         docker buildx build --push \
-          --platform "{{ platforms }}" \
+          --platform "linux/amd64,linux/arm64,linux/ppc64le,linux/s390x" \
           -t '{{ test_image }}' \
           {{ collector_root }}/integration-tests
       register: build_result
