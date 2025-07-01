@@ -80,6 +80,13 @@ jobs:
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Setup go and its cache
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: integration-tests/go.mod
+          cache-dependency-path: |
+            integration-tests/go.sum
+
       - name: Create Ansible Vars (inc. Secrets)
         run: |
           cat << EOF > ${{ github.workspace }}/ansible/secrets.yml
