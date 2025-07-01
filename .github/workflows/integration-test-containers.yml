@@ -112,28 +112,6 @@ jobs:
           echo "COLLECTOR_TESTS_TAG=${COLLECTOR_TESTS_TAG}" >> "$GITHUB_ENV"
           echo "collector-tests-tag=${COLLECTOR_TESTS_TAG}" >> "$GITHUB_OUTPUT"
 
-      - name: Check if multiarch is needed
-        run: |
-          BUILD_MULTI_ARCH="false"
-
-          if [[ "${GITHUB_EVENT_NAME}" != "pull_request" ]]; then
-            BUILD_MULTI_ARCH="true"
-          fi
-
-          if [[ "${{ inputs.is-konflux }}" == "true" ]]; then
-            BUILD_MULTI_ARCH="true"
-          fi
-
-          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') }}" == "true" ]]; then
-            BUILD_MULTI_ARCH="true"
-          fi
-
-          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps') }}" == "true" ]]; then
-            BUILD_MULTI_ARCH="true"
-          fi
-
-          echo "BUILD_MULTI_ARCH=${BUILD_MULTI_ARCH}" >> "$GITHUB_ENV"
-
       - name: Build images
         run: |
           ansible-galaxy install -r ansible/requirements.yml

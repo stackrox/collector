@@ -64,12 +64,15 @@ build:
 	mkdir -p bin/$(GOARCH)
 	CGO_ENABLED=0 GOOS=linux GOARCH=$(GOARCH) go test -tags bench,k8s -c -o bin/$(GOARCH)/collector-tests
 
-.PHONY: build-all
-build-all:
-	GOARCH=amd64 make build
-	GOARCH=arm64 make build
-	GOARCH=s390x make build
-	GOARCH=ppc64le make build
+ARCHS := amd64 arm64 ppc64le s390x
+
+build-%:
+	GOARCH=$(*) make build
+
+
+build-all: $(addprefix build-,$(ARCHS))
+
+.PHONY: build-all build-%
 
 .PHONY: build-image
 build-image: build-all

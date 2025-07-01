@@ -12,6 +12,7 @@
       community.general.make:
         chdir: "{{ collector_root }}/integration-tests"
         target: build-all
+        jobs: "{{ ansible_facts['ansible_processor_vcpus'] }}"
 
     - name: Login to quay.io
       community.docker.docker_login:
