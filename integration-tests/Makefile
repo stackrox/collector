@@ -21,6 +21,8 @@ ifeq ($(COLLECTOR_TESTS_IMAGE),)
 COLLECTOR_TESTS_IMAGE=$(COLLECTOR_TESTS_REPO):$(COLLECTOR_TAG)
 endif
 
+GOARCH ?= $(shell go env GOARCH)
+
 SHELL=/bin/bash
 
 # Environment variable COLLECTOR_IMAGE is used by integration-tests
@@ -59,11 +61,18 @@ $(foreach element,$(ALL_TESTS),$(eval $(call make-test-target-dockerized,$(eleme
 
 .PHONY: build
 build:
-	mkdir -p bin
-	go test -tags bench,k8s -c -o bin/collector-tests
+	mkdir -p bin/$(GOARCH)
+	CGO_ENABLED=0 GOOS=linux GOARCH=$(GOARCH) go test -tags bench,k8s -c -o bin/$(GOARCH)/collector-tests
+
+.PHONY: build-all
+build-all:
+	GOARCH=amd64 make build
+	GOARCH=arm64 make build
+	GOARCH=s390x make build
+	GOARCH=ppc64le make build
 
 .PHONY: build-image
-build-image:
+build-image: build-all
 	docker build --platform $(PLATFORM) -t $(COLLECTOR_TESTS_IMAGE) \
 		--build-arg QA_TAG=$(shell cat container/QA_TAG) \
 		$(CURDIR)
