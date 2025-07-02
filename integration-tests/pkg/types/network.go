@@ -42,7 +42,7 @@ func adjustNetworkAddressForComparison(addr *sensorAPI.NetworkAddress) *sensorAP
 // timestamps. We want the equal function to return true if neither of them are nil
 // or both of them are nil. This function adjusts the fields so that the comparison
 // works the way we want it to.
-func adjustNetworkConnectionForComparison(conn *sensorAPI.NetworkConnection) {
+func adjustNetworkConnectionForComparison(conn sensorAPI.NetworkConnection) sensorAPI.NetworkConnection {
 	conn.LocalAddress = adjustNetworkAddressForComparison(conn.LocalAddress)
 	conn.RemoteAddress = adjustNetworkAddressForComparison(conn.RemoteAddress)
 
@@ -51,13 +51,15 @@ func adjustNetworkConnectionForComparison(conn *sensorAPI.NetworkConnection) {
 	} else if conn.CloseTimestamp != nil {
 		conn.CloseTimestamp = NotNilTimestamp
 	}
+
+	return conn
 }
 
 // EqualVT is not called directly because it returns false in cases that we don't want it to, for example
 // when both CloseTimestamp are nil, or when they have different non-nil values.
 func EqualNetworkConnection(conn1 sensorAPI.NetworkConnection, conn2 sensorAPI.NetworkConnection) bool {
-	adjustNetworkConnectionForComparison(&conn1)
-	adjustNetworkConnectionForComparison(&conn2)
+	conn1 = adjustNetworkConnectionForComparison(conn1)
+	conn2 = adjustNetworkConnectionForComparison(conn2)
 
 	return conn1.EqualVT(&conn2)
 }
