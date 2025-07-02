@@ -1,6 +1,7 @@
 package types
 
 import (
+	"bytes"
 	"net"
 	"sort"
 	"time"
@@ -64,28 +65,6 @@ func EqualNetworkConnection(conn1 sensorAPI.NetworkConnection, conn2 sensorAPI.N
 	return conn1.EqualVT(&conn2)
 }
 
-func CompareBytes(b1 []byte, b2 []byte) int {
-	if len(b1) != len(b2) {
-		if len(b1) < len(b2) {
-			return -1
-		} else {
-			return 1
-		}
-	}
-
-	for i := range b1 {
-		if b1[i] != b2[i] {
-			if b1[i] < b2[i] {
-				return -1
-			} else {
-				return 1
-			}
-		}
-	}
-
-	return 0
-}
-
 func EqualNetworkAddress(addr1 *sensorAPI.NetworkAddress, addr2 *sensorAPI.NetworkAddress) bool {
 	ad1 := adjustNetworkAddressForComparison(addr1)
 	ad2 := adjustNetworkAddressForComparison(addr2)
@@ -94,13 +73,13 @@ func EqualNetworkAddress(addr1 *sensorAPI.NetworkAddress, addr2 *sensorAPI.Netwo
 }
 
 func LessNetworkAddress(addr1 *sensorAPI.NetworkAddress, addr2 *sensorAPI.NetworkAddress) bool {
-	comp := CompareBytes(addr1.GetAddressData(), addr2.GetAddressData())
+	comp := bytes.Compare(addr1.GetAddressData(), addr2.GetAddressData())
 
 	if comp != 0 {
 		return comp < 0
 	}
 
-	comp = CompareBytes(addr1.GetIpNetwork(), addr2.GetIpNetwork())
+	comp = bytes.Compare(addr1.GetIpNetwork(), addr2.GetIpNetwork())
 
 	if comp != 0 {
 		return comp < 0
