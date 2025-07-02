@@ -11,7 +11,8 @@ class DebugNode : public Transformer<In, In> {
       : Transformer<In, In>(input, output) {}
 
   std::optional<In> transform(const In& input) {
-    return std::nullopt;
+    CLOG(INFO) << input;
+    return {input};
   }
 };
 }  // namespace collector::pipeline

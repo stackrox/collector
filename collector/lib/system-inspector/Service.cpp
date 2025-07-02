@@ -1,6 +1,7 @@
 #include "Service.h"
 
 #include <cap-ng.h>
+#include <cstddef>
 #include <memory>
 #include <thread>
 
@@ -19,17 +20,21 @@
 #include "ContainerMetadata.h"
 #include "EventExtractor.h"
 #include "EventNames.h"
+#include "FalcoProcess.h"
 #include "HostInfo.h"
 #include "KernelDriver.h"
 #include "Logging.h"
 #include "NetworkSignalHandler.h"
+#include "Process.h"
 #include "ProcessSignalHandler.h"
 #include "SelfCheckHandler.h"
 #include "SelfChecks.h"
 #include "TimeUtil.h"
 #include "Utility.h"
 #include "events/Dispatcher.h"
+#include "events/IEvent.h"
 #include "logger.h"
+#include "ppm_events_public.h"
 
 namespace collector::system_inspector {
 
@@ -243,8 +248,21 @@ void LogUnreasonableEventTime(int64_t time_micros, sinsp_evt* evt) {
   }
 }
 
-events::IEventPtr to_ievt(sinsp_evt* evt) {
-  return std::make_shared<events::ProcessStartEvent>();
+events::IEventPtr Service::to_ievt(sinsp_evt* evt) {
+  std::bitset<PPM_EVENT_MAX> event_filter;
+  const EventNames& event_names = EventNames::GetInstance();
+  for (ppm_event_code event_id : event_names.GetEventIDs("execve<")) {
+    event_filter.set(event_id);
+  }
+
+  if (event_filter[evt->get_type()]) {
+    EventExtractor extractor;
+    extractor.Init(inspector_.get());
+    auto proc = std::make_shared<FalcoProcess>(evt, extractor);
+    events::IEventPtr ievt = std::make_shared<const events::ProcessStartEvent>(proc);
+    return ievt;
+  }
+  return std::nullptr_t();
 }
 
 void Service::Run(const std::atomic<ControlValue>& control) {

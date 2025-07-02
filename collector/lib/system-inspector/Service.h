@@ -14,6 +14,7 @@
 #include "SignalServiceClient.h"
 #include "SystemInspector.h"
 #include "events/Dispatcher.h"
+#include "events/IEvent.h"
 
 // forward declarations
 class sinsp;
@@ -50,6 +51,8 @@ class Service : public SystemInspector {
   Stats* GetUserspaceStats() { return &userspace_stats_; }
 
   void AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler);
+
+  events::IEventPtr to_ievt(sinsp_evt* evt);
 
  private:
   FRIEND_TEST(SystemInspectorServiceTest, FilterEvent);

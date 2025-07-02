@@ -14,7 +14,7 @@ class Producer {
   using InputType = void;
   using OutputType = Out;
 
-  Producer(const std::shared_ptr<Queue<Out>>& output) : output_(output) {}
+  Producer(const std::shared_ptr<void> _ptr /* ignored */, const std::shared_ptr<Queue<Out>>& output) : output_(output) {}
 
   ~Producer() {
     if (thread_.running()) {
@@ -53,7 +53,7 @@ class Consumer {
   using InputType = In;
   using OutputType = void;
 
-  Consumer(const std::shared_ptr<Queue<In>>& input) : input_(input) {}
+  Consumer(const std::shared_ptr<Queue<In>>& input, const std::shared_ptr<void> _ptr /*ignored*/) : input_(input) {}
 
   ~Consumer() {
     if (thread_.running()) {
@@ -73,6 +73,10 @@ class Consumer {
 
   void Run() {
     while (!thread_.should_stop()) {
+      if (!input_) {
+        CLOG(DEBUG) << "No input queue for Consumer";
+        break;
+      }
       auto event = input_->pop();
       if (!event.has_value()) {
         continue;
@@ -82,7 +86,7 @@ class Consumer {
   }
 
  protected:
-  std::shared_ptr<Queue<In>>& input_;
+  const std::shared_ptr<Queue<In>>& input_;
   StoppableThread thread_;
 };
 
@@ -116,14 +120,16 @@ class Transformer {
 
       auto transformed = transform(event.value());
       if (transformed.has_value()) {
-        output_.push(transformed.value());
+        if (output_) {
+          output_->push(transformed.value());
+        }
       }
     }
   }
 
  protected:
-  std::shared_ptr<Queue<In>> input_;
-  std::shared_ptr<Queue<Out>> output_;
+  const std::shared_ptr<Queue<In>> input_;
+  const std::shared_ptr<Queue<Out>> output_;
 
   StoppableThread thread_;
 };

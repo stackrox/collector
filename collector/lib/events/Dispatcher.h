@@ -15,7 +15,7 @@ namespace {
 //
 // This can be optimized by the compiler quite aggressively and this will form
 // most of the hot path of event dispatching from the several event sources we
-// may end up supporting.
+// can support
 template <typename Tuple, typename Event, std::size_t I = 0>
 void dispatch(const Tuple& handlers, const Event& event) {
   if constexpr (I < std::tuple_size_v<Tuple>) {
