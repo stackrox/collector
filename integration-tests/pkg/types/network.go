@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	NilTimestamp = "<nil>"
+	NilTimestampStr = "<nil>"
 )
 
 var (
-	nilTimestamp    = timestamppb.New(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC))
-	notNilTimestamp = timestamppb.New(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
+	NilTimestamp    = timestamppb.New(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC))
+	NotNilTimestamp = timestamppb.New(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
 )
 
 type NetworkConnectionBatch []*sensorAPI.NetworkConnection
@@ -47,11 +47,9 @@ func adjustNetworkConnectionForComparison(conn *sensorAPI.NetworkConnection) {
 	conn.RemoteAddress = adjustNetworkAddressForComparison(conn.RemoteAddress)
 
 	if conn.CloseTimestamp == nil {
-		conn.CloseTimestamp = nilTimestamp
-	}
-
-	if conn.CloseTimestamp != nil {
-		conn.CloseTimestamp = notNilTimestamp
+		conn.CloseTimestamp = NilTimestamp
+	} else if conn.CloseTimestamp != nil {
+		conn.CloseTimestamp = NotNilTimestamp
 	}
 }
 
@@ -62,7 +60,6 @@ func EqualNetworkConnection(conn1 sensorAPI.NetworkConnection, conn2 sensorAPI.N
 	adjustNetworkConnectionForComparison(&conn2)
 
 	return conn1.EqualVT(&conn2)
-
 }
 
 func CompareBytes(b1 []byte, b2 []byte) int {

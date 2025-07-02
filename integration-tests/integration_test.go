@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 
 	"github.com/stretchr/testify/suite"
 
@@ -96,7 +97,7 @@ func TestProcfsScraper(t *testing.T) {
 		Expected: []types.EndpointInfo{
 			{
 				Protocol:       "L4_PROTOCOL_TCP",
-				CloseTimestamp: types.NilTimestamp,
+				CloseTimestamp: types.NilTimestampStr,
 				Address: types.ListenAddress{
 					AddressData: "\x00\x00\x00\x00",
 					Port:        80,
@@ -129,7 +130,7 @@ func TestProcfsScraperDisableFeatureFlag(t *testing.T) {
 		Expected: []types.EndpointInfo{
 			{
 				Protocol:       "L4_PROTOCOL_TCP",
-				CloseTimestamp: types.NilTimestamp,
+				CloseTimestamp: types.NilTimestampStr,
 				Address: types.ListenAddress{
 					AddressData: "\x00\x00\x00\x00",
 					Port:        80,
@@ -174,9 +175,10 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 				{
 					LocalAddress:   types.CreateNetworkAddress("", "", uint32(port)),
 					RemoteAddress:  types.CreateNetworkAddress("", "", 0),
+					Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 					Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
 					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
-					CloseTimestamp: nil,
+					CloseTimestamp: types.NotNilTimestamp,
 				},
 			},
 			ExpectedEndpoints: []types.EndpointInfo{
@@ -197,9 +199,10 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 				{
 					LocalAddress:   types.CreateNetworkAddress("", "", 0),
 					RemoteAddress:  types.CreateNetworkAddress("", "", uint32(port)),
+					Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
 					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
-					CloseTimestamp: nil,
+					CloseTimestamp: types.NotNilTimestamp,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -220,9 +223,10 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 				{
 					LocalAddress:   types.CreateNetworkAddress("", "", uint32(port)),
 					RemoteAddress:  types.CreateNetworkAddress("", "", 0),
+					Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 					Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
 					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
-					CloseTimestamp: nil,
+					CloseTimestamp: types.NotNilTimestamp,
 				},
 			},
 			ExpectedEndpoints: []types.EndpointInfo{
@@ -243,9 +247,10 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 				{
 					LocalAddress:   types.CreateNetworkAddress("", "", 0),
 					RemoteAddress:  types.CreateNetworkAddress("", "", uint32(port)),
+					Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
 					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
-					CloseTimestamp: nil,
+					CloseTimestamp: types.NotNilTimestamp,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -266,9 +271,10 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 				{
 					LocalAddress:   types.CreateNetworkAddress("", "", uint32(port)),
 					RemoteAddress:  types.CreateNetworkAddress("", "", 0),
+					Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 					Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
 					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
-					CloseTimestamp: nil,
+					CloseTimestamp: types.NotNilTimestamp,
 				},
 			},
 			ExpectedEndpoints: []types.EndpointInfo{
@@ -289,9 +295,10 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 				{
 					LocalAddress:   types.CreateNetworkAddress("", "", 0),
 					RemoteAddress:  types.CreateNetworkAddress("", "", uint32(port)),
+					Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
 					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
-					CloseTimestamp: nil,
+					CloseTimestamp: types.NotNilTimestamp,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -312,9 +319,10 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 				{
 					LocalAddress:   types.CreateNetworkAddress("", "", uint32(port)),
 					RemoteAddress:  types.CreateNetworkAddress("", "", 0),
+					Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 					Role:           sensorAPI.ClientServerRole_ROLE_SERVER,
 					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
-					CloseTimestamp: nil,
+					CloseTimestamp: types.NotNilTimestamp,
 				},
 			},
 			ExpectedEndpoints: []types.EndpointInfo{
@@ -335,9 +343,10 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 				{
 					LocalAddress:   types.CreateNetworkAddress("", "", 0),
 					RemoteAddress:  types.CreateNetworkAddress("", "", uint32(port)),
+					Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
 					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
-					CloseTimestamp: nil,
+					CloseTimestamp: types.NotNilTimestamp,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -361,7 +370,7 @@ func TestConnectionsAndEndpointsUDPNormal(t *testing.T) {
 			// 		RemoteAddress:  "CLIENT_IP",
 			// 		Role:           "ROLE_SERVER",
 			// 		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-			// 		CloseTimestamp: types.NilTimestamp,
+			// 		CloseTimestamp: types.NilTimestampStr,
 			// 	},
 			// },
 			// TODO UDP listening endpoints should be reported
@@ -374,9 +383,10 @@ func TestConnectionsAndEndpointsUDPNormal(t *testing.T) {
 				{
 					LocalAddress:   types.CreateNetworkAddress("", "", 0),
 					RemoteAddress:  types.CreateNetworkAddress("", "", uint32(port)),
+					Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
 					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
-					CloseTimestamp: nil,
+					CloseTimestamp: types.NotNilTimestamp,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -400,7 +410,7 @@ func TestConnectionsAndEndpointsUDPNoReuseaddr(t *testing.T) {
 			// 		RemoteAddress:  "CLIENT_IP",
 			// 		Role:           "ROLE_SERVER",
 			// 		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-			// 		CloseTimestamp: types.NilTimestamp,
+			// 		CloseTimestamp: types.NilTimestampStr,
 			// 	},
 			// },
 			// TODO UDP listening endpoints should be reported
@@ -413,9 +423,10 @@ func TestConnectionsAndEndpointsUDPNoReuseaddr(t *testing.T) {
 				{
 					LocalAddress:   types.CreateNetworkAddress("", "", 0),
 					RemoteAddress:  types.CreateNetworkAddress("", "", uint32(port)),
+					Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
 					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
-					CloseTimestamp: nil,
+					CloseTimestamp: types.NotNilTimestamp,
 				},
 			},
 			ExpectedEndpoints: nil,
@@ -439,7 +450,7 @@ func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
 			// 		RemoteAddress:  "CLIENT_IP",
 			// 		Role:           "ROLE_SERVER",
 			// 		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-			// 		CloseTimestamp: types.NilTimestamp,
+			// 		CloseTimestamp: types.NilTimestampStr,
 			// 	},
 			// },
 			// TODO UDP listening endpoints should be reported
@@ -452,9 +463,10 @@ func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
 				{
 					LocalAddress:   types.CreateNetworkAddress("", "", 0),
 					RemoteAddress:  types.CreateNetworkAddress("", "", uint32(port)),
+					Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
 					SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
-					CloseTimestamp: nil,
+					CloseTimestamp: types.NotNilTimestamp,
 				},
 			},
 			ExpectedEndpoints: nil,

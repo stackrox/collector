@@ -108,12 +108,10 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 		}
 		lastNetwork := clientNetworks[nNetwork-1]
 		lastExpectedNetwork := s.Client.ExpectedNetwork[nExpectedNetwork-1]
-		expectedRemoteAddress := types.CreateNetworkAddress(s.Server.IP, "", lastExpectedNetwork.RemoteAddress.Port)
+		lastExpectedNetwork.RemoteAddress = types.CreateNetworkAddress(s.Server.IP, "", lastExpectedNetwork.RemoteAddress.Port)
+		lastExpectedNetwork.ContainerId = s.Client.ContainerID
 
-		assert.True(s.T(), types.EqualNetworkAddress(lastExpectedNetwork.LocalAddress, lastNetwork.LocalAddress))
-		assert.True(s.T(), types.EqualNetworkAddress(expectedRemoteAddress, lastNetwork.RemoteAddress))
-		assert.Equal(s.T(), sensorAPI.ClientServerRole_ROLE_CLIENT, lastNetwork.Role)
-		assert.Equal(s.T(), lastExpectedNetwork.SocketFamily, lastNetwork.SocketFamily)
+		assert.True(s.T(), types.EqualNetworkConnection(*lastExpectedNetwork, *lastNetwork))
 	}
 
 	if s.Client.ExpectedEndpoints != nil {
@@ -135,12 +133,10 @@ func (s *ConnectionsAndEndpointsTestSuite) TestConnectionsAndEndpoints() {
 		}
 		lastNetwork := serverNetworks[nNetwork-1]
 		lastExpectedNetwork := s.Server.ExpectedNetwork[nExpectedNetwork-1]
-		expectedRemoteAddress := types.CreateNetworkAddress(s.Client.IP, "", lastExpectedNetwork.RemoteAddress.Port)
+		lastExpectedNetwork.RemoteAddress = types.CreateNetworkAddress(s.Client.IP, "", lastExpectedNetwork.RemoteAddress.Port)
+		lastExpectedNetwork.ContainerId = s.Server.ContainerID
 
-		assert.True(s.T(), types.EqualNetworkAddress(lastExpectedNetwork.LocalAddress, lastNetwork.LocalAddress))
-		assert.True(s.T(), types.EqualNetworkAddress(expectedRemoteAddress, lastNetwork.RemoteAddress))
-		assert.Equal(s.T(), sensorAPI.ClientServerRole_ROLE_SERVER, lastNetwork.Role)
-		assert.Equal(s.T(), lastExpectedNetwork.SocketFamily, lastNetwork.SocketFamily)
+		assert.True(s.T(), types.EqualNetworkConnection(*lastExpectedNetwork, *lastNetwork))
 	}
 
 	serverEndpoints := s.Sensor().Endpoints(s.Server.ContainerID)
