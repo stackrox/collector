@@ -14,7 +14,7 @@ import (
 
 type NamespaceTest struct {
 	containerID       string
-	expectecNamespace string
+	expectedNamespace string
 }
 
 type K8sNamespaceTestSuite struct {
@@ -47,7 +47,7 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 
 	k.tests = append(k.tests, NamespaceTest{
 		containerID:       k.Collector().ContainerID(),
-		expectecNamespace: collector.TEST_NAMESPACE,
+		expectedNamespace: collector.TEST_NAMESPACE,
 	})
 
 	k.createTargetNamespace()
@@ -55,7 +55,7 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 	k.Require().Len(nginxID, 12)
 	k.tests = append(k.tests, NamespaceTest{
 		containerID:       nginxID,
-		expectecNamespace: NAMESPACE,
+		expectedNamespace: NAMESPACE,
 	})
 }
 
@@ -81,7 +81,7 @@ func (k *K8sNamespaceTestSuite) TestK8sNamespace() {
 		k.Require().True(ok)
 		namespace, ok := namespaceInterface.(string)
 		k.Require().True(ok)
-		k.Require().Equal(namespace, tt.expectecNamespace)
+		k.Require().Equal(namespace, tt.expectedNamespace)
 	}
 }
 
