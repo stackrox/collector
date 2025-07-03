@@ -28,8 +28,7 @@ virtual_machines:
   rhel:
     project: rhel-cloud
     families:
-      - rhel-8
-      - rhel-9
+      "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_gcp_families.sh -a X86_64 -p rhel-cloud') }}"
     container_engine: podman
 
   rhel-arm64:
@@ -37,7 +36,7 @@ virtual_machines:
     arch: arm64
     machine_type: t2a-standard-2
     families:
-      - rhel-9-arm64
+      "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_gcp_families.sh -a ARM64 -p rhel-cloud') }}"
     container_engine: podman
 
   rhel-s390x:
@@ -59,12 +58,7 @@ virtual_machines:
   rhel-sap:
     project: rhel-sap-cloud
     families:
-      - rhel-8-6-sap-ha
-      - rhel-8-8-sap-ha
-      - rhel-8-10-sap-ha
-      - rhel-9-0-sap-ha
-      - rhel-9-2-sap-ha
-      - rhel-9-4-sap-ha
+      "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_gcp_families.sh -a X86_64 -p rhel-sap-cloud') }}"
     container_engine: podman
 
   rhcos:
@@ -141,16 +135,14 @@ virtual_machines:
   ubuntu-os:
     project: ubuntu-os-cloud
     families:
-      - ubuntu-2204-lts
-      - ubuntu-2404-lts-amd64
+      "{{ lookup('ansible.builtin.pipe', \"scripts/fetch_gcp_families.sh -f '^ubuntu-\\d+-lts(-amd64)?$'\") }}"
 
   ubuntu-arm:
     project: ubuntu-os-cloud
     arch: arm64
     machine_type: t2a-standard-2
     families:
-      - ubuntu-2204-lts-arm64
-      - ubuntu-2404-lts-arm64
+      "{{ lookup('ansible.builtin.pipe', \"scripts/fetch_gcp_families.sh -f '^ubuntu-\\d+-lts-arm64$'\") }}"
 
   ubuntu-os-pro:
     project: ubuntu-os-pro-cloud
