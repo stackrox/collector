@@ -119,7 +119,7 @@ func (s *UdpNetworkFlow) runTest(image, recv, send string, port uint32) {
 	log.Info("Server: %s - Client: %s\n", server.String(), client.String())
 
 	clientConnection := &sensorAPI.NetworkConnection{
-		LocalAddress:   types.CreateNetworkAddress("", "", 0),
+		LocalAddress:   nil,
 		RemoteAddress:  types.CreateNetworkAddress(server.ip, "", server.port),
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
@@ -173,8 +173,7 @@ func (s *UdpNetworkFlow) TestMultipleDestinations() {
 	for i := 0; i < CONTAINER_COUNT; i++ {
 		// Load the client connection collector has to send for this server.
 		clientConnections[i] = &sensorAPI.NetworkConnection{
-			//LocalAddress:   nil,
-			LocalAddress:   types.CreateNetworkAddress("", "", 0),
+			LocalAddress:   nil,
 			RemoteAddress:  types.CreateNetworkAddress(servers[i].ip, "", servers[i].port),
 			Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 			Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
@@ -234,7 +233,7 @@ func (s *UdpNetworkFlow) TestMultipleSources() {
 			CloseTimestamp: nil,
 		}
 		clientConnections[i] = &sensorAPI.NetworkConnection{
-			LocalAddress:   types.CreateNetworkAddress("", "", 0),
+			LocalAddress:   nil,
 			RemoteAddress:  types.CreateNetworkAddress(server.ip, "", server.port),
 			Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 			Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,

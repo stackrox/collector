@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
@@ -27,26 +28,8 @@ func IsActive(conn *sensorAPI.NetworkConnection) bool {
 	return conn.GetCloseTimestamp() == nil
 }
 
-// The EqualVT method for NetworkAddress returns false if both of them are nil. That is not what
-// we want, so replace nil addr with a default NetworkAddress.
-func adjustNetworkAddressForComparison(addr *sensorAPI.NetworkAddress) *sensorAPI.NetworkAddress {
-	if addr == nil {
-		return CreateNetworkAddress("", "", 0)
-	}
-
-	return addr
-}
-
-// The EqualVT method for NetworkConnection returns false if both CloseTimestamps
-// are nil. Same goes for LocalAddress and Remote Address. That is not the desired
-// result. Also EqualVT returns false if the CloseTimestamp are different non-nil
-// timestamps. We want the equal function to return true if neither of them are nil
-// or both of them are nil. This function adjusts the fields so that the comparison
-// works the way we want it to.
+// We don't care about the exact timestamp, only if it is nil or not nil
 func adjustNetworkConnectionForComparison(conn sensorAPI.NetworkConnection) sensorAPI.NetworkConnection {
-	conn.LocalAddress = adjustNetworkAddressForComparison(conn.LocalAddress)
-	conn.RemoteAddress = adjustNetworkAddressForComparison(conn.RemoteAddress)
-
 	if conn.CloseTimestamp == nil {
 		conn.CloseTimestamp = NilTimestamp
 	} else if conn.CloseTimestamp != nil {
@@ -62,14 +45,7 @@ func EqualNetworkConnection(conn1 sensorAPI.NetworkConnection, conn2 sensorAPI.N
 	conn1 = adjustNetworkConnectionForComparison(conn1)
 	conn2 = adjustNetworkConnectionForComparison(conn2)
 
-	return conn1.EqualVT(&conn2)
-}
-
-func EqualNetworkAddress(addr1 *sensorAPI.NetworkAddress, addr2 *sensorAPI.NetworkAddress) bool {
-	ad1 := adjustNetworkAddressForComparison(addr1)
-	ad2 := adjustNetworkAddressForComparison(addr2)
-
-	return ad1.EqualVT(ad2)
+	return proto.Equal(&conn1, &conn2)
 }
 
 func LessNetworkAddress(addr1 *sensorAPI.NetworkAddress, addr2 *sensorAPI.NetworkAddress) bool {
@@ -89,11 +65,11 @@ func LessNetworkAddress(addr1 *sensorAPI.NetworkAddress, addr2 *sensorAPI.Networ
 }
 
 func LessNetworkConnection(conn1 *sensorAPI.NetworkConnection, conn2 *sensorAPI.NetworkConnection) bool {
-	if !EqualNetworkAddress(conn1.LocalAddress, conn2.LocalAddress) {
+	if !proto.Equal(conn1, conn2) {
 		return LessNetworkAddress(conn1.GetLocalAddress(), conn2.GetLocalAddress())
 	}
 
-	if !EqualNetworkAddress(conn1.RemoteAddress, conn2.RemoteAddress) {
+	if !proto.Equal(conn1, conn2) {
 		return LessNetworkAddress(conn1.GetRemoteAddress(), conn2.GetRemoteAddress())
 	}
 

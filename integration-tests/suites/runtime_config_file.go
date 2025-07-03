@@ -25,7 +25,7 @@ var (
 	notNilTime   = protoconv.ConvertTimeToTimestamp(time.Now())
 
 	activeNormalizedConnection = sensorAPI.NetworkConnection{
-		LocalAddress:   types.CreateNetworkAddress("", "", 0),
+		LocalAddress:   nil,
 		RemoteAddress:  types.CreateNetworkAddress(normalizedIp, "", serverPort),
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
@@ -34,7 +34,7 @@ var (
 	}
 
 	activeUnnormalizedConnection = sensorAPI.NetworkConnection{
-		LocalAddress:   types.CreateNetworkAddress("", "", 0),
+		LocalAddress:   nil,
 		RemoteAddress:  types.CreateNetworkAddress("", externalIp, serverPort),
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
@@ -43,7 +43,7 @@ var (
 	}
 
 	inactiveNormalizedConnection = sensorAPI.NetworkConnection{
-		LocalAddress:   types.CreateNetworkAddress("", "", 0),
+		LocalAddress:   nil,
 		RemoteAddress:  types.CreateNetworkAddress(normalizedIp, "", serverPort),
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
@@ -52,7 +52,7 @@ var (
 	}
 
 	inactiveUnnormalizedConnection = sensorAPI.NetworkConnection{
-		LocalAddress:   types.CreateNetworkAddress("", "", 0),
+		LocalAddress:   nil,
 		RemoteAddress:  types.CreateNetworkAddress("", externalIp, serverPort),
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,

@@ -197,7 +197,7 @@ func TestConnectionsAndEndpointsNormal(t *testing.T) {
 			Cmd:  fmt.Sprintf("echo hello | socat - TCP4:SERVER_IP:%d", port),
 			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   types.CreateNetworkAddress("", "", 0),
+					LocalAddress:   nil,
 					RemoteAddress:  types.CreateNetworkAddress("", "", uint32(port)),
 					Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
@@ -245,7 +245,7 @@ func TestConnectionsAndEndpointsHighLowPorts(t *testing.T) {
 			Cmd:  fmt.Sprintf("echo hello | socat - TCP4:SERVER_IP:%d,sourceport=10000", port),
 			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   types.CreateNetworkAddress("", "", 0),
+					LocalAddress:   nil,
 					RemoteAddress:  types.CreateNetworkAddress("", "", uint32(port)),
 					Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
@@ -293,7 +293,7 @@ func TestConnectionsAndEndpointsServerHigh(t *testing.T) {
 			Cmd:  "echo hello | socat - TCP4:SERVER_IP:60999",
 			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   types.CreateNetworkAddress("", "", 0),
+					LocalAddress:   nil,
 					RemoteAddress:  types.CreateNetworkAddress("", "", uint32(port)),
 					Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
@@ -341,7 +341,7 @@ func TestConnectionsAndEndpointsSourcePort(t *testing.T) {
 			Cmd:  fmt.Sprintf("echo hello | socat - TCP4:SERVER_IP:%d,sourceport=40000", port),
 			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   types.CreateNetworkAddress("", "", 0),
+					LocalAddress:   nil,
 					RemoteAddress:  types.CreateNetworkAddress("", "", uint32(port)),
 					Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
@@ -381,7 +381,7 @@ func TestConnectionsAndEndpointsUDPNormal(t *testing.T) {
 			Cmd:  fmt.Sprintf("echo hello | socat - UDP:SERVER_IP:%d", port),
 			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   types.CreateNetworkAddress("", "", 0),
+					LocalAddress:   nil,
 					RemoteAddress:  types.CreateNetworkAddress("", "", uint32(port)),
 					Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
@@ -421,7 +421,7 @@ func TestConnectionsAndEndpointsUDPNoReuseaddr(t *testing.T) {
 			Cmd:  fmt.Sprintf("echo hello | socat - UDP:SERVER_IP:%d", port),
 			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   types.CreateNetworkAddress("", "", 0),
+					LocalAddress:   nil,
 					RemoteAddress:  types.CreateNetworkAddress("", "", uint32(port)),
 					Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
@@ -461,7 +461,7 @@ func TestConnectionsAndEndpointsUDPNoFork(t *testing.T) {
 			Cmd:  fmt.Sprintf("echo hello | socat - UDP:SERVER_IP:%d", port),
 			ExpectedNetwork: []*sensorAPI.NetworkConnection{
 				{
-					LocalAddress:   types.CreateNetworkAddress("", "", 0),
+					LocalAddress:   nil,
 					RemoteAddress:  types.CreateNetworkAddress("", "", uint32(port)),
 					Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
 					Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,

@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/stackrox/rox/pkg/protoassert"
+
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
@@ -134,8 +136,8 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 	expectedServerEndpoint := types.CreateNetworkAddress("", "", s.ServerPort)
 	expectedClientEndpoint := types.CreateNetworkAddress(s.ClientIP, "", 0)
 
-	assert.True(s.T(), types.EqualNetworkAddress(expectedServerEndpoint, actualServerEndpoint))
-	assert.True(s.T(), types.EqualNetworkAddress(expectedClientEndpoint, actualClientEndpoint))
+	protoassert.Equal(s.T(), expectedServerEndpoint, actualServerEndpoint)
+	protoassert.Equal(s.T(), expectedClientEndpoint, actualClientEndpoint)
 
 	// client side checks
 

@@ -163,7 +163,7 @@ func (s *ProcessNetworkTestSuite) TestNetworkFlows() {
 
 	s.Sensor().ExpectConnections(s.T(), s.clientContainer, 10*time.Second,
 		&sensorAPI.NetworkConnection{
-			LocalAddress:   types.CreateNetworkAddress("", "", 0),
+			LocalAddress:   nil,
 			RemoteAddress:  types.CreateNetworkAddress(s.serverIP, "", s.serverPort),
 			Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 			Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
