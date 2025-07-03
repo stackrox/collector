@@ -1,9 +1,7 @@
 #pragma once
 
-#include <string>
 #include <vector>
 
-#include "libsinsp/filterchecks.h"
 #include "libsinsp/sinsp.h"
 
 #include "Logging.h"

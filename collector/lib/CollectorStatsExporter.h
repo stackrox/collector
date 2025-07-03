@@ -3,8 +3,6 @@
 #include <memory>
 
 #include "CollectorConfig.h"
-#include "CollectorConnectionStats.h"
-#include "CollectorStats.h"
 #include "StoppableThread.h"
 #include "prometheus/registry.h"
 #include "system-inspector/Service.h"

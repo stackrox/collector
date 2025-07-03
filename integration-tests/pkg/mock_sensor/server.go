@@ -12,7 +12,6 @@ import (
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 
-	"github.com/stackrox/rox/generated/storage"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 
@@ -53,8 +52,8 @@ type MockSensor struct {
 	// every event will be forwarded to these channels, to allow
 	// tests to look directly at the incoming data without
 	// losing anything underneath
-	processChannel    RingChan[*storage.ProcessSignal]
-	lineageChannel    RingChan[*storage.ProcessSignal_LineageInfo]
+	processChannel    RingChan[*sensorAPI.ProcessSignal]
+	lineageChannel    RingChan[*sensorAPI.ProcessSignal_LineageInfo]
 	connectionChannel RingChan[*sensorAPI.NetworkConnection]
 	endpointChannel   RingChan[*sensorAPI.NetworkEndpoint]
 }
@@ -71,7 +70,7 @@ func NewMockSensor(test string) *MockSensor {
 
 // LiveProcesses returns a channel that can be used to read live
 // process events
-func (m *MockSensor) LiveProcesses() <-chan *storage.ProcessSignal {
+func (m *MockSensor) LiveProcesses() <-chan *sensorAPI.ProcessSignal {
 	return m.processChannel.Stream()
 }
 
@@ -107,7 +106,7 @@ func (m *MockSensor) HasProcess(containerID string, process types.ProcessInfo) b
 
 // LiveLineages returns a channel that can be used to read live
 // process lineage events
-func (m *MockSensor) LiveLineages() <-chan *storage.ProcessSignal_LineageInfo {
+func (m *MockSensor) LiveLineages() <-chan *sensorAPI.ProcessSignal_LineageInfo {
 	return m.lineageChannel.Stream()
 }
 
@@ -267,11 +266,11 @@ func (m *MockSensor) Start() {
 		}),
 	)
 
-	sensorAPI.RegisterSignalServiceServer(m.grpcServer, m)
+	sensorAPI.RegisterCollectorServiceServer(m.grpcServer, m)
 	sensorAPI.RegisterNetworkConnectionInfoServiceServer(m.grpcServer, m)
 
-	m.processChannel = NewRingChan[*storage.ProcessSignal](gDefaultRingSize)
-	m.lineageChannel = NewRingChan[*storage.ProcessSignal_LineageInfo](gDefaultRingSize)
+	m.processChannel = NewRingChan[*sensorAPI.ProcessSignal](gDefaultRingSize)
+	m.lineageChannel = NewRingChan[*sensorAPI.ProcessSignal_LineageInfo](gDefaultRingSize)
 	m.connectionChannel = NewRingChan[*sensorAPI.NetworkConnection](gDefaultRingSize)
 	m.endpointChannel = NewRingChan[*sensorAPI.NetworkEndpoint](gDefaultRingSize)
 
@@ -299,53 +298,6 @@ func (m *MockSensor) Stop() {
 	m.lineageChannel.Stop()
 	m.connectionChannel.Stop()
 	m.endpointChannel.Stop()
-}
-
-// PushSignals conforms to the Sensor API. It is here that process signals and
-// process lineage information is handled and stored/sent to the relevant channel
-func (m *MockSensor) PushSignals(stream sensorAPI.SignalService_PushSignalsServer) error {
-	for {
-		signal, err := stream.Recv()
-		if err != nil {
-			return err
-		}
-
-		if signal != nil && signal.GetSignal() != nil && signal.GetSignal().GetProcessSignal() != nil {
-			processSignal := signal.GetSignal().GetProcessSignal()
-
-			if strings.HasPrefix(processSignal.GetExecFilePath(), "/proc/self") {
-				//
-				// There exists a potential race condition for the driver
-				// to capture very early container process events.
-				//
-				// This is known in falco, and somewhat documented here:
-				//     https://github.com/falcosecurity/falco/blob/555bf9971cdb79318917949a5e5f9bab5293b5e2/rules/falco_rules.yaml#L1961
-				//
-				// It is also filtered in sensor here:
-				//    https://github.com/stackrox/stackrox/blob/4d3fb539547d1935a35040e4a4e8c258a53a92e4/sensor/common/signal/signal_service.go#L90
-				//
-				// Further details can be found here https://issues.redhat.com/browse/ROX-11544
-				//
-				m.logger.Printf("runtime-process: %s %s:%s:%d:%d:%d:%s\n",
-					processSignal.GetContainerId(),
-					processSignal.GetName(),
-					processSignal.GetExecFilePath(),
-					processSignal.GetUid(),
-					processSignal.GetGid(),
-					processSignal.GetPid(),
-					processSignal.GetArgs())
-				continue
-			}
-
-			m.pushProcess(processSignal.GetContainerId(), processSignal)
-			m.processChannel.Write(processSignal)
-
-			for _, lineage := range processSignal.GetLineageInfo() {
-				m.pushLineage(processSignal.GetContainerId(), processSignal, lineage)
-				m.lineageChannel.Write(lineage)
-			}
-		}
-	}
 }
 
 func (m *MockSensor) convertConnection(connection *sensorAPI.NetworkConnection) types.NetworkInfo {
@@ -378,6 +330,65 @@ func (m *MockSensor) convertToContainerConnsMap(connections []*sensorAPI.Network
 	return containerConnsMap
 }
 
+// Communicate conforms to the Sensor API. It is here that process signals and
+// process lineage information is handled and stored/sent to the relevant channel
+func (m *MockSensor) Communicate(stream sensorAPI.CollectorService_CommunicateServer) error {
+	for {
+		signal, err := stream.Recv()
+		if err != nil {
+			return err
+		}
+
+		switch signal.GetMsg().(type) {
+		case *sensorAPI.MsgFromCollector_ProcessSignal:
+			m.pushSignal(signal.GetProcessSignal())
+		case *sensorAPI.MsgFromCollector_Register:
+			// Ignored event
+		case *sensorAPI.MsgFromCollector_Info:
+			// Unimplemented event
+		}
+	}
+}
+
+func (m *MockSensor) pushSignal(signal *sensorAPI.ProcessSignal) error {
+	if signal == nil {
+		return nil
+	}
+
+	if strings.HasPrefix(signal.GetExecFilePath(), "/proc/self") {
+		//
+		// There exists a potential race condition for the driver
+		// to capture very early container process events.
+		//
+		// This is known in falco, and somewhat documented here:
+		//     https://github.com/falcosecurity/falco/blob/555bf9971cdb79318917949a5e5f9bab5293b5e2/rules/falco_rules.yaml#L1961
+		//
+		// It is also filtered in sensor here:
+		//    https://github.com/stackrox/stackrox/blob/4d3fb539547d1935a35040e4a4e8c258a53a92e4/sensor/common/signal/signal_service.go#L90
+		//
+		// Further details can be found here https://issues.redhat.com/browse/ROX-11544
+		//
+		m.logger.Printf("runtime-process: %s %s:%s:%d:%d:%d:%s\n",
+			signal.GetContainerId(),
+			signal.GetName(),
+			signal.GetExecFilePath(),
+			signal.GetUid(),
+			signal.GetGid(),
+			signal.GetPid(),
+			signal.GetArgs())
+		return nil
+	}
+
+	m.pushProcess(signal.GetContainerId(), signal)
+	m.processChannel.Write(signal)
+
+	for _, lineage := range signal.GetLineageInfo() {
+		m.pushLineage(signal.GetContainerId(), signal, lineage)
+		m.lineageChannel.Write(lineage)
+	}
+	return nil
+}
+
 // PushNetworkConnectionInfo conforms to the Sensor API. It is here that networking
 // events (connections and endpoints) are handled and stored/sent to the relevant channel
 func (m *MockSensor) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
@@ -406,7 +417,7 @@ func (m *MockSensor) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnectio
 
 // pushProcess converts a process signal into the test's own structure
 // and stores it
-func (m *MockSensor) pushProcess(containerID string, processSignal *storage.ProcessSignal) {
+func (m *MockSensor) pushProcess(containerID string, processSignal *sensorAPI.ProcessSignal) {
 	m.processMutex.Lock()
 	defer m.processMutex.Unlock()
 
@@ -437,7 +448,7 @@ func (m *MockSensor) pushProcess(containerID string, processSignal *storage.Proc
 
 // pushLineage converts a process lineage into the test's own structure
 // and stores it
-func (m *MockSensor) pushLineage(containerID string, process *storage.ProcessSignal, lineage *storage.ProcessSignal_LineageInfo) {
+func (m *MockSensor) pushLineage(containerID string, process *sensorAPI.ProcessSignal, lineage *sensorAPI.ProcessSignal_LineageInfo) {
 	m.processMutex.Lock()
 	defer m.processMutex.Unlock()
 

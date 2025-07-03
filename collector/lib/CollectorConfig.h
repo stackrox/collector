@@ -6,6 +6,7 @@
 #include <shared_mutex>
 #include <vector>
 
+#include <gtest/gtest_prod.h>
 #include <json/json.h>
 #include <yaml-cpp/yaml.h>
 
@@ -161,6 +162,8 @@ class CollectorConfig {
   unsigned int GetSinspTotalBufferSize() const { return sinsp_total_buffer_size_; }
   unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
   bool DisableProcessArguments() const { return disable_process_arguments_; }
+  bool UseStdout() const { return use_stdout_; }
+  bool UseLegacyServices() const { return use_legacy_services_; }
 
   static std::pair<option::ArgStatus, std::string> CheckConfiguration(const char* config, Json::Value* root);
 
@@ -190,6 +193,8 @@ class CollectorConfig {
   }
 
  protected:
+  FRIEND_TEST(SensorClientFormatterTest, NoProcessArguments);
+
   int scrape_interval_;
   CollectionMethod collection_method_;
   bool turn_off_scrape_;
@@ -225,6 +230,10 @@ class CollectorConfig {
   std::optional<std::string> grpc_server_;
 
   bool disable_process_arguments_ = false;
+
+  bool use_stdout_ = false;
+
+  bool use_legacy_services_ = false;
 
   // One ring buffer will be initialized for this many CPUs
   unsigned int sinsp_cpu_per_buffer_ = 0;

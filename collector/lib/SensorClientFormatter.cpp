@@ -1,9 +1,10 @@
-#include "ProcessSignalFormatter.h"
+#include "SensorClientFormatter.h"
 
 #include <uuid/uuid.h>
 
 #include <google/protobuf/util/time_util.h>
 
+#include "internalapi/sensor/collector_iservice.pb.h"
 #include "internalapi/sensor/signal_iservice.pb.h"
 
 #include "CollectorStats.h"
@@ -15,9 +16,9 @@
 namespace collector {
 
 using SignalStreamMessage = sensor::SignalStreamMessage;
-using Signal = ProcessSignalFormatter::Signal;
-using ProcessSignal = ProcessSignalFormatter::ProcessSignal;
-using LineageInfo = ProcessSignalFormatter::LineageInfo;
+using Signal = SensorClientFormatter::Signal;
+using ProcessSignal = SensorClientFormatter::ProcessSignal;
+using LineageInfo = SensorClientFormatter::LineageInfo;
 
 using Timestamp = google::protobuf::Timestamp;
 using TimeUtil = google::protobuf::util::TimeUtil;
@@ -56,18 +57,17 @@ std::string extract_proc_args(sinsp_threadinfo* tinfo) {
 
 }  // namespace
 
-ProcessSignalFormatter::ProcessSignalFormatter(
-    sinsp* inspector,
-    const CollectorConfig& config) : event_names_(EventNames::GetInstance()),
-                                     event_extractor_(std::make_unique<system_inspector::EventExtractor>()),
-                                     container_metadata_(inspector),
-                                     config_(config) {
+SensorClientFormatter::SensorClientFormatter(sinsp* inspector, const CollectorConfig& config)
+    : event_names_(EventNames::GetInstance()),
+      event_extractor_(std::make_unique<system_inspector::EventExtractor>()),
+      container_metadata_(inspector),
+      config_(config) {
   event_extractor_->Init(inspector);
 }
 
-ProcessSignalFormatter::~ProcessSignalFormatter() = default;
+SensorClientFormatter::~SensorClientFormatter() = default;
 
-const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* event) {
+const sensor::MsgFromCollector* SensorClientFormatter::ToProtoMessage(sinsp_evt* event) {
   if (process_signals[event->get_type()] == ProcessSignalType::UNKNOWN_PROCESS_TYPE) {
     return nullptr;
   }
@@ -75,7 +75,7 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
   Reset();
 
   if (!ValidateProcessDetails(event)) {
-    CLOG(INFO) << "Dropping process event: " << ProcessDetails(event);
+    CLOG(INFO) << "Dropping process event: " << ToString(event);
     return nullptr;
   }
 
@@ -84,37 +84,33 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
     return nullptr;
   }
 
-  auto* signal = Allocate<Signal>();
-  signal->set_allocated_process_signal(process_signal);
-
-  SignalStreamMessage* signal_stream_message = AllocateRoot();
-  signal_stream_message->clear_collector_register_request();
-  signal_stream_message->set_allocated_signal(signal);
-  return signal_stream_message;
+  auto* msg = AllocateRoot();
+  msg->clear_info();
+  msg->clear_register_();
+  msg->set_allocated_process_signal(process_signal);
+  return msg;
 }
 
-const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
+const sensor::MsgFromCollector* SensorClientFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
   Reset();
   if (!ValidateProcessDetails(tinfo)) {
     CLOG(INFO) << "Dropping process event: " << tinfo;
     return nullptr;
   }
 
-  ProcessSignal* process_signal = CreateProcessSignal(tinfo);
-  if (process_signal == nullptr) {
+  ProcessSignal* signal = CreateProcessSignal(tinfo);
+  if (signal == nullptr) {
     return nullptr;
   }
 
-  auto* signal = Allocate<Signal>();
-  signal->set_allocated_process_signal(process_signal);
-
-  SignalStreamMessage* signal_stream_message = AllocateRoot();
-  signal_stream_message->clear_collector_register_request();
-  signal_stream_message->set_allocated_signal(signal);
-  return signal_stream_message;
+  auto* msg = AllocateRoot();
+  msg->clear_register_();
+  msg->clear_info();
+  msg->set_allocated_process_signal(signal);
+  return msg;
 }
 
-ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
+ProcessSignal* SensorClientFormatter::CreateProcessSignal(sinsp_evt* event) {
   auto signal = Allocate<ProcessSignal>();
 
   // set id
@@ -173,7 +169,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   // set time
   auto timestamp = Allocate<Timestamp>();
   *timestamp = TimeUtil::NanosecondsToTimestamp(event->get_ts());
-  signal->set_allocated_time(timestamp);
+  signal->set_allocated_creation_time(timestamp);
 
   // set container_id
   if (const std::string* container_id = event_extractor_->get_container_id(event)) {
@@ -181,10 +177,9 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   }
 
   // set process lineage
-  std::vector<LineageInfo> lineage;
-  this->GetProcessLineage(event->get_thread_info(), lineage);
+  auto lineage = GetProcessLineage(event->get_thread_info());
   for (const auto& p : lineage) {
-    auto signal_lineage = signal->add_lineage_info();
+    auto* signal_lineage = signal->add_lineage_info();
     signal_lineage->set_parent_exec_file_path(p.parent_exec_file_path());
     signal_lineage->set_parent_uid(p.parent_uid());
   }
@@ -197,7 +192,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   return signal;
 }
 
-ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tinfo) {
+ProcessSignal* SensorClientFormatter::CreateProcessSignal(sinsp_threadinfo* tinfo) {
   auto signal = Allocate<ProcessSignal>();
 
   // set id
@@ -238,17 +233,16 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   // set time
   auto timestamp = Allocate<Timestamp>();
   *timestamp = TimeUtil::NanosecondsToTimestamp(tinfo->m_clone_ts);
-  signal->set_allocated_time(timestamp);
+  signal->set_allocated_creation_time(timestamp);
 
   // set container_id
   signal->set_container_id(tinfo->m_container_id);
 
   // set process lineage
-  std::vector<LineageInfo> lineage;
-  GetProcessLineage(tinfo, lineage);
+  auto lineage = GetProcessLineage(tinfo);
 
   for (const auto& p : lineage) {
-    auto signal_lineage = signal->add_lineage_info();
+    auto* signal_lineage = signal->add_lineage_info();
     signal_lineage->set_parent_exec_file_path(p.parent_exec_file_path());
     signal_lineage->set_parent_uid(p.parent_uid());
   }
@@ -261,7 +255,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   return signal;
 }
 
-std::string ProcessSignalFormatter::ProcessDetails(sinsp_evt* event) {
+std::string SensorClientFormatter::ToString(sinsp_evt* event) {
   std::stringstream ss;
   const std::string* path = event_extractor_->get_exepath(event);
   const std::string* name = event_extractor_->get_comm(event);
@@ -278,7 +272,7 @@ std::string ProcessSignalFormatter::ProcessDetails(sinsp_evt* event) {
   return ss.str();
 }
 
-bool ProcessSignalFormatter::ValidateProcessDetails(const sinsp_threadinfo* tinfo) {
+bool SensorClientFormatter::ValidateProcessDetails(const sinsp_threadinfo* tinfo) {
   if (tinfo == nullptr) {
     return false;
   }
@@ -290,43 +284,32 @@ bool ProcessSignalFormatter::ValidateProcessDetails(const sinsp_threadinfo* tinf
   return true;
 }
 
-bool ProcessSignalFormatter::ValidateProcessDetails(sinsp_evt* event) {
-  const sinsp_threadinfo* tinfo = event->get_thread_info();
-
-  return ValidateProcessDetails(tinfo);
+bool SensorClientFormatter::ValidateProcessDetails(sinsp_evt* event) {
+  return ValidateProcessDetails(event->get_thread_info());
 }
 
-int ProcessSignalFormatter::GetTotalStringLength(const std::vector<LineageInfo>& lineage) {
-  int totalStringLength = 0;
-  for (LineageInfo l : lineage) {
-    totalStringLength += l.parent_exec_file_path().size();
-  }
+void SensorClientFormatter::UpdateLineageStats(const std::vector<LineageInfo>& lineage) {
+  int string_total = std::accumulate(lineage.cbegin(), lineage.cend(), 0, [](int acc, const auto& l) {
+    return acc + l.parent_exec_file_path().size();
+  });
 
-  return totalStringLength;
-}
-
-void ProcessSignalFormatter::CountLineage(const std::vector<LineageInfo>& lineage) {
-  int totalStringLength = GetTotalStringLength(lineage);
   COUNTER_INC(CollectorStats::process_lineage_counts);
   COUNTER_ADD(CollectorStats::process_lineage_total, lineage.size());
   COUNTER_ADD(CollectorStats::process_lineage_sqr_total, lineage.size() * lineage.size());
-  COUNTER_ADD(CollectorStats::process_lineage_string_total, totalStringLength);
+  COUNTER_ADD(CollectorStats::process_lineage_string_total, string_total);
 }
 
-void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
-                                               std::vector<LineageInfo>& lineage) {
+std::vector<LineageInfo> SensorClientFormatter::GetProcessLineage(sinsp_threadinfo* tinfo) {
+  std::vector<LineageInfo> lineage;
   if (tinfo == nullptr) {
-    return;
+    return lineage;
   }
-  sinsp_threadinfo* mt = nullptr;
-  if (tinfo->is_main_thread()) {
-    mt = tinfo;
-  } else {
-    mt = tinfo->get_main_thread();
-    if (mt == nullptr) {
-      return;
-    }
+
+  sinsp_threadinfo* mt = tinfo->get_main_thread();
+  if (mt == nullptr) {
+    return lineage;
   }
+
   sinsp_threadinfo::visitor_func_t visitor = [&lineage](sinsp_threadinfo* pt) {
     if (pt == nullptr) {
       return false;
@@ -335,22 +318,9 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
       return false;
     }
 
-    //
     // Collection of process lineage information should stop at the container
     // boundary to avoid collecting host process information.
-    //
-    // In back-ported eBPF probes, `m_vpid` will not be set for containers
-    // running when collector comes online because /proc/{pid}/status does
-    // not contain namespace information, so `m_container_id` is checked
-    // instead. `m_container_id` is not enough on its own to identify
-    // containerized processes, because it is not guaranteed to be set on
-    // all platforms.
-    //
-    if (pt->m_vpid == 0) {
-      if (pt->m_container_id.empty()) {
-        return false;
-      }
-    } else if (pt->m_pid == pt->m_vpid) {
+    if (pt->m_pid == pt->m_vpid) {
       return false;
     }
 
@@ -374,7 +344,9 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     return true;
   };
   mt->traverse_parent_state(visitor);
-  CountLineage(lineage);
+  UpdateLineageStats(lineage);
+
+  return lineage;
 }
 
 }  // namespace collector
