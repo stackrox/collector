@@ -65,10 +65,7 @@ virtual_machines:
       - rhel-9-0-sap-ha
       - rhel-9-2-sap-ha
       - rhel-9-4-sap-ha
-    # RHEL SAP 8.4 seems to have an older version of podman that
-    # fails with our integration tests, so we stick with docker
-    # for now.
-    container_engine: docker
+    container_engine: podman
 
   rhcos:
     project: rhcos-cloud
