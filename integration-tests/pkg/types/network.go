@@ -17,7 +17,6 @@ const (
 )
 
 var (
-	NilTimestamp    = timestamppb.New(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC))
 	NotNilTimestamp = timestamppb.New(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
 )
 
@@ -30,9 +29,7 @@ func IsActive(conn *sensorAPI.NetworkConnection) bool {
 
 // We don't care about the exact timestamp, only if it is nil or not nil
 func adjustNetworkConnectionForComparison(conn sensorAPI.NetworkConnection) sensorAPI.NetworkConnection {
-	if conn.CloseTimestamp == nil {
-		conn.CloseTimestamp = NilTimestamp
-	} else if conn.CloseTimestamp != nil {
+	if conn.CloseTimestamp != nil {
 		conn.CloseTimestamp = NotNilTimestamp
 	}
 
