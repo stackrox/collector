@@ -62,11 +62,11 @@ func LessNetworkAddress(addr1 *sensorAPI.NetworkAddress, addr2 *sensorAPI.Networ
 }
 
 func LessNetworkConnection(conn1 *sensorAPI.NetworkConnection, conn2 *sensorAPI.NetworkConnection) bool {
-	if !proto.Equal(conn1, conn2) {
+	if !proto.Equal(conn1.GetLocalAddress(), conn2.GetLocalAddress()) {
 		return LessNetworkAddress(conn1.GetLocalAddress(), conn2.GetLocalAddress())
 	}
 
-	if !proto.Equal(conn1, conn2) {
+	if !proto.Equal(conn1.GetRemoteAddress(), conn2.GetRemoteAddress()) {
 		return LessNetworkAddress(conn1.GetRemoteAddress(), conn2.GetRemoteAddress())
 	}
 
