@@ -37,7 +37,7 @@ jobs:
     name: Local collector image ${{ matrix.arch }}
     strategy:
       matrix:
-        arch: [amd64, arm64, ppc64le]
+        arch: [amd64, arm64, ppc64le, s390x]
     runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') ||
                  (matrix.arch == 'ppc64le' && 'ubuntu-24.04-ppc64le') ||
                  (matrix.arch == 's390x' && 'ubuntu-24.04-s390x') ||
@@ -96,7 +96,7 @@ jobs:
     runs-on: ubuntu-24.04
     if: always() && !contains(join(needs.*.result, ','), 'failure')
     env:
-      ARCHS: ${{ inputs.architectures }}
+      ARCHS: amd64 arm64 ppc64le s390x
 
     steps:
       - uses: actions/checkout@v4
