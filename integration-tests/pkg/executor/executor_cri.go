@@ -289,6 +289,23 @@ func (c *criExecutor) GetContainerHealthCheck(containerID string) (string, error
 	return "", fmt.Errorf("Unsupported")
 }
 
+func (c *criExecutor) GetContainerStats(ctx context.Context, containerID string) (
+	*ContainerStat, error) {
+
+	stats, err := c.runtimeService.ContainerStats(ctx, containerID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ContainerStat{
+		Timestamp: time.Unix(stats.Memory.Timestamp, 0),
+		Id:        stats.Attributes.Id,
+		Name:      stats.Attributes.Metadata.Name,
+		Mem:       stats.Memory.UsageBytes.GetValue(),
+		Cpu:       stats.Cpu.UsageCoreNanoSeconds.GetValue(),
+	}, nil
+}
+
 func (c *criExecutor) GetContainerIP(name string) (string, error) {
 	container, err := c.getContainer(name)
 	if err != nil {

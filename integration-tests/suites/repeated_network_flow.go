@@ -37,7 +37,6 @@ type RepeatedNetworkFlowTestSuite struct {
 // Launches nginx container
 func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.RegisterCleanup("nginx", "nginx-curl")
-	s.StartContainerStats()
 
 	collectorOptions := collector.StartupOptions{
 		Config: map[string]any{

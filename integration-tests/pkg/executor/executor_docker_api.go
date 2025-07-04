@@ -3,6 +3,7 @@ package executor
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -91,6 +92,34 @@ func (d *dockerAPIExecutor) GetContainerHealthCheck(containerID string) (string,
 	return strings.Join(inspectResp.Config.Healthcheck.Test, " "), nil
 }
 
+func (d *dockerAPIExecutor) GetContainerStats(ctx context.Context, containerID string) (
+	*ContainerStat, error) {
+
+	// ContainerStatsOneShot add "one-shot" parameter to the API query, which
+	// instructs the server to get a single stat, rather than waiting for more.
+	statsResp, err := d.client.ContainerStatsOneShot(ctx, containerID)
+	if err != nil {
+		return nil, err
+	}
+
+	var stats container.StatsResponse
+	decoder := json.NewDecoder(statsResp.Body)
+
+	if err := decoder.Decode(&stats); err == io.EOF {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &ContainerStat{
+		Timestamp: stats.Read,
+		Id:        stats.ID,
+		Name:      stats.Name,
+		Mem:       stats.MemoryStats.Usage,
+		Cpu:       stats.CPUStats.CPUUsage.TotalUsage,
+	}, nil
+}
+
 func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConfig) (string, error) {
 	ctx := context.Background()
 	var binds []string
@@ -159,7 +188,7 @@ func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConf
 
 func (d *dockerAPIExecutor) ExecContainer(opts *ExecOptions) (string, error) {
 	ctx := context.Background()
-	execConfig := types.ExecConfig{
+	execConfig := container.ExecOptions{
 		AttachStdout: true,
 		AttachStderr: true,
 		Cmd:          opts.Command,
@@ -170,7 +199,7 @@ func (d *dockerAPIExecutor) ExecContainer(opts *ExecOptions) (string, error) {
 		return "", fmt.Errorf("error creating Exec: %w", err)
 	}
 
-	execStartCheck := types.ExecStartCheck{Detach: false, Tty: false}
+	execStartCheck := container.ExecAttachOptions{Detach: false, Tty: false}
 	attachResp, err := d.client.ContainerExecAttach(ctx, resp.ID, execStartCheck)
 	if err != nil {
 		return "", fmt.Errorf("error attaching to Exec: %w", err)

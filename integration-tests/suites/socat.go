@@ -31,7 +31,6 @@ type SocatTestSuite struct {
 
 func (s *SocatTestSuite) SetupSuite() {
 	s.RegisterCleanup("socat")
-	s.StartContainerStats()
 
 	collectorOptions := collector.StartupOptions{
 		Config: map[string]any{
