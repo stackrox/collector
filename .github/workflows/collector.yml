@@ -54,6 +54,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Install ansible on P&Z runners
+        if: matrix.arch == 'ppc64le'
+        run: |
+          sudo apt-get install -y ansible
+
       - name: Create ansible vars
         run: |
           cat << EOF > ${{ github.workspace }}/ansible/secrets.yml
