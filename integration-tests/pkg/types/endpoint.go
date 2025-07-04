@@ -11,7 +11,7 @@ type EndpointInfo struct {
 
 func (n *EndpointInfo) IsActive() bool {
 	// no close timestamp means the connection is open, and active
-	return n.CloseTimestamp == NilTimestamp
+	return n.CloseTimestamp == NilTimestampStr
 }
 
 func (n *EndpointInfo) Less(other EndpointInfo) bool {
