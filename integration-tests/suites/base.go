@@ -15,6 +15,8 @@ import (
 	"github.com/gonum/stat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
@@ -200,9 +202,24 @@ func (s *IntegrationTestSuiteBase) SnapshotContainerStats() {
 
 	// The stats context will be canceled at the end of the test. If it happens
 	// while the request is in flight, ignore the error.
-	if err != nil && !errors.Is(err, context.Canceled) {
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return
+		}
+
+		// CRI client returns a GRPC Status instead of an error, making it
+		// harder to unwrap. Compare the code instead.
+		var grpcStatus interface{ GRPCStatus() *status.Status }
+
+		if errors.As(err, &grpcStatus) {
+			code := grpcStatus.GRPCStatus().Code()
+
+			if code == codes.Canceled {
+				return
+			}
+		}
+
 		assert.FailNowf(s.T(), "fail to get container stats", "%v", err)
-		return
 	}
 
 	if stat == nil {
