@@ -57,7 +57,7 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	port, err := s.getPort(serverName)
 	s.Require().NoError(err)
 
-	s.serverURL = fmt.Sprintf("http://%s:%s", ip, port)
+	s.serverURL = fmt.Sprintf("http://%s:%d", ip, port)
 
 	// Wait 5 seconds for the plop service to start
 	common.Sleep(5 * time.Second)
@@ -135,7 +135,7 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 			return false
 		}
 		return infos[0].CloseTimestamp != infos[1].CloseTimestamp &&
-			(infos[0].CloseTimestamp == types.NilTimestamp || infos[1].CloseTimestamp == types.NilTimestamp)
+			(infos[0].CloseTimestamp == types.NilTimestampStr || infos[1].CloseTimestamp == types.NilTimestampStr)
 	}
 
 	assert.True(s.T(), hasOpenAndClose(endpoints8081), "Did not capture open and close events for port 8081")
