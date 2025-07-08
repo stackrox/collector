@@ -8,11 +8,6 @@ on:
         required: true
         description: |
           The tag used to build the collector image
-      architectures:
-        type: string
-        required: true
-        description: |
-          Space-separated list of architectures to build
 
     outputs:
       collector-builder-tag:

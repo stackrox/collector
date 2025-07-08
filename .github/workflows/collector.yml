@@ -18,11 +18,6 @@ on:
         required: true
         description: |
           The builder tag to use in the build
-      architectures:
-        type: string
-        required: true
-        description: |
-          Space-separated list of architectures to build
 
 env:
   COLLECTOR_TAG: ${{ inputs.collector-tag }}
