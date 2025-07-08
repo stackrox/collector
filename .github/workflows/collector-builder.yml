@@ -70,9 +70,7 @@ jobs:
           echo "build-image=true" >> "$GITHUB_OUTPUT"
 
   build-builder-image:
-    name: Local builder image
-    # Multiarch builds sometimes take for eeeeeeeeeever
-    timeout-minutes: 480
+    name: Build builder image
     needs:
     - builder-needs-rebuilding
     if: |

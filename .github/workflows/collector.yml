@@ -34,7 +34,7 @@ env:
 
 jobs:
   build-collector-image:
-    name: Local collector image ${{ matrix.arch }}
+    name: Build collector image ${{ matrix.arch }}
     strategy:
       matrix:
         arch:
