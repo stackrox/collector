@@ -83,6 +83,7 @@
     "automergeSchedule": [
       "at any time"
     ],
+    "platformAutomerge": true
   }],
   "labels": ["auto-approve"],
 }
