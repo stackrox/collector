@@ -23,6 +23,8 @@ jobs:
       minor: ${{ steps.final-values.outputs.minor }}
       patch: ${{ steps.patch-version.outputs.value || '0' }}
       release-type: ${{ steps.final-values.outputs.type }}
+      stackrox-major: ${{ steps.stackrox.outputs.major }}
+      stackrox-minor: ${{ steps.stackrox.outputs.minor }}
 
     steps:
       - uses: actions/checkout@v4
@@ -43,25 +45,9 @@ jobs:
 
       - name: Get closest tag to master
         id: latest-tag
-        env:
-          REQUIRED_MAJOR: ${{ steps.required-release.outputs.major }}
-        run: |
-          tag=(0 0)
-          while read -r line; do
-            if [[ "$line" =~ ^([[:digit:]]+)\.([[:digit:]]+)\.x$ ]]; then
-                # If we are doing a release for a specific major
-                # version, we want to limit ourselves to that, so we
-                # ignore newer major versions.
-                if ((tag[0] < BASH_REMATCH[1] && (REQUIRED_MAJOR == 0 || REQUIRED_MAJOR >= BASH_REMATCH[1]))); then
-                    tag=("${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}")
-                elif ((tag[0] == BASH_REMATCH[1] && tag[1] < BASH_REMATCH[2])); then
-                    tag=("${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}")
-                fi
-            fi
-          done < <(git tag --merged)
-
-          echo "major=${tag[0]}" >> "$GITHUB_OUTPUT"
-          echo "minor=${tag[1]}" >> "$GITHUB_OUTPUT"
+        uses: ./.github/actions/get-latest-version
+        with:
+          required-major: ${{ steps.required-release.outputs.major }}
 
       - name: Determine release type and version
         id: final-values
@@ -110,6 +96,26 @@ jobs:
 
           echo "value=$((patch+1))" >> "$GITHUB_OUTPUT"
 
+      - name: Checkout stackrox submodule
+        if: steps.final-values.outputs.type != 'patch'
+        run: |
+          git submodule update --init collector/proto/third_party/stackrox
+
+      - name: Get stackrox version
+        id: stackrox-version-last
+        if: steps.final-values.outputs.type != 'patch'
+        uses: ./github/actions/get-latest-version
+        with:
+          repo: ${{ github.workspace }}/collector/proto/third_party/stackrox
+
+      - name: Adjust stackrox version
+        id: stackrox
+        if: steps.final-values.outputs.type != 'patch'
+        run: |
+          MINOR="$((${{ steps.stackrox-version-last.outputs.minor }}+1))"
+          echo "major=${{ steps.stackrox-version-last.outputs.major }}" >> "$GITHUB_OUTPUT"
+          echo "minor=${MINOR}" >> "$GITHUB_OUTPUT"
+
       - name: Notify tags and branches
         env:
           MAJOR: ${{ steps.final-values.outputs.major }}
@@ -132,6 +138,10 @@ jobs:
           if [[ "${BRANCH}" == "master" ]]; then
             notice "Master tag" "${MAJOR}.${MINOR}.x"
             notice "Release branch" "release-${MAJOR}.${MINOR}"
+          fi
+          if [[ "${RELEASE_TYPE}" != "patch" ]]; then
+            notice "Stackrox Major" "${{ steps.stackrox.outputs.major }}"
+            notice "Stackrox minor" "${{ steps.stackrox.outputs.minor }}"
           fi
 
       - name: Mismatched versions
@@ -184,7 +194,16 @@ jobs:
           git pull --ff-only
           git tag "${RELEASE}.x"
           git checkout -b "release-${RELEASE}"
-          git commit --no-verify --allow-empty -m "Empty commit to diverge ${RELEASE} from master"
+
+          # Modify values needed for konflux
+          SUFFIX="-${{ needs.determine-version.outputs.stackrox-major }}-${{ needs.determine-version.outputs.stackrox-minor }}"
+          sed -i \
+            -e "/appstudio.openshift.io\/application: / s/$/${SUFFIX}/" \
+            -e "/appstudio.openshift.io\/component: / s/$/${SUFFIX}/" \
+            -e "/serviceAccountName: / s/$/${SUFFIX}/" \
+            .tekton/collector-build.yaml
+
+          git commit --no-verify -m "Commit to diverge ${RELEASE} from master"
 
       - name: Push release branch
         if: needs.determine-version.outputs.release-type != 'patch'
