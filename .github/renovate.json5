@@ -71,4 +71,18 @@
     "dockerfile",
     "rpm",
   ],
+  "packageRules": [{
+    "matchPackageNames": ["/.*/"],
+    "groupName": "All updates",
+    "automerge": true,
+    // A known issue is that some non-Konflux CI jobs in currently fail, which may prevent successful auto-merging with a "branch" auto-merge setting.
+    // Therefore, we use PR merge type and have automation approve PRs.
+    "automergeType": "pr",
+    "automergeStrategy": "squash",
+    // Tell Renovate that it can automerge branches at any time of the day.
+    "automergeSchedule": [
+      "at any time"
+    ],
+  }],
+  "labels": ["auto-approve"],
 }
