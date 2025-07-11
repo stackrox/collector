@@ -58,13 +58,6 @@ on:
         description: |
           Trigger rebuild of QA containers
         value: ${{ jobs.common-variables.outputs.rebuild-qa-containers }}
-      architectures:
-        description: |
-          Space-separated list of architectures to build
-        value: |
-          ${{ ((github.event_name != 'pull_request' ||
-            contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds')) &&
-            'amd64 arm64 ppc64le s390x') || 'amd64 arm64' }}
 
 jobs:
   common-variables:
