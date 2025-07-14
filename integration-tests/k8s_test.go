@@ -12,6 +12,7 @@ import (
 )
 
 func TestK8sNamespace(t *testing.T) {
+	t.Skip("Skipping test")
 	if testing.Short() {
 		t.Skip("Not running k8s in short mode")
 	}

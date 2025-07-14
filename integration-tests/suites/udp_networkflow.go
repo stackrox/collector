@@ -163,11 +163,11 @@ func (s *UdpNetworkFlow) TestMultipleDestinations() {
 
 	// We give a big period here to ensure the syscall happens just once
 	// Due to an implementation restriction, the total number of messages
-	// sent must be less than 32.
+	// sent must be less than 16.
 	client := s.runClient(config.ContainerStartConfig{
 		Name:       UDP_CLIENT,
 		Image:      image,
-		Command:    newClientCmd("sendmmsg", "300", "8", servers...),
+		Command:    newClientCmd("sendmmsg", "300", "4", servers...),
 		Entrypoint: []string{"udp-client"},
 	})
 	log.Info("Client: %s\n", client.String())

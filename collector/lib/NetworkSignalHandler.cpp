@@ -133,7 +133,7 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   const Endpoint* local = is_server ? &server : &client;
   const Endpoint* remote = is_server ? &client : &server;
 
-  const std::string* container_id = event_extractor_->get_container_id(evt);
+  auto container_id = event_extractor_->get_container_id(evt);
   if (!container_id) {
     return std::nullopt;
   }
