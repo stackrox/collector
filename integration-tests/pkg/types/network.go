@@ -27,19 +27,18 @@ func IsActive(conn *sensorAPI.NetworkConnection) bool {
 	return conn.GetCloseTimestamp() == nil
 }
 
-// We don't care about the exact timestamp, only if it is nil or not nil
-func adjustNetworkConnectionForComparison(conn *sensorAPI.NetworkConnection) *sensorAPI.NetworkConnection {
-	if conn.CloseTimestamp != nil {
-		conn = conn.CloneVT()
-		conn.CloseTimestamp = NotNilTimestamp
+// Equal is not called directly because it returns false when they have different non-nil values.
+func EqualNetworkConnection(conn1 sensorAPI.NetworkConnection, conn2 sensorAPI.NetworkConnection) bool {
+	// We don't care about the exact timestamp, only if it is nil or not nil
+	adjustNetworkConnectionForComparison := func(conn *sensorAPI.NetworkConnection) *sensorAPI.NetworkConnection {
+		if conn.CloseTimestamp != nil {
+			conn = conn.CloneVT()
+			conn.CloseTimestamp = NotNilTimestamp
+		}
+
+		return conn
 	}
 
-	return conn
-}
-
-// Equal is not called directly because it returns false in cases that we don't want it to, for example
-// when both CloseTimestamp are nil, or when they have different non-nil values.
-func EqualNetworkConnection(conn1 sensorAPI.NetworkConnection, conn2 sensorAPI.NetworkConnection) bool {
 	copyConn1 := adjustNetworkConnectionForComparison(&conn1)
 	copyConn2 := adjustNetworkConnectionForComparison(&conn2)
 
