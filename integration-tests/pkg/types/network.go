@@ -28,21 +28,22 @@ func IsActive(conn *sensorAPI.NetworkConnection) bool {
 }
 
 // We don't care about the exact timestamp, only if it is nil or not nil
-func adjustNetworkConnectionForComparison(conn sensorAPI.NetworkConnection) sensorAPI.NetworkConnection {
+func adjustNetworkConnectionForComparison(conn *sensorAPI.NetworkConnection) *sensorAPI.NetworkConnection {
 	if conn.CloseTimestamp != nil {
+		conn = conn.CloneVT()
 		conn.CloseTimestamp = NotNilTimestamp
 	}
 
 	return conn
 }
 
-// EqualVT is not called directly because it returns false in cases that we don't want it to, for example
+// Equal is not called directly because it returns false in cases that we don't want it to, for example
 // when both CloseTimestamp are nil, or when they have different non-nil values.
 func EqualNetworkConnection(conn1 sensorAPI.NetworkConnection, conn2 sensorAPI.NetworkConnection) bool {
-	conn1 = adjustNetworkConnectionForComparison(conn1)
-	conn2 = adjustNetworkConnectionForComparison(conn2)
+	copyConn1 := adjustNetworkConnectionForComparison(&conn1)
+	copyConn2 := adjustNetworkConnectionForComparison(&conn2)
 
-	return proto.Equal(&conn1, &conn2)
+	return proto.Equal(copyConn1, copyConn2)
 }
 
 func LessNetworkAddress(addr1 *sensorAPI.NetworkAddress, addr2 *sensorAPI.NetworkAddress) bool {
