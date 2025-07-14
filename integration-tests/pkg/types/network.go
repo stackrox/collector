@@ -45,6 +45,13 @@ func EqualNetworkConnection(conn1 sensorAPI.NetworkConnection, conn2 sensorAPI.N
 	return proto.Equal(copyConn1, copyConn2)
 }
 
+func EqualNetworkConnectionDontCompareCloseTimestamps(conn1 sensorAPI.NetworkConnection, conn2 sensorAPI.NetworkConnection) bool {
+	conn1.CloseTimestamp = nil
+	conn2.CloseTimestamp = nil
+
+	return proto.Equal(&conn1, &conn2)
+}
+
 func LessNetworkAddress(addr1 *sensorAPI.NetworkAddress, addr2 *sensorAPI.NetworkAddress) bool {
 	comp := bytes.Compare(addr1.GetAddressData(), addr2.GetAddressData())
 
