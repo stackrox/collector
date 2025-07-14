@@ -17,12 +17,15 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
-var (
+const (
 	normalizedIp = "255.255.255.255"
 	externalIp   = "8.8.8.8"
-	serverPort   = uint32(53)
-	externalUrl  = fmt.Sprintf("http://%s:%d", externalIp, serverPort)
-	notNilTime   = protoconv.ConvertTimeToTimestamp(time.Now())
+	serverPort   = 53
+)
+
+var (
+	externalUrl = fmt.Sprintf("http://%s:%d", externalIp, serverPort)
+	notNilTime  = protoconv.ConvertTimeToTimestamp(time.Now())
 
 	activeNormalizedConnection = sensorAPI.NetworkConnection{
 		LocalAddress:   nil,
