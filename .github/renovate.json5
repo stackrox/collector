@@ -85,5 +85,5 @@
     ],
     "platformAutomerge": true,
   }],
-  "labels": ["auto-approve"],
+  "labels": ["auto-approve", "build-builder-image", "rebuild-test-container"],
 }
