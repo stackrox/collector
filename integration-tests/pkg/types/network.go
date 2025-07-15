@@ -28,7 +28,10 @@ func IsActive(conn *sensorAPI.NetworkConnection) bool {
 }
 
 // Equal is not called directly because it returns false when they have different non-nil values.
-func EqualNetworkConnection(conn1 sensorAPI.NetworkConnection, conn2 sensorAPI.NetworkConnection) bool {
+func EqualNetworkConnection(conn1 *sensorAPI.NetworkConnection, conn2 *sensorAPI.NetworkConnection) bool {
+	copyConn1 := conn1.CloneVT()
+	copyConn2 := conn2.CloneVT()
+
 	// We don't care about the exact timestamp, only if it is nil or not nil
 	adjustNetworkConnectionForComparison := func(conn *sensorAPI.NetworkConnection) *sensorAPI.NetworkConnection {
 		if conn.CloseTimestamp != nil {
@@ -39,17 +42,20 @@ func EqualNetworkConnection(conn1 sensorAPI.NetworkConnection, conn2 sensorAPI.N
 		return conn
 	}
 
-	copyConn1 := adjustNetworkConnectionForComparison(&conn1)
-	copyConn2 := adjustNetworkConnectionForComparison(&conn2)
+	copyConn1 = adjustNetworkConnectionForComparison(copyConn1)
+	copyConn2 = adjustNetworkConnectionForComparison(copyConn2)
 
 	return proto.Equal(copyConn1, copyConn2)
 }
 
-func EqualNetworkConnectionDontCompareCloseTimestamps(conn1 sensorAPI.NetworkConnection, conn2 sensorAPI.NetworkConnection) bool {
-	conn1.CloseTimestamp = nil
-	conn2.CloseTimestamp = nil
+func EqualNetworkConnectionDontCompareCloseTimestamps(conn1 *sensorAPI.NetworkConnection, conn2 *sensorAPI.NetworkConnection) bool {
+	copyConn1 := conn1.CloneVT()
+	copyConn2 := conn2.CloneVT()
 
-	return proto.Equal(&conn1, &conn2)
+	copyConn1.CloseTimestamp = nil
+	copyConn2.CloseTimestamp = nil
+
+	return proto.Equal(copyConn1, copyConn2)
 }
 
 func LessNetworkAddress(addr1 *sensorAPI.NetworkAddress, addr2 *sensorAPI.NetworkAddress) bool {
