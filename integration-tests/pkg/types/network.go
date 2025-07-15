@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	NilTimestampStr = "<nil>"
+	NilTimestamp = "<nil>"
 )
 
 var (
@@ -27,12 +27,11 @@ func IsActive(conn *sensorAPI.NetworkConnection) bool {
 	return conn.GetCloseTimestamp() == nil
 }
 
-// Equal is not called directly because it returns false when they have different non-nil values.
+// Equal is not called directly because it returns false when close timestamps have different non-nil values.
 func EqualNetworkConnection(conn1 *sensorAPI.NetworkConnection, conn2 *sensorAPI.NetworkConnection) bool {
 	copyConn1 := conn1.CloneVT()
 	copyConn2 := conn2.CloneVT()
 
-	// We don't care about the exact timestamp, only if it is nil or not nil
 	adjustNetworkConnectionForComparison := func(conn *sensorAPI.NetworkConnection) *sensorAPI.NetworkConnection {
 		if conn.CloseTimestamp != nil {
 			conn = conn.CloneVT()
