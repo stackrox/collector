@@ -46,6 +46,7 @@ std::vector<IPNet> readNetworks(const std::string& networks, Address::Family fam
   int tuple_size = Address::Length(family) + 1;
   int num_nets = networks.size() / tuple_size;
   std::vector<IPNet> ip_nets;
+
   ip_nets.reserve(num_nets);
   for (int i = 0; i < num_nets; i++) {
     // Bytes are received in big-endian order.

@@ -20,6 +20,7 @@ COLLECTOR_BUILD_DEPS := $(HDRS) $(SRCS) $(shell find $(BASE_PATH)/falcosecurity-
 cmake-configure/collector:
 	docker exec $(COLLECTOR_BUILDER_NAME) \
 		cmake -S $(BASE_PATH) -B $(CMAKE_DIR) \
+			-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 			-DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) \
 			-DDISABLE_PROFILING=$(DISABLE_PROFILING) \
 			-DUSE_VALGRIND=$(USE_VALGRIND) \
@@ -63,6 +64,29 @@ unittest: collector
 txt-files:
 	mkdir -p container/THIRD_PARTY_NOTICES/
 	cp NOTICE-sysdig.txt container/THIRD_PARTY_NOTICES/sysdig
+
+.PHONY: clang-tidy/rox-proto
+clang-tidy/rox-proto: cmake-configure/collector
+	docker exec $(COLLECTOR_BUILDER_NAME) \
+		make -C $(CMAKE_DIR) -j$(NPROCS) rox-proto
+
+.PHONY: clang-tidy/check
+clang-tidy/check: clang-tidy/rox-proto
+	git ls-files | grep -E '\.(cpp|h|cu|cuh)$$' | grep -v optionparser.h | \
+	docker exec -i -w $(CURDIR) $(COLLECTOR_BUILDER_NAME) \
+		xargs -- clang-tidy -p $(CMAKE_DIR)
+
+.PHONY: clang-tidy/check-staged
+clang-tidy/check-staged: clang-tidy/rox-proto
+	git diff --name-only --cached --relative | grep -E '\.(cpp|h|cu|cuh)$$' | grep -v optionparser.h | \
+	docker exec -i -w $(CURDIR) $(COLLECTOR_BUILDER_NAME) \
+		xargs -- clang-tidy -p $(CMAKE_DIR)
+
+.PHONY: clang-tidy/fix
+clang-tidy/fix: clang-tidy/rox-proto
+	git ls-files | grep -E '\.(cpp|h|cu|cuh)$$' | grep -v optionparser.h | \
+	docker exec -i -w $(CURDIR) $(COLLECTOR_BUILDER_NAME) \
+		xargs -- clang-tidy -p $(CMAKE_DIR) --fix-errors
 
 .PHONY: clean
 clean:
