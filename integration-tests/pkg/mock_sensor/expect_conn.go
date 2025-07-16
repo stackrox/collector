@@ -9,17 +9,19 @@ import (
 
 	collectorAssert "github.com/stackrox/collector/integration-tests/pkg/assert"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
+
+	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 )
 
 // ExpectConnections waits up to the timeout for the gRPC server to receive
 // the list of expected Connections. It will first check to see if the connections
 // have been received already, and then monitor the live feed of connections
 // until timeout or until all the events have been received.
-func (s *MockSensor) ExpectConnections(t *testing.T, containerID string, timeout time.Duration, expected ...types.NetworkInfo) bool {
+func (s *MockSensor) ExpectConnections(t *testing.T, containerID string, timeout time.Duration, expected ...*sensorAPI.NetworkConnection) bool {
 
-	to_find := funk.Filter(expected, func(x types.NetworkInfo) bool {
+	to_find := funk.Filter(expected, func(x *sensorAPI.NetworkConnection) bool {
 		return !s.HasConnection(containerID, x)
-	}).([]types.NetworkInfo)
+	}).([]*sensorAPI.NetworkConnection)
 
 	if len(to_find) == 0 {
 		return true
@@ -39,9 +41,9 @@ loop:
 				continue loop
 			}
 
-			to_find = funk.Filter(expected, func(x types.NetworkInfo) bool {
+			to_find = funk.Filter(expected, func(x *sensorAPI.NetworkConnection) bool {
 				return !s.HasConnection(containerID, x)
-			}).([]types.NetworkInfo)
+			}).([]*sensorAPI.NetworkConnection)
 
 			if len(to_find) == 0 {
 				return true
@@ -57,7 +59,7 @@ loop:
 //
 // It does not consider the content of the events, just that a certain number
 // have been received
-func (s *MockSensor) ExpectConnectionsN(t *testing.T, containerID string, timeout time.Duration, n int) []types.NetworkInfo {
+func (s *MockSensor) ExpectConnectionsN(t *testing.T, containerID string, timeout time.Duration, n int) []*sensorAPI.NetworkConnection {
 	if len(s.Connections(containerID)) == n {
 		return s.Connections(containerID)
 	}
@@ -82,11 +84,11 @@ loop:
 // ExpectSameElementsConnections compares a list of expected connections to the observed connections. This comparison is done at the beginning, when a new
 // connection arrives, and after a timeout period. The number of connections must match and the expected and observed connections must match, but the order
 // does not matter.
-func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID string, timeout time.Duration, expected ...types.NetworkInfo) bool {
+func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID string, timeout time.Duration, expected ...*sensorAPI.NetworkConnection) bool {
 	types.SortConnections(expected)
 
-	equal := func(c1, c2 types.NetworkInfo) bool {
-		return c1.Equal(c2)
+	equal := func(c1, c2 *sensorAPI.NetworkConnection) bool {
+		return types.EqualNetworkConnection(c1, c2)
 	}
 
 	connections := s.Connections(containerID)
@@ -113,8 +115,8 @@ func (s *MockSensor) ExpectSameElementsConnections(t *testing.T, containerID str
 	}
 }
 
-func (s *MockSensor) ExpectSameElementsConnectionsScrapes(t *testing.T, containerID string, timeout time.Duration, expected []types.NetworkInfoBatch) bool {
-	equal := func(c1, c2 types.NetworkInfoBatch) bool {
+func (s *MockSensor) ExpectSameElementsConnectionsScrapes(t *testing.T, containerID string, timeout time.Duration, expected []types.NetworkConnectionBatch) bool {
+	equal := func(c1, c2 types.NetworkConnectionBatch) bool {
 		if len(c1) != len(c2) {
 			return false
 		}
@@ -123,7 +125,7 @@ func (s *MockSensor) ExpectSameElementsConnectionsScrapes(t *testing.T, containe
 		types.SortConnections(c2)
 
 		for i := range c2 {
-			if !c1[i].Equal(c2[i]) {
+			if !types.EqualNetworkConnection(c1[i], c2[i]) {
 				return false
 			}
 		}
