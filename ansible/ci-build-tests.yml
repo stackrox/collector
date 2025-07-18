@@ -6,15 +6,13 @@
 
   tasks:
     - set_fact:
-        platforms: "linux/amd64,linux/ppc64le,linux/s390x,linux/arm64"
-      when: build_multi_arch
-
-    - set_fact:
-        platforms: "linux/amd64,linux/arm64"
-      when: not build_multi_arch
-
-    - set_fact:
         collector_root: "{{ lookup('env', 'GITHUB_WORKSPACE') }}"
+
+    - name: Build test binaries
+      community.general.make:
+        chdir: "{{ collector_root }}/integration-tests"
+        target: build-all
+        jobs: "{{ ansible_facts['processor_vcpus'] }}"
 
     - name: Login to quay.io
       community.docker.docker_login:
@@ -31,7 +29,7 @@
         #   - we can push the images and manifest in a single command. The make
         #     target can be used for local development and testing.
         docker buildx build --push \
-          --platform "{{ platforms }}" \
+          --platform "linux/amd64,linux/arm64,linux/ppc64le,linux/s390x" \
           -t '{{ test_image }}' \
           {{ collector_root }}/integration-tests
       register: build_result
@@ -45,4 +43,3 @@
         registry_url: quay.io
         state: absent
       when: true
-
