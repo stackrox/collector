@@ -77,6 +77,13 @@ jobs:
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Setup go and its cache
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: integration-tests/go.mod
+          cache-dependency-path: |
+            integration-tests/go.sum
+
       - name: Create Ansible Vars (inc. Secrets)
         run: |
           cat << EOF > ${{ github.workspace }}/ansible/secrets.yml
@@ -102,28 +109,6 @@ jobs:
           echo "COLLECTOR_TESTS_TAG=${COLLECTOR_TESTS_TAG}" >> "$GITHUB_ENV"
           echo "collector-tests-tag=${COLLECTOR_TESTS_TAG}" >> "$GITHUB_OUTPUT"
 
-      - name: Check if multiarch is needed
-        run: |
-          BUILD_MULTI_ARCH="false"
-
-          if [[ "${GITHUB_EVENT_NAME}" != "pull_request" ]]; then
-            BUILD_MULTI_ARCH="true"
-          fi
-
-          if [[ "${{ inputs.is-konflux }}" == "true" ]]; then
-            BUILD_MULTI_ARCH="true"
-          fi
-
-          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'run-multiarch-builds') }}" == "true" ]]; then
-            BUILD_MULTI_ARCH="true"
-          fi
-
-          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'run-cpaas-steps') }}" == "true" ]]; then
-            BUILD_MULTI_ARCH="true"
-          fi
-
-          echo "BUILD_MULTI_ARCH=${BUILD_MULTI_ARCH}" >> "$GITHUB_ENV"
-
       - name: Build images
         run: |
           ansible-galaxy install -r ansible/requirements.yml
@@ -132,7 +117,6 @@ jobs:
           ansible-playbook \
             --connection local -i localhost, --limit localhost \
             -e test_image="quay.io/rhacs-eng/collector-tests:${COLLECTOR_TESTS_TAG}" \
-            -e "{\"build_multi_arch\": $BUILD_MULTI_ARCH}" \
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-tests.yml
 
