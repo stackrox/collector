@@ -2,75 +2,82 @@
   include_vars:
     file: s390x.yml
 
-- name: Check for existing VSI
-  ibm.cloudcollection.ibm_is_instance_info:
-    name: "{{ vsi_name }}"
-  failed_when:
-    - vsi.rc != 0
-    - '"No Instance found" not in vsi.stderr'
-  register: vsi
+- name: Create s390x VM
+  block:
+    - name: Check for existing VSI
+      ibm.cloudcollection.ibm_is_instance_info:
+        name: "{{ vsi_name }}"
+      failed_when:
+        - vsi.rc != 0
+        - '"No Instance found" not in vsi.stderr'
+      register: vsi
 
-- name: Configure VSI
-  ibm.cloudcollection.ibm_is_instance:
-    name: "{{ vsi_name }}"
-    state: available
-    id: "{{ vsi.resource.id | default(omit) }}"
-    vpc: "{{ s390x.vpc_id }}"
-    profile: "{{ s390x.vsi_profile }}"
-    image: "{{ s390x.vsi_image_id }}"
-    resource_group: "{{ s390x.vsi_resource_group_id }}"
-    keys:
-      - "{{ s390x.ssh_key_id }}"
-    primary_network_interface:
-      - subnet: "{{ s390x.subnet_id }}"
-    zone: "{{ s390x.zone }}"
-    boot_volume:
-      - size: "{{ s390x.disk_size }}"
-  register: vsi
+    - name: Configure VSI
+      ibm.cloudcollection.ibm_is_instance:
+        name: "{{ vsi_name }}"
+        state: available
+        id: "{{ vsi.resource.id | default(omit) }}"
+        vpc: "{{ s390x.vpc_id }}"
+        profile: "{{ s390x.vsi_profile }}"
+        image: "{{ s390x.vsi_image_id }}"
+        resource_group: "{{ s390x.vsi_resource_group_id }}"
+        keys:
+          - "{{ s390x.ssh_key_id }}"
+        primary_network_interface:
+          - subnet: "{{ s390x.subnet_id }}"
+        zone: "{{ s390x.zone }}"
+        boot_volume:
+          - size: "{{ s390x.disk_size }}"
+      register: vsi
 
-- name: Check for existing Floating IP
-  ibm.cloudcollection.ibm_is_floating_ip_info:
-    name: "{{ vsi_name }}-fip"
-  failed_when:
-    - fip.rc != 0
-    - '"No floatingIP found" not in fip.stderr'
-  register: fip
+    - name: Check for existing Floating IP
+      ibm.cloudcollection.ibm_is_floating_ip_info:
+        name: "{{ vsi_name }}-fip"
+      failed_when:
+        - fip.rc != 0
+        - '"No floatingIP found" not in fip.stderr'
+      register: fip
 
-- name: Configure Floating IP Address
-  ibm.cloudcollection.ibm_is_floating_ip:
-    name: "{{ vsi_name }}-fip"
-    state: available
-    id: "{{ fip.resource.id | default(omit) }}"
-    resource_group: "{{ s390x.vsi_resource_group_id }}"
-    target: "{{ vsi.resource.primary_network_interface[0]['id'] }}"
-  register: fip
+    - name: Configure Floating IP Address
+      ibm.cloudcollection.ibm_is_floating_ip:
+        name: "{{ vsi_name }}-fip"
+        state: available
+        id: "{{ fip.resource.id | default(omit) }}"
+        resource_group: "{{ s390x.vsi_resource_group_id }}"
+        target: "{{ vsi.resource.primary_network_interface[0]['id'] }}"
+      register: fip
 
-- name: Print Floating IP Address
-  debug:
-    msg: "{{ vsi_name }} IP Address: {{ fip.resource.address }}"
+    - name: Print Floating IP Address
+      debug:
+        msg: "{{ vsi_name }} IP Address: {{ fip.resource.address }}"
 
-- name: Add VSI to Ansible inventory
-  add_host:
-    name: "{{ vsi_name }}"
-    ansible_user: root
-    ansible_host: "{{ fip.resource.address }}"
-    groups:
-      - job_id_{{ job_id }}
-      - platform_{{ test_platform }}
-      - vm_arch_s390x
-    ansible_ssh_extra_args: "-o StrictHostKeyChecking=no"
-    ansible_ssh_private_key_file: "{{ vm_ssh_key_file }}"
-    vm_config: "{{ vm_config }}"
-    vm_image_family: "{{ vm_family }}"
-    vm_collection_method: "{{ vm_collection_method }}"
-    vm_arch: "{{ vm_arch }}"
-    ibm_cloud_vm: true
+  always:
+    # regardless of success/failure of VM creation we want to add an entry
+    # to the inventory. VM creation can fail but a VM can be created (in a failed
+    # state) but without a record of it in the inventory we can leak VM instances
+    # in IBM cloud. Empty defaults in some variables here are to account for this.
+    - name: Add VSI to Ansible inventory
+      add_host:
+        name: "{{ vsi_name }}"
+        ansible_user: root
+        ansible_host: "{{ fip.resource.address | default('') }}"
+        groups:
+          - job_id_{{ job_id }}
+          - platform_{{ test_platform }}
+          - vm_arch_s390x
+        ansible_ssh_extra_args: "-o StrictHostKeyChecking=no"
+        ansible_ssh_private_key_file: "{{ vm_ssh_key_file }}"
+        vm_config: "{{ vm_config }}"
+        vm_image_family: "{{ vm_family }}"
+        vm_collection_method: "{{ vm_collection_method }}"
+        vm_arch: "{{ vm_arch }}"
+        ibm_cloud_vm: true
 
-- name: generate provisioner inventory file
-  template:
-    src: 'ibm-cloud-inventory.j2'
-    dest: "{{ ibm_output_inventory_file }}"
-    mode: '0644'
-  when:
-    - ibm_output_inventory_file != ""
-  delegate_to: localhost
+    - name: generate provisioner inventory file
+      template:
+        src: 'ibm-cloud-inventory.j2'
+        dest: "{{ ibm_output_inventory_file }}"
+        mode: '0644'
+      when:
+        - ibm_output_inventory_file != ""
+      delegate_to: localhost
