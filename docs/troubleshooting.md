@@ -107,37 +107,33 @@ We can instantly see that the Collector has failed to download a kernel driver.
 
 ## Collector Start Up
 
-The vast majority of errors occur during Collector startup, where Collector will
-configure itself, find or download an appropriate kernel driver for the system,
-and then start collecting events. The following diagram describes the main parts
-of this start-up process:
-
-<p align="center">
-  <!-- To edit the diagram, open with app.diagrams.net -->
-  <img src="./imgs/collector-startup.drawio.png" />
-</p>
+The vast majority of errors occur during Collector startup, where Collector
+will configure itself, load the eBPF probe into the kernel and then start
+collecting events. The following diagram describes the main parts of this
+start-up process:
 
 If any part of the start-up procedure fails, a helpful diagnostic summary is written
 to the logs, detailing which steps succeeded or failed.
 
 For example, for a successful startup, where Collector has been able to connect
-to Sensor, download a kernel driver and load the driver successfully into the kernel:
+to Sensor and load the eBPF probe successfully into the kernel:
 
 ```
-[INFO    2022/11/28 13:21:55] == Collector Startup Diagnostics: ==
-[INFO    2022/11/28 13:21:55]  Connected to Sensor?       true
-[INFO    2022/11/28 13:21:55]  Kernel driver available?   true
-[INFO    2022/11/28 13:21:55]  Driver loaded into kernel? true
-[INFO    2022/11/28 13:21:55] ====================================
+[INFO    2025/07/24 10:05:54] == Collector Startup Diagnostics: ==
+[INFO    2025/07/24 10:05:54]  Connected to Sensor?       false
+[INFO    2025/07/24 10:05:54]  Kernel driver candidates:
+[INFO    2025/07/24 10:05:54]    core_bpf (available)
+[INFO    2025/07/24 10:05:54]  Driver loaded into kernel: core_bpf
+[INFO    2025/07/24 10:05:54] ====================================
 ```
 
 ## Common Error Conditions
 
 ### Unable to Connect to Sensor
 
-The first thing that Collector attempts to do upon starting is connect to Sensor.
-Sensor is used to download kernel drivers, and CIDR blocks for processing network
-events. As such, it is fundamental to the rest of the start up.
+The first thing that Collector attempts to do upon starting is connect to
+Sensor. Sensor is used to download CIDR blocks for processing network events.
+As such, it is fundamental to the rest of the start up.
 
 ```
 Collector Version: 3.12.0
@@ -151,11 +147,10 @@ Starting StackRox Collector...
 [INFO    2022/10/13 12:21:13]
 [INFO    2022/10/13 12:21:13] == Collector Startup Diagnostics: ==
 [INFO    2022/10/13 12:21:13]  Connected to Sensor?       false
-[INFO    2022/10/13 12:21:13]  Kernel driver available?   false
-[INFO    2022/10/13 12:21:13]  Driver loaded into kernel? false
+[INFO    2022/10/13 12:21:13]  Kernel driver candidates:
 [INFO    2022/10/13 12:21:13] ====================================
 [INFO    2022/10/13 12:21:13]
-[FATAL   2022/10/13 12:21:13] Unable to connect to Sensor.
+[FATAL   2022/10/13 12:21:13] Unable to connect to Sensor at 'sensor.stackrox.svc:9998'.
 ```
 
 Normally, failing to connect to Sensor either means that Sensor has not started
@@ -163,56 +158,9 @@ correctly or Collector has been misconfigured. Double check the Collector config
 to ensure that the Sensor address is correct, and check that the Sensor pod is running
 correctly.
 
-### No Kernel Driver Available
+### Failed to load the eBPF probe
 
-Collector will check whether it has available a kernel driver for the kernel version
-of the node. First it checks local storage for a driver of the right version and type
-and then, attempts to download one from Sensor. If there is no local kernel driver,
-and Sensor does not provide one, Collector is unable to run and will enter CrashLoopBackOff.
-
-```
-Collector Version: 3.12.0
-OS: Alpine Linux v3.14
-Kernel Version: 5.10.109-0-virt
-Starting StackRox Collector...
-[INFO    2022/10/13 13:32:57] Hostname: 'alpine'
-[...]
-[INFO    2022/10/13 13:32:57] Sensor configured at address: sensor.stackrox.svc:9999
-[INFO    2022/10/13 13:32:57] Attempting to connect to Sensor
-[INFO    2022/10/13 13:32:57] Successfully connected to Sensor.
-[INFO    2022/10/13 13:32:57] Module version: 2.2.0
-[INFO    2022/10/13 13:32:57] Attempting to find kernel module - Candidate kernel versions:
-[INFO    2022/10/13 13:32:57] 5.10.109-0-virt
-[INFO    2022/10/13 13:32:57] Local storage does not contain collector-5.10.109-0-virt.ko
-[...]
-[INFO    2022/10/13 13:32:57] Attempting to download kernel object from https://sensor.stackrox.svc/kernel-objects/2.2.0/collector-5.10.109-0-virt.ko.gz
-[WARNING 2022/10/13 13:32:58] [Throttled] Unexpected HTTP request failure (HTTP 404)
-[WARNING 2022/10/13 13:33:08] [Throttled] Unexpected HTTP request failure (HTTP 404)
-[WARNING 2022/10/13 13:33:18] [Throttled] Unexpected HTTP request failure (HTTP 404)
-[WARNING 2022/10/13 13:33:29] [Throttled] Unexpected HTTP request failure (HTTP 404)
-[WARNING 2022/10/13 13:33:35] Attempted to download collector-5.10.109-0-virt.ko.gz 30 time(s)
-[WARNING 2022/10/13 13:33:35] Failed to download from collector-5.10.109-0-virt.ko.gz
-[WARNING 2022/10/13 13:33:35] Unable to download kernel object collector-5.10.109-0-virt.ko to /module/collector.ko.gz
-[ERROR   2022/10/13 13:33:35] Error getting kernel object: collector-5.10.109-0-virt.ko
-[INFO    2022/10/13 13:33:35]
-[INFO    2022/10/13 13:33:35] == Collector Startup Diagnostics: ==
-[INFO    2022/10/13 13:33:35]  Connected to Sensor?       true
-[INFO    2022/10/13 13:33:35]  Kernel driver available?   false
-[INFO    2022/10/13 13:33:35]  Driver loaded into kernel? false
-[INFO    2022/10/13 13:33:35] ====================================
-[INFO    2022/10/13 13:33:35]
-[FATAL   2022/10/13 13:33:35]  No suitable kernel object downloaded for kernel 5.10.109-0-virt
-```
-
-The logs will first show the attempts at finding the module locally, and then
-any attempts at downloading the driver from Sensor. The 404 errors above indicate
-that there is no kernel driver for the node's kernel.
-
-All supported kernel versions are listed in the [KERNEL_VERSIONS](../kernel-modules/KERNEL_VERSIONS) file.
-
-### Failed to load the Kernel Driver
-
-In rare cases, there may be a problem with loading the kernel driver. This is the
+In rare cases, there may be a problem with loading the eBPF probe. This is the
 final step before Collector is fully up and running, and failures can result in a
 variety of error messages or exceptions. The same diagnostic summary is reported
 in the logs, and will indicate the failure of this step.
@@ -223,28 +171,15 @@ fixed, so should be reported to ACS support or in a [GitHub issue](https://githu
 The following is a simple example of this occurring:
 
 ```
-[INFO    2022/10/13 14:25:13] Hostname: 'hostname'
 [...]
-[INFO    2022/10/13 14:25:13] Successfully downloaded and decompressed /module/collector.ko
-[INFO    2022/10/13 14:25:13]
-[INFO    2022/10/13 14:25:13] This product uses kernel module and ebpf subcomponents licensed under the GNU
-[INFO    2022/10/13 14:25:13] GENERAL PURPOSE LICENSE Version 2 outlined in the /kernel-modules/LICENSE file.
-[INFO    2022/10/13 14:25:13] Source code for the kernel module and ebpf subcomponents is available upon
-[INFO    2022/10/13 14:25:13] request by contacting support@stackrox.com.
-[INFO    2022/10/13 14:25:13]
+[INFO    2025/07/24 10:26:37] Trying to open the right engine!
+[INFO    2025/07/24 10:26:41] libbpf: prog 'execve_x': -- BEGIN PROG LOAD LOG --
 [...]
-[INFO    2022/10/13 14:25:13] Inserting kernel module /module/collector.ko with indefinite removal and retry if required.
-[ERROR   2022/10/13 14:25:13] Error inserting kernel module: /module/collector.ko: Operation not permitted. Aborting...
-[ERROR   2022/10/13 14:25:13] Failed to insert kernel module
-[ERROR   2022/10/13 14:25:13] Failed to setup Kernel module
-[INFO    2022/10/13 14:25:13]
-[INFO    2022/10/13 14:25:13] == Collector Startup Diagnostics: ==
-[INFO    2022/10/13 14:25:13]  Connected to Sensor?       true
-[INFO    2022/10/13 14:25:13]  Kernel driver available?   true
-[INFO    2022/10/13 14:25:13]  Driver loaded into kernel? false
-[INFO    2022/10/13 14:25:13] ====================================
-[INFO    2022/10/13 14:25:13]
-[FATAL   2022/10/13 14:25:13] Failed to initialize collector kernel components.
+-- END PROG LOAD LOG --
+[INFO    2025/07/24 10:26:41] libbpf: prog 'execve_x': failed to load: -7
+[INFO    2025/07/24 10:26:41] libbpf: failed to load object 'bpf_probe'
+[INFO    2025/07/24 10:26:41] libbpf: failed to load BPF skeleton 'bpf_probe': -7
+[INFO    2025/07/24 10:26:41] libpman: failed to load BPF object (errno: 7 | message: Argument list too long)
 ```
 
 ## Troubleshooting using performance counters
