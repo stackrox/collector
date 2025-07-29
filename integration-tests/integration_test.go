@@ -18,6 +18,13 @@ import (
 )
 
 const (
+	// This is used when an IP address for a test is not known
+	// before the test is run. This is the case for the remote
+	// address field in ConnectionsAndEndpointsTestSuite. The
+	// RemoteAddress is still specified when the
+	// ConnectionsAndEndpointsTestSuite objects are created.
+	// The port field of the RemoteAddress is set, but the
+	// IP address is unknown so it is set to the placeholder.
 	placeholderIP = "0.0.0.0"
 )
 
