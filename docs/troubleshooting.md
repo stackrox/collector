@@ -109,8 +109,7 @@ We can instantly see that the Collector has failed to download a kernel driver.
 
 The vast majority of errors occur during Collector startup, where Collector
 will configure itself, load the eBPF probe into the kernel and then start
-collecting events. The following diagram describes the main parts of this
-start-up process:
+collecting events.
 
 If any part of the start-up procedure fails, a helpful diagnostic summary is written
 to the logs, detailing which steps succeeded or failed.
