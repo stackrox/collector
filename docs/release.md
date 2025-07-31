@@ -13,17 +13,27 @@
 A workflow for automated releases can be found in the 'Actions' tab of
 GitHub. Once in said tab, look for the `Tag a new release` workflow in
 the side bar, select it and use the `Run workflow` button on the far
-right to trigger the tagging process, setting the `<Major>.<minor>`
-version for the release in the menu that pops up or leaving it as 0.0.
-The workflow will check the version input and adjust the major, minor
-and patch versions to be used before creating any necessary branches
-and tags. If left with the default value of 0.0, the workflow will
-create a new minor release.
+right to trigger the release process.
+
+| Parameter | Description |
+| -------- | ----------- |
+| Branch | Determines where to find the workflow file. Use `master` unless testing the automation. |
+| Release version | A version of the form `<Major>.<Minor>`. |
+| Do not push anything | Whether or not to actually create new branches/tags. |
+
+* **if performing a new minor release**: keep the default settings. The workflow will
+caclulate the next minor version.
+* **if performing a patch release**: set the release version to the
+`<Major>.<Minor>` of the release you're patching, e.g. `3.21`. The workflow will calculate
+the next patch version.
+* **if performing a new major release**: set the release version to the next
+major version, e.g `4.0`.
 
 The recommended workflow is to first run in dry-mode and check the tags
-and branches that will be used are correct in the `Summary` section of
-the triggered workflow, then run it again without dry-mode to create
-the actual release. With the tag pushed, the workflow for creating the
+and branches are correct in the `Summary` section of the triggered run,
+then run it again without dry-mode to create the actual release.
+
+With the tag pushed, the workflow for creating the
 new version of collector should be triggered on its own.
 
 ## Manual release
