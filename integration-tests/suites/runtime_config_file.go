@@ -11,44 +11,56 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
+
+	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
-var (
+const (
 	normalizedIp = "255.255.255.255"
 	externalIp   = "8.8.8.8"
 	serverPort   = 53
-	externalUrl  = fmt.Sprintf("http://%s:%d", externalIp, serverPort)
+)
 
-	activeNormalizedConnection = types.NetworkInfo{
-		LocalAddress:   "",
-		RemoteAddress:  fmt.Sprintf("%s:%d", normalizedIp, serverPort),
-		Role:           "ROLE_CLIENT",
-		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-		CloseTimestamp: types.NilTimestamp,
+var (
+	externalUrl = fmt.Sprintf("http://%s:%d", externalIp, serverPort)
+	notNilTime  = protoconv.ConvertTimeToTimestamp(time.Now())
+
+	activeNormalizedConnection = sensorAPI.NetworkConnection{
+		LocalAddress:   nil,
+		RemoteAddress:  types.CreateNetworkAddress(normalizedIp, "", serverPort),
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+		SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+		CloseTimestamp: nil,
 	}
 
-	activeUnnormalizedConnection = types.NetworkInfo{
-		LocalAddress:   "",
-		RemoteAddress:  fmt.Sprintf("%s:%d", externalIp, serverPort),
-		Role:           "ROLE_CLIENT",
-		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-		CloseTimestamp: types.NilTimestamp,
+	activeUnnormalizedConnection = sensorAPI.NetworkConnection{
+		LocalAddress:   nil,
+		RemoteAddress:  types.CreateNetworkAddress("", externalIp, serverPort),
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+		SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+		CloseTimestamp: nil,
 	}
 
-	inactiveNormalizedConnection = types.NetworkInfo{
-		LocalAddress:   "",
-		RemoteAddress:  fmt.Sprintf("%s:%d", normalizedIp, serverPort),
-		Role:           "ROLE_CLIENT",
-		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-		CloseTimestamp: "Not nill time",
+	inactiveNormalizedConnection = sensorAPI.NetworkConnection{
+		LocalAddress:   nil,
+		RemoteAddress:  types.CreateNetworkAddress(normalizedIp, "", serverPort),
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+		SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+		CloseTimestamp: notNilTime,
 	}
 
-	inactiveUnnormalizedConnection = types.NetworkInfo{
-		LocalAddress:   "",
-		RemoteAddress:  fmt.Sprintf("%s:%d", externalIp, serverPort),
-		Role:           "ROLE_CLIENT",
-		SocketFamily:   "SOCKET_FAMILY_UNKNOWN",
-		CloseTimestamp: "Not nill time",
+	inactiveUnnormalizedConnection = sensorAPI.NetworkConnection{
+		LocalAddress:   nil,
+		RemoteAddress:  types.CreateNetworkAddress("", externalIp, serverPort),
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		Role:           sensorAPI.ClientServerRole_ROLE_CLIENT,
+		SocketFamily:   sensorAPI.SocketFamily_SOCKET_FAMILY_UNKNOWN,
+		CloseTimestamp: notNilTime,
 	}
 
 	runtimeConfigDir  = "/tmp/collector-test"
@@ -87,6 +99,11 @@ func (s *RuntimeConfigFileTestSuite) SetupTest() {
 	s.Require().NoError(err)
 	s.ClientContainer = common.ContainerShortID(containerID)
 
+	activeNormalizedConnection.ContainerId = s.ClientContainer
+	inactiveNormalizedConnection.ContainerId = s.ClientContainer
+	activeUnnormalizedConnection.ContainerId = s.ClientContainer
+	inactiveUnnormalizedConnection.ContainerId = s.ClientContainer
+
 	collectorOptions := collector.StartupOptions{
 		Env: map[string]string{
 			"ROX_AFTERGLOW_PERIOD":               "6",
@@ -114,7 +131,7 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileEnable() {
 	// Default configuration is external IPs disabled.
 	// We expect normalized connections.
 	assert.AssertNoRuntimeConfig(s.T(), collectorIP)
-	expectedConnections := []types.NetworkInfoBatch{[]types.NetworkInfo{activeNormalizedConnection}}
+	expectedConnections := []types.NetworkConnectionBatch{[]*sensorAPI.NetworkConnection{&activeNormalizedConnection}}
 	connectionSuccess := s.Sensor().ExpectSameElementsConnectionsScrapes(s.T(), s.ClientContainer, 10*time.Second, expectedConnections)
 	s.Require().True(connectionSuccess)
 
@@ -123,7 +140,7 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileEnable() {
 	// Unnormalized connection will now be reported.
 	s.setExternalIpsEnabled(runtimeConfigFile, "ENABLED")
 	assert.AssertExternalIps(s.T(), "ENABLED", collectorIP)
-	expectedConnections = append(expectedConnections, []types.NetworkInfo{activeUnnormalizedConnection, inactiveNormalizedConnection})
+	expectedConnections = append(expectedConnections, []*sensorAPI.NetworkConnection{&activeUnnormalizedConnection, &inactiveNormalizedConnection})
 	connectionSuccess = s.Sensor().ExpectSameElementsConnectionsScrapes(s.T(), s.ClientContainer, 10*time.Second, expectedConnections)
 	s.Require().True(connectionSuccess)
 
@@ -131,14 +148,14 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileEnable() {
 	// and the unnormalized connection shoul be inactive.
 	s.deleteFile(runtimeConfigFile)
 	assert.AssertNoRuntimeConfig(s.T(), collectorIP)
-	expectedConnections = append(expectedConnections, []types.NetworkInfo{activeNormalizedConnection, inactiveUnnormalizedConnection})
+	expectedConnections = append(expectedConnections, []*sensorAPI.NetworkConnection{&activeNormalizedConnection, &inactiveUnnormalizedConnection})
 	connectionSuccess = s.Sensor().ExpectSameElementsConnectionsScrapes(s.T(), s.ClientContainer, 10*time.Second, expectedConnections)
 	s.Require().True(connectionSuccess)
 
 	// Back to having external IPs enabled.
 	s.setExternalIpsEnabled(runtimeConfigFile, "ENABLED")
 	assert.AssertExternalIps(s.T(), "ENABLED", collectorIP)
-	expectedConnections = append(expectedConnections, []types.NetworkInfo{activeUnnormalizedConnection, inactiveNormalizedConnection})
+	expectedConnections = append(expectedConnections, []*sensorAPI.NetworkConnection{&activeUnnormalizedConnection, &inactiveNormalizedConnection})
 	connectionSuccess = s.Sensor().ExpectSameElementsConnectionsScrapes(s.T(), s.ClientContainer, 10*time.Second, expectedConnections)
 	s.Require().True(connectionSuccess)
 }
@@ -148,7 +165,7 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileDisable() {
 	// Default configuration is external IPs disabled.
 	// We expect normalized connections.
 	assert.AssertNoRuntimeConfig(s.T(), collectorIP)
-	expectedConnections := []types.NetworkInfo{activeNormalizedConnection}
+	expectedConnections := []*sensorAPI.NetworkConnection{&activeNormalizedConnection}
 	connectionSuccess := s.Sensor().ExpectSameElementsConnections(s.T(), s.ClientContainer, 10*time.Second, expectedConnections...)
 	s.Require().True(connectionSuccess)
 
@@ -173,7 +190,7 @@ func (s *RuntimeConfigFileTestSuite) TestRuntimeConfigFileInvalid() {
 	// Default configuration is external IPs disabled.
 	// We expect normalized connections.
 	assert.AssertNoRuntimeConfig(s.T(), collectorIP)
-	expectedConnections := []types.NetworkInfo{activeNormalizedConnection}
+	expectedConnections := []*sensorAPI.NetworkConnection{&activeNormalizedConnection}
 	connectionSuccess := s.Sensor().ExpectSameElementsConnections(s.T(), s.ClientContainer, 10*time.Second, expectedConnections...)
 	s.Require().True(connectionSuccess)
 
