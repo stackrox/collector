@@ -2,7 +2,7 @@ ARG BUILD_DIR=/build
 ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
 
 
-FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:b5cf5cbc9a2bb40b5216a3d15fd71ae9bda1491ab374246523dcdfa2e468fc5b AS builder
+FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:a910ffa70b1481121db5051432dea04aab0ba7150ffe4870c5b55e15427ea6c1 AS builder
 
 RUN dnf -y install --nobest --allowerasing \
         make \
@@ -79,7 +79,7 @@ RUN ctest --no-tests=error -V --test-dir "${CMAKE_BUILD_DIR}"
 RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:5b195cf0b8eb2262ce81334ee44066fdb5026022803f55bfe607be7d08d4fe43
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:7957d61cf18d023b426249b456fee704106acf7a93e83de2690ae7c29b7f4323
 
 RUN microdnf -y install --nobest \
       tbb \
