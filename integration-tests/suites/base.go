@@ -446,10 +446,16 @@ func (s *IntegrationTestSuiteBase) getIPAddress(containerName string) (string, e
 
 // unit16 makes more sense for ports, but sensor.NetworkConnection uses uint32 for
 // ports, so uint32 is used for ports.
-func (s *IntegrationTestSuiteBase) getPort(containerName string) (uint32, error) {
-	portStr, err := s.Executor().GetContainerPort(containerName)
-	port, _ := strconv.ParseUint(portStr, 10, 32)
-	return uint32(port), err
+func (s *IntegrationTestSuiteBase) getPorts(containerName string) ([]uint32, error) {
+	ports := []uint32{}
+	portsStr, err := s.Executor().GetContainerPorts(containerName)
+
+	for _, p := range portsStr {
+		port, _ := strconv.ParseUint(p, 10, 32)
+		ports = append(ports, uint32(port))
+	}
+
+	return ports, err
 }
 
 func (s *IntegrationTestSuiteBase) StartContainerStats() {

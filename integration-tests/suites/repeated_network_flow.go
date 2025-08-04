@@ -59,19 +59,19 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	scheduled_curls_image := image_store.QaImageByKey("qa-schedule-curls")
 
 	images := []string{
-		image_store.ImageByKey("nginx"),
+		image_store.QaImageByKey("qa-nginx"),
 		scheduled_curls_image,
 	}
 
 	for _, image := range images {
-		err := s.executor.PullImage(image)
+		err := s.Executor().PullImage(image)
 		s.Require().NoError(err)
 	}
 
 	// invokes default nginx
 	containerID, err := s.Executor().StartContainer(config.ContainerStartConfig{
 		Name:  "nginx",
-		Image: image_store.ImageByKey("nginx"),
+		Image: image_store.QaImageByKey("qa-nginx"),
 		Ports: []uint16{80},
 	})
 	s.Require().NoError(err)
@@ -85,7 +85,8 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.ServerIP, err = s.getIPAddress("nginx")
 	s.Require().NoError(err)
 
-	s.ServerPort, err = s.getPort("nginx")
+	ports, err := s.getPorts("nginx")
+	s.ServerPort = ports[0]
 	s.Require().NoError(err)
 
 	serverAddress := fmt.Sprintf("%s:%d", s.ServerIP, s.ServerPort)

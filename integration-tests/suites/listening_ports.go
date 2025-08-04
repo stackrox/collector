@@ -54,10 +54,10 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	ip, err := s.getIPAddress(serverName)
 	s.Require().NoError(err)
 
-	port, err := s.getPort(serverName)
+	ports, err := s.getPorts(serverName)
 	s.Require().NoError(err)
 
-	s.serverURL = fmt.Sprintf("http://%s:%d", ip, port)
+	s.serverURL = fmt.Sprintf("http://%s:%d", ip, ports[0])
 
 	// Wait 5 seconds for the plop service to start
 	common.Sleep(5 * time.Second)
