@@ -228,7 +228,7 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
   ExternalIPsConfig prevEnableExternalIPs = config_.GetExternalIPsConf();
 
   while (writer->Sleep(next_scrape)) {
-    CLOG(DEBUG) << "Starting network status notification";
+    CLOG(TRACE) << "Starting network status notification";
     next_scrape = std::chrono::system_clock::now() + std::chrono::seconds(config_.ScrapeInterval());
 
     if (!UpdateAllConnsAndEndpoints()) {
@@ -275,7 +275,7 @@ void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnect
     }
 
     if (!msg) {
-      CLOG(DEBUG) << "No update to report";
+      CLOG(TRACE) << "No update to report";
       continue;
     }
 
