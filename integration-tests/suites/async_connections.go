@@ -50,7 +50,10 @@ func (s *AsyncConnectionTestSuite) SetupSuite() {
 
 	image_store := config.Images()
 
-	containerID, err := s.Executor().StartContainer(config.ContainerStartConfig{Name: "server", Image: image_store.ImageByKey("nginx")})
+	containerID, err := s.Executor().StartContainer(config.ContainerStartConfig{
+		Name:  "server",
+		Image: image_store.QaImageByKey("qa-nginx"),
+	})
 	s.Require().NoError(err)
 	s.serverContainer = common.ContainerShortID(containerID)
 

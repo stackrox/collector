@@ -61,7 +61,7 @@ type Executor interface {
 	GetContainerIP(containerID string) (string, error)
 	GetContainerLogs(containerID string) (ContainerLogs, error)
 	CaptureLogs(testName, containerName string) (string, error)
-	GetContainerPort(containerID string) (string, error)
+	GetContainerPorts(containerID string) ([]string, error)
 	IsContainerFoundFiltered(containerID, filter string) (bool, error)
 }
 

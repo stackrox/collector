@@ -361,23 +361,23 @@ func (d *dockerAPIExecutor) GetContainerIP(containerID string) (string, error) {
 	return inspectResp.NetworkSettings.DefaultNetworkSettings.IPAddress, nil
 }
 
-func (d *dockerAPIExecutor) GetContainerPort(containerID string) (string, error) {
-	containerPort := "-1"
+func (d *dockerAPIExecutor) GetContainerPorts(containerID string) ([]string, error) {
+	containerPorts := []string{}
 	containerJSON, err := d.inspectContainer(containerID)
 	if err != nil {
-		return containerPort, err
+		return containerPorts, err
 	}
 	for portStr := range containerJSON.NetworkSettings.Ports {
 		portSplit := strings.Split(string(portStr), "/")
 		if len(portSplit) > 0 {
-			containerPort = portSplit[0]
+			containerPorts = append(containerPorts, portSplit[0])
 		}
 	}
-	if containerPort == "-1" {
-		return containerPort, log.Error("port not found for container %s", containerID)
+	if len(containerPorts) == 0 {
+		return containerPorts, log.Error("port not found for container %s", containerID)
 	}
-	log.Info("port for %s is %s\n", containerID, containerPort)
-	return containerPort, nil
+	log.Info("port for %s is %s\n", containerID, containerPorts)
+	return containerPorts, nil
 }
 
 func (d *dockerAPIExecutor) CheckContainerHealthy(containerID string) (bool, error) {

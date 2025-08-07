@@ -319,17 +319,17 @@ func (c *criExecutor) GetContainerIP(name string) (string, error) {
 	return status.Status.Network.GetIp(), nil
 }
 
-func (c *criExecutor) GetContainerPort(name string) (string, error) {
+func (c *criExecutor) GetContainerPorts(name string) ([]string, error) {
 	container, err := c.getContainer(name)
 	if err != nil {
-		return "", nil
+		return []string{}, nil
 	}
 
 	ports, ok := container.Labels["ports"]
 	if !ok {
-		return "", log.Error("No port configured in %q", name)
+		return []string{}, log.Error("No port configured in %q", name)
 	}
-	return strings.Split(ports, ",")[0], nil
+	return strings.Split(ports, ","), nil
 }
 
 func (c *criExecutor) GetContainerLogs(containerName string) (ContainerLogs, error) {
