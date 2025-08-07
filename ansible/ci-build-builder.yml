@@ -12,18 +12,6 @@
     local_branch: local
 
   tasks:
-    - name: Clone repository
-      ansible.builtin.git:
-        repo: https://github.com/stackrox/collector
-        dest: "{{ collector_root }}"
-        # We fetch the ref (either master, or pull/<ID>/merge) and then
-        # create a local branch based on that. Doing it this way, rather
-        # than with commit hashes, prevents "reference is not a tree" errors
-        version: "{{ local_branch }}"
-        refspec: "+{{ collector_git_ref | replace('refs/', '') }}:{{ local_branch }}"
-        recursive: true
-      when: arch == "s390x"
-
     - name: Build the collector builder image
       community.general.make:
         chdir: "{{ ansible_env.GITHUB_WORKSPACE | default(collector_root) }}"
