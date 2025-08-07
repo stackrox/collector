@@ -42,6 +42,14 @@ jobs:
       collector-tag: ${{ needs.init.outputs.collector-tag }}
     secrets: inherit
 
+  lint:
+    uses: ./.github/workflows/lint.yml
+    # We only lint PRs
+    if: github.event_name == 'pull_request'
+    needs: build-builder-image
+    with:
+      collector-builder-tag: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
+
   build-collector:
     uses: ./.github/workflows/collector.yml
     needs:

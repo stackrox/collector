@@ -1,6 +1,13 @@
 name: Lint
 
-on: [pull_request]
+on:
+  workflow_call:
+    inputs:
+      collector-builder-tag:
+        type: string
+        required: true
+        description: |
+          The builder tag to use in the build
 
 jobs:
   lint:
@@ -44,3 +51,33 @@ jobs:
           source .venv/bin/activate
           python3 -m pip install pre-commit
           pre-commit run --show-diff-on-failure --color=always --all-files
+
+  clang-tidy:
+    runs-on: ubuntu-24.04
+    container:
+      image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: dorny/paths-filter@v3
+        id: changed
+        with:
+          list-files: shell
+          filters: |
+            collector:
+              - collector/*.cpp
+              - collector/lib/*.cpp
+              - collector/lib/*.h
+              - collector/test/*.cpp
+
+      - name: Run clang-tidy
+        if: steps.changed.outputs.collector
+        run: |
+          mkdir -p cmake-build/
+          cmake -S . -B cmake-build/ -DDISABLE_PROFILING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          # rox-proto generates some files required for clang-tidy to fully work
+          make -C cmake-build/ rox-proto
+          clang-tidy -p cmake-build/ ${{ steps.changed.outputs.collector_files }}

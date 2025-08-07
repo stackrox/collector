@@ -82,6 +82,7 @@ class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnection
   void OnRecvControlMessage(const sensor::NetworkFlowsControlMessage* msg);
 
   void Run();
+
   void WaitUntilWriterStarted(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time);
   bool UpdateAllConnsAndEndpoints();
   void RunSingle(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer);
