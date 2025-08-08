@@ -46,13 +46,16 @@ func (s *ProcfsScraperTestSuite) SetupSuite() {
 }
 
 func (s *ProcfsScraperTestSuite) launchNginx() {
-	image := config.Images().ImageByKey("nginx")
+	image := config.Images().QaImageByKey("qa-nginx")
 
 	err := s.executor.PullImage(image)
 	s.Require().NoError(err)
 
 	// invokes default nginx
-	containerID, err := s.Executor().StartContainer(config.ContainerStartConfig{Name: "nginx", Image: image})
+	containerID, err := s.Executor().StartContainer(config.ContainerStartConfig{
+		Name:  "nginx",
+		Image: image,
+	})
 
 	s.Require().NoError(err)
 	s.ServerContainer = common.ContainerShortID(containerID)
