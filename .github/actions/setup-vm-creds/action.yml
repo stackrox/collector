@@ -37,6 +37,10 @@ inputs:
   job-tag:
     description:
       Optional job tag to add to the ID
+  workspace:
+    default: ${{ github.workspace }}
+    description:
+      Optional path to the root of the collector repo
 runs:
   using: composite
   steps:
@@ -103,9 +107,9 @@ runs:
 
     - shell: bash
       run: |
-        python -m pip install -r "${{ github.workspace }}/ansible/requirements.txt"
-        ansible-galaxy collection install -r "${{ github.workspace }}/ansible/requirements.yml"
-        ansible-galaxy collection install -r "${{ github.workspace }}/ansible/ansible-collections.yml"
+        python -m pip install -r "${{ inputs.workspace }}/ansible/requirements.txt"
+        ansible-galaxy collection install -r "${{ inputs.workspace }}/ansible/requirements.yml"
+        ansible-galaxy collection install -r "${{ inputs.workspace }}/ansible/ansible-collections.yml"
 
     # Added workaround for ssh connection issue with power vm from ubuntu machine.
     # Changing mtu works in resolving the issue
