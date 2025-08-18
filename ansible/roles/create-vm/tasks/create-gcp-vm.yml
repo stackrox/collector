@@ -62,8 +62,9 @@
   loop: "{{ vm_available_zones }}"
   loop_control:
     loop_var: gcp_zone
-    break_when:
-      - (instance_result | default({'changed': false})).changed
   register: instance_result
   when: >
-    (vm_arch == "amd64" or vm_arch == "arm64") and not excluded
+    (vm_arch == "amd64" or vm_arch == "arm64") and not condition and excluded == false
+  vars:
+    condition: "{{ (instance_result | default({'changed': false})).changed }}"
+
