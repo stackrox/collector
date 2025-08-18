@@ -12,8 +12,8 @@ RUN dnf -y update \
         binutils-devel \
         bison \
         ca-certificates \
-        clang-19.1.5 \
-        llvm-19.1.5 \
+        'clang-19.1.*' \
+        'llvm-19.1.*' \
         cmake \
         cracklib-dicts \
         diffutils \
