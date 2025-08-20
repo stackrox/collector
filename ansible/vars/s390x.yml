@@ -8,12 +8,12 @@ s390x:
 
   # IBM Cloud setup
   # vpc_name: stackrox-vpc-us-east
-  vpc_id: 0767-43e68696-83cd-4072-9741-74543bbc2696
+  vpc_id: r014-c42556dc-1754-488c-a94f-e384fee53bcd
   # subnet_name: stackrox-ci-sn3 (us-east-2)
   # subnet_id: 02s7-0fca7f4f-7e53-40d5-a087-f8cb5d7ab682
   #
   # us-east-2
-  subnet_id: 02r7-68814545-4e23-4fe9-b557-a557f03a2b71
+  subnet_id: 0767-43e68696-83cd-4072-9741-74543bbc2696
   zone: us-east-2
   # ssh_key_name: acs-sshkey-us-east
   ssh_key_id: r014-e3c69aa9-d9ea-4950-92e5-65406d6a785c
