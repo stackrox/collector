@@ -14,6 +14,6 @@ qa:
   qa-alpine-curl: quay.io/rhacs-eng/qa-multi-arch:alpine-curl
   qa-perf-event-open: quay.io/rhacs-eng/qa-multi-arch:collector-perf-event-open
   qa-udp: quay.io/rhacs-eng/qa-multi-arch:udp
+  qa-nginx: quay.io/rhacs-eng/qa-multi-arch:nginx
 
 non_qa:
-  nginx: nginx:1.14-alpine

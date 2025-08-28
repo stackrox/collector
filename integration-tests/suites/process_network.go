@@ -30,12 +30,12 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	image_store := config.Images()
 
 	images := []string{
-		image_store.ImageByKey("nginx"),
+		image_store.QaImageByKey("qa-nginx"),
 		image_store.QaImageByKey("qa-alpine-curl"),
 	}
 
 	for _, image := range images {
-		err := s.executor.PullImage(image)
+		err := s.Executor().PullImage(image)
 		s.Require().NoError(err)
 	}
 
@@ -43,7 +43,7 @@ func (s *ProcessNetworkTestSuite) SetupSuite() {
 	containerID, err := s.Executor().StartContainer(
 		config.ContainerStartConfig{
 			Name:  "nginx",
-			Image: image_store.ImageByKey("nginx"),
+			Image: image_store.QaImageByKey("qa-nginx"),
 		})
 
 	s.Require().NoError(err)
