@@ -907,13 +907,13 @@ arches:
     name: kbd-misc
     evr: 2.0.4-11.el8
     sourcerpm: kbd-2.0.4-11.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/k/kernel-headers-4.18.0-553.71.1.el8_10.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/k/kernel-headers-4.18.0-553.72.1.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 12398852
-    checksum: sha256:9e76d35e06ddb1ae090bee198efd5524d4389213443a58c496cf196b9d573333
+    size: 12402392
+    checksum: sha256:a372fbaf82de3b621b785eb931226373d275281758098b996a48a9505740c483
     name: kernel-headers
-    evr: 4.18.0-553.71.1.el8_10
-    sourcerpm: kernel-4.18.0-553.71.1.el8_10.src.rpm
+    evr: 4.18.0-553.72.1.el8_10
+    sourcerpm: kernel-4.18.0-553.72.1.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/k/keyutils-libs-1.5.10-9.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
     size: 34656
@@ -2695,12 +2695,12 @@ arches:
     checksum: sha256:9ccad26b460609bc75dfe8795f72dbdcc9fdd08529de1398a7d2a205d6d20ad3
     name: kbd
     evr: 2.0.4-11.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/k/kernel-4.18.0-553.71.1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/k/kernel-4.18.0-553.72.1.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
-    size: 138674858
-    checksum: sha256:b77cce0a9c103cda1a4ea3d6667d49be8ccc8ecc1a48b98c9a7a32469f1493ce
+    size: 138678503
+    checksum: sha256:34bda16e82c3bd06524e8c5349f018f225d0ec3c72a8fa73e0ec91e2295f15c3
     name: kernel
-    evr: 4.18.0-553.71.1.el8_10
+    evr: 4.18.0-553.72.1.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/k/keyutils-1.5.10-9.el8.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
     size: 103686
@@ -6871,10 +6871,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/ea71a25cd3eb7dd15c93721bdd8f06057e960c9caa904141c1eacd40d1f25238-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/e931a0547a2c4f80695dd631e5467f9d1c101afa402145c16f21c4c47ce30d0a-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 724744
-    checksum: sha256:ea71a25cd3eb7dd15c93721bdd8f06057e960c9caa904141c1eacd40d1f25238
+    checksum: sha256:e931a0547a2c4f80695dd631e5467f9d1c101afa402145c16f21c4c47ce30d0a
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -10155,10 +10155,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/8ab2aee2eedce8b541438dfe5e0862831434eceefc8e1998450a2d4c2ea9a377-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/1c066d2eddf25b128fcf5f916c765637c436f0213dd0fbbf4474e837b7317bd5-modules.yaml.gz
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 729682
-    checksum: sha256:8ab2aee2eedce8b541438dfe5e0862831434eceefc8e1998450a2d4c2ea9a377
+    checksum: sha256:1c066d2eddf25b128fcf5f916c765637c436f0213dd0fbbf4474e837b7317bd5
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
