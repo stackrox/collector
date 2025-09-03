@@ -50,6 +50,10 @@
     state: present
   register: network
 
+
+- set_fact:
+    instance_created: false
+
 - name: Create GCP VM
   ansible.builtin.include_tasks:
     file: create-gcp-instance.yml
@@ -63,6 +67,4 @@
   loop_control:
     loop_var: gcp_zone
   when: >
-    (vm_arch == "amd64" or vm_arch == "arm64") and not condition and excluded == false
-  vars:
-    condition: "{{ (instance_result | default({'changed': false})).changed }}"
+    (vm_arch == "amd64" or vm_arch == "arm64") and excluded == false

@@ -23,6 +23,10 @@
         labels: "{{ gcp_default_labels | combine(gcp_extra_labels) }}"
         metadata: "{{ gcp_meta_data | default({}) }}"
       register: instance_result
+
+    - set_fact:
+        instance_created: true
+      when: instance_result is defined and instance_result.changed
   rescue:
     - name: Remove failed GCP compute instance
       google.cloud.gcp_compute_instance:
@@ -32,3 +36,4 @@
         service_account_file: "{{ gcp_service_account_file }}"
         zone: "{{ gcp_zone }}"
         state: absent
+  when: not instance_created
