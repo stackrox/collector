@@ -57,6 +57,8 @@ jobs:
           - fedora-coreos
           - rhel
           - rhel-sap
+          # TODO(ROX-30765): re-enable once provisioning is fixed
+          # - sles
           - garden-linux
     with:
       vm_type: ${{ matrix.vm_type }}
@@ -98,6 +100,8 @@ jobs:
           - cos-arm64
           - rhel-arm64
           - ubuntu-arm
+          # TODO(ROX-30765): re-enable once provisioning is fixed
+          # - sles-arm64
           - fcarm
 
     with:
