@@ -8,7 +8,6 @@ gcp_instance_prefix: "{{ lookup('env', 'USER') }}-dev"
 gcp_available_zones:
   - us-central1-a
   - us-central1-b
-  - us-central1-c
   - us-central1-f
 ansible_user: "{{ lookup('env', 'USER') }}"
 gcp_network_name: default
