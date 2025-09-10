@@ -10,6 +10,11 @@
 
 ## Automated release
 
+**Note**: If stackrox is doing a major version bump, do not use the
+automated release workflow!! Follow the manual instructions below
+instead.
+---
+
 A workflow for automated releases can be found in the 'Actions' tab of
 GitHub. Once in said tab, look for the `Tag a new release` workflow in
 the side bar, select it and use the `Run workflow` button on the far
@@ -54,7 +59,7 @@ git pull
 2. Set the release environment variable, which should be incremented from the previous released version.
 
 ```sh
-export COLLECTOR_RELEASE=3.8
+export COLLECTOR_RELEASE=3.22
 ```
 
 3. Create an internal release tag to mark on the master branch where we forked for the release.
@@ -64,11 +69,22 @@ git tag "${COLLECTOR_RELEASE}.x"
 git push origin "${COLLECTOR_RELEASE}.x"
 ```
 
-4. Create the release branch with an empty commit and push.
+4. Set the ACS version suffix to be used by konflux, this should be the major and minor versions of ACS that will use the collector version being tagged.
+
+```sh
+export STACKROX_SUFFIX=4-8
+```
+
+4. Create the release branch with the required konflux suffixes.
 
 ```sh
 git checkout -b "release-${COLLECTOR_RELEASE}"
-git commit --allow-empty -m "Empty commit to diverge ${COLLECTOR_RELEASE} from master"
+sed -i \
+    -e "/appstudio.openshift.io\/application: / s/$/-${STACKROX_SUFFIX}/" \
+    -e "/appstudio.openshift.io\/component: / s/$/-${STACKROX_SUFFIX}/" \
+    -e "/serviceAccountName: / s/$/-${STACKROX_SUFFIX}/" \
+    .tekton/collector-build.yaml
+git commit -m "Empty commit to diverge ${COLLECTOR_RELEASE} from master"
 git push --set-upstream origin "release-${COLLECTOR_RELEASE}"
 ```
 
@@ -77,7 +93,7 @@ git push --set-upstream origin "release-${COLLECTOR_RELEASE}"
 
 ```sh
 export COLLECTOR_PATCH_NUMBER=0
-export COLLECTOR_RELEASE=3.8
+export COLLECTOR_RELEASE=3.22
 ```
 
 6. Tag and push the release.
