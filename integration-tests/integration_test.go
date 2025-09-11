@@ -564,7 +564,8 @@ func TestUdpNetworkFlow(t *testing.T) {
 	if strings.Contains(config.VMInfo().Config, "rhel-8-4-sap") {
 		t.Skip("Skipping test on RHEL 8.4 SAP due to a verifier issue")
 	}
-	if strings.Contains(config.VMInfo().Config, "fedora-coreos-stable") {
+	// Matches both 'fedora-coreos' and 'fedora-coreos-stable'
+	if strings.Contains(config.VMInfo().Config, "fedora-coreos") {
 		t.Skip("Skipping due to ROX-27673")
 	}
 	suite.Run(t, new(suites.UdpNetworkFlow))
