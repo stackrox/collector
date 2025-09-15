@@ -127,4 +127,5 @@ ENTRYPOINT ["collector"]
 LABEL \
     com.redhat.component="rhacs-collector-container" \
     io.k8s.display-name="collector" \
-    name="rhacs-collector-rhel8"
+    name="advanced-cluster-security/rhacs-collector-rhel8" \
+    cpe="cpe:/a:redhat:advanced_cluster_security:4.8::el8"
