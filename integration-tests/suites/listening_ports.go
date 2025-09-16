@@ -63,14 +63,14 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	common.Sleep(5 * time.Second)
 
 	log.Info("Opening ports...")
-	s.openPort(8081)
-	s.openPort(9091)
+	s.openPort(38081)
+	s.openPort(39091)
 
 	common.Sleep(6 * time.Second)
 
 	log.Info("Closing ports...")
-	s.closePort(8081)
-	s.closePort(9091)
+	s.closePort(38081)
+	s.closePort(39091)
 }
 
 func (s *ProcessListeningOnPortTestSuite) TearDownSuite() {
@@ -92,7 +92,7 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 
 	process := processes[0]
 
-	possiblePorts := []int{8081, 9091, 5000}
+	possiblePorts := []int{38081, 39091, 5000}
 
 	// First verify that all endpoints have the expected metadata, that
 	// they are the correct protocol and come from the expected Originator
@@ -113,13 +113,13 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 	// Check that we have precisely two pairs of endpoints, for opening
 	// and closing the port. A closed port will have a populated CloseTimestamp
 
-	endpoints8081 := make([]types.EndpointInfo, 0)
-	endpoints9091 := make([]types.EndpointInfo, 0)
+	endpoints38081 := make([]types.EndpointInfo, 0)
+	endpoints39091 := make([]types.EndpointInfo, 0)
 	for _, endpoint := range endpoints {
-		if endpoint.Address.Port == 8081 {
-			endpoints8081 = append(endpoints8081, endpoint)
-		} else if endpoint.Address.Port == 9091 {
-			endpoints9091 = append(endpoints9091, endpoint)
+		if endpoint.Address.Port == 38081 {
+			endpoints38081 = append(endpoints38081, endpoint)
+		} else if endpoint.Address.Port == 39091 {
+			endpoints39091 = append(endpoints39091, endpoint)
 		}
 		// other ports cannot exist at this point due to previous assertions
 	}
@@ -138,8 +138,8 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 			(infos[0].CloseTimestamp == types.NilTimestamp || infos[1].CloseTimestamp == types.NilTimestamp)
 	}
 
-	assert.True(s.T(), hasOpenAndClose(endpoints8081), "Did not capture open and close events for port 8081")
-	assert.True(s.T(), hasOpenAndClose(endpoints9091), "Did not capture open and close events for port 9091")
+	assert.True(s.T(), hasOpenAndClose(endpoints38081), "Did not capture open and close events for port 38081")
+	assert.True(s.T(), hasOpenAndClose(endpoints39091), "Did not capture open and close events for port 39091")
 }
 
 func getProcessListeningOnPortsImage() string {
