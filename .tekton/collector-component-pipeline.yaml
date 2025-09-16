@@ -2,7 +2,9 @@ apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
   name: collector-component-pipeline
+
 spec:
+
   finally:
   - name: slack-notification
     params:
@@ -24,6 +26,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: show-sbom
     params:
     - name: IMAGE_URL
@@ -37,6 +40,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: post-metric-end
     params:
     - name: AGGREGATE_TASKS_STATUS
@@ -50,6 +54,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   params:
   - description: Source Repository URL
     name: git-url
@@ -107,6 +112,7 @@ spec:
     description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
     name: oci-artifact-expires-after
     type: string
+
   results:
   - description: ""
     name: IMAGE_URL
@@ -120,11 +126,15 @@ spec:
   - description: ""
     name: CHAINS-GIT_COMMIT
     value: $(tasks.clone-repository.results.commit)
+
   workspaces:
   - name: git-auth
+
   tasks:
+
   - name: post-metric-start
     taskRef: *post-bigquery-metrics-ref
+
   - name: init
     params:
     - name: image-url
@@ -143,6 +153,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: clone-repository
     params:
     - name: url
@@ -175,6 +186,7 @@ spec:
     workspaces:
     - name: basic-auth
       workspace: git-auth
+
   - name: determine-image-expiration
     params:
     - name: DEFAULT_IMAGE_EXPIRES_AFTER
@@ -190,6 +202,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: determine-image-tag
     params:
     - name: TAG_SUFFIX
@@ -205,6 +218,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: prefetch-dependencies
     params:
     - name: input
@@ -232,6 +246,7 @@ spec:
     workspaces:
     - name: git-basic-auth
       workspace: git-auth
+
   - name: build-container-amd64
     params:
     - name: IMAGE
@@ -270,6 +285,7 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
+
   - name: build-container-s390x
     params:
     - name: IMAGE
@@ -311,6 +327,7 @@ spec:
       operator: in
       values: [ "true" ]
     timeout: 1h30m0s
+
   - name: build-container-ppc64le
     params:
     - name: IMAGE
@@ -352,6 +369,7 @@ spec:
       operator: in
       values: [ "true" ]
     timeout: 1h30m0s
+
   - name: build-container-arm64
     params:
     - name: IMAGE
@@ -393,6 +411,7 @@ spec:
       operator: in
       values: [ "true" ]
     timeout: 1h30m0s
+
   - name: build-image-index
     params:
     - name: IMAGE
@@ -420,6 +439,7 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
+
   - name: build-image-index-extra
     matrix:
       params:
@@ -452,6 +472,7 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
+
   - name: build-source-image
     params:
     - name: BINARY_IMAGE
@@ -478,6 +499,7 @@ spec:
     - input: $(params.build-source-image)
       operator: in
       values: [ "true" ]
+
   - name: deprecated-base-image-check
     params:
     - name: IMAGE_URL
@@ -497,6 +519,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
+
   - name: clair-scan
     params:
     - name: image-digest
@@ -516,6 +539,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
+
   - name: ecosystem-cert-preflight-checks
     params:
     - name: image-url
@@ -533,6 +557,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
+
   - name: sast-shell-check
     params:
     - name: image-digest
@@ -556,6 +581,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
+
   - name: sast-unicode-check
     params:
     - name: image-digest
@@ -579,6 +605,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
+
   - name: sast-snyk-check
     params:
     - name: SOURCE_ARTIFACT
@@ -602,6 +629,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
+
   - name: clamav-scan
     params:
     - name: image-digest
@@ -621,6 +649,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
+
   - name: rpms-signature-scan
     params:
     - name: image-digest
@@ -640,6 +669,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
+
   - name: push-dockerfile
     params:
     - name: IMAGE
