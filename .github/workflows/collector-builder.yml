@@ -51,7 +51,8 @@ jobs:
             github.ref_type == 'tag' || startsWith(github.ref_name, 'release-')
           )) ||
           contains(github.event.pull_request.labels.*.name, 'build-builder-image') ||
-          github.event_name == 'schedule'
+          github.event_name == 'schedule' ||
+          (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release-'))
         run: |
           COLLECTOR_BUILDER_TAG="${DEFAULT_BUILDER_TAG}"
           if [[ "${{ github.event_name }}" == 'pull_request' || \
