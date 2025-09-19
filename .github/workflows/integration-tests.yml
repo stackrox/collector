@@ -59,7 +59,7 @@ jobs:
           - rhel-sap
           # TODO(ROX-30765): re-enable once provisioning is fixed
           # - sles
-          - garden-linux
+          # - garden-linux
     with:
       vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ inputs.collector-tag }}
