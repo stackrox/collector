@@ -14,9 +14,9 @@ metadata:
       )
   labels:
     appstudio.openshift.io/application: acs-4-6
-    appstudio.openshift.io/component: collector-4-6
+    appstudio.openshift.io/component: collector-slim-4-6
     pipelines.appstudio.openshift.io/type: build
-  name: collector-on-push
+  name: collector-slim-on-push
   namespace: rh-acs-tenant
 
 spec:
@@ -28,7 +28,7 @@ spec:
   - name: image-expires-after
     value: '13w'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/release-collector
+    value: quay.io/rhacs-eng/release-collector-slim
   - name: path-context
     value: .
   - name: revision
@@ -135,7 +135,7 @@ spec:
       computeResources: *ta-resources
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-collector-4-6
+    serviceAccountName: build-pipeline-collector-slim-4-6
 
   timeouts:
     # The pipeline regularly takes >1h to finish.
