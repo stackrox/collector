@@ -12,7 +12,7 @@ JSONPATH=${2:-"x86_64.images.gcp.name"}
 
 URL="https://raw.githubusercontent.com/openshift/installer/release-${OCP_VERSION}/data/data/coreos/rhcos.json"
 
-json_data=$(curl -s "$URL")
+json_data=$(curl --retry 5 --retry-delay 2 -sS "$URL")
 if [ -z "$json_data" ]; then
     echo "Failed to fetch JSON data from URL: $URL"
     exit 1
