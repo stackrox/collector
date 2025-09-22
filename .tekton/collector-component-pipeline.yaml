@@ -448,8 +448,6 @@ spec:
       value: $(tasks.build-image-index.results.IMAGE_DIGEST)
     - name: ADDITIONAL_TAGS
       value:
-      - $(tasks.determine-image-tag.results.IMAGE_TAG)-latest
-      - $(tasks.determine-image-tag.results.IMAGE_TAG)-slim
       - konflux-$(params.revision)
     taskRef:
       params:
