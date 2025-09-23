@@ -1,0 +1,148 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/stackrox/collector?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/max-keep-runs: "500"
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      event == "pull_request" || (
+        event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")
+      )
+  labels:
+    appstudio.openshift.io/application: acs-4-6
+    appstudio.openshift.io/component: collector-slim-4-6
+    pipelines.appstudio.openshift.io/type: build
+  name: collector-slim-on-push
+  namespace: rh-acs-tenant
+
+spec:
+  params:
+  - name: dockerfile
+    value: collector/container/konflux.Dockerfile
+  - name: git-url
+    value: '{{source_url}}'
+  - name: image-expires-after
+    value: '13w'
+  - name: output-image-repo
+    value: quay.io/rhacs-eng/release-collector-slim
+  - name: path-context
+    value: .
+  - name: revision
+    value: '{{revision}}'
+  - name: rebuild
+    value: 'true'
+  - name: hermetic
+    value: "true"
+  - name: prefetch-input
+    value: '{ "type": "rpm", "path": "." }'
+  - name: clone-depth
+    value: '0'
+  - name: clone-fetch-tags
+    value: 'true'
+  - name: clone-submodules
+    value: 'true'
+  - name: build-source-image
+    value: 'true'
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+
+  taskRunSpecs:
+
+  # Only adjusting computeResources for amd64 build because
+  # multi-arch builds happen off cluster
+  - pipelineTaskName: build-container-amd64
+    stepSpecs:
+    - name: build
+      # CPU requests are increased to speed up builds compared to the defaults.
+      # Defaults: https://github.com/redhat-appstudio/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L126
+      computeResources:
+        limits:
+          cpu: 4
+        requests:
+          cpu: 4
+    - name: use-trusted-artifact
+      # use-/create-trusted-artifact gets OOM-killed when a cluster is loaded. Bigger mem limits==request should help.
+      computeResources: &ta-resources
+        limits:
+          memory: 6Gi
+        requests:
+          memory: 6Gi
+
+  - pipelineTaskName: clone-repository
+    stepSpecs:
+    - name: create-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: determine-image-expiration
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: determine-image-tag
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: prefetch-dependencies
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+    - name: create-trusted-artifact
+      computeResources: *ta-resources
+    - name: prefetch-dependencies
+      # We saw prefetch-dependencies _step_ also OOMKill-ed, therefore bumping its memory compared to default.
+      computeResources:
+        limits:
+          memory: 6Gi
+        requests:
+          cpu: "1"
+          memory: 6Gi
+  - pipelineTaskName: build-container-s390x
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: build-container-ppc64le
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: build-container-arm64
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: build-source-image
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: sast-shell-check
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: sast-unicode-check
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: sast-snyk-check
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+  - pipelineTaskName: push-dockerfile
+    stepSpecs:
+    - name: use-trusted-artifact
+      computeResources: *ta-resources
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-collector-slim-4-6
+
+  timeouts:
+    # The pipeline regularly takes >1h to finish.
+    # When changing the value here, make sure to adjust wait-for-images time limit in .github/workflows/konflux-tests.yml
+    tasks: 2h
+    finally: 10m
+    pipeline: 2h10m
+
+  pipelineRef:
+    name: collector-component-pipeline
