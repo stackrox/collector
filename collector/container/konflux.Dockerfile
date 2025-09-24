@@ -45,6 +45,8 @@ ARG USE_VALGRIND=false
 ARG ADDRESS_SANITIZER=false
 ARG TRACE_SINSP_EVENTS=false
 
+ENV OUTPUT_DIR=/tmp/output
+
 WORKDIR ${BUILD_DIR}
 
 RUN mkdir kernel-modules \
