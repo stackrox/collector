@@ -53,6 +53,7 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 	repeatedNetworkFlowTestSuite := &suites.RepeatedNetworkFlowTestSuite{
 		AfterglowPeriod:        10,
 		ScrapeInterval:         4,
+		TurnOffScrape:          false,
 		EnableAfterglow:        true,
 		NumMetaIter:            1,
 		NumIter:                11,
@@ -70,6 +71,7 @@ func TestRepeatedNetworkFlowWithZeroAfterglowPeriod(t *testing.T) {
 	repeatedNetworkFlowTestSuite := &suites.RepeatedNetworkFlowTestSuite{
 		AfterglowPeriod:        0,
 		ScrapeInterval:         2,
+		TurnOffScrape:          false,
 		EnableAfterglow:        true,
 		NumMetaIter:            1,
 		NumIter:                3,
@@ -86,6 +88,7 @@ func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
 	repeatedNetworkFlowTestSuite := &suites.RepeatedNetworkFlowTestSuite{
 		AfterglowPeriod:        0,
 		ScrapeInterval:         4,
+		TurnOffScrape:          true,
 		EnableAfterglow:        false,
 		NumMetaIter:            1,
 		NumIter:                3,
