@@ -203,6 +203,7 @@ jobs:
             -e "/serviceAccountName: / s/$/${SUFFIX}/" \
             .tekton/collector-build.yaml
 
+          git add -u .
           git commit --no-verify -m "Commit to diverge ${RELEASE} from master"
 
       - name: Push release branch
