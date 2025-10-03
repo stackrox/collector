@@ -104,7 +104,7 @@ jobs:
       - name: Get stackrox version
         id: stackrox-version-last
         if: steps.final-values.outputs.type != 'patch'
-        uses: ./github/actions/get-latest-version
+        uses: ./.github/actions/get-latest-version
         with:
           repo: ${{ github.workspace }}/collector/proto/third_party/stackrox
 
