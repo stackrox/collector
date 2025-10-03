@@ -24,8 +24,9 @@ runs:
   steps:
     - id: version
       env:
-        REQUIRED_MAJOR: ${{ steps.inputs.required-major }}
+        REQUIRED_MAJOR: ${{ inputs.required-major }}
       shell: bash
+      working-directory: ${{ inputs.repo }}
       run: |
         tag=(0 0)
         while read -r line; do
