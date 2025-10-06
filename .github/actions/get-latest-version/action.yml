@@ -1,0 +1,46 @@
+name: Get latest version
+description: Gets the latest version in a repo, following semver rules
+inputs:
+  repo:
+    required: false
+    default: ${{ github.workspace }}
+    description: Path to the repo to get the version from
+  required-major:
+    required: false
+    default: "0"
+    description: Major version that was requested
+outputs:
+  version:
+    value: ${{ steps.version.outputs.major }}.${{ steps.version.outputs.minor }}
+    description: Latest version in M.m format
+  major:
+    value: ${{ steps.version.outputs.major }}
+    description: Major version
+  minor:
+    value: ${{ steps.version.outputs.minor }}
+    description: Minor version
+runs:
+  using: composite
+  steps:
+    - id: version
+      env:
+        REQUIRED_MAJOR: ${{ inputs.required-major }}
+      shell: bash
+      working-directory: ${{ inputs.repo }}
+      run: |
+        tag=(0 0)
+        while read -r line; do
+          if [[ "$line" =~ ^([[:digit:]]+)\.([[:digit:]]+)\.x$ ]]; then
+              # If we are doing a release for a specific major
+              # version, we want to limit ourselves to that, so we
+              # ignore newer major versions.
+              if ((tag[0] < BASH_REMATCH[1] && (REQUIRED_MAJOR == 0 || REQUIRED_MAJOR == BASH_REMATCH[1]))); then
+                  tag=("${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}")
+              elif ((tag[0] == BASH_REMATCH[1] && tag[1] < BASH_REMATCH[2])); then
+                  tag=("${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}")
+              fi
+          fi
+        done < <(git tag --merged)
+
+        echo "major=${tag[0]}" >> "$GITHUB_OUTPUT"
+        echo "minor=${tag[1]}" >> "$GITHUB_OUTPUT"
