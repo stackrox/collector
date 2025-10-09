@@ -17,20 +17,29 @@
     // This tells Renovate to combine all updates in one PR so that we have fewer PRs to deal with.
     "group:all",
   ],
+  // The number of PRs that can be open against the repo.
+  "prConcurrentLimit": 20,
+  // `null` means the branch limit should be the same as PR limit.
+  "branchConcurrentLimit": null,
+  // The number of PRs MintMaker can open in one hour, effectively in one run.
+  "prHourlyLimit": 4,
   "timezone": "Etc/UTC",
   "schedule": [
     // Allowed syntax: https://docs.renovatebot.com/configuration-options/#schedule
+    // This is a "general" schedule for managers that don't declare their own.
     // The time was selected (with the help of https://time.fyi/timezones) so that Renovate isn't active during business
-    // hours from Germany to US West Coast. This way, after we merge a PR, a new one does not pop up immediately after
-    // that.
-    "after 3am and before 7am",
+    // hours from Central Europe to US West Coast. This way, after we merge a PR, a new one does not pop up immediately
+    // after that.
+    // Between 3a.m. and 7a.m. every day.
+    "* 3-7 * * *",
   ],
-  // Tell Renovate not to update PRs when outside of schedule.
+  // Tell Renovate not to update PRs when outside schedule.
   "updateNotScheduled": false,
   "tekton": {
     "schedule": [
-      // Override Konflux custom schedule for this manager to our intended one.
-      "after 3am and before 7am",
+      // Between 3a.m. and 7a.m. every day.
+      // We duplicate our desired schedule here because Konflux global config tends to have a special override for it.
+      "* 3-7 * * *",
     ],
     "packageRules": [
       // Note: the packageRules from the Konflux config (find URL in comments above) get merged with these.
@@ -48,10 +57,6 @@
       // to have less PR noise.
       "**/*konflux*.Dockerfile",
     ],
-    "schedule": [
-      // Override Konflux custom schedule for this manager to our intended one.
-      "after 3am and before 7am",
-    ],
     "postUpgradeTasks": {
       "commands": [
         // Refresh the rpm lockfile after updating image references in the dockerfile.
@@ -59,32 +64,32 @@
       ],
     },
   },
-  "rpm-lockfile": {
-    "schedule": [
-      // Override Konflux custom schedule for this manager to our intended one.
-      // Note that MintMaker will create security updates outside of schedule.
-      "after 3am and before 7am",
-    ],
-  },
   "enabledManagers": [
     // Restrict Renovate focus on Konflux things since we rely on GitHub's dependabot for everything else.
     "tekton",
     "dockerfile",
     "rpm-lockfile",
   ],
-  "packageRules": [{
-    "matchPackageNames": ["/.*/"],
-    "groupName": "All updates",
-    "automerge": true,
-    // A known issue is that some non-Konflux CI jobs in currently fail, which may prevent successful auto-merging with a "branch" auto-merge setting.
-    // Therefore, we use PR merge type and have automation approve PRs.
-    "automergeType": "pr",
-    "automergeStrategy": "squash",
-    // Tell Renovate that it can automerge branches at any time of the day.
-    "automergeSchedule": [
-      "at any time"
-    ],
-    "platformAutomerge": true,
-  }],
-  "labels": ["auto-approve", "build-builder-image", "rebuild-test-container"],
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "*",
+      ],
+      "groupName": "All updates",
+      "automerge": true,
+      // A known issue is that some non-Konflux CI jobs currently fail, which may prevent successful auto-merging with a "branch" auto-merge setting.
+      // Therefore, we use PR merge type and have automation approve PRs.
+      "automergeType": "pr",
+      "automergeStrategy": "squash",
+      // Tell Renovate that it can automerge branches at any time of the day.
+      "automergeSchedule": [
+        "at any time",
+      ],
+    }
+  ],
+  "labels": [
+    "auto-approve",
+    "build-builder-image",
+    "rebuild-test-container",
+  ],
 }
