@@ -101,7 +101,7 @@ LABEL \
     io.k8s.display-name="collector" \
     io.openshift.tags="rhacs,collector,stackrox" \
     maintainer="Red Hat, Inc." \
-    name="rhacs-collector-rhel8" \
+    name="advanced-cluster-security/rhacs-collector-rhel8" \
     # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
     source-location="https://github.com/stackrox/collector" \
     summary="Runtime data collection for Red Hat Advanced Cluster Security for Kubernetes" \
