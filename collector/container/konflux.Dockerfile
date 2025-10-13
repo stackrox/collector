@@ -93,12 +93,15 @@ ARG COLLECTOR_TAG
 WORKDIR /
 
 LABEL \
+    com.redhat.component="rhacs-collector-container" \
     com.redhat.license_terms="https://www.redhat.com/agreements" \
     description="This image supports runtime data collection for Red Hat Advanced Cluster Security for Kubernetes" \
     distribution-scope="public" \
     io.k8s.description="This image supports runtime data collection for Red Hat Advanced Cluster Security for Kubernetes" \
+    io.k8s.display-name="collector" \
     io.openshift.tags="rhacs,collector,stackrox" \
     maintainer="Red Hat, Inc." \
+    name="rhacs-collector-rhel8" \
     # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
     source-location="https://github.com/stackrox/collector" \
     summary="Runtime data collection for Red Hat Advanced Cluster Security for Kubernetes" \
@@ -123,8 +126,3 @@ COPY LICENSE /licenses/LICENSE
 EXPOSE 8080 9090
 
 ENTRYPOINT ["collector"]
-
-LABEL \
-    com.redhat.component="rhacs-collector-container" \
-    io.k8s.display-name="collector" \
-    name="rhacs-collector-rhel8"
