@@ -7,7 +7,7 @@ spec:
   - name: slack-notification
     params:
     - name: message
-      value: ':x: `{{event_type}}` pipeline for <https://console.redhat.com/application-pipeline/workspaces/rh-acs/applications/acs/pipelineruns/$(context.pipelineRun.name)|$(context.pipelineRun.name)> (`$(params.output-image-repo)`, revision <$(params.git-url)/commit/$(params.revision)|$(params.revision)>) has failed.'
+      value: ':x: `{{event_type}}` pipeline for {{ target_branch }} branch (`$(params.output-image-repo)`, revision <$(params.git-url)/commit/$(params.revision)|$(params.revision)>, <https://console.redhat.com/application-pipeline/workspaces/rh-acs/applications/acs/pipelineruns/$(context.pipelineRun.name)|$(context.pipelineRun.name)>) has failed. Follow the instructions on <https://spaces.redhat.com/spaces/StackRox/pages/407312060/How+to+everything+Konflux+for+RHACS#HowtoeverythingKonfluxforRHACS-re-runningHowtore-runpipelines|Confluence> to re-run the pipeline.'
     - name: key-name
       value: 'acs-konflux-notifications'
     when:
@@ -155,7 +155,7 @@ spec:
     - name: url
       value: $(params.git-url)
     - name: revision
-      value: $(params.revision)
+      value: $(params.revision)-123
     - name: submodules
       value: $(params.clone-submodules)
     - name: depth
