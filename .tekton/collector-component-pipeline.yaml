@@ -305,6 +305,8 @@ spec:
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     - name: PLATFORM
       value: linux/s390x
+    - name: BUILDAH_FORMAT
+      value: $(params.buildah-format)
     - name: BUILD_TIMESTAMP
       value: "$(tasks.clone-repository.results.commit-timestamp)"
     taskRef:
@@ -348,6 +350,8 @@ spec:
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     - name: PLATFORM
       value: linux/ppc64le
+    - name: BUILDAH_FORMAT
+      value: $(params.buildah-format)
     - name: BUILD_TIMESTAMP
       value: "$(tasks.clone-repository.results.commit-timestamp)"
     taskRef:
@@ -391,6 +395,8 @@ spec:
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     - name: PLATFORM
       value: linux-c2xlarge/arm64
+    - name: BUILDAH_FORMAT
+      value: $(params.buildah-format)
     - name: BUILD_TIMESTAMP
       value: "$(tasks.clone-repository.results.commit-timestamp)"
     taskRef:
