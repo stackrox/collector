@@ -3,7 +3,6 @@ include Makefile-constants.mk
 
 NPROCS ?= $(shell nproc)
 
-DEV_SSH_SERVER_KEY ?= $(CURDIR)/.collector_dev_ssh_host_ed25519_key
 BUILD_BUILDER_IMAGE ?= false
 
 export COLLECTOR_VERSION := $(COLLECTOR_TAG)
@@ -93,20 +92,14 @@ ci-benchmarks:
 .PHONY: ci-all-tests
 ci-all-tests: ci-benchmarks ci-integration-tests
 
-$(DEV_SSH_SERVER_KEY):
-ifeq (,$(wildcard $(DEV_SSH_SERVER_KEY)))
-	ssh-keygen -t ed25519 -N '' -f $(DEV_SSH_SERVER_KEY) < /dev/null
-endif
-
 .PHONY: start-builder
 start-builder: builder teardown-builder
-	docker run -d \
+	docker run -id \
 		$(BUILDER_OPTS) \
 		--name $(COLLECTOR_BUILDER_NAME) \
 		--pull never \
 		--platform ${PLATFORM} \
 		-v $(CURDIR):$(CURDIR) \
-		$(if $(LOCAL_SSH_PORT),-p $(LOCAL_SSH_PORT):22 )\
 		-w $(CURDIR) \
 		--cap-add sys_ptrace \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
