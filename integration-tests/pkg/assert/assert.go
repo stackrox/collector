@@ -39,6 +39,8 @@ func AssertNoRuntimeConfig(t *testing.T, collectorIP string) {
 	AssertRepeated(t, tickTime, timeout, runtimeConfigErrorMsg, func() bool {
 		body, err := collector.IntrospectionQuery(collectorIP, "/state/runtime-config")
 		assert.NoError(t, err)
+		fmt.Println("body: ")
+		fmt.Println(strings.TrimSpace(string(body)))
 		return strings.TrimSpace(string(body)) == "{}"
 	})
 }
