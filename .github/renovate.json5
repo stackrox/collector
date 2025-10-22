@@ -72,22 +72,6 @@
     "dockerfile",
     "rpm-lockfile",
   ],
-<<<<<<< HEAD
-  "packageRules": [{
-    "matchPackageNames": ["/.*/"],
-    "groupName": "All updates",
-    "automerge": true,
-    // A known issue is that some non-Konflux CI jobs in currently fail, which may prevent successful auto-merging with a "branch" auto-merge setting.
-    // Therefore, we use PR merge type and have automation approve PRs.
-    "automergeType": "pr",
-    "automergeStrategy": "squash",
-    // Tell Renovate that it can automerge branches at any time of the day.
-    "automergeSchedule": [
-      "at any time"
-    ],
-  }],
-  "labels": ["auto-approve", "build-builder-image","rebuild-test-container"],
-=======
   "packageRules": [
     {
       "matchPackageNames": [
@@ -111,5 +95,4 @@
     "build-builder-image",
     "rebuild-test-container",
   ],
->>>>>>> 238d8b3f9 (ROX-31317: disable mintmaker auto-approvals for release branches (#2609))
 }
