@@ -88,6 +88,7 @@
     }
   ],
   "labels": [
+    // Add auto-approve label which triggers the corresponding workflow.
     "auto-approve",
     "build-builder-image",
     "rebuild-test-container",
