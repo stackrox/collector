@@ -3,24 +3,24 @@
 
 s390x:
   #rhel-8-6-s390x
-  vsi_image_id: r038-0d89bf54-c28f-4dc4-bec0-0f8e03a74de3
+  vsi_image_id: r014-bd269dc6-aa79-4998-b2bc-1eccbda68ed2
   vsi_profile: bz2-2x8
 
   # IBM Cloud setup
-  # vpc_name: lei-vpc-toronto
-  vpc_id: r038-c4f8e233-4b56-44bd-af71-140ebd1664e9
-  # subnet_name: stackrox-ci-sn3 (ca-tor-3)
+  # vpc_name: stackrox-vpc-us-east
+  vpc_id: r014-c42556dc-1754-488c-a94f-e384fee53bcd
+  # subnet_name: stackrox-ci-sn3 (us-east-2)
   # subnet_id: 02s7-0fca7f4f-7e53-40d5-a087-f8cb5d7ab682
   #
-  # ca-tor-2
-  subnet_id: 02r7-68814545-4e23-4fe9-b557-a557f03a2b71
-  zone: ca-tor-2
-  # ssh_key_name: acs-sshkey
-  ssh_key_id: r038-fb0260c7-c01d-45c8-8026-7d50042943b9
+  # us-east-2
+  subnet_id: 0767-43e68696-83cd-4072-9741-74543bbc2696
+  zone: us-east-2
+  # ssh_key_name: acs-sshkey-us-east
+  ssh_key_id: r014-e3c69aa9-d9ea-4950-92e5-65406d6a785c
   # vsi_resource_group: stackrox-ci-resource-group
   vsi_resource_group_id: 1a33a6a9bd6e498f8115e9b1064bfa97
   disk_size: "{{ ibm_disk_size }}"
 
   env:
     IC_API_KEY: "{{ lookup('env', 'IBM_CLOUD_S390X_API_KEY') }}"
-    IC_REGION: ca-tor
+    IC_REGION: us-east
