@@ -59,7 +59,6 @@ jobs:
           - fedora-coreos
           - rhel
           - rhel-sap
-          - sles
           - garden-linux
     with:
       vm_type: ${{ matrix.vm_type }}
@@ -100,7 +99,6 @@ jobs:
           - cos-arm64
           - rhel-arm64
           - ubuntu-arm
-          - sles-arm64
           - fcarm
 
     with:
