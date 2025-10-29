@@ -94,18 +94,6 @@ spec:
         requests:
           cpu: "1"
           memory: 6Gi
-  - pipelineTaskName: build-container-s390x
-    stepSpecs:
-    - name: use-trusted-artifact
-      computeResources: *ta-resources
-  - pipelineTaskName: build-container-ppc64le
-    stepSpecs:
-    - name: use-trusted-artifact
-      computeResources: *ta-resources
-  - pipelineTaskName: build-container-arm64
-    stepSpecs:
-    - name: use-trusted-artifact
-      computeResources: *ta-resources
   - pipelineTaskName: build-source-image
     stepSpecs:
     - name: use-trusted-artifact
