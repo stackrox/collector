@@ -30,6 +30,7 @@ virtual_machines:
     families:
       - rhel-8
       - rhel-9
+      - rhel-10
     container_engine: podman
 
   rhel-arm64:
@@ -38,6 +39,7 @@ virtual_machines:
     machine_type: t2a-standard-2
     families:
       - rhel-9-arm64
+      - rhel-10-arm64
     container_engine: podman
 
   rhel-s390x:
