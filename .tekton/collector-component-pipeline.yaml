@@ -115,8 +115,8 @@ spec:
     type: array
     description: Additional labels to put on the built containers.
   - default:
-    - linux-c2xlarge/amd64
-    - linux-c2xlarge/arm64
+    - linux-cxlarge/amd64
+    - linux-cxlarge/arm64
     - linux/ppc64le
     - linux/s390x
     description: >
