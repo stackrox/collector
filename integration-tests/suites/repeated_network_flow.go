@@ -100,7 +100,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	numIter := strconv.Itoa(s.NumIter)
 	sleepBetweenCurlTime := strconv.Itoa(s.SleepBetweenCurlTime)
 	sleepBetweenIterations := strconv.Itoa(s.SleepBetweenIterations)
-	_, err = s.execContainer("nginx-curl", []string{"/usr/bin/schedule-curls.sh", numMetaIter, numIter, sleepBetweenCurlTime, sleepBetweenIterations, serverAddress}, false)
+	_, err = s.execContainer("nginx-curl", []string{"python3", "/usr/bin/schedule-curls.py", numMetaIter, numIter, sleepBetweenCurlTime, sleepBetweenIterations, serverAddress}, false)
 
 	s.ClientIP, err = s.getIPAddress("nginx-curl")
 	s.Require().NoError(err)
