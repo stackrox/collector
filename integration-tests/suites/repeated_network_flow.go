@@ -82,11 +82,6 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.ServerContainer = containerID[0:12]
 
-	// invokes another container
-	containerID, err = s.Executor().StartContainer(config.ContainerStartConfig{Name: "nginx-curl", Image: scheduled_curls_image, Command: []string{"sleep", "300"}})
-	s.Require().NoError(err)
-	s.ClientContainer = containerID[0:12]
-
 	s.ServerIP, err = s.getIPAddress("nginx")
 	s.Require().NoError(err)
 
@@ -100,7 +95,11 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	numIter := strconv.Itoa(s.NumIter)
 	sleepBetweenCurlTime := strconv.Itoa(s.SleepBetweenCurlTime)
 	sleepBetweenIterations := strconv.Itoa(s.SleepBetweenIterations)
-	_, err = s.execContainer("nginx-curl", []string{"python3", "/usr/bin/schedule-curls.py", numMetaIter, numIter, sleepBetweenCurlTime, sleepBetweenIterations, serverAddress}, false)
+
+	// Invokes the client container and runs the curls
+	containerID, err = s.Executor().StartContainer(config.ContainerStartConfig{Name: "nginx-curl", Image: scheduled_curls_image, Command: []string{"python3", "/usr/bin/schedule-curls.py", numMetaIter, numIter, sleepBetweenCurlTime, sleepBetweenIterations, serverAddress}})
+	s.Require().NoError(err)
+	s.ClientContainer = containerID[0:12]
 
 	s.ClientIP, err = s.getIPAddress("nginx-curl")
 	s.Require().NoError(err)
