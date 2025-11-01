@@ -40,8 +40,9 @@ def run_curl(target_url: str):
 i = 0
 while i < num_meta_iter:
     j = 0
-    next_execution_time = time.time()
+    start_time = time.time()
     while j < num_iter:
+        next_execution_time = start_time + (j * fixed_interval)
         current_time = time.time()
         sleep_duration = next_execution_time - current_time
         if sleep_duration > 0:
@@ -53,7 +54,6 @@ while i < num_meta_iter:
         milliseconds = f"{execution_time % 1:.3f}"[2:]
         print(f"[{time_str}.{milliseconds}] Executing curl (Meta: {i + 1}/{num_meta_iter}, Iter: {j + 1}/{num_iter})")
         run_curl(url)
-        next_execution_time += fixed_interval
         j += 1
     if sleep_between_iterations > 0:
         time.sleep(sleep_between_iterations)
