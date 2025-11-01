@@ -27,14 +27,14 @@ def format_timestamp(timestamp: float) -> str:
 def run_curl(target_url: str):
     start_time = time.time()
     try:
-        subprocess.run(['curl', target_url], check=True)
+        subprocess.run(['curl', '-I', '-s', target_url], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError as e:
         print(f"Curl failed with exit code {e.returncode}: {e}", file=sys.stderr)
         sys.exit(e.returncode)
     end_time = time.time()
     duration = end_time - start_time
 
-    print(f"Curl timing: start=[{format_timestamp(start_time)}], end=[{format_timestamp(end_time)}], duration={duration:.3f}s")
+    print(f"Curl timing: start=[{format_timestamp(start_time)}], end=[{format_timestamp(end_time)}], duration={duration:.3f}s", flush=True)
 
 
 i = 0
