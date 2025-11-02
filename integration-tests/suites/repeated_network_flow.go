@@ -31,8 +31,13 @@ type RepeatedNetworkFlowTestSuite struct {
 	NumIter                int
 	SleepBetweenCurlTime   int
 	SleepBetweenIterations int
-	ExpectedActive         int // number of active connections expected
-	ExpectedInactive       int // number of inactive connections expected
+	// Due to connections having finite lifetimes it is possible to catch the connection
+	// during the short time that it is active, thus we cannot in all cases be certain
+	// of the number of active connections that are found, but we can be certain that the
+	// number of active connections will be in a certain range.
+	ExpectedMinActive int // minimum number of active connections expected
+	ExpectedMaxActive int // maximum number of active connections expected
+	ExpectedInactive  int // number of inactive connections expected
 }
 
 // Launches collector
@@ -111,7 +116,7 @@ func (s *RepeatedNetworkFlowTestSuite) TearDownSuite() {
 }
 
 func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
-	networkConnections := s.Sensor().ExpectConnectionsN(s.T(), s.ServerContainer, 10*time.Second, s.ExpectedActive+s.ExpectedInactive)
+	networkConnections := s.Sensor().Connections(s.ServerContainer)
 
 	observedActive := 0
 	observedInactive := 0
@@ -124,7 +129,9 @@ func (s *RepeatedNetworkFlowTestSuite) TestRepeatedNetworkFlow() {
 		}
 	}
 
-	assert.Equal(s.T(), s.ExpectedActive, observedActive, "Unexpected number of active connections reported")
+	//assert.Equal(s.T(), s.ExpectedActive, observedActive, "Unexpected number of active connections reported")
+	assert.True(s.T(), s.ExpectedMinActive <= observedActive, "Too few active connections reported")
+	assert.True(s.T(), s.ExpectedMaxActive >= observedActive, "Too many active connections reported")
 	assert.Equal(s.T(), s.ExpectedInactive, observedInactive, "Unexpected number of inactive connections reported")
 
 	// Server side checks
