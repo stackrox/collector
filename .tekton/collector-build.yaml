@@ -58,19 +58,8 @@ spec:
       secretName: '{{ git_auth_secret }}'
 
   taskRunSpecs:
-
-  # Only adjusting computeResources for amd64 build because
-  # multi-arch builds happen off cluster
-  - pipelineTaskName: build-container-amd64
+  - pipelineTaskName: build-images
     stepSpecs:
-    - name: build
-      # CPU requests are increased to speed up builds compared to the defaults.
-      # Defaults: https://github.com/redhat-appstudio/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L126
-      computeResources:
-        limits:
-          cpu: 4
-        requests:
-          cpu: 4
     - name: use-trusted-artifact
       # use-/create-trusted-artifact gets OOM-killed when a cluster is loaded. Bigger mem limits==request should help.
       computeResources: &ta-resources
@@ -105,18 +94,6 @@ spec:
         requests:
           cpu: "1"
           memory: 6Gi
-  - pipelineTaskName: build-container-s390x
-    stepSpecs:
-    - name: use-trusted-artifact
-      computeResources: *ta-resources
-  - pipelineTaskName: build-container-ppc64le
-    stepSpecs:
-    - name: use-trusted-artifact
-      computeResources: *ta-resources
-  - pipelineTaskName: build-container-arm64
-    stepSpecs:
-    - name: use-trusted-artifact
-      computeResources: *ta-resources
   - pipelineTaskName: build-source-image
     stepSpecs:
     - name: use-trusted-artifact
