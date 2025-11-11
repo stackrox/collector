@@ -2,7 +2,7 @@
 collections:
 - google.cloud
 - name: community.general
-  version: '>=10.1.0'
+  version: '==11.4.1'
 - community.docker
 - containers.podman
 - kubernetes.core
