@@ -16,5 +16,3 @@ qa:
   qa-udp: quay.io/rhacs-eng/qa-multi-arch:udp
   qa-thread-exec: quay.io/rhacs-eng/qa-multi-arch:collector-thread-exec
   qa-nginx: quay.io/rhacs-eng/qa-multi-arch:nginx
-
-non_qa:
