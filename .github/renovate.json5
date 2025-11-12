@@ -35,6 +35,10 @@
   ],
   // Tell Renovate not to update PRs when outside schedule.
   "updateNotScheduled": false,
+  "ignoreDeps": [
+    "clang",
+    "clang-libs",
+  ],
   "tekton": {
     "schedule": [
       // Between 3a.m. and 7a.m. every day.
