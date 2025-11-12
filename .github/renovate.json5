@@ -85,7 +85,16 @@
       "automergeSchedule": [
         "at any time",
       ],
-    }
+    },
+    {
+      "groupName": "Disable bot updates for RPM packages",
+      "matchManager": "rpm-lockfile":,
+      "matchPackageNames": [
+        "clang",
+        "clang-libs",
+      ],
+      "enabled": false
+    },
   ],
   "labels": [
     // Add auto-approve label which triggers the corresponding workflow.
