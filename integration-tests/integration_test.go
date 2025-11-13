@@ -43,6 +43,10 @@ func TestMissingProcScrape(t *testing.T) {
 	}
 }
 
+// TODO (ROX-31753): Add tests with procfs scrape only and tests with syscalls only.
+// The reason for this is that currently there might be situations in which we have
+// race conditions between procfs scrape and syscalls. It would be good to confirm
+// that each method is working well independently.
 func TestRepeatedNetworkFlow(t *testing.T) {
 	// Perform 11 curl commands with a 2 second sleep between each curl command.
 	// The scrapeInterval is increased to 4 seconds to reduce the chance that jiter will effect the results.
@@ -58,7 +62,8 @@ func TestRepeatedNetworkFlow(t *testing.T) {
 		NumIter:                11,
 		SleepBetweenCurlTime:   2,
 		SleepBetweenIterations: 1,
-		ExpectedActive:         1,
+		ExpectedMinActive:      1,
+		ExpectedMaxActive:      1,
 		ExpectedInactive:       1,
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
@@ -75,8 +80,16 @@ func TestRepeatedNetworkFlowWithZeroAfterglowPeriod(t *testing.T) {
 		NumIter:                3,
 		SleepBetweenCurlTime:   3,
 		SleepBetweenIterations: 1,
-		ExpectedActive:         0,
-		ExpectedInactive:       3,
+		// It is possible that at the scrap interval the connection will be active.
+		// If the connections is active at t=0 and that coinsides with a scrape interval.
+		// The next connection will be at t=3 and the next scrape is at t=2.
+		// The next connection after that will be at t=6. That also coisides with a
+		// scrape interval. That is a second opportunity for the connection to be active
+		// during the scrape inteval. Therefore it is possible that between 0 and 2 active
+		// connections will be seen by the test.
+		ExpectedMinActive: 0,
+		ExpectedMaxActive: 2,
+		ExpectedInactive:  3,
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
@@ -91,8 +104,10 @@ func TestRepeatedNetworkFlowThreeCurlsNoAfterglow(t *testing.T) {
 		NumIter:                3,
 		SleepBetweenCurlTime:   6,
 		SleepBetweenIterations: 1,
-		ExpectedActive:         0,
-		ExpectedInactive:       3,
+		// Similar analysis as for the above test.
+		ExpectedMinActive: 0,
+		ExpectedMaxActive: 2,
+		ExpectedInactive:  3,
 	}
 	suite.Run(t, repeatedNetworkFlowTestSuite)
 }
