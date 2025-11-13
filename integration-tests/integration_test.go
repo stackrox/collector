@@ -43,6 +43,10 @@ func TestMissingProcScrape(t *testing.T) {
 	}
 }
 
+// TODO (ROX-31753): Add tests with procfs scrape only and tests with syscalls only.
+// The reason for this is that currently there might be situations in which we have
+// race conditions between procfs scrape and syscalls. It would be good to confirm
+// that each method is working well independently.
 func TestRepeatedNetworkFlow(t *testing.T) {
 	// Perform 11 curl commands with a 2 second sleep between each curl command.
 	// The scrapeInterval is increased to 4 seconds to reduce the chance that jiter will effect the results.
