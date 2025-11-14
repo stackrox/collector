@@ -1,22 +1,9 @@
 # Stackrox Collector
 
-[![nighly upstream](https://github.com/stackrox/collector/actions/workflows/main.yml/badge.svg?event=schedule)](https://github.com/stackrox/collector/actions/workflows/main.yml?query=event%3Aschedule++)
-[![nighly upstream](https://github.com/stackrox/collector/actions/workflows/konflux.yml/badge.svg?event=schedule)](https://github.com/stackrox/collector/actions/workflows/konflux.yml?query=event%3Aschedule++)
-
-[![3.23 upstream](https://github.com/stackrox/collector/actions/workflows/main.yml/badge.svg?branch=release-3.23&event=push)](https://github.com/stackrox/collector/actions/workflows/main.yml?query=event%3Apush+branch%3Arelease-3.23++)
-[![3.23 downstream](https://github.com/stackrox/collector/actions/workflows/konflux.yml/badge.svg?branch=release-3.23&event=push)](https://github.com/stackrox/collector/actions/workflows/konflux.yml?query=event%3Apush+branch%3Arelease-3.23++)
-[![head](https://img.shields.io/github/commits-since/stackrox/collector/latest/release-3.23)](https://github.com/stackrox/collector/tree/release-3.23)
-[⬆️4.9](https://github.com/stackrox/stackrox/tree/release-4.9)
-
-[![3.22 upstream](https://github.com/stackrox/collector/actions/workflows/main.yml/badge.svg?branch=release-3.22&event=push)](https://github.com/stackrox/collector/actions/workflows/main.yml?query=event%3Apush+branch%3Arelease-3.22++)
-[![3.22 downstream](https://github.com/stackrox/collector/actions/workflows/konflux.yml/badge.svg?branch=release-3.22&event=push)](https://github.com/stackrox/collector/actions/workflows/konflux.yml?query=event%3Apush+branch%3Arelease-3.22++)
-[![head](https://img.shields.io/github/commits-since/stackrox/collector/latest/release-3.22)](https://github.com/stackrox/collector/tree/release-3.22)
-[⬆️4.8](https://github.com/stackrox/stackrox/tree/release-4.8)
-
-[![3.21 upstream](https://github.com/stackrox/collector/actions/workflows/main.yml/badge.svg?branch=release-3.21&event=push)](https://github.com/stackrox/collector/actions/workflows/main.yml?query=event%3Apush+branch%3Arelease-3.21++)
-[![3.21 downstream](https://github.com/stackrox/collector/actions/workflows/konflux.yml/badge.svg?branch=release-3.21&event=push)](https://github.com/stackrox/collector/actions/workflows/konflux.yml?query=event%3Apush+branch%3Arelease-3.21++)
-[![head](https://img.shields.io/github/commits-since/stackrox/collector/latest/release-3.21)](https://github.com/stackrox/collector/tree/release-3.21)
-[⬆️4.7](https://github.com/stackrox/stackrox/tree/release-4.7)
+| master | [![nighly upstream](https://github.com/stackrox/collector/actions/workflows/main.yml/badge.svg?event=schedule)](https://github.com/stackrox/collector/actions/workflows/main.yml?query=event%3Aschedule++) | [![last downstream](https://github.com/stackrox/collector/actions/workflows/konflux.yml/badge.svg?event=push)](https://github.com/stackrox/collector/actions/workflows/konflux.yml?query=event%3Apush++) | |
+| [3.23](https://github.com/stackrox/collector/tree/release-3.23) | [![3.23 upstream](https://github.com/stackrox/collector/actions/workflows/main.yml/badge.svg?branch=release-3.23&event=push)](https://github.com/stackrox/collector/actions/workflows/main.yml?query=event%3Apush+branch%3Arelease-3.23++) | [![3.23 downstream](https://github.com/stackrox/collector/actions/workflows/konflux.yml/badge.svg?branch=release-3.23&event=push)](https://github.com/stackrox/collector/actions/workflows/konflux.yml?query=event%3Apush+branch%3Arelease-3.23++) | [⬆️4.9](https://github.com/stackrox/stackrox/tree/release-4.9) |
+| [3.22](https://github.com/stackrox/collector/tree/release-3.22) | [![3.22 upstream](https://github.com/stackrox/collector/actions/workflows/main.yml/badge.svg?branch=release-3.22&event=push)](https://github.com/stackrox/collector/actions/workflows/main.yml?query=event%3Apush+branch%3Arelease-3.22++) | [![3.22 downstream](https://github.com/stackrox/collector/actions/workflows/konflux.yml/badge.svg?branch=release-3.22&event=push)](https://github.com/stackrox/collector/actions/workflows/konflux.yml?query=event%3Apush+branch%3Arelease-3.22++) | [⬆️4.8](https://github.com/stackrox/stackrox/tree/release-4.8) |
+| [3.21](https://github.com/stackrox/collector/tree/release-3.21) | [![3.21 upstream](https://github.com/stackrox/collector/actions/workflows/main.yml/badge.svg?branch=release-3.21&event=push)](https://github.com/stackrox/collector/actions/workflows/main.yml?query=event%3Apush+branch%3Arelease-3.21++) | [![3.21 downstream](https://github.com/stackrox/collector/actions/workflows/konflux.yml/badge.svg?branch=release-3.21&event=push)](https://github.com/stackrox/collector/actions/workflows/konflux.yml?query=event%3Apush+branch%3Arelease-3.21++) | [⬆️4.7](https://github.com/stackrox/stackrox/tree/release-4.7) |
 
 Welcome to the Stackrox Collector project documentation. Here you can learn
 more about idea behind the project, how to start guidelines, design overview
