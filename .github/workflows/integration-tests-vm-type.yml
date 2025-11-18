@@ -54,6 +54,8 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: integration-tests/go.mod
+          cache-dependency-path: |
+            integration-tests/go.sum
 
       - uses: actions/setup-python@v5
         with:
