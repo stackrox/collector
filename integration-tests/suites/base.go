@@ -116,7 +116,10 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *col
 // the MockSensor if it was started.
 func (s *IntegrationTestSuiteBase) StopCollector() {
 	// Stop stats collection first
-	s.statsCancel()
+	if s.statsCancel != nil {
+		s.statsCancel()
+	}
+
 	s.Require().NoError(s.collector.TearDown())
 
 	if s.sensor != nil {
