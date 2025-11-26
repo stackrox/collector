@@ -8,10 +8,10 @@
 RELEASED_VERSIONS               @stackrox/collector-team
 RELEASED_VERSIONS.unsupported   @stackrox/collector-team
 
-# The RHTAP maintainers for ACS review all changes related to the Konflux pipelines, such as new
-# pipelines, parameter changes or automated task updates as well as Dockerfile updates.
-# rhacs-bot auto-approves MintMaker PRs for automated task and security updates.
-**/konflux.*Dockerfile  @stackrox/rhtap-maintainers @rhacs-bot
-/.tekton/               @stackrox/rhtap-maintainers @rhacs-bot
-rpms.*                  @stackrox/rhtap-maintainers @rhacs-bot
-.github/renovate.json5  @stackrox/rhtap-maintainers
+# The Konflux maintainers for ACS review all changes related to the Konflux pipelines, Dockerfiles, etc.
+# Release engineers need to merge MintMaker PRs at the time of release.
+# rhacs-bot needs ability to auto-approve MintMaker PRs for automated task and security updates.
+**/konflux.*Dockerfile  @stackrox/konflux-maintainers-no-email @stackrox/release-mgmt-no-email @rhacs-bot
+/.tekton/               @stackrox/konflux-maintainers-no-email @stackrox/release-mgmt-no-email @rhacs-bot
+rpms.*                  @stackrox/konflux-maintainers-no-email @stackrox/release-mgmt-no-email @rhacs-bot
+.github/renovate.json5  @stackrox/konflux-maintainers
