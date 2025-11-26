@@ -2,8 +2,11 @@ apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
   name: collector-component-pipeline
+
 spec:
+
   finally:
+
   - name: slack-notification
     params:
     - name: message
@@ -11,10 +14,10 @@ spec:
     - name: key-name
       value: 'acs-konflux-notifications'
     when:
-        # Run when any task has Failed
+    # Run when any task has Failed
     - input: $(tasks.status)
       operator: in
-      values: ["Failed"]
+      values: [ "Failed" ]
     taskRef:
       params:
       - name: name
@@ -24,6 +27,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: show-sbom
     params:
     - name: IMAGE_URL
@@ -37,6 +41,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: post-metric-end
     params:
     - name: AGGREGATE_TASKS_STATUS
@@ -50,6 +55,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   params:
   - description: Source Repository URL
     name: git-url
@@ -125,6 +131,7 @@ spec:
       on the cluster: https://konflux.pages.redhat.com/docs/users/getting-started/multi-platform-builds.html
     name: build-platforms
     type: array
+
   results:
   - description: ""
     name: IMAGE_URL
@@ -138,17 +145,20 @@ spec:
   - description: ""
     name: CHAINS-GIT_COMMIT
     value: $(tasks.clone-repository.results.commit)
+
   workspaces:
   - name: git-auth
+
   tasks:
+
   - name: post-metric-start
     taskRef: *post-bigquery-metrics-ref
   - name: init
     params:
     - name: image-url
-          # We can't provide a StackRox-style tag because it is not known at this time (requires cloning source, etc.)
-          # As a workaround, we still provide a unique tag that's based on a revision in order for this task to comply with
-          # its expected input. We later actually add this tag on a built image with the apply-index-image-tag task.
+      # We can't provide a StackRox-style tag because it is not known at this time (requires cloning source, etc.)
+      # As a workaround, we still provide a unique tag that's based on a revision in order for this task to comply with
+      # its expected input. We later actually add this tag on a built image with the apply-index-image-tag task.
       value: $(params.output-image-repo):konflux-$(params.revision)
     - name: rebuild
       value: $(params.rebuild)
@@ -161,6 +171,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: clone-repository
     params:
     - name: url
@@ -189,10 +200,11 @@ spec:
     when:
     - input: $(tasks.init.results.build)
       operator: in
-      values: ["true"]
+      values: [ "true" ]
     workspaces:
     - name: basic-auth
       workspace: git-auth
+
   - name: determine-image-expiration
     params:
     - name: DEFAULT_IMAGE_EXPIRES_AFTER
@@ -208,6 +220,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: determine-image-tag
     params:
     - name: TAG_SUFFIX
@@ -223,6 +236,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: prefetch-dependencies
     params:
     - name: input
@@ -235,7 +249,7 @@ spec:
       value: $(params.oci-artifact-expires-after)
     - name: ACTIVATION_KEY
       value: subscription-manager-activation-key-prod
-        # Required for the RPM prefetching support.
+      # Required for the RPM prefetching support.
     - name: dev-package-managers
       value: "true"
     taskRef:
@@ -250,6 +264,7 @@ spec:
     workspaces:
     - name: git-basic-auth
       workspace: git-auth
+
   - name: build-images
     matrix:
       params:
@@ -285,7 +300,7 @@ spec:
     - name: BUILDAH_FORMAT
       value: $(params.buildah-format)
     - name: LABELS
-      value: ["$(params.extra-labels[*])"]
+      value: [ "$(params.extra-labels[*])" ]
     - name: BUILD_TIMESTAMP
       value: "$(tasks.clone-repository.results.commit-timestamp)"
     taskRef:
@@ -300,8 +315,9 @@ spec:
     when:
     - input: $(tasks.init.results.build)
       operator: in
-      values: ["true"]
+      values: [ "true" ]
     timeout: 1h30m0s
+
   - name: build-image-index
     params:
     - name: IMAGE
@@ -328,7 +344,8 @@ spec:
     when:
     - input: $(tasks.init.results.build)
       operator: in
-      values: ["true"]
+      values: [ "true" ]
+
   - name: apply-index-image-tag
     params:
     - name: IMAGE_URL
@@ -350,7 +367,8 @@ spec:
     when:
     - input: $(tasks.init.results.build)
       operator: in
-      values: ["true"]
+      values: [ "true" ]
+
   - name: build-source-image
     params:
     - name: BINARY_IMAGE
@@ -373,10 +391,11 @@ spec:
     when:
     - input: $(tasks.init.results.build)
       operator: in
-      values: ["true"]
+      values: [ "true" ]
     - input: $(params.build-source-image)
       operator: in
-      values: ["true"]
+      values: [ "true" ]
+
   - name: deprecated-base-image-check
     params:
     - name: IMAGE_URL
@@ -395,7 +414,8 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
+
   - name: clair-scan
     matrix:
       params:
@@ -419,7 +439,8 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
+
   - name: ecosystem-cert-preflight-checks
     matrix:
       params:
@@ -441,7 +462,8 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
+
   - name: sast-shell-check
     params:
     - name: image-digest
@@ -464,7 +486,8 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
+
   - name: sast-unicode-check
     params:
     - name: image-digest
@@ -487,7 +510,8 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
+
   - name: sast-snyk-check
     params:
     - name: SOURCE_ARTIFACT
@@ -510,7 +534,8 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
+
   - name: clamav-scan
     matrix:
       params:
@@ -534,7 +559,8 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
+
   - name: rpms-signature-scan
     params:
     - name: image-digest
@@ -553,7 +579,8 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
+
   - name: push-dockerfile
     params:
     - name: IMAGE
