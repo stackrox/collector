@@ -47,7 +47,7 @@ jobs:
 
       - name: Generate coverage report
         run: |
-          dnf install -y python-pip
+          dnf install -y python-pip gpg
           pip install gcovr
           gcovr \
             --xml /tmp/xml-report/ \
