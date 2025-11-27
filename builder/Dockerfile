@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream9
+FROM quay.io/centos/centos:stream10
 
 ARG BUILD_DIR=/install-tmp
 ARG COLLECTOR_BUILDER_DEBUG
