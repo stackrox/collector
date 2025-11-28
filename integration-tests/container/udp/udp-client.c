@@ -22,7 +22,7 @@ static const char LOREM_IPSUM[] =
     "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. "
     "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n";
 static const int LOREM_IPSUM_LEN = sizeof(LOREM_IPSUM) / sizeof(char);
-static const size_t IOVEC_N = 32;
+static const size_t IOVEC_N = 16;
 static const size_t MMSGHDR_N = 32;
 
 typedef enum send_method_e {

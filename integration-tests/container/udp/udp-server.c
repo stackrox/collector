@@ -15,7 +15,7 @@
 #include <sys/types.h>
 
 static const size_t BUF_SIZE = 4096;
-static const size_t IOVEC_N = 32;
+static const size_t IOVEC_N = 16;
 static const size_t MMSGHDR_N = 32;
 static bool running = true;
 
