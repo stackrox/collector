@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 	"github.com/stackrox/collector/integration-tests/suites"
 )
@@ -576,12 +577,23 @@ func TestRingBuffer(t *testing.T) {
 }
 
 func TestUdpNetworkFlow(t *testing.T) {
-	if strings.Contains(config.VMInfo().Config, "rhel-8-4-sap") {
-		t.Skip("Skipping test on RHEL 8.4 SAP due to a verifier issue")
-	}
+	log.Info("VMInfo: %s", config.VMInfo)
 	if strings.Contains(config.VMInfo().Config, "fedora-coreos-stable") {
 		t.Skip("Skipping due to ROX-27673")
 	}
+	skipped_vms := []string{
+		"rhcos",
+		"rhel_rhel-8",
+		"rhel-sap",
+		"rhel-s390x",
+		"rhel-88", // ppc64le
+	}
+	for _, vm := range skipped_vms {
+		if strings.Contains(config.VMInfo().Config, vm) {
+			t.Skip("Skipping due to ROX-27673")
+		}
+	}
+
 	suite.Run(t, new(suites.UdpNetworkFlow))
 }
 
