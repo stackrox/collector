@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
+	"github.com/stackrox/collector/integration-tests/pkg/log"
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 	"github.com/stackrox/collector/integration-tests/suites"
 )
@@ -576,6 +577,7 @@ func TestRingBuffer(t *testing.T) {
 }
 
 func TestUdpNetworkFlow(t *testing.T) {
+	log.Info("VMInfo: %s", config.VMInfo)
 	if strings.Contains(config.VMInfo().Config, "fedora-coreos-stable") {
 		t.Skip("Skipping due to ROX-27673")
 	}
@@ -591,7 +593,8 @@ func TestUdpNetworkFlow(t *testing.T) {
 	if strings.Contains(config.VMInfo().Config, "rhel-s390x") {
 		t.Skip("Skipping due to ROX-32092")
 	}
-	if strings.Contains(config.VMInfo().Config, "rhel-ppc64le") {
+	// rhel-ppc64le
+	if strings.Contains(config.VMInfo().Config, "rhel-88") {
 		t.Skip("Skipping due to ROX-32092")
 	}
 
