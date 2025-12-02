@@ -576,12 +576,25 @@ func TestRingBuffer(t *testing.T) {
 }
 
 func TestUdpNetworkFlow(t *testing.T) {
-	if strings.Contains(config.VMInfo().Config, "rhel-8-4-sap") {
-		t.Skip("Skipping test on RHEL 8.4 SAP due to a verifier issue")
-	}
 	if strings.Contains(config.VMInfo().Config, "fedora-coreos-stable") {
 		t.Skip("Skipping due to ROX-27673")
 	}
+	if strings.Contains(config.VMInfo().Config, "rhcos") {
+		t.Skip("Skipping due to ROX-32092")
+	}
+	if strings.Contains(config.VMInfo().Config, "rhel_rhel-8") {
+		t.Skip("Skipping due to ROX-32092")
+	}
+	if strings.Contains(config.VMInfo().Config, "rhel-sap") {
+		t.Skip("Skipping due to ROX-32092")
+	}
+	if strings.Contains(config.VMInfo().Config, "rhel-s390x") {
+		t.Skip("Skipping due to ROX-32092")
+	}
+	if strings.Contains(config.VMInfo().Config, "rhel-ppc64le") {
+		t.Skip("Skipping due to ROX-32092")
+	}
+
 	suite.Run(t, new(suites.UdpNetworkFlow))
 }
 
