@@ -581,21 +581,17 @@ func TestUdpNetworkFlow(t *testing.T) {
 	if strings.Contains(config.VMInfo().Config, "fedora-coreos-stable") {
 		t.Skip("Skipping due to ROX-27673")
 	}
-	if strings.Contains(config.VMInfo().Config, "rhcos") {
-		t.Skip("Skipping due to ROX-32092")
+	skipped_vms := []string{
+		"rhcos",
+		"rhel_rhel-8",
+		"rhel-sap",
+		"rhel-s390x",
+		"rhel-88", // ppc64le
 	}
-	if strings.Contains(config.VMInfo().Config, "rhel_rhel-8") {
-		t.Skip("Skipping due to ROX-32092")
-	}
-	if strings.Contains(config.VMInfo().Config, "rhel-sap") {
-		t.Skip("Skipping due to ROX-32092")
-	}
-	if strings.Contains(config.VMInfo().Config, "rhel-s390x") {
-		t.Skip("Skipping due to ROX-32092")
-	}
-	// rhel-ppc64le
-	if strings.Contains(config.VMInfo().Config, "rhel-88") {
-		t.Skip("Skipping due to ROX-32092")
+	for _, vm := range skipped_vms {
+		if strings.Contains(config.VMInfo().Config, vm) {
+			t.Skip("Skipping due to ROX-27673")
+		}
 	}
 
 	suite.Run(t, new(suites.UdpNetworkFlow))
