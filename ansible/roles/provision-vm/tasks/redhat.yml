@@ -60,7 +60,6 @@
       - podman-docker
       - git
       - make
-    state: latest
-    update_cache: true
+    state: present
   when: runtime_command == 'podman'
 
