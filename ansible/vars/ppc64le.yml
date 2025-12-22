@@ -2,18 +2,18 @@
 
 #rhel-8.8-05102023
 pi_name: "{{ vm_name }}"
-sys_type: s922
+sys_type: s1022
 proc_type: shared
 processors: "0.25"
 memory: "6"
 storage_type: tier1
-pi_cloud_instance_id: "2f734538-93cc-45fc-9065-5da9506d14c8"
+pi_cloud_instance_id: "913c0d80-7cba-4c2c-9764-ec6099d62296"
 ssh_public_key: "{{ lookup('env', 'IBM_CLOUD_POWER_SSH_PUBLIC_KEY') }}"
 api_key: "{{ lookup('env', 'IBM_CLOUD_POWER_API_KEY') }}"
-region: syd
+region: us-south
 
 ppc64le:
   env:
     IC_API_KEY: "{{ lookup('env', 'IBM_CLOUD_POWER_API_KEY') }}"
-    IC_REGION: syd
-    IC_ZONE:  syd05
+    IC_REGION: us-south
+    IC_ZONE: us-south
