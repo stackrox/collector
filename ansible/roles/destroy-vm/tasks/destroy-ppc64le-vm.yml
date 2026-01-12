@@ -65,7 +65,11 @@
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
     state: absent
     id: "{{ pi_network_id }}"
-  register: pi_network_create_output
+  retries: 3
+  delay: 5
+  register: delete_network_operation
+  until: delete_network_operation is success
+  ignore_errors: true
   when:
     - pi_network_existing_output.resource.id is defined
 
