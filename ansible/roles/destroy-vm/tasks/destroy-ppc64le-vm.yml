@@ -78,6 +78,8 @@
   ibm.cloudcollection.ibm_pi_key:
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
     state: absent
+    pi_ssh_key: "{{ pi_ssh_key_existing_info.resource }}"
+    pi_key_name: "{{ hostname }}-ssh-key"
     id: "{{ pi_ssh_key_existing_info.resource.id }}"
   retries: 10
   delay: 30
