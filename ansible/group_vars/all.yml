@@ -75,6 +75,7 @@ virtual_machines:
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.19') }}"
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.18') }}"
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.16') }}"
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.14') }}"
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.12') }}"
     username: core
     ignition:
