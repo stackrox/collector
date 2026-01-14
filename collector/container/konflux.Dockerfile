@@ -2,9 +2,11 @@ ARG BUILD_DIR=/build
 ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
 
 
-FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:ceea2c6434cc16cd796b7fcab26f351c308675bd3256894f7377262f3ed2f277 AS builder
+FROM registry.access.redhat.com/ubi9/ubi:latest AS builder
 
-RUN dnf -y install --nobest --allowerasing \
+# Source Cachi2 environment for hermetic builds
+RUN if [ -f /cachi2/cachi2.env ]; then . /cachi2/cachi2.env; fi && \
+    dnf -y install --nobest --allowerasing \
         make \
         wget \
         unzip \
@@ -79,9 +81,11 @@ RUN ctest --no-tests=error -V --test-dir "${CMAKE_BUILD_DIR}"
 RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:21398599ff11971e5084dae6f5fb8fd880b4b430b4dc2bc80780916066a9695e
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
-RUN microdnf -y install --nobest \
+# Source Cachi2 environment for hermetic builds
+RUN if [ -f /cachi2/cachi2.env ]; then . /cachi2/cachi2.env; fi && \
+    microdnf -y install --nobest \
       tbb \
       c-ares && \
     microdnf -y clean all && \
@@ -101,7 +105,7 @@ LABEL \
     io.k8s.display-name="collector" \
     io.openshift.tags="rhacs,collector,stackrox" \
     maintainer="Red Hat, Inc." \
-    name="advanced-cluster-security/rhacs-collector-rhel8" \
+    name="advanced-cluster-security/rhacs-collector-rhel9" \
     # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
     source-location="https://github.com/stackrox/collector" \
     summary="Runtime data collection for Red Hat Advanced Cluster Security for Kubernetes" \

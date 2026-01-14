@@ -29,7 +29,7 @@ packages:
 contentOrigin:
   repofiles: [ "rpms.rhel.repo" ]
 context:
-  bare: true
+  image: registry.access.redhat.com/ubi9/ubi:latest
 arches:
 - aarch64
 - ppc64le
