@@ -6,7 +6,7 @@ packages:
 - make
 - wget
 - unzip
-- clang-19.1.7
+- clang
 - llvm
 - cmake
 - gcc-c++
