@@ -47,57 +47,46 @@
   ibm.cloudcollection.ibm_pi_network_info:
     pi_network_name: "{{ hostname }}-network"
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
-  failed_when:
-    - pi_network_existing_output.rc != 0
-    - '"unable to get network" not in pi_network_existing_output.stderr'
-  register: pi_network_existing_output
-
-- name: Save existing network as fact
-  delegate_to: localhost
-  set_fact:
-    cacheable: True
-    pi_network_id: "{{ pi_network_existing_output.resource.id }}"
-  when: pi_network_existing_output.resource.id is defined
+  register: pi_network_existing_info
+  ignore_errors: true
 
 - name: Delete network
   delegate_to: localhost
   ibm.cloudcollection.ibm_pi_network:
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
     state: absent
-    id: "{{ pi_network_id }}"
-  register: pi_network_create_output
+    id: "{{ pi_network_existing_info.resource.id }}"
+  retries: 3
+  delay: 5
+  register: delete_network_operation
+  until: delete_network_operation is success
+  ignore_errors: true
   when:
-    - pi_network_existing_output.resource.id is defined
+    - pi_network_existing_info is success
+    - pi_network_existing_info.resource.id is defined
 
 - name: Check for existing SSH Key
   delegate_to: localhost
   ibm.cloudcollection.ibm_pi_key_info:
     pi_key_name: "{{ hostname }}-ssh-key"
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
-  failed_when:
-    - pi_ssh_key_existing_output.rc != 0
-    - '"does not exist" not in pi_ssh_key_existing_output.stderr'
-  register: pi_ssh_key_existing_output
-
-- name: Save existing SSH Key as fact
-  delegate_to: localhost
-  set_fact:
-    cacheable: True
-    pi_ssh_key: "{{ pi_ssh_key_existing_output.resource }}"
-  when: pi_ssh_key_existing_output.resource.id is defined
+  register: pi_ssh_key_existing_info
+  ignore_errors: true
 
 - name: Delete SSH Key
   delegate_to: localhost
   ibm.cloudcollection.ibm_pi_key:
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
     state: absent
-    pi_ssh_key: "{{ pi_ssh_key_existing_output.resource }}"
+    pi_ssh_key: "{{ pi_ssh_key_existing_info.resource }}"
     pi_key_name: "{{ hostname }}-ssh-key"
-    id: "{{ pi_ssh_key_existing_output.resource.id }}"
+    id: "{{ pi_ssh_key_existing_info.resource.id }}"
   retries: 10
   delay: 30
-  register: pi_ssh_key_create_output
-  when: pi_ssh_key_existing_output.resource.id is defined
+  register: pi_ssh_key_delete
+  when: 
+    - pi_ssh_key_existing_info is success
+    - pi_ssh_key_existing_info.resource is defined
 
 - name: Remove IBM inventory file (delete file)
   delegate_to: localhost
