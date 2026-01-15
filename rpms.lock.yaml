@@ -3428,10 +3428,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/167a404a2f51612fbc173ab81c761fbbe3948e762f0d87bc704d07676b1ea1af-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/0951060feeae60d5e7ffa7fc231d82cbce71f4d00a8180db49735be84fa66d16-modules.yaml.gz
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 755348
-    checksum: sha256:167a404a2f51612fbc173ab81c761fbbe3948e762f0d87bc704d07676b1ea1af
+    size: 756439
+    checksum: sha256:0951060feeae60d5e7ffa7fc231d82cbce71f4d00a8180db49735be84fa66d16
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -6871,10 +6871,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/a7866a3deb70a089564769543e78375823a57eeae26eceba65699d3d138b23f5-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/26fdc5fabf8bb878dc73a0dc561e6c10ccaeb1b6237175e98be15de9fb9f8fd9-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 752834
-    checksum: sha256:a7866a3deb70a089564769543e78375823a57eeae26eceba65699d3d138b23f5
+    size: 754812
+    checksum: sha256:26fdc5fabf8bb878dc73a0dc561e6c10ccaeb1b6237175e98be15de9fb9f8fd9
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -10155,10 +10155,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/99f4664c0d56fe014f3045e5197fbf421150b2e7c25832eab7a5aa32bdcd7720-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/ee9767f45e91c28b36f93c262da80185cba75b530b6fd4f4e8103b16be4e079b-modules.yaml.gz
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 755049
-    checksum: sha256:99f4664c0d56fe014f3045e5197fbf421150b2e7c25832eab7a5aa32bdcd7720
+    size: 756364
+    checksum: sha256:ee9767f45e91c28b36f93c262da80185cba75b530b6fd4f4e8103b16be4e079b
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -13571,7 +13571,7 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/c74587ca4defddd13ac6895ac7cd4e72767174cbf5353dd76e28cb24c71c1fbb-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/4f4dd2b3da4093890d352fbb8bc0953f32c6bb80367d50387512bbe7a5a96902-modules.yaml.gz
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 779063
-    checksum: sha256:c74587ca4defddd13ac6895ac7cd4e72767174cbf5353dd76e28cb24c71c1fbb
+    size: 780995
+    checksum: sha256:4f4dd2b3da4093890d352fbb8bc0953f32c6bb80367d50387512bbe7a5a96902
