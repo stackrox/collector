@@ -4,9 +4,7 @@ ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
 
 FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:22e95731596d661ff08daabaa5ef751b20ac42d0a58492dac5efa7373f471389 AS builder
 
-# Source Cachi2 environment for hermetic builds
-RUN if [ -f /cachi2/cachi2.env ]; then . /cachi2/cachi2.env; fi && \
-    dnf -y install --nobest --allowerasing \
+RUN dnf -y install --nobest --allowerasing \
         make \
         wget \
         unzip \
@@ -83,9 +81,7 @@ RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:90bd85dcd061d1ad6dbda70a867c41958c04a86462d05c631f8205e8870f28f8
 
-# Source Cachi2 environment for hermetic builds
-RUN if [ -f /cachi2/cachi2.env ]; then . /cachi2/cachi2.env; fi && \
-    microdnf -y install --nobest \
+RUN microdnf -y install --nobest \
       tbb \
       c-ares && \
     microdnf -y clean all && \
