@@ -155,6 +155,9 @@ func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConf
 	if err != nil {
 		return "", errors.Wrapf(err, "create %s", startConfig.Name)
 	}
+
+	d.client.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
+
 	if err := d.client.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
 		return "", errors.Wrapf(err, "start %s", startConfig.Name)
 	}
