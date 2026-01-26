@@ -254,7 +254,7 @@ func Mem2Numeric(value string) (float64, error) {
 		value, err := strconv.ParseFloat(numericPart, 32)
 		return value / 1024, err
 	} else {
-		return 0, errors.New(fmt.Sprintf("Invalid units, %s", value))
+		return 0, fmt.Errorf("Invalid units, %s", value)
 	}
 }
 
