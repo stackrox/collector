@@ -1,5 +1,5 @@
 [rhel-9-for-$basearch-appstream-rpms]
-name = Red Hat Enterprise Linux 9 for ARM 64 - AppStream (RPMs)
+name = Red Hat Enterprise Linux 9 for $basearch - AppStream (RPMs)
 baseurl = https://cdn.redhat.com/content/dist/rhel9/9/$basearch/appstream/os
 enabled = 1
 gpgcheck = 1
@@ -13,7 +13,7 @@ metadata_expire = 86400
 enabled_metadata = 1
 
 [rhel-9-for-$basearch-appstream-source-rpms]
-name = Red Hat Enterprise Linux 9 for ARM 64 - AppStream (Source RPMs)
+name = Red Hat Enterprise Linux 9 for $basearch - AppStream (Source RPMs)
 baseurl = https://cdn.redhat.com/content/dist/rhel9/9/$basearch/appstream/source/SRPMS
 enabled = 1
 gpgcheck = 1
@@ -27,7 +27,7 @@ metadata_expire = 86400
 enabled_metadata = 1
 
 [rhel-9-for-$basearch-baseos-rpms]
-name = Red Hat Enterprise Linux 9 for ARM 64 - BaseOS (RPMs)
+name = Red Hat Enterprise Linux 9 for $basearch - BaseOS (RPMs)
 baseurl = https://cdn.redhat.com/content/dist/rhel9/9/$basearch/baseos/os
 enabled = 1
 gpgcheck = 1
@@ -41,7 +41,7 @@ metadata_expire = 86400
 enabled_metadata = 1
 
 [rhel-9-for-$basearch-baseos-source-rpms]
-name = Red Hat Enterprise Linux 9 for ARM 64 - BaseOS (Source RPMs)
+name = Red Hat Enterprise Linux 9 for $basearch - BaseOS (Source RPMs)
 baseurl = https://cdn.redhat.com/content/dist/rhel9/9/$basearch/baseos/source/SRPMS
 enabled = 1
 gpgcheck = 1
