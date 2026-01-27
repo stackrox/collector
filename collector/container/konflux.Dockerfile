@@ -83,7 +83,8 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:90bd85dcd061d1ad6
 
 RUN microdnf -y install --nobest \
       tbb \
-      c-ares && \
+      c-ares \
+      elfutils-libelf && \
     microdnf -y clean all && \
     rpm --verbose -e --nodeps $(rpm -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*') && \
     rm -rf /var/cache/dnf /var/cache/yum
