@@ -24,7 +24,7 @@ sslclientkey = $SSL_CLIENT_KEY
 sslclientcert = $SSL_CLIENT_CERT
 sslverifystatus = 1
 metadata_expire = 86400
-enabled_metadata = 1
+enabled_metadata = 0
 
 [rhel-9-for-$basearch-baseos-rpms]
 name = Red Hat Enterprise Linux 9 for $basearch - BaseOS (RPMs)
@@ -52,5 +52,5 @@ sslclientkey = $SSL_CLIENT_KEY
 sslclientcert = $SSL_CLIENT_CERT
 sslverifystatus = 1
 metadata_expire = 86400
-enabled_metadata = 1
+enabled_metadata = 0
 
