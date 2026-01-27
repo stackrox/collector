@@ -53,4 +53,3 @@ sslclientcert = $SSL_CLIENT_CERT
 sslverifystatus = 1
 metadata_expire = 86400
 enabled_metadata = 0
-
