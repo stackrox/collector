@@ -218,7 +218,7 @@ jobs:
           if [[ "${RELEASE_TYPE}" == "patch" ]]; then
             git pull --ff-only
           fi
-          git tag "${RELEASE}.${PATCH}"
+          git tag -a -m "Collector v${RELEASE}.${PATCH} release" "${RELEASE}.${PATCH}"
 
       - name: Push release tag
         run: |
