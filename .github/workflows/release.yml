@@ -195,17 +195,6 @@ jobs:
           git tag "${RELEASE}.x"
           git checkout -b "release-${RELEASE}"
 
-          # Modify values needed for konflux
-          SUFFIX="-${{ needs.determine-version.outputs.stackrox-major }}-${{ needs.determine-version.outputs.stackrox-minor }}"
-          sed -i \
-            -e "/appstudio.openshift.io\/application: / s/$/${SUFFIX}/" \
-            -e "/appstudio.openshift.io\/component: / s/$/${SUFFIX}/" \
-            -e "/serviceAccountName: / s/$/${SUFFIX}/" \
-            .tekton/collector-build.yaml
-
-          git add -u .
-          git commit --no-verify -m "Commit to diverge ${RELEASE} from master"
-
       - name: Push release branch
         if: needs.determine-version.outputs.release-type != 'patch'
         run: |
@@ -218,7 +207,7 @@ jobs:
           if [[ "${RELEASE_TYPE}" == "patch" ]]; then
             git pull --ff-only
           fi
-          git tag "${RELEASE}.${PATCH}"
+          git tag -a -m "Collector v${RELEASE}.${PATCH} release" "${RELEASE}.${PATCH}"
 
       - name: Push release tag
         run: |
