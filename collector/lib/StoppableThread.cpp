@@ -1,6 +1,8 @@
 #include "StoppableThread.h"
 
+#include <chrono>
 #include <iostream>
+#include <thread>
 #include <unistd.h>
 
 #include "Utility.h"
@@ -43,6 +45,10 @@ void StoppableThread::Stop() {
       }
     }
     break;
+  }
+  if (!thread_->joinable()) {
+    CLOG(WARNING) << "thread not yet joinable...";
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
   }
   thread_->join();
   thread_.reset();

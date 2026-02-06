@@ -1359,6 +1359,7 @@ class FakeProcess : public IProcess {
                           args_(args) {}
 
   uint64_t pid() const override { return pid_; }
+  std::string name() const override { return ""; }
   std::string container_id() const override { return container_id_; }
   std::string comm() const override { return comm_; }
   std::string exe() const override { return exe_; }

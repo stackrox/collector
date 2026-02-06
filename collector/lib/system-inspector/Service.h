@@ -13,6 +13,8 @@
 #include "SignalHandler.h"
 #include "SignalServiceClient.h"
 #include "SystemInspector.h"
+#include "events/Dispatcher.h"
+#include "events/IEvent.h"
 
 // forward declarations
 class sinsp;
@@ -30,7 +32,7 @@ class Service : public SystemInspector {
   Service& operator=(Service&&) = delete;
   ~Service() override;
 
-  Service(const CollectorConfig& config);
+  Service(const CollectorConfig& config, collector::events::EventDispatcher& dispatcher);
   void Start() override;
   void Run(const std::atomic<ControlValue>& control) override;
   void CleanUp() override;
@@ -49,6 +51,8 @@ class Service : public SystemInspector {
   Stats* GetUserspaceStats() { return &userspace_stats_; }
 
   void AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler);
+
+  events::IEventPtr to_ievt(sinsp_evt* evt);
 
  private:
   FRIEND_TEST(SystemInspectorServiceTest, FilterEvent);
@@ -85,6 +89,8 @@ class Service : public SystemInspector {
   mutable std::mutex process_requests_mutex_;
   // [ ( pid, callback ), ( pid, callback ), ... ]
   std::list<std::pair<uint64_t, ProcessInfoCallbackRef>> pending_process_requests_;
+
+  collector::events::EventDispatcher& dispatcher_;
 };
 
 }  // namespace collector::system_inspector

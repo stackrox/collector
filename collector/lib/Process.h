@@ -8,6 +8,10 @@
 #include <string>
 #include <unordered_map>
 
+#include "libsinsp/sinsp.h"
+
+#include "system-inspector/EventExtractor.h"
+
 // forward declarations
 class sinsp_threadinfo;
 namespace collector {
@@ -44,6 +48,7 @@ class ProcessStore {
 class IProcess {
  public:
   virtual uint64_t pid() const = 0;
+  virtual std::string name() const = 0;
   virtual std::string container_id() const = 0;
   virtual std::string comm() const = 0;
   virtual std::string exe() const = 0;
@@ -61,6 +66,7 @@ class IProcess {
 class Process : public IProcess {
  public:
   inline uint64_t pid() const override { return pid_; }
+  std::string name() const override;
   std::string container_id() const override;
   std::string comm() const override;
   std::string exe() const override;
@@ -70,6 +76,7 @@ class Process : public IProcess {
   /* - when 'cache' is provided, this process will remove itself from it upon deletion.
    * - 'instance' is used to request the process information from the system. */
   Process(uint64_t pid, ProcessStore::MapRef cache = 0, system_inspector::Service* instance = 0);
+
   ~Process();
 
  private:

@@ -1,6 +1,7 @@
 file(GLOB COLLECTOR_LIB_SRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/system-inspector/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/events/*.cpp
 )
 
 add_library(collector_lib ${DRIVER_HEADERS} ${COLLECTOR_LIB_SRC_FILES})
