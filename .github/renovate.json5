@@ -60,12 +60,6 @@
       // to have less PR noise.
       "**/*konflux*.Dockerfile",
     ],
-    "postUpgradeTasks": {
-      "commands": [
-        // Refresh the rpm lockfile after updating image references in the dockerfile.
-        "rpm-lockfile-prototype rpms.in.yaml",
-      ],
-    },
   },
   "enabledManagers": [
     // Restrict Renovate focus on Konflux things since we rely on GitHub's dependabot for everything else.
