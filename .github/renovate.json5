@@ -17,6 +17,9 @@
     // This tells Renovate to combine all updates in one PR so that we have fewer PRs to deal with.
     "group:all",
   ],
+  // Automerge all rpm-lockfile security updates. This is configured separately from other package managers.
+  // https://konflux-ci.dev/docs/mintmaker/rpm-lockfile/#how-to-enable-automerge-for-rpm-security-updates
+  "rpmVulnerabilityAutomerge": "ALL",
   "timezone": "Etc/UTC",
   "schedule": [
     // Allowed syntax: https://docs.renovatebot.com/configuration-options/#schedule
