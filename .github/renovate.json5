@@ -23,6 +23,9 @@
   "branchConcurrentLimit": null,
   // The number of PRs MintMaker can open in one hour, effectively in one run.
   "prHourlyLimit": 4,
+  // Automerge all rpm-lockfile security updates. This is configured separately from other package managers.
+  // https://konflux-ci.dev/docs/mintmaker/rpm-lockfile/#how-to-enable-automerge-for-rpm-security-updates
+  "rpmVulnerabilityAutomerge": "ALL",
   "timezone": "Etc/UTC",
   "schedule": [
     // Allowed syntax: https://docs.renovatebot.com/configuration-options/#schedule
@@ -57,12 +60,6 @@
       // to have less PR noise.
       "**/*konflux*.Dockerfile",
     ],
-    "postUpgradeTasks": {
-      "commands": [
-        // Refresh the rpm lockfile after updating image references in the dockerfile.
-        "rpm-lockfile-prototype rpms.in.yaml",
-      ],
-    },
   },
   "enabledManagers": [
     // Restrict Renovate focus on Konflux things since we rely on GitHub's dependabot for everything else.
