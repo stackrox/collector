@@ -1,0 +1,51 @@
+name: CI Report
+on:
+  schedule:
+    - cron: '0 9 * * MON'  # Every Monday at 9am UTC
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '.github/workflows/ci-report.yml'
+
+jobs:
+  generate-report:
+    permissions:
+      models: read      # Required for GitHub Models
+      contents: read    # Read repo content
+      actions: read     # Access workflow runs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/ai-inference@v1
+        id: report
+        with:
+          prompt: |
+            Analyze the Github Actions workflow runs for the Collector repository from the past week,
+            focussing on master and the release-* branches.
+            Generate a summary report including:
+            - Overall success rate
+            - Common failure patterns
+            - Flaky tests identified
+            - Trends compared to previous weeks
+            Format it as a concise Slack message with key metrics highlighted.
+          enable-github-mcp: true
+          model: openai/gpt-4o
+          max-tokens: 2000
+          token: ${{ secrets.USER_PAT }}
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: mshick/add-pr-comment@v2
+        with:
+          message: |
+            ## CI Analysis Report
+
+            ${{ steps.report.outputs.response }}
+          message-id: ci-report-comment
+
+#      - name: Post to Slack
+#        env:
+#          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+#        run: |
+#          curl -X POST "$SLACK_WEBHOOK" \
+#            -H 'Content-Type: application/json' \
+#            -d "{\"text\": $(echo '${{ steps.report.outputs.response }}' | jq -Rs .)}"
