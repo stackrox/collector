@@ -92,13 +92,17 @@ jobs:
         with:
           submodules: true
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Install ansible on P&Z runners
         if: matrix.arch == 'ppc64le' || matrix.arch == 's390x'
         run: |
           sudo apt-get install -y ansible
+
+      - name: Disable apparmor on P&Z runners
+        if: matrix.arch == 'ppc64le' || matrix.arch == 's390x'
+        run: |
+          aa-status
+          aa-disable /etc/apparmor.d/podman || true
+          aa-teardown || true
 
       - name: Create ansible vars
         run: |
@@ -123,7 +127,7 @@ jobs:
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-builder.yml
 
-  create-multiarch-manifest:
+  create-multiarch-manifest-stackrox-io:
     needs:
     - builder-needs-rebuilding
     - build-builder-image
@@ -152,8 +156,24 @@ jobs:
           base-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
           archs: ${{ env.ARCHS }}
 
-      - name: Login to quay.io/rhacs-eng
-        uses: docker/login-action@v3
+  create-multiarch-manifest-rhacs-eng:
+    needs:
+    - builder-needs-rebuilding
+    - build-builder-image
+    name: Create Multiarch manifest
+    runs-on: ubuntu-24.04
+    if: |
+      always() && !contains(join(needs.*.result, ','), 'failure') &&
+      needs.builder-needs-rebuilding.outputs.build-image == 'true'
+    env:
+      COLLECTOR_BUILDER_TAG: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}
+      ARCHS: amd64 arm64 ppc64le s390x
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to quay.io
+        uses: redhat-actions/podman-login@v1
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
@@ -170,7 +190,8 @@ jobs:
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name != 'pull_request'
     needs:
       - build-builder-image
-      - create-multiarch-manifest
+      - create-multiarch-manifest-stackrox-io
+      - create-multiarch-manifest-rhacs-eng
     steps:
       - name: Slack notification
         uses: rtCamp/action-slack-notify@v2

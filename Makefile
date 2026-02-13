@@ -23,13 +23,13 @@ container-dockerfile-dev:
 .PHONY: builder
 builder:
 ifneq ($(BUILD_BUILDER_IMAGE), false)
-	docker buildx build --load --platform ${PLATFORM} \
+	podman build \
 		--build-arg COLLECTOR_BUILDER_DEBUG=$(COLLECTOR_BUILDER_DEBUG) \
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
 		"$(CURDIR)/builder"
 else ifeq ($(COLLECTOR_BUILDER_DEBUG),)
-	docker pull --platform ${PLATFORM} \
+	podman pull \
 		quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG)
 endif
 
