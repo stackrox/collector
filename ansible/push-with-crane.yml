@@ -5,7 +5,7 @@
   register: crane_stat
 
 - name: Install crane
-  when: crane_stat.stat.exists
+  when: not crane_stat.stat.exists
   shell:
     cmd: |
       # Inspired by https://github.com/actions/runner-images/issues/13474#issuecomment-3893588930
