@@ -13,6 +13,8 @@
 
   tasks:
     - name: Wrap docker with crane
+      args:
+        executable: /bin/bash
       ansible.builtin.shell: |
         # Taken from https://github.com/actions/runner-images/issues/13474#issuecomment-3893588930
         #
