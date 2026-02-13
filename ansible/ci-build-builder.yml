@@ -12,6 +12,46 @@
     local_branch: local
 
   tasks:
+    - name: Wrap docker with crane
+      ansible.builtin.shell: |
+        # Taken from https://github.com/actions/runner-images/issues/13474#issuecomment-3893588930
+        #
+        # Docker 29 containerd pushes OCI manifests that ECR rejects with 403
+        # Bypass docker push: save image to tarball, push with crane
+        CRANE_VERSION=v0.20.7
+        CRANE_PLATFORM=${PLATFORM}
+        case "${CRANE_PLATFORM} in
+          amd64) CRANE_PLATFORM=x86_64 ;;
+        esac
+        curl -sL "https://github.com/google/go-containerregistry/releases/download/${CRANE_VERSION}/go-containerregistry_Linux_${CRANE_PLATFORM}.tar.gz" \
+          | tar xz -C /usr/local/bin crane
+
+        REAL_DOCKER=$(which docker)
+        cat > /usr/local/bin/docker <<'WRAPPER'
+        #!/bin/sh
+        if [ "$1" = "push" ]; then
+          shift
+          # Parse image reference (skip flags like --platform)
+          IMAGE=""
+          for arg in "$@"; do
+            case "$arg" in
+              --*) ;;
+              *) IMAGE="$arg" ;;
+            esac
+          done
+          echo "=== crane push workaround for Docker 29 / ECR OCI ==="
+          TMPTAR=$(mktemp /tmp/image-XXXXXX.tar)
+          REAL_DOCKER save "$IMAGE" -o "$TMPTAR" && crane push "$TMPTAR" "$IMAGE"
+          RC=$?
+          rm -f "$TMPTAR"
+          exit $RC
+        else
+          exec REAL_DOCKER "$@"
+        fi
+        WRAPPER
+        sed -i "s|REAL_DOCKER|$REAL_DOCKER|g" /usr/local/bin/docker
+        chmod +x /usr/local/bin/docker
+
     - name: Build the collector builder image
       community.general.make:
         chdir: "{{ ansible_env.GITHUB_WORKSPACE | default(collector_root) }}"
