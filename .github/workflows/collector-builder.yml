@@ -120,7 +120,7 @@ jobs:
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-builder.yml
 
-  create-multiarch-manifest:
+  create-multiarch-manifest-stackrox-io:
     needs:
     - builder-needs-rebuilding
     - build-builder-image
@@ -149,6 +149,22 @@ jobs:
           base-image: quay.io/stackrox-io/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
           archs: ${{ env.ARCHS }}
 
+  create-multiarch-manifest-rhacs-eng:
+    needs:
+    - builder-needs-rebuilding
+    - build-builder-image
+    name: Create Multiarch manifest
+    runs-on: ubuntu-24.04
+    if: |
+      always() && !contains(join(needs.*.result, ','), 'failure') &&
+      needs.builder-needs-rebuilding.outputs.build-image == 'true'
+    env:
+      COLLECTOR_BUILDER_TAG: ${{ needs.builder-needs-rebuilding.outputs.collector-builder-tag }}
+      ARCHS: amd64 arm64 ppc64le s390x
+
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Login to quay.io
         uses: redhat-actions/podman-login@v1
         with:
@@ -167,7 +183,8 @@ jobs:
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name != 'pull_request'
     needs:
       - build-builder-image
-      - create-multiarch-manifest
+      - create-multiarch-manifest-stackrox-io
+      - create-multiarch-manifest-rhacs-eng
     steps:
       - name: Slack notification
         uses: rtCamp/action-slack-notify@v2
