@@ -23,7 +23,7 @@ container-dockerfile-dev:
 .PHONY: builder
 builder:
 ifneq ($(BUILD_BUILDER_IMAGE), false)
-	docker buildx build --load --platform ${PLATFORM} \
+	docker buildx build --platform ${PLATFORM} \
 		--output type=image,oci-mediatypes=true \
 		--build-arg COLLECTOR_BUILDER_DEBUG=$(COLLECTOR_BUILDER_DEBUG) \
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
