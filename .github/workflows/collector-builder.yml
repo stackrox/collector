@@ -97,6 +97,13 @@ jobs:
         run: |
           sudo apt-get install -y ansible
 
+      - name: Disable apparmor on P&Z runners
+        if: matrix.arch == 'ppc64le' || matrix.arch == 's390x'
+        run: |
+          aa-status
+          aa-disable /etc/apparmor.d/podman || true
+          aa-teardown || true
+
       - name: Create ansible vars
         run: |
           cat << EOF > ${{ github.workspace }}/ansible/secrets.yml
