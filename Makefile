@@ -24,6 +24,7 @@ container-dockerfile-dev:
 builder:
 ifneq ($(BUILD_BUILDER_IMAGE), false)
 	docker buildx build --load --platform ${PLATFORM} \
+		--output type=image,oci-mediatypes=true \
 		--build-arg COLLECTOR_BUILDER_DEBUG=$(COLLECTOR_BUILDER_DEBUG) \
 		-t quay.io/stackrox-io/collector-builder:$(COLLECTOR_BUILDER_TAG) \
 		-f "$(CURDIR)/builder/Dockerfile" \
