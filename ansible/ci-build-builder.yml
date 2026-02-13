@@ -21,7 +21,7 @@
           # Bypass docker push: save image to tarball, push with crane
           CRANE_VERSION=v0.20.7
           CRANE_PLATFORM=${PLATFORM}
-          case "${CRANE_PLATFORM} in
+          case "${CRANE_PLATFORM}" in
             amd64) CRANE_PLATFORM=x86_64 ;;
           esac
           curl -sL "https://github.com/google/go-containerregistry/releases/download/${CRANE_VERSION}/go-containerregistry_Linux_${CRANE_PLATFORM}.tar.gz" \
