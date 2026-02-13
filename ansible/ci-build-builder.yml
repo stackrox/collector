@@ -24,7 +24,7 @@
         source: local
 
     - name: Untag collector builder image to prevent issues with multiarch
-      containers.podman.podman:
+      containers.podman.podman_image:
         name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
         state: absent
 
