@@ -12,12 +12,12 @@
     local_branch: local
 
   tasks:
-    - name: Wrap docker with crane
+    - name: Install crane
       shell:
         cmd: |
           # Inspired by https://github.com/actions/runner-images/issues/13474#issuecomment-3893588930
           CRANE_VERSION=v0.20.7
-          CRANE_PLATFORM=${PLATFORM}
+          CRANE_PLATFORM={{ arch }}
           case "${CRANE_PLATFORM}" in
             amd64) CRANE_PLATFORM=x86_64 ;;
           esac
