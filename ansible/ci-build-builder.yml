@@ -12,18 +12,6 @@
     local_branch: local
 
   tasks:
-    - name: Install crane
-      shell:
-        cmd: |
-          # Inspired by https://github.com/actions/runner-images/issues/13474#issuecomment-3893588930
-          CRANE_VERSION=v0.20.7
-          CRANE_PLATFORM={{ arch }}
-          case "${CRANE_PLATFORM}" in
-            amd64) CRANE_PLATFORM=x86_64 ;;
-          esac
-          curl -sL "https://github.com/google/go-containerregistry/releases/download/${CRANE_VERSION}/go-containerregistry_Linux_${CRANE_PLATFORM}.tar.gz" \
-            | tar xz -C /usr/local/bin crane
-
     - name: Build the collector builder image
       community.general.make:
         chdir: "{{ ansible_env.GITHUB_WORKSPACE | default(collector_root) }}"
@@ -36,16 +24,10 @@
         password: "{{ stackrox_io_password }}"
 
     - name: Push builder image to quay.io/stackrox-io
-      shell:
-        environment:
-          SRC_IMAGE: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
-          DST_IMAGE: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
-        cmd: |
-          TMPTAR=$(mktemp /tmp/image-XXXXXX.tar)
-          docker save "$SRC_IMAGE" -o "$TMPTAR" && crane push "$TMPTAR" "$DST_IMAGE"
-          RC=$?
-          rm -f "$TMPTAR"
-          exit $RC
+      import_tasks: push-with-crane.yml
+      vars:
+        src_image: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
+        dst_image: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
 
     - name: Login to quay.io
       community.docker.docker_login:
@@ -54,16 +36,15 @@
         password: "{{ rhacs_eng_password }}"
 
     - name: Push builder image to quay.io/rhacs-eng
-      shell:
-        environment:
-          SRC_IMAGE: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
-          DST_IMAGE: "quay.io/rhacs-eng/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
-        cmd: |
-          TMPTAR=$(mktemp /tmp/image-XXXXXX.tar)
-          docker save "$SRC_IMAGE" -o "$TMPTAR" && crane push "$TMPTAR" "$DST_IMAGE"
-          RC=$?
-          rm -f "$TMPTAR"
-          exit $RC
+      import_tasks: push-with-crane.yml
+      vars:
+        src_image: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
+        dst_image: "quay.io/rhacs-eng/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
+
+    - name: Untag collector builder image to prevent issues with multiarch
+      community.docker.docker_image:
+        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
+        state: absent
 
     - name: Print builder images pushed
       debug:

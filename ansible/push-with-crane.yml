@@ -1,0 +1,28 @@
+---
+- name: Check if crane is available
+  ansible.builtin.stat:
+    path: /usr/local/bin/crane
+  register: crane_stat
+
+- name: Install crane
+  when: crane_stat.stat.exists
+  shell:
+    cmd: |
+      # Inspired by https://github.com/actions/runner-images/issues/13474#issuecomment-3893588930
+        CRANE_VERSION=v0.20.7
+        CRANE_PLATFORM={{ arch }}
+        case "${CRANE_PLATFORM}" in
+          amd64) CRANE_PLATFORM=x86_64 ;;
+        esac
+        curl -sL "https://github.com/google/go-containerregistry/releases/download/${CRANE_VERSION}/go-containerregistry_Linux_${CRANE_PLATFORM}.tar.gz" \
+          | tar xz -C /usr/local/bin crane
+
+- name: Push image
+  shell:
+    cmd: |
+      TMPTAR=$(mktemp /tmp/image-XXXXXX.tar)
+      docker save "{{ src_image }}" -o "$TMPTAR" && crane push "$TMPTAR" "{{ dst_image }}"
+      RC=$?
+      rm -f "$TMPTAR"
+      exit $RC
+
