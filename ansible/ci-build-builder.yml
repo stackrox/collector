@@ -18,10 +18,11 @@
         target: builder
 
     - name: Retag collector builder image to arch specific
-      containers.podman.podman_image:
-        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
-        repository: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
-        source: local
+      containers.podman.podman_tag:
+        image: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
+        target_names:
+          - "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
+          - "quay.io/rhacs-eng/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
 
     - name: Untag collector builder image to prevent issues with multiarch
       containers.podman.podman_image:
@@ -30,7 +31,7 @@
 
     - name: Login to quay.io
       containers.podman.podman_login:
-        registry_url: quay.io
+        registry: quay.io
         username: "{{ stackrox_io_username }}"
         password: "{{ stackrox_io_password }}"
 
@@ -38,20 +39,17 @@
       containers.podman.podman_image:
         name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
         push: true
-        source: local
 
     - name: Login to quay.io
       containers.podman.podman_login:
-        registry_url: quay.io
+        registry: quay.io
         username: "{{ rhacs_eng_username }}"
         password: "{{ rhacs_eng_password }}"
 
     - name: Push builder image to quay.io/rhacs-eng
       containers.podman.podman_image:
-        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
-        repository: "quay.io/rhacs-eng/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
+        name: "quay.io/rhacs-eng/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
         push: true
-        source: local
 
     - name: Print builder images pushed
       debug:
