@@ -82,6 +82,13 @@ jobs:
           # to inconsistent timing
           docker pull ${{ env.COLLECTOR_IMAGE }}
 
+      - name: Disable Docker containerd snapshotter
+        run: |
+          # Workaround for Docker v29 containerd snapshotter issue with kind
+          # See: https://github.com/kubernetes-sigs/kind/issues/4066
+          echo '{"features": {"containerd-snapshotter": false}}' | sudo tee /etc/docker/daemon.json
+          sudo systemctl restart docker
+
       - name: Run tests
         run: |
           ansible-playbook \
