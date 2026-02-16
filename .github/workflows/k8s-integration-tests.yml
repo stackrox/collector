@@ -72,6 +72,13 @@ jobs:
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
 
+      - name: Disable Docker containerd snapshotter
+        run: |
+          # Workaround for Docker v29 containerd snapshotter issue with kind
+          # See: https://github.com/kubernetes-sigs/kind/issues/4066
+          echo '{"features": {"containerd-snapshotter": false}}' | sudo tee /etc/docker/daemon.json
+          sudo systemctl restart docker
+
       - name: Pull tests image
         run: |
           docker pull ${{ env.COLLECTOR_TESTS_IMAGE }}
@@ -81,13 +88,6 @@ jobs:
           # Collector image is pulled to prevent timeout errors due
           # to inconsistent timing
           docker pull ${{ env.COLLECTOR_IMAGE }}
-
-      - name: Disable Docker containerd snapshotter
-        run: |
-          # Workaround for Docker v29 containerd snapshotter issue with kind
-          # See: https://github.com/kubernetes-sigs/kind/issues/4066
-          echo '{"features": {"containerd-snapshotter": false}}' | sudo tee /etc/docker/daemon.json
-          sudo systemctl restart docker
 
       - name: Run tests
         run: |
