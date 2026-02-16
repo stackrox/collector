@@ -17,17 +17,6 @@
         chdir: "{{ ansible_env.GITHUB_WORKSPACE | default(collector_root) }}"
         target: builder
 
-    - name: Retag collector builder image to arch specific
-      community.docker.docker_image:
-        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
-        repository: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
-        source: local
-
-    - name: Untag collector builder image to prevent issues with multiarch
-      community.docker.docker_image:
-        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
-        state: absent
-
     - name: Login to quay.io
       community.docker.docker_login:
         registry_url: quay.io
@@ -35,10 +24,10 @@
         password: "{{ stackrox_io_password }}"
 
     - name: Push builder image to quay.io/stackrox-io
-      community.docker.docker_image:
-        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
-        push: true
-        source: local
+      import_tasks: push-with-crane.yml
+      vars:
+        src_image: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
+        dst_image: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
 
     - name: Login to quay.io
       community.docker.docker_login:
@@ -47,11 +36,15 @@
         password: "{{ rhacs_eng_password }}"
 
     - name: Push builder image to quay.io/rhacs-eng
+      import_tasks: push-with-crane.yml
+      vars:
+        src_image: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
+        dst_image: "quay.io/rhacs-eng/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
+
+    - name: Untag collector builder image to prevent issues with multiarch
       community.docker.docker_image:
-        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
-        repository: "quay.io/rhacs-eng/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}-{{ arch }}"
-        push: true
-        source: local
+        name: "quay.io/stackrox-io/collector-builder:{{ ansible_env.COLLECTOR_BUILDER_TAG }}"
+        state: absent
 
     - name: Print builder images pushed
       debug:
