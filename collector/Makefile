@@ -44,6 +44,7 @@ container/bin/collector: cmake-build/collector
 collector: container/bin/collector txt-files
 	mkdir -p container/libs
 	docker cp $(COLLECTOR_BUILDER_NAME):/THIRD_PARTY_NOTICES/ container/
+	docker cp $(COLLECTOR_BUILDER_NAME):/usr/local/bin/orphaner container/bin/orphaner
 
 .PHONY: build-connscrape-test
 build-connscrape-test:
