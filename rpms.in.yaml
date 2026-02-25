@@ -26,6 +26,7 @@ packages:
 # final stage in collector/container/konflux.Dockerfile
 - tbb
 - c-ares
+- crypto-policies-scripts
 - elfutils-libelf
 contentOrigin:
   repofiles: [ "rpms.rhel.repo" ]
