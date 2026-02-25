@@ -20,7 +20,7 @@ struct package {
   struct require {
     const char* name;
     struct require* next;
-  }* requires;
+  }* reqs;  // not using 'requires' as clang-format doesn't like it
 };
 
 // List of 'provided' items and the pkg that provides each of them.
@@ -59,7 +59,7 @@ static void enumerate_packages() {
 
     pkg->name = strdup(headerGetString(h, RPMTAG_NAME));
     pkg->packages.key = pkg->name;
-    pkg->requires = NULL;
+    pkg->reqs = NULL;
 
     avl_insert(&packages, &pkg->packages);
 
@@ -69,8 +69,8 @@ static void enumerate_packages() {
         struct require* req = (struct require*)malloc(sizeof(*req));
 
         req->name = strdup(reqname);
-        req->next = pkg->requires;
-        pkg->requires = req;
+        req->next = pkg->reqs;
+        pkg->reqs = req;
       }
     }
     if (headerGet(h, RPMTAG_PROVIDENAME, name_td, HEADERGET_DEFAULT)) {
@@ -112,7 +112,7 @@ static void remove_recursively(const char* depname) {
         break;
       }
       avl_delete(&packages, &pkg->packages);
-      struct require* require = pkg->requires;
+      struct require* require = pkg->reqs;
       while (require != NULL) {
         fprintf(stderr, "[%s]->%s ", pkg->name, require->name);
         remove_recursively(require->name);
