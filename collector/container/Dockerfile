@@ -26,6 +26,7 @@ COPY container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY kernel-modules /kernel-modules
 COPY container/bin/collector /usr/local/bin/
 COPY container/bin/self-checks /usr/local/bin/self-checks
+COPY container/bin/libcontainer.so /usr/local/lib64/libcontainer.so
 COPY container/status-check.sh /usr/local/bin/status-check.sh
 
 EXPOSE 8080 9090

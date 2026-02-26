@@ -6,8 +6,9 @@
 
 #include <linux/ioctl.h>
 
-#include "libsinsp/container_engine/sinsp_container_type.h"
+#include "libsinsp/filter.h"
 #include "libsinsp/parsers.h"
+#include "libsinsp/plugin.h"
 #include "libsinsp/sinsp.h"
 
 #include <google/protobuf/util/time_util.h>
@@ -15,7 +16,6 @@
 #include "CollectionMethod.h"
 #include "CollectorException.h"
 #include "CollectorStats.h"
-#include "ContainerEngine.h"
 #include "ContainerMetadata.h"
 #include "EventExtractor.h"
 #include "EventNames.h"
@@ -35,12 +35,7 @@ namespace collector::system_inspector {
 Service::~Service() = default;
 
 Service::Service(const CollectorConfig& config)
-    : inspector_(std::make_unique<sinsp>(true)),
-      container_metadata_inspector_(std::make_unique<ContainerMetadata>(inspector_.get())),
-      default_formatter_(std::make_unique<sinsp_evt_formatter>(
-          inspector_.get(),
-          DEFAULT_OUTPUT_STR,
-          EventExtractor::FilterList())) {
+    : inspector_(std::make_unique<sinsp>(true)) {
   // Setup the inspector.
   // peeking into arguments has a big overhead, so we prevent it from happening
   inspector_->set_snaplen(0);
@@ -50,7 +45,7 @@ Service::Service(const CollectorConfig& config)
   inspector_->disable_log_timestamps();
   inspector_->set_log_callback(logging::InspectorLogCallback);
 
-  inspector_->set_import_users(config.ImportUsers(), false);
+  inspector_->set_import_users(config.ImportUsers());
   inspector_->set_thread_timeout_s(30);
   inspector_->set_auto_threads_purging_interval_s(60);
   inspector_->m_thread_manager->set_max_thread_table_size(config.GetSinspThreadCacheSize());
@@ -62,31 +57,43 @@ Service::Service(const CollectorConfig& config)
     inspector_->get_parser()->set_track_connection_status(true);
   }
 
-  if (config.EnableRuntimeConfig()) {
-    uint64_t mask = 1 << CT_CRI |
-                    1 << CT_CRIO |
-                    1 << CT_CONTAINERD;
-
-    if (config.UseDockerCe()) {
-      mask |= 1 << CT_DOCKER;
+  // Load the container plugin for container ID attribution and metadata.
+  // This MUST happen before EventExtractor::Init() (via ContainerMetadata)
+  // because the plugin provides the "container.id" and "k8s.ns.name" fields.
+  const char* plugin_path = "/usr/local/lib64/libcontainer.so";
+  try {
+    auto plugin = inspector_->register_plugin(plugin_path);
+    std::string err;
+    if (!plugin->init("", err)) {
+      CLOG(ERROR) << "Failed to init container plugin: " << err;
     }
-
-    if (config.UsePodmanCe()) {
-      mask |= 1 << CT_PODMAN;
+    if (plugin->caps() & CAP_EXTRACTION) {
+      EventExtractor::FilterList().add_filter_check(sinsp_plugin::new_filtercheck(plugin));
     }
-
-    inspector_->set_container_engine_mask(mask);
-
-    // k8s naming conventions specify that max length be 253 characters
-    // (the extra 2 are just for a nice 0xFF).
-    inspector_->set_container_labels_max_len(255);
-  } else {
-    auto engine = std::make_shared<ContainerEngine>(inspector_->m_container_manager);
-    auto* container_engines = inspector_->m_container_manager.get_container_engines();
-    container_engines->push_back(engine);
+    CLOG(INFO) << "Loaded container plugin from " << plugin_path;
+  } catch (const sinsp_exception& e) {
+    CLOG(WARNING) << "Could not load container plugin from " << plugin_path
+                  << ": " << e.what();
   }
 
-  inspector_->set_filter("container.id != 'host'");
+  // Initialize ContainerMetadata after the plugin is loaded, so that
+  // EventExtractor::Init() can find plugin-provided fields like container.id.
+  container_metadata_inspector_ = std::make_shared<ContainerMetadata>(inspector_.get());
+  default_formatter_ = std::make_unique<sinsp_evt_formatter>(
+      inspector_.get(), DEFAULT_OUTPUT_STR, EventExtractor::FilterList());
+
+  // Compile the container filter using our FilterList (which includes
+  // plugin filterchecks). sinsp::set_filter(string) uses a hardcoded
+  // filter check list that doesn't include plugin fields.
+  try {
+    auto factory = std::make_shared<sinsp_filter_factory>(
+        inspector_.get(), EventExtractor::FilterList());
+    sinsp_filter_compiler compiler(factory, "container.id != 'host'");
+    inspector_->set_filter(compiler.compile(), "container.id != 'host'");
+  } catch (const sinsp_exception& e) {
+    CLOG(WARNING) << "Could not set container filter: " << e.what()
+                  << ". Container filtering will not be active.";
+  }
 
   // The self-check handlers should only operate during start up,
   // so they are added to the handler list first, so they have access
@@ -296,7 +303,7 @@ bool Service::SendExistingProcesses(SignalHandler* handler) {
   }
 
   return threads->loop([&](sinsp_threadinfo& tinfo) {
-    if (!tinfo.m_container_id.empty() && tinfo.is_main_thread()) {
+    if (!GetContainerID(tinfo, *inspector_->m_thread_manager).empty() && tinfo.is_main_thread()) {
       auto result = handler->HandleExistingProcess(&tinfo);
       if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
         CLOG(WARNING) << "Failed to write existing process signal: " << &tinfo;
@@ -398,7 +405,7 @@ void Service::ServePendingProcessRequests() {
     auto callback = request.second.lock();
 
     if (callback) {
-      (*callback)(inspector_->get_thread_ref(pid, true));
+      (*callback)(inspector_->m_thread_manager->get_thread(pid));
     }
 
     pending_process_requests_.pop_front();

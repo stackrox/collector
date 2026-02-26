@@ -14,6 +14,7 @@
 
 // forward declarations
 class sinsp_threadinfo;
+class sinsp_thread_manager;
 
 namespace collector {
 
@@ -64,6 +65,10 @@ std::string Str(Args&&... args) {
 }
 
 std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo* t);
+
+// Extract container ID from a threadinfo using the dynamic field written by
+// the container plugin. Returns an empty string if unavailable.
+std::string GetContainerID(sinsp_threadinfo& tinfo, sinsp_thread_manager& thread_manager);
 
 // UUIDStr returns UUID in string format.
 const char* UUIDStr();
