@@ -15,6 +15,7 @@ packages:
 - curl-devel
 - libuuid-devel
 - libcap-ng-devel
+- rpm-devel
 - autoconf
 - libtool
 - git
