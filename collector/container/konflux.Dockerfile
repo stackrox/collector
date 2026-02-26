@@ -17,6 +17,7 @@ RUN dnf -y install --nobest --allowerasing \
         curl-devel \
         libuuid-devel \
         libcap-ng-devel \
+        rpm-devel \
         autoconf \
         libtool \
         git \
@@ -50,6 +51,7 @@ WORKDIR ${BUILD_DIR}
 RUN mkdir kernel-modules \
     && cp -a ${SOURCES_DIR}/builder builder \
     && ln -s builder/third_party third_party \
+    && ln -s builder/orphaner orphaner \
     && cp -a ${SOURCES_DIR}/collector collector \
     && cp -a ${SOURCES_DIR}/falcosecurity-libs falcosecurity-libs \
     && cp -a ${SOURCES_DIR}/CMakeLists.txt CMakeLists.txt
@@ -81,13 +83,15 @@ RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:c7d44146f826037f6873d99da479299b889473492d3c1ab8af86f08af04ec8a0
 
+COPY --from=builder /usr/local/bin/orphaner /
+
 RUN microdnf -y install --nobest \
       tbb \
       c-ares \
       elfutils-libelf && \
     microdnf -y clean all && \
-    rpm --verbose -e --nodeps $(rpm -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*') && \
-    rm -rf /var/cache/dnf /var/cache/yum
+    rpm --verbose -e --nodeps $(rpm -qa $(/orphaner bash curl elfutils-libelf openssl-libs libuuid libstdc++ libcurl-minimal)) && \
+    rm -rf /var/cache/dnf /var/cache/yum /orphaner
 
 ARG COLLECTOR_TAG
 
