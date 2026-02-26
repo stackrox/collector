@@ -90,7 +90,7 @@ RUN microdnf -y install --nobest \
       c-ares \
       elfutils-libelf && \
     microdnf -y clean all && \
-    rpm --verbose -e --nodeps $(rpm -qa $(/orphaner bash curl elfutils-libelf openssl-libs libuuid libstdc++ libcurl-minimal)) && \
+    rpm --verbose -e --nodeps $(rpm -qa $(/orphaner bash curl elfutils-libelf tbb c-ares openssl-libs libcap-ng libuuid libstdc++ libcurl-minimal)) && \
     rm -rf /var/cache/dnf /var/cache/yum /orphaner
 
 ARG COLLECTOR_TAG
