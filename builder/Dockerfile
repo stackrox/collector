@@ -37,6 +37,7 @@ RUN dnf -y update \
         patchutils \
         passwd \
         pkgconfig \
+        rpm-devel \
         rsync \
         tar \
         unzip \
@@ -52,6 +53,7 @@ WORKDIR ${BUILD_DIR}
 
 COPY install builder/install
 COPY third_party third_party
+COPY orphaner orphaner
 
 RUN "builder/install/install-dependencies.sh" && if [ -z "${COLLECTOR_BUILDER_DEBUG}" ]; then rm -rf ${BUILD_DIR}; fi
 RUN echo -e '/usr/local/lib\n/usr/local/lib64' > /etc/ld.so.conf.d/usrlocallib.conf && ldconfig

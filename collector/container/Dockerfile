@@ -16,6 +16,8 @@ LABEL name="collector" \
 
 WORKDIR /
 
+COPY container/bin/orphaner /usr/local/bin/orphaner
+
 COPY container/${BUILD_TYPE}/install.sh /
 RUN ./install.sh && rm -f install.sh
 
