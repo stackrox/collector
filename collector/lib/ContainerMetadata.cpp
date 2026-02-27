@@ -2,6 +2,7 @@
 
 #include <libsinsp/sinsp.h>
 
+#include "Logging.h"
 #include "system-inspector/EventExtractor.h"
 
 namespace collector {
@@ -20,19 +21,13 @@ std::string ContainerMetadata::GetNamespace(const std::string& container_id) {
 }
 
 std::string ContainerMetadata::GetContainerLabel(const std::string& container_id, const std::string& label) {
-  auto containers = inspector_->m_container_manager.get_containers();
-  const auto& container = containers->find(container_id);
-  if (container == containers->end()) {
-    return "";
-  }
-
-  const auto& labels = container->second->m_labels;
-  const auto& label_it = labels.find(label);
-  if (label_it == labels.end()) {
-    return "";
-  }
-
-  return label_it->second;
+  // Container labels are no longer available through the sinsp API.
+  // The container plugin provides container metadata via filter fields
+  // (e.g., container.label) but not through a programmatic lookup API.
+  CLOG_THROTTLED(DEBUG, std::chrono::seconds(300))
+      << "Container label lookup by container ID is not supported: "
+      << "container_id=" << container_id << " label=" << label;
+  return "";
 }
 
 }  // namespace collector

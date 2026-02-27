@@ -18,6 +18,7 @@ extern "C" {
 #include <utf8_validity.h>
 
 #include <libsinsp/sinsp.h>
+#include <libsinsp/thread_manager.h>
 
 #include <google/protobuf/util/json_util.h>
 
@@ -57,9 +58,19 @@ const char* SignalName(int signum) {
   }
 }
 
+std::string GetContainerID(sinsp_threadinfo& tinfo, sinsp_thread_manager& thread_manager) {
+  const auto* accessor = thread_manager.get_field_accessor("container_id");
+  if (!accessor) {
+    return {};
+  }
+  std::string container_id;
+  tinfo.get_dynamic_field(*accessor, container_id);
+  return container_id;
+}
+
 std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo* t) {
   if (t) {
-    os << "Container: \"" << t->m_container_id << "\", Name: " << t->m_comm << ", PID: " << t->m_pid << ", Args: " << t->m_exe;
+    os << "Name: " << t->m_comm << ", PID: " << t->m_pid << ", Args: " << t->m_exe;
   } else {
     os << "NULL\n";
   }

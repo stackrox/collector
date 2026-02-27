@@ -72,3 +72,6 @@
 	path = builder/third_party/bpftool
 	url = https://github.com/libbpf/bpftool
 	branch = v7.3.0
+[submodule "builder/third_party/falcosecurity-plugins"]
+	path = builder/third_party/falcosecurity-plugins
+	url = https://github.com/falcosecurity/plugins.git

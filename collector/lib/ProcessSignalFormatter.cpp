@@ -2,6 +2,9 @@
 
 #include <uuid/uuid.h>
 
+#include <libsinsp/sinsp.h>
+#include <libsinsp/thread_manager.h>
+
 #include <google/protobuf/util/time_util.h>
 
 #include "internalapi/sensor/signal_iservice.pb.h"
@@ -59,6 +62,7 @@ std::string extract_proc_args(sinsp_threadinfo* tinfo) {
 ProcessSignalFormatter::ProcessSignalFormatter(
     sinsp* inspector,
     const CollectorConfig& config) : event_names_(EventNames::GetInstance()),
+                                     inspector_(inspector),
                                      event_extractor_(std::make_unique<system_inspector::EventExtractor>()),
                                      container_metadata_(inspector),
                                      config_(config) {
@@ -176,8 +180,8 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   signal->set_allocated_time(timestamp);
 
   // set container_id
-  if (const std::string* container_id = event_extractor_->get_container_id(event)) {
-    signal->set_container_id(*container_id);
+  if (const char* container_id = event_extractor_->get_container_id(event)) {
+    signal->set_container_id(container_id);
   }
 
   // set process lineage
@@ -232,8 +236,8 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   signal->set_pid(tinfo->m_pid);
 
   // set user and group id credentials
-  signal->set_uid(tinfo->m_user.uid());
-  signal->set_gid(tinfo->m_group.gid());
+  signal->set_uid(tinfo->m_uid);
+  signal->set_gid(tinfo->m_gid);
 
   // set time
   auto timestamp = Allocate<Timestamp>();
@@ -241,7 +245,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   signal->set_allocated_time(timestamp);
 
   // set container_id
-  signal->set_container_id(tinfo->m_container_id);
+  signal->set_container_id(GetContainerID(*tinfo, *inspector_->m_thread_manager));
 
   // set process lineage
   std::vector<LineageInfo> lineage;
@@ -265,11 +269,11 @@ std::string ProcessSignalFormatter::ProcessDetails(sinsp_evt* event) {
   std::stringstream ss;
   const std::string* path = event_extractor_->get_exepath(event);
   const std::string* name = event_extractor_->get_comm(event);
-  const std::string* container_id = event_extractor_->get_container_id(event);
+  const char* container_id = event_extractor_->get_container_id(event);
   const char* args = event_extractor_->get_proc_args(event);
   const int64_t* pid = event_extractor_->get_pid(event);
 
-  ss << "Container: " << (container_id ? *container_id : "null")
+  ss << "Container: " << (container_id ? container_id : "null")
      << ", Name: " << (name ? *name : "null")
      << ", PID: " << (pid ? *pid : -1)
      << ", Path: " << (path ? *path : "null")
@@ -327,7 +331,7 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
       return;
     }
   }
-  sinsp_threadinfo::visitor_func_t visitor = [this, &lineage](sinsp_threadinfo* pt) {
+  sinsp_thread_manager::visitor_func_t visitor = [this, &lineage](sinsp_threadinfo* pt) {
     if (pt == NULL) {
       return false;
     }
@@ -341,13 +345,13 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     //
     // In back-ported eBPF probes, `m_vpid` will not be set for containers
     // running when collector comes online because /proc/{pid}/status does
-    // not contain namespace information, so `m_container_id` is checked
-    // instead. `m_container_id` is not enough on its own to identify
+    // not contain namespace information, so the container ID is checked
+    // instead. The container ID is not enough on its own to identify
     // containerized processes, because it is not guaranteed to be set on
     // all platforms.
     //
     if (pt->m_vpid == 0) {
-      if (pt->m_container_id.empty()) {
+      if (GetContainerID(*pt, *inspector_->m_thread_manager).empty()) {
         return false;
       }
     } else if (pt->m_pid == pt->m_vpid) {
@@ -361,7 +365,7 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     // Collapse parent child processes that have the same path
     if (lineage.empty() || (lineage.back().parent_exec_file_path() != pt->m_exepath)) {
       LineageInfo info;
-      info.set_parent_uid(pt->m_user.uid());
+      info.set_parent_uid(pt->m_uid);
       info.set_parent_exec_file_path(pt->m_exepath);
       lineage.push_back(info);
     }
@@ -373,7 +377,7 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
 
     return true;
   };
-  mt->traverse_parent_state(visitor);
+  inspector_->m_thread_manager->traverse_parent_state(*mt, visitor);
   CountLineage(lineage);
 }
 
