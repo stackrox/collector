@@ -7,6 +7,12 @@ export CXXFLAGS="-Wno-error=class-memaccess -Wno-ignored-qualifiers -Wno-stringo
 cd third_party/grpc
 
 cp NOTICE.txt "${LICENSE_DIR}/grpc-${GRPC_REVISION}"
+
+# ROX-33133: Remove hardcoded P-256 curve from gRPC (OpenSSL 3.x only) to allow
+# OpenSSL to use system crypto-policies defaults, enabling post-quantum key
+# exchange (ML-KEM). See: https://github.com/grpc/grpc/issues/23083
+patch -p1 < ../../builder/install/grpc-pq-curves.patch
+
 mkdir -p cmake/build
 cd cmake/build
 cmake \
