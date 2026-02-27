@@ -84,7 +84,10 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:c7d44146f826037f6
 RUN microdnf -y install --nobest \
       tbb \
       c-ares \
+      crypto-policies-scripts \
       elfutils-libelf && \
+    # Enable post-quantum cryptography key exchange for TLS.
+    update-crypto-policies --set DEFAULT:PQ && \
     microdnf -y clean all && \
     rpm --verbose -e --nodeps $(rpm -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*') && \
     rm -rf /var/cache/dnf /var/cache/yum

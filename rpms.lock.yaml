@@ -1026,6 +1026,13 @@ arches:
     name: crypto-policies
     evr: 20250905-1.git377cc42.el9_7
     sourcerpm: crypto-policies-20250905-1.git377cc42.el9_7.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/c/crypto-policies-scripts-20250905-1.git377cc42.el9_7.noarch.rpm
+    repoid: rhel-9-for-aarch64-baseos-rpms
+    size: 104676
+    checksum: sha256:5e0cbb9b384a94aebde15ab9a1c01b4dd33c52734e1bb559b43fb18b075295ab
+    name: crypto-policies-scripts
+    evr: 20250905-1.git377cc42.el9_7
+    sourcerpm: crypto-policies-20250905-1.git377cc42.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/c/curl-7.76.1-35.el9_7.3.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 295895
@@ -4054,6 +4061,13 @@ arches:
     size: 92511
     checksum: sha256:38078d704d7be136211a17da34692e9e669fd59a43ec2e82b22082e280c6f290
     name: crypto-policies
+    evr: 20250905-1.git377cc42.el9_7
+    sourcerpm: crypto-policies-20250905-1.git377cc42.el9_7.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/c/crypto-policies-scripts-20250905-1.git377cc42.el9_7.noarch.rpm
+    repoid: rhel-9-for-ppc64le-baseos-rpms
+    size: 104676
+    checksum: sha256:5e0cbb9b384a94aebde15ab9a1c01b4dd33c52734e1bb559b43fb18b075295ab
+    name: crypto-policies-scripts
     evr: 20250905-1.git377cc42.el9_7
     sourcerpm: crypto-policies-20250905-1.git377cc42.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/c/curl-7.76.1-35.el9_7.3.ppc64le.rpm
@@ -7106,6 +7120,13 @@ arches:
     name: crypto-policies
     evr: 20250905-1.git377cc42.el9_7
     sourcerpm: crypto-policies-20250905-1.git377cc42.el9_7.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/c/crypto-policies-scripts-20250905-1.git377cc42.el9_7.noarch.rpm
+    repoid: rhel-9-for-s390x-baseos-rpms
+    size: 104676
+    checksum: sha256:5e0cbb9b384a94aebde15ab9a1c01b4dd33c52734e1bb559b43fb18b075295ab
+    name: crypto-policies-scripts
+    evr: 20250905-1.git377cc42.el9_7
+    sourcerpm: crypto-policies-20250905-1.git377cc42.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/c/curl-7.76.1-35.el9_7.3.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 297640
@@ -10134,6 +10155,13 @@ arches:
     size: 92511
     checksum: sha256:38078d704d7be136211a17da34692e9e669fd59a43ec2e82b22082e280c6f290
     name: crypto-policies
+    evr: 20250905-1.git377cc42.el9_7
+    sourcerpm: crypto-policies-20250905-1.git377cc42.el9_7.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/c/crypto-policies-scripts-20250905-1.git377cc42.el9_7.noarch.rpm
+    repoid: rhel-9-for-x86_64-baseos-rpms
+    size: 104676
+    checksum: sha256:5e0cbb9b384a94aebde15ab9a1c01b4dd33c52734e1bb559b43fb18b075295ab
+    name: crypto-policies-scripts
     evr: 20250905-1.git377cc42.el9_7
     sourcerpm: crypto-policies-20250905-1.git377cc42.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/c/curl-7.76.1-35.el9_7.3.x86_64.rpm
