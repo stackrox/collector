@@ -79,8 +79,17 @@ RUN ctest --no-tests=error -V --test-dir "${CMAKE_BUILD_DIR}"
 RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 
-# Stage: Package installer
+# Stage: Package installer base
 FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:cecb1cde7bda7c8165ae27841c2335667f8a3665a349c0d051329c61660a496c AS package_installer
+
+# Stage: ubi-micro base (needed for copying to /out to preserve rpmdb)
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:093a704be0eaef9bb52d9bc0219c67ee9db13c2e797da400ddb5d5ae6849fa10 AS ubi-micro-base
+
+# Stage: Install packages on top of ubi-micro base
+FROM package_installer AS package_installer_final
+
+# Copy ubi-micro base to /out to preserve its rpmdb
+COPY --from=ubi-micro-base / /out/
 
 # Install packages directly to /out/ using --installroot
 RUN dnf install -y \
@@ -93,7 +102,7 @@ RUN dnf install -y \
     rm -rf /out/var/cache/*
 
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:093a704be0eaef9bb52d9bc0219c67ee9db13c2e797da400ddb5d5ae6849fa10
+FROM ubi-micro-base
 
 ARG COLLECTOR_TAG
 
@@ -126,7 +135,7 @@ ARG CMAKE_BUILD_DIR
 ENV COLLECTOR_HOST_ROOT=/host
 
 # Copy installed packages from package_installer
-COPY --from=package_installer /out/ /
+COPY --from=package_installer_final /out/ /
 
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
 
