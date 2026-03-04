@@ -1,8 +1,5 @@
 # Stage 1: Package installer
-FROM registry.access.redhat.com/ubi10/ubi-minimal:latest@sha256:29599cb2a44f3275232bc5fc48d26e069e8ba72b710229bed6652633725aa31a AS package_installer
-
-# Install dnf for better --installroot support
-RUN microdnf install -y dnf && microdnf clean all
+FROM registry.access.redhat.com/ubi10/ubi:latest@sha256:f573194e8e5231f1c9340c497e1f8d9aa9dbb42b2849e60341e34f50eec9477e AS package_installer
 
 # Install packages directly to /out/ using --installroot
 RUN dnf install -y \

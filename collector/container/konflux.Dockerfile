@@ -80,10 +80,7 @@ RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 
 # Stage: Package installer
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:c7d44146f826037f6873d99da479299b889473492d3c1ab8af86f08af04ec8a0 AS package_installer
-
-# Install dnf for better --installroot support
-RUN microdnf install -y dnf && microdnf clean all
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:cecb1cde7bda7c8165ae27841c2335667f8a3665a349c0d051329c61660a496c AS package_installer
 
 # Install packages directly to /out/ using --installroot
 RUN dnf install -y \
