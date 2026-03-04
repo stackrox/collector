@@ -79,18 +79,24 @@ RUN ctest --no-tests=error -V --test-dir "${CMAKE_BUILD_DIR}"
 RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:69f5c9886ecb19b23e88275a5cd904c47dd982dfa370fbbd0c356d7b1047ef68
+# Stage: Package installer
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:69f5c9886ecb19b23e88275a5cd904c47dd982dfa370fbbd0c356d7b1047ef68 AS package_installer
 
-RUN microdnf -y install --nobest \
-      tbb \
-      c-ares \
-      crypto-policies-scripts \
-      elfutils-libelf && \
-    # Enable post-quantum cryptography key exchange for TLS.
-    update-crypto-policies --set DEFAULT:PQ && \
-    microdnf -y clean all && \
-    rpm --verbose -e --nodeps $(rpm -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*') && \
-    rm -rf /var/cache/dnf /var/cache/yum
+# Install dnf for better --installroot support
+RUN microdnf install -y dnf && microdnf clean all
+
+# Install packages directly to /out/ using --installroot
+RUN dnf install -y \
+    --installroot=/out/ \
+    --releasever=9 \
+    --setopt=install_weak_deps=False \
+    --nodocs \
+    tbb c-ares crypto-policies-scripts elfutils-libelf && \
+    dnf clean all --installroot=/out/ && \
+    rm -rf /out/var/cache/*
+
+
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:093a704be0eaef9bb52d9bc0219c67ee9db13c2e797da400ddb5d5ae6849fa10
 
 ARG COLLECTOR_TAG
 
@@ -122,8 +128,10 @@ ARG CMAKE_BUILD_DIR
 
 ENV COLLECTOR_HOST_ROOT=/host
 
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
+# Copy installed packages from package_installer
+COPY --from=package_installer /out/ /
+
+COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
 
 COPY LICENSE /licenses/LICENSE
 

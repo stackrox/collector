@@ -1,4 +1,21 @@
-FROM registry.access.redhat.com/ubi10/ubi-minimal:latest
+# Stage 1: Package installer
+FROM registry.access.redhat.com/ubi10/ubi-minimal:latest@sha256:29599cb2a44f3275232bc5fc48d26e069e8ba72b710229bed6652633725aa31a AS package_installer
+
+# Install dnf for better --installroot support
+RUN microdnf install -y dnf && microdnf clean all
+
+# Install packages directly to /out/ using --installroot
+RUN dnf install -y \
+    --installroot=/out/ \
+    --releasever=10 \
+    --setopt=install_weak_deps=False \
+    --nodocs \
+    bash coreutils curl grep gawk elfutils-libelf ca-certificates && \
+    dnf clean all --installroot=/out/ && \
+    rm -rf /out/var/cache/*
+
+# Stage 2: Final runtime image
+FROM registry.access.redhat.com/ubi10/ubi-micro:latest@sha256:551f8ee81be3dbabd45a9c197f3724b9724c1edb05d68d10bfe85a5c9e46a458
 
 ARG BUILD_TYPE=rhel
 ARG ROOT_DIR=.
@@ -16,21 +33,19 @@ LABEL name="collector" \
 
 WORKDIR /
 
-COPY container/${BUILD_TYPE}/install.sh /
-RUN ./install.sh && rm -f install.sh
+# Copy installed packages from package_installer
+COPY --from=package_installer /out/ /
 
 # Uncomment this line to enable generation of core for collector
 # RUN echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
 
 COPY container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY kernel-modules /kernel-modules
-COPY container/bin/collector /usr/local/bin/
-COPY container/bin/self-checks /usr/local/bin/self-checks
-COPY container/status-check.sh /usr/local/bin/status-check.sh
+COPY container/bin/collector container/bin/self-checks container/status-check.sh /usr/local/bin/
 
 EXPOSE 8080 9090
 
-HEALTHCHECK	\
+HEALTHCHECK \
 	# health checks within the first 5s are not counted as failure
 	--start-period=5s \
 	# perform health check every 5s
