@@ -16,7 +16,8 @@ RUN dnf install -y \
     --releasever=10 \
     --setopt=install_weak_deps=False \
     --nodocs \
-    bash coreutils curl grep gawk elfutils-libelf ca-certificates openssl && \
+    --allowerasing \
+    bash coreutils curl grep gawk elfutils-libelf ca-certificates openssl libuuid libstdc++ && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/*
 
