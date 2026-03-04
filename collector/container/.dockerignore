@@ -1,0 +1,33 @@
+# Version control
+.git
+.gitignore
+.github
+
+# CI/CD
+.tekton
+
+# Documentation
+*.md
+docs
+
+# Testing
+integration-tests
+
+# Build artifacts
+cmake-build*
+build/
+
+# Utilities not needed in container
+utilities
+
+# Builder directory (for main Dockerfile builds)
+builder
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# Claude Code
+.claude
