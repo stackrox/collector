@@ -89,10 +89,12 @@ FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:6ed9f6f637fe731d93ec60c06
 COPY --from=ubi-micro-base / /out/
 
 # Install packages directly to /out/ using --installroot
+# Note: --setopt=reposdir=/etc/yum.repos.d ensures dnf uses host repos (cachi2) not installroot repos (UBI)
 RUN dnf install -y \
     --installroot=/out/ \
     --releasever=9 \
     --setopt=install_weak_deps=False \
+    --setopt=reposdir=/etc/yum.repos.d \
     --nodocs \
     --allowerasing \
     tbb c-ares crypto-policies-scripts elfutils-libelf ca-certificates openssl libuuid libstdc++ && \
