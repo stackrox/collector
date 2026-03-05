@@ -28,6 +28,9 @@ packages:
 - c-ares
 - crypto-policies-scripts
 - elfutils-libelf
+- openssl
+- libuuid
+- libstdc++
 contentOrigin:
   repofiles: [ "rpms.rhel.repo" ]
 context:
