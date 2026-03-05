@@ -1,11 +1,8 @@
-# Stage 1: Package installer base
-FROM registry.access.redhat.com/ubi10/ubi:latest@sha256:f573194e8e5231f1c9340c497e1f8d9aa9dbb42b2849e60341e34f50eec9477e AS package_installer
-
-# Stage 2: ubi-micro base (needed for copying to /out to preserve rpmdb)
+# Stage 1: ubi-micro base (needed for copying to /out to preserve rpmdb)
 FROM registry.access.redhat.com/ubi10/ubi-micro:latest@sha256:551f8ee81be3dbabd45a9c197f3724b9724c1edb05d68d10bfe85a5c9e46a458 AS ubi-micro-base
 
-# Stage 3: Install packages on top of ubi-micro base
-FROM package_installer AS package_installer_final
+# Stage 2: Package installer with runtime packages
+FROM registry.access.redhat.com/ubi10/ubi:latest@sha256:f573194e8e5231f1c9340c497e1f8d9aa9dbb42b2849e60341e34f50eec9477e AS package_installer
 
 # Copy ubi-micro base to /out to preserve its rpmdb
 COPY --from=ubi-micro-base / /out/
@@ -21,7 +18,14 @@ RUN dnf install -y \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/*
 
-# Stage 4: Final runtime image
+# Copy additional files into /out/ to consolidate layers
+COPY container/THIRD_PARTY_NOTICES/ /out/THIRD_PARTY_NOTICES/
+COPY kernel-modules /out/kernel-modules
+COPY container/bin/collector /out/usr/local/bin/collector
+COPY container/bin/self-checks /out/usr/local/bin/self-checks
+COPY container/status-check.sh /out/usr/local/bin/status-check.sh
+
+# Stage 3: Final runtime image
 FROM ubi-micro-base
 
 ARG BUILD_TYPE=rhel
@@ -40,15 +44,11 @@ LABEL name="collector" \
 
 WORKDIR /
 
-# Copy installed packages from package_installer
-COPY --from=package_installer_final /out/ /
+# Copy everything from package_installer in one layer (packages + all files)
+COPY --from=package_installer /out/ /
 
 # Uncomment this line to enable generation of core for collector
 # RUN echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
-
-COPY container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
-COPY kernel-modules /kernel-modules
-COPY container/bin/collector container/bin/self-checks container/status-check.sh /usr/local/bin/
 
 EXPOSE 8080 9090
 
