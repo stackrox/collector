@@ -98,7 +98,7 @@ RUN dnf install -y \
     --setopt=install_weak_deps=False \
     --nodocs \
     --allowerasing \
-    tbb c-ares crypto-policies-scripts elfutils-libelf openssl libuuid libstdc++ && \
+    tbb c-ares crypto-policies-scripts elfutils-libelf ca-certificates openssl libuuid libstdc++ && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/*
 
