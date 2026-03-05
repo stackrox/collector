@@ -79,14 +79,11 @@ RUN ctest --no-tests=error -V --test-dir "${CMAKE_BUILD_DIR}"
 RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 
-# Stage: Package installer base
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:6ed9f6f637fe731d93ec60c065dbced79273f1e0b5f512951f2c0b0baedb16ad AS package_installer
-
 # Stage: ubi-micro base (needed for copying to /out to preserve rpmdb)
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:093a704be0eaef9bb52d9bc0219c67ee9db13c2e797da400ddb5d5ae6849fa10 AS ubi-micro-base
 
-# Stage: Install packages on top of ubi-micro base
-FROM package_installer AS package_installer_final
+# Stage: Package installer with runtime packages
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:6ed9f6f637fe731d93ec60c065dbced79273f1e0b5f512951f2c0b0baedb16ad AS package_installer
 
 # Copy ubi-micro base to /out to preserve its rpmdb
 COPY --from=ubi-micro-base / /out/
@@ -101,6 +98,14 @@ RUN dnf install -y \
     tbb c-ares crypto-policies-scripts elfutils-libelf ca-certificates openssl libuuid libstdc++ && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/*
+
+# Copy LICENSE into /out/ to consolidate layers
+COPY LICENSE /out/licenses/LICENSE
+
+# Copy builder artifacts into /out/
+ARG CMAKE_BUILD_DIR
+COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /out/usr/local/bin/collector
+COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /out/usr/local/bin/self-checks
 
 
 FROM ubi-micro-base
@@ -135,12 +140,8 @@ ARG CMAKE_BUILD_DIR
 
 ENV COLLECTOR_HOST_ROOT=/host
 
-# Copy installed packages from package_installer
-COPY --from=package_installer_final /out/ /
-
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
-
-COPY LICENSE /licenses/LICENSE
+# Copy everything from package_installer in one layer (packages + LICENSE + binaries)
+COPY --from=package_installer /out/ /
 
 EXPOSE 8080 9090
 
