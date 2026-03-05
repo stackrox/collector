@@ -28,6 +28,7 @@ packages:
 - c-ares
 - crypto-policies-scripts
 - elfutils-libelf
+- ca-certificates
 - openssl
 - libuuid
 - libstdc++
