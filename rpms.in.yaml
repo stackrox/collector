@@ -24,6 +24,11 @@ packages:
 - patch
 - systemtap-sdt-devel
 # final stage in collector/container/konflux.Dockerfile
+- bash
+- coreutils
+- curl
+- grep
+- gawk
 - tbb
 - c-ares
 - crypto-policies-scripts
