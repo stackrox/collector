@@ -13,6 +13,6 @@
 #
 # Pattern match for "status":"ok" in the JSON response
 case "$(curl -sf localhost:8080/ready)" in
-  *'"status"'*'"ok"'*) exit 0 ;;
-  *) exit 1 ;;
+    *'"status"'*'"ok"'*) exit 0 ;;
+    *) exit 1 ;;
 esac
