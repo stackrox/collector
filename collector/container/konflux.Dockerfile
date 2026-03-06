@@ -97,7 +97,7 @@ RUN dnf install -y \
     --setopt=reposdir=/etc/yum.repos.d \
     --nodocs \
     --allowerasing \
-    c-ares ca-certificates crypto-policies-scripts elfutils-libelf libcurl-minimal libstdc++ libuuid openssl tbb && \
+    c-ares ca-certificates crypto-policies-scripts elfutils-libelf libcap-ng libcurl-minimal libstdc++ libuuid openssl tbb && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/*
 

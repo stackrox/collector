@@ -33,6 +33,7 @@ packages:
 - openssl
 - libuuid
 - libstdc++
+- libcap-ng
 contentOrigin:
   repofiles: [ "rpms.rhel.repo" ]
 context:
