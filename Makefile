@@ -51,7 +51,7 @@ image-dev: collector
 	make -C collector txt-files
 	docker buildx build --load --platform ${PLATFORM} \
 		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
-		-f collector/container/Dockerfile.dev \
+		-f collector/container/dev.Dockerfile \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
