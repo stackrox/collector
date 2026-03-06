@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # /ready API will return the following formatted response:
 # {
@@ -11,11 +11,8 @@
 #    "status" : "ok"
 # }
 #
-# Take the status line, split it by ":" and trim spaces and quotes.
-STATUS=$(curl -s localhost:8080/ready | grep 'status' | awk -F ':' '{print $2}' | tr -d '"' | tr -d ' ')
-
-if [[ "${STATUS}" = "ok" ]]; then
-    exit 0
-else
-    exit 1
-fi
+# Pattern match for "status":"ok" in the JSON response
+case "$(curl -sf localhost:8080/ready)" in
+  *'"status"'*'"ok"'*) exit 0 ;;
+  *) exit 1 ;;
+esac
