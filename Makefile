@@ -15,11 +15,6 @@ tag:
 builder-tag:
 	@echo "$(COLLECTOR_BUILDER_TAG)"
 
-.PHONY: container-dockerfile-dev
-container-dockerfile-dev:
-	sed '1s/ubi-minimal/ubi/' $(CURDIR)/collector/container/Dockerfile > \
-		$(CURDIR)/collector/container/Dockerfile.dev
-
 .PHONY: builder
 builder:
 ifneq ($(BUILD_BUILDER_IMAGE), false)
@@ -52,11 +47,10 @@ image: collector
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
-image-dev: collector container-dockerfile-dev
+image-dev: collector
 	make -C collector txt-files
 	docker buildx build --load --platform ${PLATFORM} \
 		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
-		--build-arg BUILD_TYPE=devel \
 		-f collector/container/Dockerfile.dev \
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
