@@ -23,12 +23,8 @@ packages:
 - c-ares-devel
 - patch
 - systemtap-sdt-devel
-# final stage in collector/container/konflux.Dockerfile
-- bash
-- coreutils
-- curl
-- grep
-- gawk
+# final stage in collector/container/konflux.Dockerfile (no HEALTHCHECK)
+- libcurl-minimal
 - tbb
 - c-ares
 - crypto-policies-scripts
