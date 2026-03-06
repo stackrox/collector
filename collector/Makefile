@@ -69,7 +69,6 @@ clean:
 	rm -rf container/LICENSE-kernel-modules.txt
 	rm -rf container/bin
 	rm -rf container/THIRD_PARTY_NOTICES
-	rm -f container/Dockerfile.dev
 
 .PHONY: check
 check:
