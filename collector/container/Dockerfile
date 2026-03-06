@@ -14,7 +14,7 @@ RUN dnf install -y \
     --setopt=install_weak_deps=False \
     --nodocs \
     --allowerasing \
-    ca-certificates curl-minimal elfutils-libelf libstdc++ libuuid openssl && \
+    c-ares ca-certificates curl-minimal elfutils-libelf libcap-ng libstdc++ libuuid openssl tbb && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/*
 
