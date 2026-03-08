@@ -37,3 +37,7 @@ ansible/ci/inventory_ibmcloud.yml
 # vcpkg
 vcpkg_installed/
 vcpkg-manifest-install.log
+
+# Dolt database files (added by bd init)
+.dolt/
+*.db
