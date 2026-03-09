@@ -1,0 +1,22 @@
+[package]
+name = "collector-bin"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "collector"
+path = "src/main.rs"
+
+[dependencies]
+collector-bpf = { workspace = true }
+collector-core = { workspace = true }
+collector-types = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+clap = { workspace = true }
+axum = { workspace = true }
+anyhow = { workspace = true }
+uuid = { workspace = true }
+hostname = "0.4"

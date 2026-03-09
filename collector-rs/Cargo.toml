@@ -1,0 +1,49 @@
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.dependencies]
+# BPF
+libbpf-rs = "0.24"
+libbpf-cargo = "0.24"
+
+# Async
+tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+tokio-stream = "0.1"
+
+# gRPC
+tonic = { version = "0.12", features = ["tls"] }
+tonic-build = "0.12"
+prost = "0.13"
+prost-types = "0.13"
+
+# HTTP
+axum = "0.7"
+
+# Config
+clap = { version = "4", features = ["derive", "env"] }
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+
+# Observability
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+prometheus = "0.13"
+
+# Utilities
+anyhow = "1"
+uuid = { version = "1", features = ["v4"] }
+async-trait = "0.1"
+
+# Internal crates
+collector-bpf = { path = "crates/collector-bpf" }
+collector-types = { path = "crates/collector-types" }
+collector-core = { path = "crates/collector-core" }
+
+# Testing
+[workspace.dependencies.proptest]
+version = "1"
+
+[workspace.dependencies.criterion]
+version = "0.5"

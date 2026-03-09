@@ -1,0 +1,31 @@
+[package]
+name = "collector-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+collector-bpf = { workspace = true }
+collector-types = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+tokio-stream = { workspace = true }
+tonic = { workspace = true }
+prost = { workspace = true }
+prost-types = { workspace = true }
+axum = { workspace = true }
+clap = { workspace = true }
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+prometheus = { workspace = true }
+anyhow = { workspace = true }
+uuid = { workspace = true }
+async-trait = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+tower = { version = "0.5", features = ["util"] }
+
+[build-dependencies]
+tonic-build = { workspace = true }
