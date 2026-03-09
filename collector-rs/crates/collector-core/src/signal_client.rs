@@ -10,6 +10,7 @@ use crate::process_handler::SignalSender;
 use crate::proto::sensor;
 use crate::proto::sensor::signal_service_client::SignalServiceClient;
 
+/// Streams process signals to Sensor over a bidirectional gRPC connection.
 pub struct GrpcSignalClient {
     tx: mpsc::Sender<sensor::SignalStreamMessage>,
 }
@@ -161,6 +162,7 @@ async fn connect_and_stream(
     }
 }
 
+/// Debug-mode signal sender that logs process signals to stdout instead of gRPC.
 pub struct StdoutSignalSender;
 
 #[async_trait::async_trait]

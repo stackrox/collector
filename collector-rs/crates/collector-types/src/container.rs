@@ -1,3 +1,4 @@
+/// Short (12-char) container identifier extracted from cgroup paths.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ContainerId(pub String);
 

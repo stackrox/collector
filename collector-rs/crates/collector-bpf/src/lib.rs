@@ -21,10 +21,12 @@ use libbpf_rs::RingBufferBuilder;
 
 use events::{ConnectEvent, EventHeader, EventType, ExecEvent, ExitEvent, RawEvent};
 
+/// Abstraction over BPF event sources, enabling test mocks without real BPF programs.
 pub trait EventSource: Send {
     fn next_event(&mut self, timeout: Duration) -> Option<RawEvent>;
 }
 
+/// Loads and attaches BPF programs, then polls the ring buffer for events.
 pub struct BpfLoader {
     rx: std::sync::mpsc::Receiver<RawEvent>,
     // Must keep skel and ring alive for the BPF program's lifetime.
@@ -40,6 +42,7 @@ pub struct BpfLoader {
 unsafe impl Send for BpfLoader {}
 
 impl BpfLoader {
+    /// Opens the BPF skeleton, loads programs into the kernel, and attaches tracepoints.
     pub fn load_and_attach() -> Result<Self> {
         let mut open_obj = Box::new(MaybeUninit::uninit());
         let builder = skel::CollectorSkelBuilder::default();
@@ -120,6 +123,7 @@ fn parse_ring_event(data: &[u8]) -> Option<RawEvent> {
     }
 }
 
+/// Test double that replays a pre-recorded sequence of events.
 pub struct MockEventSource {
     events: VecDeque<RawEvent>,
 }

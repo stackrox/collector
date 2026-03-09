@@ -1,8 +1,13 @@
+/// Maximum length of execve filename buffer, matching BPF-side `MAX_FILENAME_LEN`.
 pub const MAX_FILENAME_LEN: usize = 256;
+/// Maximum length of execve arguments buffer, matching BPF-side `MAX_ARGS_LEN`.
 pub const MAX_ARGS_LEN: usize = 1024;
+/// Maximum length of cgroup path buffer, matching BPF-side `MAX_CGROUP_LEN`.
 pub const MAX_CGROUP_LEN: usize = 256;
+/// Maximum length of process comm buffer (kernel's TASK_COMM_LEN).
 pub const MAX_COMM_LEN: usize = 16;
 
+/// BPF event type discriminants, must match the C-side `event_type` enum in the BPF program.
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventType {
@@ -16,6 +21,7 @@ pub enum EventType {
 }
 
 impl EventType {
+    /// Converts a raw u32 from BPF event headers into a typed discriminant.
     pub fn from_u32(v: u32) -> Option<Self> {
         match v {
             1 => Some(Self::ProcessExec),
@@ -30,6 +36,7 @@ impl EventType {
     }
 }
 
+/// Common header prepended to every BPF ring buffer event, providing pid/uid context.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct EventHeader {
@@ -42,6 +49,7 @@ pub struct EventHeader {
     pub gid: u32,
 }
 
+/// Process exec event from the sched_process_exec tracepoint, carrying filename, args, and cgroup.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct ExecEvent {
@@ -58,6 +66,7 @@ pub struct ExecEvent {
     pub cgroup: [u8; MAX_CGROUP_LEN],
 }
 
+/// Network socket event (connect/accept/close/listen), carrying addresses and protocol info.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct ConnectEvent {
@@ -74,6 +83,7 @@ pub struct ConnectEvent {
     pub cgroup: [u8; MAX_CGROUP_LEN],
 }
 
+/// Process exit event from sched_process_exit, carrying the exit code.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct ExitEvent {
@@ -94,21 +104,25 @@ pub enum RawEvent {
 }
 
 impl ExecEvent {
+    /// Returns the exec filename as a UTF-8 string, clamped to the actual buffer length.
     pub fn filename_str(&self) -> &str {
         let len = (self.filename_len as usize).min(MAX_FILENAME_LEN);
         std::str::from_utf8(&self.filename[..len]).unwrap_or("")
     }
 
+    /// Returns the process comm name (task_struct->comm).
     pub fn comm_str(&self) -> &str {
         let len = (self.comm_len as usize).min(MAX_COMM_LEN);
         std::str::from_utf8(&self.comm[..len]).unwrap_or("")
     }
 
+    /// Returns the cgroup path, used to derive container ID.
     pub fn cgroup_str(&self) -> &str {
         let len = (self.cgroup_len as usize).min(MAX_CGROUP_LEN);
         std::str::from_utf8(&self.cgroup[..len]).unwrap_or("")
     }
 
+    /// Returns the raw null-separated argument bytes from execve.
     pub fn args_bytes(&self) -> &[u8] {
         let len = (self.args_len as usize).min(MAX_ARGS_LEN);
         &self.args[..len]
@@ -116,6 +130,7 @@ impl ExecEvent {
 }
 
 impl ConnectEvent {
+    /// Returns the cgroup path, used to derive container ID.
     pub fn cgroup_str(&self) -> &str {
         let len = (self.cgroup_len as usize).min(MAX_CGROUP_LEN);
         std::str::from_utf8(&self.cgroup[..len]).unwrap_or("")

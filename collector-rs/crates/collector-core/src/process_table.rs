@@ -13,12 +13,14 @@ struct ProcessEntry {
     last_seen: Instant,
 }
 
+/// LRU-bounded process table that tracks running processes and walks parent lineage chains.
 pub struct ProcessTable {
     entries: HashMap<u32, ProcessEntry>,
     max_size: usize,
 }
 
 impl ProcessTable {
+    /// Creates a process table with the default max size (32768 entries).
     pub fn new() -> Self {
         Self {
             entries: HashMap::new(),
@@ -26,6 +28,7 @@ impl ProcessTable {
         }
     }
 
+    /// Creates a process table with a custom capacity, evicting oldest entries when full.
     pub fn with_max_size(max_size: usize) -> Self {
         Self {
             entries: HashMap::new(),
@@ -33,6 +36,7 @@ impl ProcessTable {
         }
     }
 
+    /// Inserts or updates a process entry, returning the previous info if the pid existed.
     pub fn upsert(&mut self, info: ProcessInfo, ppid: u32) -> Option<ProcessInfo> {
         self.upsert_at(info, ppid, Instant::now())
     }
@@ -56,18 +60,22 @@ impl ProcessTable {
         old.map(|e| e.info)
     }
 
+    /// Removes a process by pid (on exit), returning its info if present.
     pub fn remove(&mut self, pid: u32) -> Option<ProcessInfo> {
         self.entries.remove(&pid).map(|e| e.info)
     }
 
+    /// Looks up a process by pid.
     pub fn get(&self, pid: u32) -> Option<&ProcessInfo> {
         self.entries.get(&pid).map(|e| &e.info)
     }
 
+    /// Walks the parent chain for `pid` within the same container, collapsing consecutive duplicates.
     pub fn lineage(&self, pid: u32, container_id: &ContainerId) -> Vec<LineageInfo> {
         self.lineage_with_depth(pid, container_id, DEFAULT_MAX_LINEAGE_DEPTH)
     }
 
+    /// Like [`lineage`](Self::lineage) but with a custom maximum depth.
     pub fn lineage_with_depth(
         &self,
         pid: u32,
@@ -119,6 +127,7 @@ impl ProcessTable {
         result
     }
 
+    /// Iterates over all tracked processes.
     pub fn iter(&self) -> impl Iterator<Item = &ProcessInfo> {
         self.entries.values().map(|e| &e.info)
     }

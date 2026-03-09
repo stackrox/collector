@@ -18,6 +18,7 @@ const AF_INET: u16 = 2;
 const AF_INET6: u16 = 10;
 const IPPROTO_TCP: u8 = 6;
 
+/// Consumes network events from BPF and updates the shared ConnTracker state.
 pub async fn run_network_handler(
     mut rx: mpsc::Receiver<NetworkEvent>,
     conn_tracker: &Mutex<ConnTracker>,

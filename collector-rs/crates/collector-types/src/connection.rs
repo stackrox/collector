@@ -1,18 +1,21 @@
 use crate::address::Endpoint;
 use crate::container::ContainerId;
 
+/// Layer-4 transport protocol for a tracked connection.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum L4Protocol {
     Tcp,
     Udp,
 }
 
+/// Whether this side initiated (Client) or accepted (Server) the connection.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Role {
     Client,
     Server,
 }
 
+/// Uniquely identifies a tracked network connection by its endpoints, protocol, and role.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Connection {
     pub container_id: ContainerId,

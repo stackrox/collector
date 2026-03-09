@@ -25,7 +25,12 @@ async-trait = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
+criterion = { workspace = true }
 tower = { version = "0.5", features = ["util"] }
+
+[[bench]]
+name = "collector_bench"
+harness = false
 
 [build-dependencies]
 tonic-build = { workspace = true }

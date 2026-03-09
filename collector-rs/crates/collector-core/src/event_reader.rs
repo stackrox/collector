@@ -9,12 +9,14 @@ use tracing::{debug, warn};
 
 use crate::metrics;
 
+/// Typed wrapper for process-related BPF events (exec or exit).
 #[derive(Debug)]
 pub enum ProcessEvent {
     Exec(ExecEvent),
     Exit(ExitEvent),
 }
 
+/// Typed wrapper for network-related BPF events (connect/accept/close/listen).
 #[derive(Debug)]
 pub enum NetworkEvent {
     Connect(ConnectEvent),
@@ -25,6 +27,7 @@ pub enum NetworkEvent {
 
 const POLL_TIMEOUT: Duration = Duration::from_millis(100);
 
+/// Spawns a dedicated OS thread that polls the BPF event source and routes events to channels.
 pub fn spawn_event_reader(
     mut source: Box<dyn EventSource>,
     process_tx: mpsc::Sender<ProcessEvent>,

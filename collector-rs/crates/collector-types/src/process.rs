@@ -1,5 +1,6 @@
 use crate::container::ContainerId;
 
+/// Per-process metadata captured from exec events and stored in the process table.
 #[derive(Debug, Clone)]
 pub struct ProcessInfo {
     pub pid: u32,
@@ -10,6 +11,7 @@ pub struct ProcessInfo {
     pub container_id: ContainerId,
 }
 
+/// A single ancestor in a process's parent chain, reported to Sensor.
 #[derive(Debug, Clone)]
 pub struct LineageInfo {
     pub parent_uid: u32,

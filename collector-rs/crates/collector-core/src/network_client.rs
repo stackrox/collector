@@ -18,6 +18,7 @@ use crate::proto::sensor;
 use crate::proto::sensor::network_connection_info_service_client::NetworkConnectionInfoServiceClient;
 use crate::proto::storage;
 
+/// Periodically computes connection deltas and streams them to Sensor via gRPC.
 pub async fn run_network_client(
     endpoint: String,
     hostname: String,

@@ -121,4 +121,31 @@ mod tests {
         let cgroup = "/kubepods.abc123def456abc123def456abc123def456abc123def456abc123def456abcd";
         assert_eq!(extract_container_id(cgroup), None);
     }
+
+    #[test]
+    fn bare_64_hex_from_bpf_kernfs() {
+        // BPF reads kernfs_node name which is the bare 64-hex container ID
+        let cgroup = "abc123def456abc123def456abc123def456abc123def456abc123def456abcd";
+        assert_eq!(extract_container_id(cgroup), Some("abc123def456"));
+    }
+
+    #[test]
+    fn bare_64_hex_uppercase() {
+        let cgroup = "ABC123DEF456ABC123DEF456ABC123DEF456ABC123DEF456ABC123DEF456ABCD";
+        assert_eq!(extract_container_id(cgroup), Some("ABC123DEF456"));
+    }
+
+    #[test]
+    fn bare_63_chars_returns_none() {
+        // One char short of a container ID
+        let cgroup = "abc123def456abc123def456abc123def456abc123def456abc123def456abc";
+        assert_eq!(extract_container_id(cgroup), None);
+    }
+
+    #[test]
+    fn bare_65_chars_returns_none() {
+        // One char too long
+        let cgroup = "abc123def456abc123def456abc123def456abc123def456abc123def456abcde";
+        assert_eq!(extract_container_id(cgroup), None);
+    }
 }

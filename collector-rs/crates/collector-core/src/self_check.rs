@@ -6,6 +6,7 @@ use collector_bpf::events::EventType;
 use collector_bpf::EventSource;
 use tracing::info;
 
+/// Runs /bin/true and verifies the BPF program captures the exec event within 5 seconds.
 pub fn verify_bpf(source: &mut dyn EventSource) -> Result<()> {
     info!("running BPF self-check: executing /bin/true");
 

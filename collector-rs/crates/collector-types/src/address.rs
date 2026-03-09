@@ -1,11 +1,13 @@
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
+/// An IP address and port pair identifying one side of a network connection.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Endpoint {
     pub address: IpAddr,
     pub port: u16,
 }
 
+/// A CIDR network (address + prefix length) used for filtering connections.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct IpNetwork {
     pub address: IpAddr,
@@ -13,6 +15,7 @@ pub struct IpNetwork {
 }
 
 impl IpNetwork {
+    /// Returns true if the given address falls within this CIDR network.
     pub fn contains(&self, addr: IpAddr) -> bool {
         match (self.address, addr) {
             (IpAddr::V4(net), IpAddr::V4(a)) => {
@@ -34,6 +37,7 @@ impl IpNetwork {
     }
 }
 
+/// Returns RFC 1918 (IPv4) and RFC 4193/link-local (IPv6) private network ranges.
 pub fn private_networks() -> &'static [IpNetwork] {
     static NETWORKS: &[IpNetwork] = &[
         IpNetwork {

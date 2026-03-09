@@ -7,6 +7,7 @@ use serde::Deserialize;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, info, warn};
 
+/// Command-line arguments for the collector binary, with env var fallbacks.
 #[derive(Parser, Debug)]
 #[command(name = "collector")]
 pub struct CliArgs {
@@ -50,6 +51,7 @@ pub struct CliArgs {
     pub process_table_size: usize,
 }
 
+/// Hot-reloadable runtime configuration, loaded from YAML and pushed by Sensor.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
 pub struct RuntimeConfig {
@@ -102,6 +104,7 @@ impl Default for RuntimeConfig {
     }
 }
 
+/// Loads runtime config from YAML at `path`, falling back to defaults on any error.
 pub fn load_runtime_config(path: &Path) -> RuntimeConfig {
     match std::fs::read_to_string(path) {
         Ok(contents) => match serde_yaml::from_str(&contents) {
@@ -121,6 +124,7 @@ pub fn load_runtime_config(path: &Path) -> RuntimeConfig {
     }
 }
 
+/// Polls the config file for modifications and reloads into the shared `RwLock` on change.
 pub async fn watch_config_file(
     path: PathBuf,
     config: Arc<RwLock<RuntimeConfig>>,

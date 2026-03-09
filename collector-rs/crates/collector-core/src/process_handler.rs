@@ -15,6 +15,7 @@ use crate::process_table::ProcessTable;
 use crate::proto::sensor;
 use crate::rate_limit::RateLimitCache;
 
+/// Abstraction for sending process signals, enabling gRPC and stdout implementations.
 #[async_trait::async_trait]
 pub trait SignalSender: Send + Sync {
     async fn send(&self, msg: sensor::SignalStreamMessage) -> anyhow::Result<()>;
@@ -22,6 +23,7 @@ pub trait SignalSender: Send + Sync {
 
 const FILTERED_COMM: &[&str] = &["runc", "conmon", "runc:[2:INIT]"];
 
+/// Processes exec/exit events: updates the process table, rate-limits, and sends signals.
 pub async fn run_process_handler(
     mut rx: mpsc::Receiver<ProcessEvent>,
     sender: Box<dyn SignalSender>,
@@ -275,5 +277,83 @@ mod tests {
 
         let msgs = messages.lock().await;
         assert_eq!(msgs.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn conmon_process_is_filtered() {
+        let messages = Arc::new(TokioMutex::new(Vec::new()));
+        let sender: Box<dyn SignalSender> = Box::new(MockSender {
+            messages: messages.clone(),
+        });
+        let table = Mutex::new(ProcessTable::new());
+        let limiter = Mutex::new(RateLimitCache::new());
+
+        let evt = make_exec_event(
+            100,
+            "conmon",
+            "/usr/bin/conmon",
+            "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+        );
+        handle_exec(&evt, &sender, &table, &limiter).await;
+        assert!(messages.lock().await.is_empty());
+    }
+
+    #[tokio::test]
+    async fn runc_init_process_is_filtered() {
+        let messages = Arc::new(TokioMutex::new(Vec::new()));
+        let sender: Box<dyn SignalSender> = Box::new(MockSender {
+            messages: messages.clone(),
+        });
+        let table = Mutex::new(ProcessTable::new());
+        let limiter = Mutex::new(RateLimitCache::new());
+
+        let evt = make_exec_event(
+            100,
+            "runc:[2:INIT]",
+            "/usr/bin/runc",
+            "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+        );
+        handle_exec(&evt, &sender, &table, &limiter).await;
+        assert!(messages.lock().await.is_empty());
+    }
+
+    #[test]
+    fn parse_args_null_separated() {
+        assert_eq!(parse_args(b"ls\0-la\0/tmp"), "ls -la /tmp");
+    }
+
+    #[test]
+    fn parse_args_empty() {
+        assert_eq!(parse_args(b""), "");
+    }
+
+    #[test]
+    fn parse_args_trailing_nulls() {
+        assert_eq!(parse_args(b"cmd\0arg1\0\0\0"), "cmd arg1");
+    }
+
+    #[test]
+    fn parse_args_single_arg() {
+        assert_eq!(parse_args(b"mycommand"), "mycommand");
+    }
+
+    #[test]
+    fn sanitize_utf8_passes_normal_text() {
+        assert_eq!(sanitize_utf8("hello world"), "hello world");
+    }
+
+    #[test]
+    fn sanitize_utf8_replaces_control_chars() {
+        assert_eq!(sanitize_utf8("hello\x01\x02world"), "hello??world");
+    }
+
+    #[test]
+    fn sanitize_utf8_preserves_newline_and_tab() {
+        assert_eq!(sanitize_utf8("line1\nline2\tcol"), "line1\nline2\tcol");
+    }
+
+    #[test]
+    fn sanitize_utf8_replaces_null() {
+        assert_eq!(sanitize_utf8("ab\0cd"), "ab?cd");
     }
 }

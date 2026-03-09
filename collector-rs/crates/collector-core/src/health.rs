@@ -4,6 +4,7 @@ use prometheus::{Encoder, TextEncoder};
 
 use crate::metrics;
 
+/// Creates an axum router serving `/healthz` (liveness) and `/metrics` (Prometheus scrape).
 pub fn build_health_router() -> Router {
     let registry = metrics::registry().clone();
 

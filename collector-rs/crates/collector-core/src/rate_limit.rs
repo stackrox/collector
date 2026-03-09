@@ -10,6 +10,7 @@ struct TokenBucket {
     last_refill: Instant,
 }
 
+/// Per-key token bucket rate limiter to suppress duplicate process signals.
 pub struct RateLimitCache {
     buckets: HashMap<String, TokenBucket>,
     burst: u32,
@@ -18,6 +19,7 @@ pub struct RateLimitCache {
 }
 
 impl RateLimitCache {
+    /// Creates a rate limiter with default burst (10) and 30-minute refill interval.
     pub fn new() -> Self {
         Self {
             buckets: HashMap::new(),
@@ -27,6 +29,7 @@ impl RateLimitCache {
         }
     }
 
+    /// Creates a rate limiter with custom burst count, refill interval, and max tracked keys.
     pub fn with_config(burst: u32, refill_interval: Duration, max_entries: usize) -> Self {
         Self {
             buckets: HashMap::new(),
@@ -36,6 +39,7 @@ impl RateLimitCache {
         }
     }
 
+    /// Returns true if the key has remaining tokens, consuming one.
     pub fn allow(&mut self, key: &str) -> bool {
         self.allow_at(key, Instant::now())
     }
