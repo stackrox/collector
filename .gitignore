@@ -54,3 +54,7 @@ vcpkg-manifest-install.log
 dolt/
 
 target/
+
+# Dolt database files (added by bd init)
+.dolt/
+*.db
