@@ -71,6 +71,12 @@ Categorize each patch as:
 - `8ba291e78` — disable trusted exepath (see "Exepath" section below)
 - `88d5093f4` — ASSERT_TO_LOG via falcosecurity_log_fn callback
 
+**BPF verifier null-check optimization** (keep — not upstreamed):
+- BPF verifier fix for `sys_exit` program: refactored `sampling_logic_exit()` and `sys_exit()` in `syscall_exit.bpf.c` to use a single `maps__get_capture_settings()` lookup instead of multiple inlined calls that clang optimizes into null-unsafe code. Without this, the BPF probe fails to load on kernels < 6.17 (RHEL 9, Ubuntu 22.04, COS, etc.)
+
+**Network signal handler fix** (keep — collector-side):
+- Skip `is_socket_failed()`/`is_socket_pending()` checks for send/recv events in `NetworkSignalHandler.cpp`. The sinsp parser marks sockets as "failed" on EAGAIN but never clears the flag on subsequent success for recv operations.
+
 **Rebase fixups** (always regenerated):
 - `d0fb1702c` — fixes following rebase (CMake cycle, exepath fallback, assert macro)
 
@@ -191,6 +197,11 @@ After each rebase stage, update collector code for API changes found in Step 3.
 - `extract_single(event, &len)` → `extract(event, vals)` vector-based API
 - Add null guards for `filter_check` pointers (plugin-provided checks may not be initialized)
 
+**UDP test adjustments** (from 0.23.0+):
+- UDP tests need 30-second timeouts (vs 5-10s for TCP) due to BPF event delivery pipeline latency
+- `TestMultipleDestinations`: sendmmsg message count × server count must not exceed `MAX_SENDMMSG_RECVMMSG_SIZE` (16)
+- File: `integration-tests/suites/udp_networkflow.go`
+
 ## Step 7: Known Gotchas
 
 ### Exepath Resolution (CRITICAL)
@@ -249,38 +260,126 @@ The container plugin (`libcontainer.so`) is a C++/Go hybrid:
 ### BPF Verifier Compatibility
 
 BPF verifier behavior varies significantly across:
-- **Kernel versions**: Older kernels have stricter limits
+- **Kernel versions**: Older kernels have stricter limits (see kernel matrix below)
 - **Clang versions**: clang > 19 can produce code that exceeds instruction counts
-- **Platform kernels**: RHEL SAP, Google COS have custom verifiers
+- **Platform kernels**: RHEL SAP, Google COS have custom verifiers or clang-compiled kernels with different BTF attributes
 
-Common fixes:
-- Reduce loop bounds (e.g., `MAX_IOVCNT` 32 → 16)
-- Mark variables `volatile` to prevent optimizations the verifier can't follow
-- Add `#pragma unroll` for loops the verifier can't bound
-- Break pointer chain reads into separate variables with null checks
-- Use `const` qualifiers on credential struct pointers
+**The most insidious class of bug**: Clang inlines `__always_inline` BPF helper functions and optimizes away null checks that the BPF verifier requires. This happens when:
+1. Multiple inlined functions each call `bpf_map_lookup_elem()` on the same map
+2. The compiler deduces from the first successful lookup that subsequent lookups can't return NULL
+3. It removes the null check, but the verifier tracks each lookup independently as `map_value_or_null`
+4. Result: `R0 invalid mem access 'map_value_or_null'` on older kernels
+
+**Example** (found in 0.23.1): `syscall_exit.bpf.c:sampling_logic_exit()` called `maps__get_dropping_mode()` then `maps__get_sampling_ratio()` — both inlined functions that do `bpf_map_lookup_elem(&capture_settings, &key)`. Clang kept the null check for the first but dropped it for the second. Fix: do a single `maps__get_capture_settings()` call and access fields directly.
+
+**Fix applied**: Refactored `sys_exit` BPF program to do one `maps__get_capture_settings()` lookup in the caller, pass the pointer to `sampling_logic_exit()`, and reuse it for `drop_failed` check. No redundant map lookups = no optimized-away null checks.
+
+Common fix patterns:
+- **Single lookup + direct field access**: Call the map lookup once, pass the pointer, access fields directly (preferred)
+- **`volatile` qualifier**: Mark map lookup result as `volatile` to prevent optimization
+- **Compiler barriers**: `asm volatile("")` after null check
+- **Reduce loop bounds**: e.g., `MAX_IOVCNT` 32 → 16
+- **`#pragma unroll`**: For loops the verifier can't bound
+- **Break pointer chains**: Read through intermediate variables with null checks (e.g., `task->cred` on COS where kernel is clang-compiled with RCU attributes)
+- **`const` qualifiers**: On credential struct pointers
+
+### CI Kernel Compatibility Matrix
+
+The BPF probe must load on all CI platforms. After each update, verify against this matrix:
+
+| Platform | Kernel | Notes |
+|---|---|---|
+| Fedora CoreOS | 6.18+ | Newest kernel, most permissive verifier |
+| Ubuntu 24.04 | 6.17+ | GCP VM, works with modern BPF |
+| Ubuntu 22.04 | 6.8 | GCP VM, stricter verifier — **common failure point** |
+| COS stable | 6.6 | Google kernel, clang-compiled — RCU/BTF differences |
+| RHEL 9 | 5.14 | Oldest supported kernel — **most restrictive verifier** |
+| RHEL SAP | 5.14 | Same kernel as RHEL 9 but different config |
+| Flatcar | varies | Container Linux |
+| ARM64 variants | varies | rhcos-arm64, cos-arm64, ubuntu-arm, fcarm |
+| s390x | varies | rhel-s390x |
+| ppc64le | varies | rhel-ppc64le |
+
+**ubuntu-os** CI job runs on BOTH Ubuntu 22.04 AND 24.04 VMs. A failure on either fails the whole job.
+
+**How to diagnose BPF loading failures from CI**:
+1. Download the logs artifact (e.g., `ubuntu-os-logs`) from the GitHub Actions run
+2. Find `collector.log` under `container-logs/<vm>/core-bpf/<TestName>/`
+3. Search for `failed to load` — the line before it shows the verifier error
+4. The verifier log shows exact instruction and register state at the point of rejection
+5. Compare against master's CI run to confirm it's a regression
+
+### Network Signal Handler: UDP send/recv Socket State (CRITICAL)
+
+**Problem**: `sinsp::parse_rw_exit()` marks socket fd as "failed" (`set_socket_failed()`) when ANY send/recv syscall returns negative (e.g., EAGAIN from timeout). Unlike `connect()`, the success path for send/recv does NOT call `set_socket_connected()` to clear the flag. Result: once a UDP socket gets a single EAGAIN (common with `SO_RCVTIMEO`), all subsequent events on that fd are rejected by `GetConnection()`.
+
+**Fix applied** in `collector/lib/NetworkSignalHandler.cpp`: Skip `is_socket_failed()` / `is_socket_pending()` checks for send/recv events (identified by `strncmp(evt_name, "send", 4)` or `strncmp(evt_name, "recv", 4)`). These checks are only relevant for TCP connection establishment (connect/accept/getsockopt).
+
+**How to detect**: UDP network flow tests fail — connections from containers using `recvfrom`/`recvmsg`/`recvmmsg` with `SO_RCVTIMEO` are never reported. The server's receive call times out → EAGAIN → fd marked failed → all subsequent successful receives ignored.
+
+### Container Plugin "No Info" Messages
+
+After switching to the container plugin (0.21.0+), the collector log may contain thousands of `container: the plugin has no info for the container id '<id>'` messages. This is **noisy but not fatal** — the plugin eventually resolves the container ID, and all tests pass despite the spam. Do not treat this as a test failure indicator.
 
 ## Step 8: Validate Each Stage
+
+### Build Commands
+
+```bash
+# Build collector image (from repo root, NOT from collector/ subdirectory)
+make image
+
+# Run unit tests
+make unittest
+
+# Run specific integration test (from integration-tests/ directory)
+cd integration-tests
+DOCKER_HOST=unix:///run/podman/podman.sock COLLECTOR_LOG_LEVEL=debug make TestProcessNetwork
+DOCKER_HOST=unix:///run/podman/podman.sock COLLECTOR_LOG_LEVEL=debug make TestUdpNetworkFlow
+```
+
+**Important**: Use `make image` from the repo root. Do NOT use `make -C collector image` — there is no `image` target in the collector subdirectory Makefile.
+
+### Validation Checklist
 
 Run this checklist after each stage:
 
 - [ ] `falcosecurity-libs` builds via cmake `add_subdirectory`
 - [ ] Each surviving patch verified: diff against original to ensure no content loss
-- [ ] `make collector` succeeds on amd64
+- [ ] `make image` succeeds on amd64 (builds collector binary + container image)
 - [ ] `make unittest` passes (all test suites, especially ProcessSignalFormatterTest)
-- [ ] Integration tests: `TestProcessViz` (exepath correctness), `TestProcessLineageInfo`, `TestNetworkFlows`
+- [ ] Integration tests pass (see key tests below)
 - [ ] Multi-arch compilation: arm64, ppc64le, s390x
 - [ ] Container ID attribution works (not all showing empty or host)
 - [ ] Process exepaths are correct (not showing container runtime binary like `/usr/bin/podman`)
 - [ ] Container label/namespace lookup works
 - [ ] Network signal handler receives correct container IDs
 - [ ] Runtime self-checks pass
+- [ ] BPF probe loads on older kernels (check CI results for RHEL 9, Ubuntu 22.04, COS)
 
 ### Key Integration Tests
 
-- **TestProcessViz**: Verifies process ExePath, Name, and Args for container processes. Catches the exepath regression where all paths show the container runtime. Expected paths like `/bin/ls`, `/usr/sbin/nginx`, `/bin/sh`.
-- **TestProcessLineageInfo**: Verifies parent process lineage chains stop at container boundaries.
-- **TestNetworkFlows**: Verifies network connections are attributed to correct containers.
+- **TestProcessNetwork** (TestProcessViz + TestNetworkFlows + TestProcessLineageInfo):
+  - Verifies process ExePath, Name, Args for container processes
+  - Catches exepath regression (all paths show container runtime)
+  - Verifies network connections attributed to correct containers
+  - Verifies parent process lineage chains stop at container boundaries
+- **TestUdpNetworkFlow**: Verifies UDP connection tracking across all send/recv syscall combinations:
+  - Tests: sendto, sendmsg, sendmmsg × recvfrom, recvmsg, recvmmsg (9 combinations)
+  - TestMultipleDestinations: one client → multiple servers (watch `MAX_SENDMMSG_RECVMMSG_SIZE=16`)
+  - TestMultipleSources: multiple clients → one server
+  - Uses 30-second timeouts (UDP BPF event pipeline is slower than TCP)
+  - **If `recvfrom` tests fail but `recvmsg` passes**: check `is_socket_failed()` handling in NetworkSignalHandler
+- **TestConnectionsAndEndpointsUDPNormal**: UDP endpoint detection without send/recv tracking
+- **TestCollectorStartup**: Basic smoke test — catches BPF loading failures immediately
+
+### Diagnosing CI Failures
+
+1. Check if the failure is a **BPF loading crash** (exit code 139, `scap_init` error) vs a **test logic failure**
+2. Compare against master's CI run — if master passes on the same platform, it's a regression
+3. Download log artifacts: `gh api repos/stackrox/collector/actions/artifacts/<id>/zip > logs.zip`
+4. The `collector.log` file in the artifact contains full libbpf output including verifier errors
+5. The test framework only shows the last few lines of collector logs in the CI output — always check the full artifact
 
 ## Step 9: Final Update
 
@@ -328,3 +427,17 @@ Each stage should produce **two PRs**:
 ### Enter Event Deprecation
 
 Upstream removed enter events to reduce ~50% of kernel/userspace overhead (proposal: `proposals/20240901-disable-support-for-syscall-enter-events.md`). All parameters moved to exit events. A scap converter handles old capture files. Any code depending on `retrieve_enter_event()` will silently fail with modern drivers — check for fallbacks using exit event parameters.
+
+## Step 10: Update This Skill
+
+**This step is mandatory.** After completing an update, review and update this skill file (`.claude/commands/update-falco-libs.md`) with anything learned during the process:
+
+- **New API breakpoints**: Add entries to "Known historical API breakpoints" (Step 4) for any new breaking changes encountered
+- **New StackRox patches**: Update the "Current StackRox Patches" list (Step 2) — add new patches, remove ones that were upstreamed
+- **New gotchas**: Add to "Step 7: Known Gotchas" if you discovered new pitfalls (BPF verifier issues, parser bugs, build problems)
+- **Outdated steps**: Remove or correct any steps that no longer apply (e.g., if an API listed as "changed in 0.22.0" is now the only way and doesn't need a migration note)
+- **CI matrix updates**: Update the kernel compatibility matrix if CI platforms changed (new VM images, new kernel versions, platforms added/removed)
+- **Fix patterns**: Add new "Common patterns of change" (Step 6) for any collector-side adaptations that future updates will likely need
+- **Build/test changes**: Update build commands or test expectations if they changed
+
+The goal is that the next person (or AI) performing an update has all the context from previous updates available, without needing to rediscover issues that were already solved.
