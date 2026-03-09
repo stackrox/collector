@@ -13,6 +13,7 @@
 {"issue_id":"collector-9eph","label":"phase-1"}
 {"issue_id":"collector-bl32","label":"phase-4"}
 {"issue_id":"collector-crsz","label":"phase-1"}
+{"issue_id":"collector-d8a","label":"docs"}
 {"issue_id":"collector-dt00","label":"phase-5"}
 {"issue_id":"collector-eaui","label":"bpf"}
 {"issue_id":"collector-eaui","label":"phase-1"}
