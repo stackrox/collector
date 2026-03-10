@@ -55,14 +55,23 @@ async fn main() -> Result<()> {
 
     // Initialize BPF
     info!("loading BPF programs");
-    let mut loader = BpfLoader::load_and_attach()?;
-
-    // Self-check
-    verify_bpf(&mut loader)?;
+    let loader = BpfLoader::load_and_attach()?;
 
     // Create channels
-    let (proc_tx, proc_rx) = mpsc::channel(4096);
+    let (proc_tx, mut proc_rx) = mpsc::channel(4096);
     let (net_tx, net_rx) = mpsc::channel(4096);
+
+    // Spawn event reader on dedicated OS thread (before self-check so events flow through channels)
+    let event_reader_cancel = cancel.clone();
+    let event_reader_handle = spawn_event_reader(
+        Box::new(loader),
+        proc_tx,
+        net_tx,
+        event_reader_cancel,
+    );
+
+    // Self-check: reads from process channel, doesn't consume from ring buffer directly
+    verify_bpf(&mut proc_rx).await?;
 
     // Shared state
     let afterglow = {
@@ -76,15 +85,6 @@ async fn main() -> Result<()> {
     let conn_tracker = Arc::new(Mutex::new(ConnTracker::new(afterglow)));
     let process_table = Mutex::new(ProcessTable::new());
     let rate_limiter = Mutex::new(RateLimitCache::new());
-
-    // Spawn event reader on dedicated OS thread
-    let event_reader_cancel = cancel.clone();
-    let event_reader_handle = spawn_event_reader(
-        Box::new(loader),
-        proc_tx,
-        net_tx,
-        event_reader_cancel,
-    );
 
     // Create signal sender (gRPC or stdout)
     let hostname = hostname::get()

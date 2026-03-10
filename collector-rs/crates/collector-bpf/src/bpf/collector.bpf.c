@@ -134,24 +134,48 @@ static __always_inline __u32 read_cgroup(char *buf, __u32 buf_len) {
     BPF_CORE_READ_INTO(&cgroups, task, cgroups);
     if (!cgroups) return 0;
 
-    struct cgroup_subsys_state *subsys;
-    BPF_CORE_READ_INTO(&subsys, cgroups, subsys[0]);
-    if (!subsys) return 0;
-
+    // On cgroup v2, the default cgroup is in dfl_cgrp.
+    // On cgroup v1, subsys[0] is used. Try dfl_cgrp first.
     struct cgroup *cgrp;
-    BPF_CORE_READ_INTO(&cgrp, subsys, cgroup);
-    if (!cgrp) return 0;
+    BPF_CORE_READ_INTO(&cgrp, cgroups, dfl_cgrp);
+    if (!cgrp) {
+        struct cgroup_subsys_state *subsys;
+        BPF_CORE_READ_INTO(&subsys, cgroups, subsys[0]);
+        if (!subsys) return 0;
+        BPF_CORE_READ_INTO(&cgrp, subsys, cgroup);
+        if (!cgrp) return 0;
+    }
 
-    struct kernfs_node *kn;
-    BPF_CORE_READ_INTO(&kn, cgrp, kn);
-    if (!kn) return 0;
+    // Walk up the cgroup hierarchy via cgroup->self.parent->cgroup
+    // looking for a kernfs node name long enough to contain a container ID.
+    // On cgroup v2 with podman/docker, the layout is:
+    //   machine.slice / libpod-<64hex>.scope / container
+    // We want the "libpod-<64hex>.scope" level.
+    #pragma unroll
+    for (int i = 0; i < 4; i++) {
+        if (!cgrp) return 0;
 
-    const char *name;
-    BPF_CORE_READ_INTO(&name, kn, name);
-    if (!name) return 0;
+        struct kernfs_node *kn;
+        BPF_CORE_READ_INTO(&kn, cgrp, kn);
+        if (!kn) return 0;
 
-    int ret = bpf_probe_read_kernel_str(buf, buf_len, name);
-    return ret > 0 ? ret : 0;
+        const char *name;
+        BPF_CORE_READ_INTO(&name, kn, name);
+        if (!name) return 0;
+
+        int ret = bpf_probe_read_kernel_str(buf, buf_len, name);
+        if (ret > 64) {
+            return ret;
+        }
+
+        // Walk to parent cgroup
+        struct cgroup_subsys_state *parent_css;
+        BPF_CORE_READ_INTO(&parent_css, cgrp, self.parent);
+        if (!parent_css) return 0;
+        BPF_CORE_READ_INTO(&cgrp, parent_css, cgroup);
+    }
+
+    return 0;
 }
 
 // ============================================================
@@ -229,12 +253,83 @@ int handle_exit(struct trace_event_raw_sched_process_template *ctx) {
 }
 
 // ============================================================
-// Network: connect (two-phase kprobe/kretprobe)
+// Helper: emit a connect_event from a struct sock
+// ============================================================
+
+static __always_inline int emit_sock_event(struct sock *sk, __u32 event_type, __u8 protocol) {
+    __u32 zero = 0;
+    struct connect_event *evt = bpf_map_lookup_elem(&connect_heap, &zero);
+    if (!evt) return 0;
+
+    fill_header(&evt->header, event_type);
+    evt->retval = 0;
+    evt->protocol = protocol;
+
+    __u16 family;
+    BPF_CORE_READ_INTO(&family, sk, __sk_common.skc_family);
+    evt->family = family;
+
+    if (family == AF_INET) {
+        BPF_CORE_READ_INTO(evt->saddr, sk, __sk_common.skc_rcv_saddr);
+        BPF_CORE_READ_INTO(evt->daddr, sk, __sk_common.skc_daddr);
+    } else if (family == AF_INET6) {
+        BPF_CORE_READ_INTO(evt->saddr, sk, __sk_common.skc_v6_rcv_saddr);
+        BPF_CORE_READ_INTO(evt->daddr, sk, __sk_common.skc_v6_daddr);
+    } else {
+        return 0;
+    }
+
+    BPF_CORE_READ_INTO(&evt->sport, sk, __sk_common.skc_num);
+    __u16 dport_be;
+    BPF_CORE_READ_INTO(&dport_be, sk, __sk_common.skc_dport);
+    evt->dport = __bpf_ntohs(dport_be);
+
+    evt->cgroup_len = read_cgroup(evt->cgroup, sizeof(evt->cgroup));
+
+    bpf_ringbuf_output(&events, evt, sizeof(*evt), 0);
+    return 0;
+}
+
+// TCP state constants
+#define TCP_ESTABLISHED  1
+#define TCP_SYN_SENT     2
+#define TCP_SYN_RECV     3
+#define TCP_CLOSE        7
+
+// ============================================================
+// Network: TCP connect, accept, close via inet_sock_set_state
+// ============================================================
+
+SEC("raw_tracepoint/inet_sock_set_state")
+int handle_inet_sock_set_state(struct bpf_raw_tracepoint_args *ctx) {
+    // Args: (struct sock *sk, int oldstate, int newstate)
+    int oldstate = (int)ctx->args[1];
+    int newstate = (int)ctx->args[2];
+
+    struct sock *sk = (struct sock *)ctx->args[0];
+    if (!sk) return 0;
+
+    if (newstate == TCP_ESTABLISHED) {
+        if (oldstate == TCP_SYN_SENT) {
+            // Client connect completed
+            return emit_sock_event(sk, EVENT_CONNECT, IPPROTO_TCP);
+        } else if (oldstate == TCP_SYN_RECV) {
+            // Server accepted
+            return emit_sock_event(sk, EVENT_ACCEPT, IPPROTO_TCP);
+        }
+    } else if (newstate == TCP_CLOSE) {
+        return emit_sock_event(sk, EVENT_CLOSE, IPPROTO_TCP);
+    }
+
+    return 0;
+}
+
+// ============================================================
+// Network: UDP connect (ksyscall for portability)
 // ============================================================
 
 struct connect_args {
     struct sockaddr *addr;
-    int fd;
 };
 
 struct {
@@ -244,23 +339,21 @@ struct {
     __type(value, struct connect_args);
 } connect_args_map SEC(".maps");
 
-SEC("kprobe/__sys_connect")
-int kprobe_connect(struct pt_regs *ctx) {
+SEC("ksyscall/connect")
+int BPF_KSYSCALL(enter_connect, int fd, struct sockaddr *addr, int addrlen) {
     __u64 pid_tgid = bpf_get_current_pid_tgid();
     struct connect_args args = {};
-    args.fd = PT_REGS_PARM1(ctx);
-    args.addr = (struct sockaddr *)PT_REGS_PARM2(ctx);
+    args.addr = addr;
     bpf_map_update_elem(&connect_args_map, &pid_tgid, &args, BPF_ANY);
     return 0;
 }
 
-SEC("kretprobe/__sys_connect")
-int kretprobe_connect(struct pt_regs *ctx) {
+SEC("kretsyscall/connect")
+int BPF_KRETPROBE(exit_connect, long retval) {
     __u64 pid_tgid = bpf_get_current_pid_tgid();
     struct connect_args *args = bpf_map_lookup_elem(&connect_args_map, &pid_tgid);
     if (!args) return 0;
 
-    int retval = PT_REGS_RC(ctx);
     if (retval < 0 && retval != -EINPROGRESS) {
         bpf_map_delete_elem(&connect_args_map, &pid_tgid);
         return 0;
@@ -273,9 +366,8 @@ int kretprobe_connect(struct pt_regs *ctx) {
         return 0;
     }
 
-
     fill_header(&evt->header, EVENT_CONNECT);
-    evt->retval = retval;
+    evt->retval = (int)retval;
 
     __u16 family;
     bpf_probe_read_user(&family, sizeof(family), &args->addr->sa_family);
@@ -304,200 +396,12 @@ int kretprobe_connect(struct pt_regs *ctx) {
 }
 
 // ============================================================
-// Network: accept (TCP state transition)
+// Network: UDP close via fentry
 // ============================================================
 
-SEC("tp_btf/inet_sock_set_state")
-int handle_inet_sock_set_state(struct trace_event_raw_inet_sock_set_state *ctx) {
-    // Only SYN_RECV -> ESTABLISHED = server accepted
-    if (ctx->newstate != 1 /* TCP_ESTABLISHED */)
-        return 0;
-    if (ctx->oldstate != 3 /* TCP_SYN_RECV */)
-        return 0;
-
-    __u32 zero = 0;
-    struct connect_event *evt = bpf_map_lookup_elem(&connect_heap, &zero);
-    if (!evt) return 0;
-
-
-    fill_header(&evt->header, EVENT_ACCEPT);
-    evt->retval = 0;
-    evt->family = ctx->family;
-    evt->protocol = IPPROTO_TCP;
-
-    if (ctx->family == AF_INET) {
-        __builtin_memcpy(evt->saddr, ctx->saddr, 4);
-        __builtin_memcpy(evt->daddr, ctx->daddr, 4);
-    } else {
-        __builtin_memcpy(evt->saddr, ctx->saddr_v6, 16);
-        __builtin_memcpy(evt->daddr, ctx->daddr_v6, 16);
-    }
-    evt->sport = ctx->sport;
-    evt->dport = __bpf_ntohs(ctx->dport);
-
-    evt->cgroup_len = read_cgroup(evt->cgroup, sizeof(evt->cgroup));
-
-    bpf_ringbuf_output(&events, evt, sizeof(*evt), 0);
-    return 0;
-}
-
-// ============================================================
-// Network: TCP close
-// ============================================================
-
-SEC("kprobe/tcp_close")
-int handle_tcp_close(struct pt_regs *ctx) {
-    struct sock *sk = (struct sock *)PT_REGS_PARM1(ctx);
-    if (!sk) return 0;
-
-    __u32 zero = 0;
-    struct connect_event *evt = bpf_map_lookup_elem(&connect_heap, &zero);
-    if (!evt) return 0;
-
-
-    fill_header(&evt->header, EVENT_CLOSE);
-    evt->retval = 0;
-    evt->protocol = IPPROTO_TCP;
-
-    __u16 family;
-    BPF_CORE_READ_INTO(&family, sk, __sk_common.skc_family);
-    evt->family = family;
-
-    if (family == AF_INET) {
-        BPF_CORE_READ_INTO(evt->saddr, sk, __sk_common.skc_rcv_saddr);
-        BPF_CORE_READ_INTO(evt->daddr, sk, __sk_common.skc_daddr);
-    } else if (family == AF_INET6) {
-        BPF_CORE_READ_INTO(evt->saddr, sk, __sk_common.skc_v6_rcv_saddr);
-        BPF_CORE_READ_INTO(evt->daddr, sk, __sk_common.skc_v6_daddr);
-    } else {
-        return 0;
-    }
-
-    BPF_CORE_READ_INTO(&evt->sport, sk, __sk_common.skc_num);
-    __u16 dport_be;
-    BPF_CORE_READ_INTO(&dport_be, sk, __sk_common.skc_dport);
-    evt->dport = __bpf_ntohs(dport_be);
-
-    evt->cgroup_len = read_cgroup(evt->cgroup, sizeof(evt->cgroup));
-
-    bpf_ringbuf_output(&events, evt, sizeof(*evt), 0);
-    return 0;
-}
-
-// ============================================================
-// Network: generic close for UDP sockets
-// ============================================================
-
-struct close_args {
-    int fd;
-};
-
-struct {
-    __uint(type, BPF_MAP_TYPE_HASH);
-    __uint(max_entries, 8192);
-    __type(key, __u64);
-    __type(value, struct close_args);
-} close_args_map SEC(".maps");
-
-SEC("kprobe/__sys_close")
-int kprobe_close(struct pt_regs *ctx) {
-    __u64 pid_tgid = bpf_get_current_pid_tgid();
-    struct close_args args = {};
-    args.fd = PT_REGS_PARM1(ctx);
-    bpf_map_update_elem(&close_args_map, &pid_tgid, &args, BPF_ANY);
-    return 0;
-}
-
-SEC("kretprobe/__sys_close")
-int kretprobe_close(struct pt_regs *ctx) {
-    __u64 pid_tgid = bpf_get_current_pid_tgid();
-    struct close_args *args = bpf_map_lookup_elem(&close_args_map, &pid_tgid);
-    if (!args) return 0;
-
-    int retval = PT_REGS_RC(ctx);
-    if (retval < 0) {
-        bpf_map_delete_elem(&close_args_map, &pid_tgid);
-        return 0;
-    }
-
-    // Look up fd -> file -> socket -> sk to check if UDP
-    struct task_struct *task = (void *)bpf_get_current_task();
-    struct files_struct *files;
-    BPF_CORE_READ_INTO(&files, task, files);
-    if (!files) goto cleanup;
-
-    struct fdtable *fdt;
-    BPF_CORE_READ_INTO(&fdt, files, fdt);
-    if (!fdt) goto cleanup;
-
-    struct file **fd_array;
-    BPF_CORE_READ_INTO(&fd_array, fdt, fd);
-    if (!fd_array) goto cleanup;
-
-    struct file *file;
-    bpf_probe_read_kernel(&file, sizeof(file), &fd_array[args->fd]);
-    if (!file) goto cleanup;
-
-    // Check if it's a socket
-    struct inode *inode;
-    BPF_CORE_READ_INTO(&inode, file, f_inode);
-    if (!inode) goto cleanup;
-
-    // socket_file_ops check: verify via i_mode that it's a socket
-    __u16 i_mode;
-    BPF_CORE_READ_INTO(&i_mode, inode, i_mode);
-    if ((i_mode & 0xF000) != 0xC000) // S_IFSOCK = 0140000, but upper nibble is 0xC
-        goto cleanup;
-
-    // Get the socket struct from the inode
-    struct socket *socket;
-    socket = (struct socket *)((char *)inode + sizeof(struct inode));
-
-    struct sock *sk;
-    BPF_CORE_READ_INTO(&sk, socket, sk);
-    if (!sk) goto cleanup;
-
-    // Only handle UDP (TCP goes through tcp_close)
-    __u8 protocol;
-    BPF_CORE_READ_INTO(&protocol, sk, sk_protocol);
-    if (protocol != IPPROTO_UDP)
-        goto cleanup;
-
-    __u32 zero = 0;
-    struct connect_event *evt = bpf_map_lookup_elem(&connect_heap, &zero);
-    if (!evt) goto cleanup;
-
-
-    fill_header(&evt->header, EVENT_CLOSE);
-    evt->retval = 0;
-    evt->protocol = IPPROTO_UDP;
-
-    __u16 family;
-    BPF_CORE_READ_INTO(&family, sk, __sk_common.skc_family);
-    evt->family = family;
-
-    if (family == AF_INET) {
-        BPF_CORE_READ_INTO(evt->saddr, sk, __sk_common.skc_rcv_saddr);
-        BPF_CORE_READ_INTO(evt->daddr, sk, __sk_common.skc_daddr);
-    } else if (family == AF_INET6) {
-        BPF_CORE_READ_INTO(evt->saddr, sk, __sk_common.skc_v6_rcv_saddr);
-        BPF_CORE_READ_INTO(evt->daddr, sk, __sk_common.skc_v6_daddr);
-    } else {
-        goto cleanup;
-    }
-
-    BPF_CORE_READ_INTO(&evt->sport, sk, __sk_common.skc_num);
-    __u16 dport_be;
-    BPF_CORE_READ_INTO(&dport_be, sk, __sk_common.skc_dport);
-    evt->dport = __bpf_ntohs(dport_be);
-
-    evt->cgroup_len = read_cgroup(evt->cgroup, sizeof(evt->cgroup));
-
-    bpf_ringbuf_output(&events, evt, sizeof(*evt), 0);
-
-cleanup:
-    bpf_map_delete_elem(&close_args_map, &pid_tgid);
-    return 0;
+SEC("fentry/udp_destroy_sock")
+int BPF_PROG(handle_udp_destroy_sock, struct sock *sk) {
+    return emit_sock_event(sk, EVENT_CLOSE, IPPROTO_UDP);
 }
 
 char LICENSE[] SEC("license") = "GPL";

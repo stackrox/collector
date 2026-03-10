@@ -5,6 +5,38 @@ fn is_container_id(s: &str) -> bool {
     s.len() == CONTAINER_ID_LENGTH && s.bytes().all(|b| b.is_ascii_hexdigit())
 }
 
+/// Tries to extract a container ID from /proc/{pid}/cgroup as a fallback
+/// when the BPF cgroup walk returns empty.
+pub fn extract_container_id_from_proc(pid: u32) -> Option<String> {
+    // Try host-mounted procfs first (collector runs in a container with /host mount),
+    // then fall back to local /proc
+    let host_path = format!("/host/proc/{}/cgroup", pid);
+    let local_path = format!("/proc/{}/cgroup", pid);
+    let content = std::fs::read_to_string(&host_path)
+        .or_else(|_| std::fs::read_to_string(&local_path))
+        .ok()?;
+    for line in content.lines() {
+        // cgroup v2 format: "0::/machine.slice/libpod-<id>.scope/container"
+        // cgroup v1 format: "N:name=systemd:/docker/<id>" or similar
+        if let Some(id) = extract_container_id(line) {
+            return Some(id.to_string());
+        }
+        // Also try just the path part (after the last ::)
+        if let Some(path_part) = line.rsplit("::").next() {
+            if let Some(id) = extract_container_id(path_part) {
+                return Some(id.to_string());
+            }
+            // Try each path segment
+            for segment in path_part.split('/') {
+                if let Some(id) = extract_container_id(segment) {
+                    return Some(id.to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
 /// Extracts a 12-char container ID from a cgroup path.
 ///
 /// Handles Docker (/docker/<64hex>), CRI-O (crio-<64hex>.scope),

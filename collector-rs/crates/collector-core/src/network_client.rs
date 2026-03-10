@@ -68,7 +68,12 @@ async fn connect_and_report(
     scrape_interval: Duration,
     cancel: &CancellationToken,
 ) -> Result<()> {
-    let channel = Channel::from_shared(endpoint.to_string())
+    let uri = if endpoint.contains("://") {
+        endpoint.to_string()
+    } else {
+        format!("http://{}", endpoint)
+    };
+    let channel = Channel::from_shared(uri)
         .context("invalid endpoint")?
         .connect()
         .await

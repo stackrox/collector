@@ -8,7 +8,7 @@ use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, warn};
 
-use crate::container_id::extract_container_id;
+use crate::container_id::{extract_container_id, extract_container_id_from_proc};
 use crate::event_reader::ProcessEvent;
 use crate::metrics;
 use crate::process_table::ProcessTable;
@@ -60,9 +60,26 @@ async fn handle_exec(
     rate_limiter: &Mutex<RateLimitCache>,
 ) {
     let cgroup = evt.cgroup_str().trim_end_matches('\0');
+    let container_id_str;
     let container_id = match extract_container_id(cgroup) {
         Some(id) => id,
-        None => return, // host process, skip
+        None => {
+            // Fallback: try /proc/{pid}/cgroup when BPF cgroup walk returns empty
+            match extract_container_id_from_proc(evt.header.pid) {
+                Some(id) => {
+                    debug!("resolved container via procfs fallback: pid={} container={}",
+                           evt.header.pid, id);
+                    container_id_str = id;
+                    &container_id_str
+                }
+                None => {
+                    debug!("filtered event: pid={} comm={} filename={} cgroup={:?} cgroup_len={}",
+                           evt.header.pid, evt.comm_str().trim_end_matches('\0'),
+                           evt.filename_str().trim_end_matches('\0'), cgroup, evt.cgroup_len);
+                    return; // host process, skip
+                }
+            }
+        }
     };
 
     let comm = evt.comm_str().trim_end_matches('\0');

@@ -10,7 +10,7 @@ use tokio_util::sync::CancellationToken;
 use tracing::debug;
 
 use crate::conn_tracker::ConnTracker;
-use crate::container_id::extract_container_id;
+use crate::container_id::{extract_container_id, extract_container_id_from_proc};
 use crate::event_reader::NetworkEvent;
 use crate::metrics;
 
@@ -60,7 +60,15 @@ fn parse_network_event(event: &NetworkEvent) -> Option<(Connection, bool)> {
     }
 
     let cgroup = evt.cgroup_str().trim_end_matches('\0');
-    let container_id = extract_container_id(cgroup)?;
+    let container_id_owned;
+    let container_id = match extract_container_id(cgroup) {
+        Some(id) => id,
+        None => {
+            // Fallback: try /proc/{pid}/cgroup when BPF cgroup walk returns empty
+            container_id_owned = extract_container_id_from_proc(evt.header.pid)?;
+            &container_id_owned
+        }
+    };
 
     let (local_addr, remote_addr) = parse_addresses(evt)?;
 

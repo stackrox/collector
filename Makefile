@@ -52,6 +52,23 @@ image: collector
 		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
 		$(COLLECTOR_BUILD_CONTEXT)
 
+.PHONY: rust-collector
+rust-collector:
+	cd collector-rs && cargo build --release -p collector-bin
+	mkdir -p collector/container/bin
+	cp collector-rs/target/release/collector collector/container/bin/collector
+
+image-rust: rust-collector
+	make -C collector txt-files
+	mkdir -p collector/container/bin
+	touch collector/container/bin/self-checks
+	chmod +x collector/container/bin/self-checks
+	docker buildx build --load --platform linux/amd64 \
+		--build-arg COLLECTOR_VERSION="$(COLLECTOR_TAG)" \
+		-f collector/container/Dockerfile \
+		-t quay.io/stackrox-io/collector:$(COLLECTOR_TAG) \
+		$(COLLECTOR_BUILD_CONTEXT)
+
 image-dev: collector container-dockerfile-dev
 	make -C collector txt-files
 	docker buildx build --load --platform ${PLATFORM} \
