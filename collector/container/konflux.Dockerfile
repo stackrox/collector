@@ -134,8 +134,8 @@ ARG CMAKE_BUILD_DIR
 
 ENV COLLECTOR_HOST_ROOT=/host
 
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/collector
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/self-checks
+COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
+COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
 
 COPY LICENSE /licenses/LICENSE
 
