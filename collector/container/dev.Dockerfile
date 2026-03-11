@@ -15,8 +15,8 @@ LABEL name="collector" \
 
 WORKDIR /
 
-COPY container/devel/install.sh /
-RUN ./install.sh && rm -f install.sh
+RUN dnf upgrade -y && \
+    dnf install -y libasan libubsan libtsan elfutils-libelf
 
 # Uncomment this line to enable generation of core for collector
 # RUN echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
