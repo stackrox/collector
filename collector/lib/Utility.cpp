@@ -18,7 +18,6 @@ extern "C" {
 #include <utf8_validity.h>
 
 #include <libsinsp/sinsp.h>
-#include <libsinsp/thread_manager.h>
 
 #include <google/protobuf/util/json_util.h>
 
@@ -58,14 +57,20 @@ const char* SignalName(int signum) {
   }
 }
 
-std::string GetContainerID(sinsp_threadinfo& tinfo, sinsp_thread_manager& thread_manager) {
-  const auto* accessor = thread_manager.get_field_accessor("container_id");
-  if (!accessor) {
-    return {};
+std::string GetContainerID(sinsp_threadinfo& tinfo) {
+  for (const auto& [subsys, cgroup_path] : tinfo.cgroups()) {
+    if (auto id = ExtractContainerIDFromCgroup(cgroup_path)) {
+      return std::string(*id);
+    }
   }
-  std::string container_id;
-  tinfo.get_dynamic_field(*accessor, container_id);
-  return container_id;
+  return {};
+}
+
+std::string GetContainerID(sinsp_evt* event) {
+  if (!event) return {};
+  sinsp_threadinfo* tinfo = event->get_thread_info();
+  if (!tinfo) return {};
+  return GetContainerID(*tinfo);
 }
 
 std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo* t) {
@@ -214,7 +219,7 @@ std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cg
   }
 
   auto container_id_part = cgroup.substr(cgroup.size() - (CONTAINER_ID_LENGTH + 1));
-  if (container_id_part[0] != '/' && container_id_part[0] != '-') {
+  if (container_id_part[0] != '/' && container_id_part[0] != '-' && container_id_part[0] != ':') {
     return {};
   }
 

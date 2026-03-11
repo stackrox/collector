@@ -92,9 +92,9 @@ These patches are generic enough to propose upstream:
 Check what APIs changed between versions. Key areas to inspect:
 
 ```sh
-# Container engine / plugin changes
-git log --oneline <current>..<target> -- userspace/libsinsp/container_engine/
-git log --oneline <current>..<target> --grep="container_engine\|container plugin"
+# Thread cgroup / container-related changes (collector uses cgroup extraction, not the container plugin)
+git log --oneline <current>..<target> -- userspace/libsinsp/threadinfo.h
+git log --oneline <current>..<target> --grep="cgroup\|container"
 
 # Thread manager changes
 git log --oneline <current>..<target> -- userspace/libsinsp/threadinfo.h userspace/libsinsp/thread_manager.h
@@ -119,13 +119,12 @@ grep -rn '<removed_api_name>' collector/lib/ collector/test/ --include='*.cpp' -
 ```
 
 Key collector integration points to check:
-- `collector/lib/system-inspector/Service.cpp` — sinsp initialization, plugin loading, filter setup
-- `collector/lib/system-inspector/EventExtractor.h` — threadinfo field access macros (TINFO_FIELD, FIELD_CSTR, FIELD_RAW)
-- `collector/lib/ContainerMetadata.cpp` — container info/label lookup
+- `collector/lib/system-inspector/Service.cpp` — sinsp initialization, filter setup (`proc.pid != proc.vpid`)
+- `collector/lib/system-inspector/EventExtractor.h` — threadinfo field access macros (TINFO_FIELD, FIELD_RAW, FIELD_RAW_SAFE)
 - `collector/lib/ProcessSignalFormatter.cpp` — process signal creation, exepath access, container_id, lineage traversal
-- `collector/lib/NetworkSignalHandler.cpp` — container_id access
-- `collector/lib/Process.cpp` — process info access, container_id
-- `collector/lib/Utility.cpp` — GetContainerID helper, threadinfo printing
+- `collector/lib/NetworkSignalHandler.cpp` — container_id access via `GetContainerID(evt)`
+- `collector/lib/Process.cpp` — process info access, container_id via cgroup extraction
+- `collector/lib/Utility.cpp` — `GetContainerID()`, `ExtractContainerIDFromCgroup()`, threadinfo printing
 - `collector/test/ProcessSignalFormatterTest.cpp` — thread creation, thread_manager usage
 - `collector/test/SystemInspectorServiceTest.cpp` — service initialization
 - `collector/CMakeLists.txt` — falco build flags
@@ -140,7 +139,7 @@ If the gap is large (>200 commits), identify intermediate stopping points:
 
 Known historical API breakpoints (update as upstream evolves):
 - **0.20.0**: `set_import_users` lost second arg, user/group structs on threadinfo replaced with `m_uid`/`m_gid`
-- **0.21.0**: Container engine subsystem removed entirely, replaced by container plugin (`libcontainer.so`). `m_container_id` removed from threadinfo. `m_thread_manager` changed to `shared_ptr`. `build_threadinfo()`/`add_thread()` removed from sinsp. Enter events for many syscalls deprecated (`EF_OLD_VERSION`).
+- **0.21.0**: Container engine subsystem removed entirely. `m_container_id` removed from threadinfo (collector uses cgroup extraction instead of upstream's container plugin). `m_thread_manager` changed to `shared_ptr`. `build_threadinfo()`/`add_thread()` removed from sinsp. Enter events for many syscalls deprecated (`EF_OLD_VERSION`).
 - **0.22.0**: `get_thread_ref` removed from sinsp (use `find_thread`). `get_container_id()` removed from threadinfo. `extract_single` API changed in filterchecks.
 - **0.23.0+**: Parent thread traversal moved to thread_manager. `get_thread_info(bool)` signature changed to `get_thread_info()` (no bool). `m_user`/`m_group` structs removed (use `m_uid`/`m_gid` directly).
 
@@ -166,17 +165,14 @@ After each rebase stage, update collector code for API changes found in Step 3.
 
 ### Common patterns of change
 
-**Container plugin integration** (from 0.21.0):
-- Delete `ContainerEngine.h` — container engines no longer built-in
-- Ship `libcontainer.so` in the collector image (built from source in builder, needs Go)
-- Load via `sinsp::register_plugin()` in Service.cpp before setting filters
-- Register extraction capabilities: `EventExtractor::FilterList().add_filter_check(sinsp_plugin::new_filtercheck(plugin))`
-- Wrap `set_filter("container.id != 'host'")` in try-catch for tests without plugin
-
 **Container ID access** (from 0.21.0+):
-- Replace `tinfo->m_container_id` with a helper like `GetContainerID(tinfo, thread_manager)` that reads from plugin state tables
-- In EventExtractor.h: change `TINFO_FIELD(container_id)` to `FIELD_CSTR(container_id, "container.id")` (provided by container plugin)
-- The `FIELD_CSTR` null guard handles tests where the plugin isn't loaded
+- Container plugin (`libcontainer.so`) is NOT used — collector extracts container IDs directly from thread cgroups
+- `GetContainerID(sinsp_threadinfo&)` iterates `tinfo.cgroups()` and calls `ExtractContainerIDFromCgroup()` (Utility.cpp)
+- `GetContainerID(sinsp_evt*)` extracts from event's thread info cgroups
+- sinsp filter uses `proc.pid != proc.vpid` (built-in field) instead of `container.id != 'host'` (plugin field)
+- No plugin loading, no `libcontainer.so`, no Go worker dependency
+- `ContainerMetadata` class was removed — namespace/label lookup is not available without the plugin
+- `ContainerInfoInspector` endpoint (`/state/containers/:id`) still exists but always returns empty namespace
 
 **Thread access** (from 0.22.0+):
 - Replace `get_thread_ref(tid, true)` with `m_thread_manager->find_thread(tid, false)` or `m_thread_manager->get_thread(tid, false)`
@@ -248,14 +244,9 @@ Collector compiles with `-DASSERT_TO_LOG` so assertions log instead of aborting.
 
 **Fix**: Use `falcosecurity_log_fn` callback from `scap_log.h` (same pattern as `scap_assert.h`). This is a tiny header with no dependencies. The callback is set by sinsp when it opens the scap handle.
 
-### Container Plugin Build
+### Container Plugin Not Used
 
-The container plugin (`libcontainer.so`) is a C++/Go hybrid:
-- Source: `github.com/falcosecurity/plugins` (monorepo), `plugins/container/` directory
-- Requires Go 1.23+ for the go-worker component
-- Upstream only ships x86_64 and arm64 binaries; ppc64le/s390x must be built from source
-- Version must match falcosecurity-libs (check plugin compatibility matrix)
-- Submodule at `builder/third_party/falcosecurity-plugins`
+The upstream container plugin (`libcontainer.so`) is NOT used by collector. Container IDs are extracted directly from thread cgroups via `ExtractContainerIDFromCgroup()` in `Utility.cpp`. This avoids the Go worker dependency, CGO bridge, container runtime dependency, startup race conditions, and silent event-dropping failure modes of the plugin. The sinsp filter uses `proc.pid != proc.vpid` (built-in) instead of `container.id != 'host'` (plugin-provided). If a future falcosecurity-libs update changes cgroup format or thread API, update `ExtractContainerIDFromCgroup()` and `GetContainerID()` in Utility.cpp.
 
 ### BPF Verifier Compatibility
 
@@ -317,10 +308,6 @@ The BPF probe must load on all CI platforms. After each update, verify against t
 
 **How to detect**: UDP network flow tests fail — connections from containers using `recvfrom`/`recvmsg`/`recvmmsg` with `SO_RCVTIMEO` are never reported. The server's receive call times out → EAGAIN → fd marked failed → all subsequent successful receives ignored.
 
-### Container Plugin "No Info" Messages
-
-After switching to the container plugin (0.21.0+), the collector log may contain thousands of `container: the plugin has no info for the container id '<id>'` messages. This is **noisy but not fatal** — the plugin eventually resolves the container ID, and all tests pass despite the spam. Do not treat this as a test failure indicator.
-
 ## Step 8: Validate Each Stage
 
 ### Build Commands
@@ -350,9 +337,8 @@ Run this checklist after each stage:
 - [ ] `make unittest` passes (all test suites, especially ProcessSignalFormatterTest)
 - [ ] Integration tests pass (see key tests below)
 - [ ] Multi-arch compilation: arm64, ppc64le, s390x
-- [ ] Container ID attribution works (not all showing empty or host)
+- [ ] Container ID attribution works via cgroup extraction (not all showing empty or host)
 - [ ] Process exepaths are correct (not showing container runtime binary like `/usr/bin/podman`)
-- [ ] Container label/namespace lookup works
 - [ ] Network signal handler receives correct container IDs
 - [ ] Runtime self-checks pass
 - [ ] BPF probe loads on older kernels (check CI results for RHEL 9, Ubuntu 22.04, COS)
@@ -422,7 +408,7 @@ Each stage should produce **two PRs**:
 | `m_exepath` | Enter event reconstruction OR param 27/30 | See "Exepath Resolution" gotcha |
 | `m_pid` | Exit event param 4 | |
 | `m_uid`/`m_gid` | Exit event param 26/29 | Was `m_user.uid()`/`m_group.gid()` before 0.20.0 |
-| container_id | Container plugin filter field | Was `m_container_id` before 0.21.0 |
+| container_id | Extracted from thread cgroups via `GetContainerID()` | Was `m_container_id` before 0.21.0; plugin not used |
 
 ### Enter Event Deprecation
 

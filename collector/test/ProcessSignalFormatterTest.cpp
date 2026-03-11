@@ -578,9 +578,8 @@ TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
 
 TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   // This test verifies lineage traversal stops at the container boundary.
-  // Originally tested vpid=0 + container_id fallback (ROX-3377), but
-  // container_id is now a dynamic field from the container plugin.
-  // Instead, test boundary detection via pid==vpid (namespace init process).
+  // Originally tested vpid=0 + container_id fallback (ROX-3377).
+  // Now tests boundary detection via pid==vpid (namespace init process).
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
   CollectorConfig config;

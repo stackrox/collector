@@ -136,9 +136,6 @@ class EventExtractor {
   //
   // ADD ANY NEW FIELDS BELOW THIS LINE
 
-  // Container related fields — provided by the container plugin via filter fields.
-  FIELD_CSTR(container_id, "container.id");
-
   // Process related fields
   TINFO_FIELD(comm);
   TINFO_FIELD(exe);
@@ -154,9 +151,6 @@ class EventExtractor {
   // File/network related
   FIELD_RAW_SAFE(client_port, "fd.cport", uint16_t);
   FIELD_RAW_SAFE(server_port, "fd.sport", uint16_t);
-
-  // k8s metadata
-  FIELD_CSTR(k8s_namespace, "k8s.ns.name");
 
 #undef TINFO_FIELD
 #undef FIELD_RAW

@@ -8,7 +8,6 @@
 
 #include "libsinsp/filter.h"
 #include "libsinsp/parsers.h"
-#include "libsinsp/plugin.h"
 #include "libsinsp/sinsp.h"
 
 #include <google/protobuf/util/time_util.h>
@@ -16,7 +15,6 @@
 #include "CollectionMethod.h"
 #include "CollectorException.h"
 #include "CollectorStats.h"
-#include "ContainerMetadata.h"
 #include "EventExtractor.h"
 #include "EventNames.h"
 #include "HostInfo.h"
@@ -57,39 +55,17 @@ Service::Service(const CollectorConfig& config)
     inspector_->get_parser()->set_track_connection_status(true);
   }
 
-  // Load the container plugin for container ID attribution and metadata.
-  // This MUST happen before EventExtractor::Init() (via ContainerMetadata)
-  // because the plugin provides the "container.id" and "k8s.ns.name" fields.
-  const char* plugin_path = "/usr/local/lib64/libcontainer.so";
-  try {
-    auto plugin = inspector_->register_plugin(plugin_path);
-    std::string err;
-    if (!plugin->init("", err)) {
-      CLOG(ERROR) << "Failed to init container plugin: " << err;
-    }
-    if (plugin->caps() & CAP_EXTRACTION) {
-      EventExtractor::FilterList().add_filter_check(sinsp_plugin::new_filtercheck(plugin));
-    }
-    CLOG(INFO) << "Loaded container plugin from " << plugin_path;
-  } catch (const sinsp_exception& e) {
-    CLOG(WARNING) << "Could not load container plugin from " << plugin_path
-                  << ": " << e.what();
-  }
-
-  // Initialize ContainerMetadata after the plugin is loaded, so that
-  // EventExtractor::Init() can find plugin-provided fields like container.id.
-  container_metadata_inspector_ = std::make_shared<ContainerMetadata>(inspector_.get());
   default_formatter_ = std::make_unique<sinsp_evt_formatter>(
       inspector_.get(), DEFAULT_OUTPUT_STR, EventExtractor::FilterList());
 
-  // Compile the container filter using our FilterList (which includes
-  // plugin filterchecks). sinsp::set_filter(string) uses a hardcoded
-  // filter check list that doesn't include plugin fields.
+  // Filter out host processes. In containers, pid != vpid due to PID
+  // namespacing. This is a built-in sinsp field that doesn't require
+  // any plugin.
   try {
     auto factory = std::make_shared<sinsp_filter_factory>(
         inspector_.get(), EventExtractor::FilterList());
-    sinsp_filter_compiler compiler(factory, "container.id != 'host'");
-    inspector_->set_filter(compiler.compile(), "container.id != 'host'");
+    sinsp_filter_compiler compiler(factory, "proc.pid != proc.vpid");
+    inspector_->set_filter(compiler.compile(), "proc.pid != proc.vpid");
   } catch (const sinsp_exception& e) {
     CLOG(WARNING) << "Could not set container filter: " << e.what()
                   << ". Container filtering will not be active.";
@@ -303,7 +279,7 @@ bool Service::SendExistingProcesses(SignalHandler* handler) {
   }
 
   return threads->loop([&](sinsp_threadinfo& tinfo) {
-    if (!GetContainerID(tinfo, *inspector_->m_thread_manager).empty() && tinfo.is_main_thread()) {
+    if (!GetContainerID(tinfo).empty() && tinfo.is_main_thread()) {
       auto result = handler->HandleExistingProcess(&tinfo);
       if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
         CLOG(WARNING) << "Failed to write existing process signal: " << &tinfo;

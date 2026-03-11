@@ -39,7 +39,6 @@ container/bin/collector: cmake-build/collector
 	mkdir -p container/bin
 	cp "$(COLLECTOR_BIN_DIR)/collector" container/bin/collector
 	cp "$(COLLECTOR_BIN_DIR)/self-checks" container/bin/self-checks
-	docker cp $(COLLECTOR_BUILDER_NAME):/usr/local/lib64/libcontainer.so container/bin/libcontainer.so
 
 .PHONY: collector
 collector: container/bin/collector txt-files

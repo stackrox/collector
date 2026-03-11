@@ -12,8 +12,7 @@ ContainerMetadata::ContainerMetadata(sinsp* inspector) : event_extractor_(std::m
 }
 
 std::string ContainerMetadata::GetNamespace(sinsp_evt* event) {
-  const char* ns = event_extractor_->get_k8s_namespace(event);
-  return ns != nullptr ? ns : "";
+  return "";
 }
 
 std::string ContainerMetadata::GetNamespace(const std::string& container_id) {
@@ -21,9 +20,7 @@ std::string ContainerMetadata::GetNamespace(const std::string& container_id) {
 }
 
 std::string ContainerMetadata::GetContainerLabel(const std::string& container_id, const std::string& label) {
-  // Container labels are no longer available through the sinsp API.
-  // The container plugin provides container metadata via filter fields
-  // (e.g., container.label) but not through a programmatic lookup API.
+  // Container labels are not available through the sinsp API.
   CLOG_THROTTLED(DEBUG, std::chrono::seconds(300))
       << "Container label lookup by container ID is not supported: "
       << "container_id=" << container_id << " label=" << label;

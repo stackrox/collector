@@ -6,6 +6,7 @@
 #include <libsinsp/sinsp.h>
 
 #include "EventMap.h"
+#include "Utility.h"
 #include "system-inspector/EventExtractor.h"
 
 namespace collector {
@@ -139,8 +140,8 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   const Endpoint* local = is_server ? &server : &client;
   const Endpoint* remote = is_server ? &client : &server;
 
-  const char* container_id = event_extractor_->get_container_id(evt);
-  if (!container_id) {
+  auto container_id = GetContainerID(evt);
+  if (container_id.empty()) {
     return std::nullopt;
   }
 
