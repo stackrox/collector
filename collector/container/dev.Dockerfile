@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi10/ubi:latest@sha256:f573194e8e5231f1c9340c497e1f8d9aa9dbb42b2849e60341e34f50eec9477e
+FROM quay.io/centos/centos:stream10
 
 ARG ROOT_DIR=.
 ARG COLLECTOR_VERSION
