@@ -16,7 +16,7 @@ RUN dnf install -y \
     --allowerasing \
     ca-certificates curl-minimal elfutils-libelf libcap-ng libstdc++ libuuid openssl tbb && \
     dnf clean all --installroot=/out/ && \
-    rm -rf /out/var/cache/*
+    rm -rf /out/var/cache/dnf /out/var/cache/yum
 
 # Copy additional files into /out/ to consolidate layers
 COPY container/THIRD_PARTY_NOTICES/ /out/THIRD_PARTY_NOTICES/

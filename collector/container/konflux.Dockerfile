@@ -99,7 +99,7 @@ RUN dnf install -y \
     --allowerasing \
     c-ares ca-certificates crypto-policies-scripts elfutils-libelf libcap-ng libcurl-minimal libstdc++ libuuid openssl tbb && \
     dnf clean all --installroot=/out/ && \
-    rm -rf /out/var/cache/*
+    rm -rf /out/var/cache/dnf /out/var/cache/yum
 
 # Copy LICENSE into /out/ to consolidate layers
 COPY LICENSE /out/licenses/LICENSE
