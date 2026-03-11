@@ -101,14 +101,6 @@ RUN dnf install -y \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
-# Copy LICENSE into /out/ to consolidate layers
-COPY LICENSE /out/licenses/LICENSE
-
-# Copy builder artifacts into /out/
-ARG CMAKE_BUILD_DIR
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /out/usr/local/bin/collector
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /out/usr/local/bin/self-checks
-
 
 FROM ubi-micro-base
 
@@ -144,6 +136,12 @@ ENV COLLECTOR_HOST_ROOT=/host
 
 # Copy everything from package_installer in one layer (packages + LICENSE + binaries)
 COPY --from=package_installer /out/ /
+
+COPY LICENSE /licenses/LICENSE
+
+ARG CMAKE_BUILD_DIR
+COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/collector
+COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/self-checks
 
 EXPOSE 8080 9090
 
