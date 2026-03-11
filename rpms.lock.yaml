@@ -4224,13 +4224,13 @@ arches:
     name: gmp
     evr: 1:6.2.0-13.el9
     sourcerpm: gmp-6.2.0-13.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/g/gnutls-3.8.3-9.el9.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/g/gnutls-3.8.3-10.el9_7.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 1120000
-    checksum: sha256:4a98ea70bc38d915fc988f8826277281e999e96a0f99e220737e24f7d4f50cc4
+    size: 1127324
+    checksum: sha256:d53da8e98f662b5f5303cd35748a5dd807d0bb0f36f7b1d3c1da9c21c74a0ca6
     name: gnutls
-    evr: 3.8.3-9.el9
-    sourcerpm: gnutls-3.8.3-9.el9.src.rpm
+    evr: 3.8.3-10.el9_7
+    sourcerpm: gnutls-3.8.3-10.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/g/grep-3.6-5.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 288035
@@ -5584,12 +5584,12 @@ arches:
     checksum: sha256:d0d8a795eea9ae555da63fbcfc3575425e86bb7e96d117b9ae2785b4f5e82f7c
     name: gmp
     evr: 1:6.2.0-13.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/g/gnutls-3.8.3-9.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/g/gnutls-3.8.3-10.el9_7.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
-    size: 8601327
-    checksum: sha256:982eca80780f840ad587ffdd5fde77dd6aa704c6025e4d83fde44658e2af9305
+    size: 8623920
+    checksum: sha256:c51aee44147769754dad64b4d8f0fd389b62e8829b69ec56f99dee5959a0f243
     name: gnutls
-    evr: 3.8.3-9.el9
+    evr: 3.8.3-10.el9_7
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/g/grep-3.6-5.el9.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
     size: 1620891
@@ -7281,13 +7281,13 @@ arches:
     name: gmp
     evr: 1:6.2.0-13.el9
     sourcerpm: gmp-6.2.0-13.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/g/gnutls-3.8.3-9.el9.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/g/gnutls-3.8.3-10.el9_7.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 988117
-    checksum: sha256:69f0f8f92d1d04eda3624a7fd955c06806309b0b92ca19222f8648712728d0cc
+    size: 996938
+    checksum: sha256:530f38616f6174600a5c5775095c8247432479aa58323c8a307ba8403f0c262f
     name: gnutls
-    evr: 3.8.3-9.el9
-    sourcerpm: gnutls-3.8.3-9.el9.src.rpm
+    evr: 3.8.3-10.el9_7
+    sourcerpm: gnutls-3.8.3-10.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/g/grep-3.6-5.el9.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 280207
@@ -8634,12 +8634,12 @@ arches:
     checksum: sha256:d0d8a795eea9ae555da63fbcfc3575425e86bb7e96d117b9ae2785b4f5e82f7c
     name: gmp
     evr: 1:6.2.0-13.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/g/gnutls-3.8.3-9.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/g/gnutls-3.8.3-10.el9_7.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
-    size: 8601327
-    checksum: sha256:982eca80780f840ad587ffdd5fde77dd6aa704c6025e4d83fde44658e2af9305
+    size: 8623920
+    checksum: sha256:c51aee44147769754dad64b4d8f0fd389b62e8829b69ec56f99dee5959a0f243
     name: gnutls
-    evr: 3.8.3-9.el9
+    evr: 3.8.3-10.el9_7
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/g/grep-3.6-5.el9.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
     size: 1620891
@@ -10318,13 +10318,13 @@ arches:
     name: gmp
     evr: 1:6.2.0-13.el9
     sourcerpm: gmp-6.2.0-13.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/g/gnutls-3.8.3-9.el9.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/g/gnutls-3.8.3-10.el9_7.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 1125893
-    checksum: sha256:9ba66985a8c124168580129778d1ce82811f11a4a47dfa4fdd764ade8350687b
+    size: 1134219
+    checksum: sha256:4aa66b3d1ad78f64d1be7ab8dad5f163f09ee3e4207489a488caa0f62300dbf5
     name: gnutls
-    evr: 3.8.3-9.el9
-    sourcerpm: gnutls-3.8.3-9.el9.src.rpm
+    evr: 3.8.3-10.el9_7
+    sourcerpm: gnutls-3.8.3-10.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/g/grep-3.6-5.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 279174
@@ -11671,12 +11671,12 @@ arches:
     checksum: sha256:d0d8a795eea9ae555da63fbcfc3575425e86bb7e96d117b9ae2785b4f5e82f7c
     name: gmp
     evr: 1:6.2.0-13.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/g/gnutls-3.8.3-9.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/g/gnutls-3.8.3-10.el9_7.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
-    size: 8601327
-    checksum: sha256:982eca80780f840ad587ffdd5fde77dd6aa704c6025e4d83fde44658e2af9305
+    size: 8623920
+    checksum: sha256:c51aee44147769754dad64b4d8f0fd389b62e8829b69ec56f99dee5959a0f243
     name: gnutls
-    evr: 3.8.3-9.el9
+    evr: 3.8.3-10.el9_7
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/g/grep-3.6-5.el9.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
     size: 1620891
