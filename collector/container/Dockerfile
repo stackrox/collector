@@ -40,14 +40,14 @@ WORKDIR /
 # Copy everything from package_installer in one layer (packages + all files)
 COPY --from=package_installer /out/ /
 
-COPY container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
-COPY kernel-modules /kernel-modules
-COPY container/bin/collector /usr/local/bin/collector
-COPY container/bin/self-checks /usr/local/bin/self-checks
-COPY container/status-check.sh /usr/local/bin/status-check.sh
-
 # Uncomment this line to enable generation of core for collector
 # RUN echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
+
+COPY container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
+COPY kernel-modules /kernel-modules
+COPY container/bin/collector /usr/local/bin/
+COPY container/bin/self-checks /usr/local/bin/self-checks
+COPY container/status-check.sh /usr/local/bin/status-check.sh
 
 EXPOSE 8080 9090
 

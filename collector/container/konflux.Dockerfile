@@ -134,14 +134,12 @@ ARG CMAKE_BUILD_DIR
 
 ENV COLLECTOR_HOST_ROOT=/host
 
-# Copy everything from package_installer in one layer (packages + LICENSE + binaries)
-COPY --from=package_installer /out/ /
+COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/collector
+COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/self-checks
 
 COPY LICENSE /licenses/LICENSE
 
-ARG CMAKE_BUILD_DIR
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/collector
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/self-checks
+COPY --from=package_installer /out/ /
 
 EXPOSE 8080 9090
 
