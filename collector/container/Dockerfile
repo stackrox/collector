@@ -37,7 +37,6 @@ LABEL name="collector" \
 
 WORKDIR /
 
-# Copy everything from package_installer in one layer (packages + all files)
 COPY --from=package_installer /out/ /
 
 # Uncomment this line to enable generation of core for collector
@@ -51,7 +50,7 @@ COPY container/status-check.sh /usr/local/bin/status-check.sh
 
 EXPOSE 8080 9090
 
-HEALTHCHECK \
+HEALTHCHECK	\
 	# health checks within the first 5s are not counted as failure
 	--start-period=5s \
 	# perform health check every 5s
