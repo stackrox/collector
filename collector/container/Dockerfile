@@ -1,8 +1,8 @@
 # Stage 1: ubi-micro base (needed for copying to /out to preserve rpmdb)
-FROM registry.access.redhat.com/ubi10/ubi-micro:latest@sha256:551f8ee81be3dbabd45a9c197f3724b9724c1edb05d68d10bfe85a5c9e46a458 AS ubi-micro-base
+FROM registry.access.redhat.com/ubi10/ubi-micro:latest AS ubi-micro-base
 
 # Stage 2: Package installer with runtime packages
-FROM registry.access.redhat.com/ubi10/ubi:latest@sha256:f573194e8e5231f1c9340c497e1f8d9aa9dbb42b2849e60341e34f50eec9477e AS package_installer
+FROM registry.access.redhat.com/ubi10/ubi:latest AS package_installer
 
 # Copy ubi-micro base to /out to preserve its rpmdb
 COPY --from=ubi-micro-base / /out/
