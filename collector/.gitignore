@@ -14,5 +14,8 @@ cmake-build-rhel/
 generated/
 collector/protoc-*
 
+# Generated dockerfiles
+container/Dockerfile.dev
+
 # clangd specific files
 .cache/
