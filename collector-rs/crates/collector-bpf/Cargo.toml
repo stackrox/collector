@@ -1,0 +1,12 @@
+[package]
+name = "collector-bpf"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libbpf-rs = { workspace = true }
+anyhow = { workspace = true }
+collector-types = { workspace = true }
+
+[build-dependencies]
+libbpf-cargo = { workspace = true }

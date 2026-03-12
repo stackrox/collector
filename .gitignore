@@ -37,3 +37,24 @@ ansible/ci/inventory_ibmcloud.yml
 # vcpkg
 vcpkg_installed/
 vcpkg-manifest-install.log
+
+# Daemon runtime files
+.beads/daemon.log
+.beads/daemon.pid
+.beads/daemon.lock
+.beads/daemon-error
+.beads/bd.sock
+.beads/.exclusive-lock
+
+# .beads directory files
+.beads/.gitignore
+.beads/db.sqlite
+.beads/bd.db
+.beads/dolt-*.*
+dolt/
+
+target/
+
+# Dolt database files (added by bd init)
+.dolt/
+*.db
