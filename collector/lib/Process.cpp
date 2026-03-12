@@ -28,6 +28,10 @@ const std::shared_ptr<IProcess> ProcessStore::Fetch(uint64_t pid) {
   return cached_process;
 }
 
+std::string Process::name() const {
+  return exe();
+}
+
 std::string Process::container_id() const {
   WaitForProcessInfo();
 

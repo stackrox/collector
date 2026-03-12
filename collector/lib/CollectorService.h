@@ -10,6 +10,7 @@
 #include "Control.h"
 #include "NetworkStatusInspector.h"
 #include "NetworkStatusNotifier.h"
+#include "events/Dispatcher.h"
 #include "system-inspector/Service.h"
 
 namespace collector {
@@ -30,6 +31,8 @@ class CollectorService {
 
  private:
   bool WaitForGRPCServer();
+
+  collector::events::EventDispatcher event_dispatcher_;
 
   CollectorConfig& config_;
   system_inspector::Service system_inspector_;

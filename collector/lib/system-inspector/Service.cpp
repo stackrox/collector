@@ -1,6 +1,7 @@
 #include "Service.h"
 
 #include <cap-ng.h>
+#include <cstddef>
 #include <memory>
 #include <thread>
 
@@ -19,28 +20,34 @@
 #include "ContainerMetadata.h"
 #include "EventExtractor.h"
 #include "EventNames.h"
+#include "FalcoProcess.h"
 #include "HostInfo.h"
 #include "KernelDriver.h"
 #include "Logging.h"
 #include "NetworkSignalHandler.h"
+#include "Process.h"
 #include "ProcessSignalHandler.h"
 #include "SelfCheckHandler.h"
 #include "SelfChecks.h"
 #include "TimeUtil.h"
 #include "Utility.h"
+#include "events/Dispatcher.h"
+#include "events/IEvent.h"
 #include "logger.h"
+#include "ppm_events_public.h"
 
 namespace collector::system_inspector {
 
 Service::~Service() = default;
 
-Service::Service(const CollectorConfig& config)
+Service::Service(const CollectorConfig& config, collector::events::EventDispatcher& dispatcher)
     : inspector_(std::make_unique<sinsp>(true)),
       container_metadata_inspector_(std::make_unique<ContainerMetadata>(inspector_.get())),
       default_formatter_(std::make_unique<sinsp_evt_formatter>(
           inspector_.get(),
           DEFAULT_OUTPUT_STR,
-          EventExtractor::FilterList())) {
+          EventExtractor::FilterList())),
+      dispatcher_(dispatcher) {
   // Setup the inspector.
   // peeking into arguments has a big overhead, so we prevent it from happening
   inspector_->set_snaplen(0);
@@ -241,6 +248,23 @@ void LogUnreasonableEventTime(int64_t time_micros, sinsp_evt* evt) {
   }
 }
 
+events::IEventPtr Service::to_ievt(sinsp_evt* evt) {
+  std::bitset<PPM_EVENT_MAX> event_filter;
+  const EventNames& event_names = EventNames::GetInstance();
+  for (ppm_event_code event_id : event_names.GetEventIDs("execve<")) {
+    event_filter.set(event_id);
+  }
+
+  if (event_filter[evt->get_type()]) {
+    EventExtractor extractor;
+    extractor.Init(inspector_.get());
+    auto proc = std::make_shared<FalcoProcess>(evt, extractor);
+    events::IEventPtr ievt = std::make_shared<const events::ProcessStartEvent>(proc);
+    return ievt;
+  }
+  return std::nullptr_t();
+}
+
 void Service::Run(const std::atomic<ControlValue>& control) {
   if (!inspector_) {
     throw CollectorException("Invalid state: system inspector was not initialized");
@@ -253,6 +277,9 @@ void Service::Run(const std::atomic<ControlValue>& control) {
     if (!evt) {
       continue;
     }
+
+    auto ievt = to_ievt(evt);
+    dispatcher_.Dispatch(*ievt);
 
     auto process_start = NowMicros();
     for (auto it = signal_handlers_.begin(); it != signal_handlers_.end(); it++) {
