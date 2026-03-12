@@ -140,6 +140,12 @@ COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
 COPY LICENSE /licenses/LICENSE
 
 COPY --from=package_installer /out/ /
+COPY --from=package_installer /out/ /
+
+COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
+COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
+
+COPY LICENSE /licenses/LICENSE
 
 EXPOSE 8080 9090
 
