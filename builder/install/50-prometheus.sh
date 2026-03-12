@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
-set -e
+set -eu
+
+source builder/install/cmake.sh
 
 cd third_party/prometheus-cpp
 
 cat LICENSE > "${LICENSE_DIR}/prometheus-${PROMETHEUS_CPP_REVISION}"
 
-mkdir cmake-build
-cd cmake-build
-cmake -DENABLE_TESTING=OFF -DUSE_THIRDPARTY_LIBRARIES=NO -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}" ../
-cmake --build . --target install ${NPROCS:+-j ${NPROCS}}
+cmake_wrap "prometheus" "${OUTPUT_DIR}" \
+    -DENABLE_TESTING=OFF \
+    -DUSE_THIRDPARTY_LIBRARIES=NO
