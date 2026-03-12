@@ -1,7 +1,5 @@
-# Stage 1: ubi-micro base (needed for copying to /out to preserve rpmdb)
 FROM registry.access.redhat.com/ubi10/ubi-micro:latest AS ubi-micro-base
 
-# Stage 2: Package installer with runtime packages
 FROM registry.access.redhat.com/ubi10/ubi:latest AS package_installer
 
 # Copy ubi-micro base to /out to preserve its rpmdb
@@ -17,14 +15,10 @@ RUN dnf install -y \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
-# Stage 3: Final runtime image
 FROM ubi-micro-base
 
-ARG BUILD_TYPE=rhel
-ARG ROOT_DIR=.
 ARG COLLECTOR_VERSION
 
-ENV ROOT_DIR=$ROOT_DIR
 ENV COLLECTOR_HOST_ROOT=/host
 
 LABEL name="collector" \

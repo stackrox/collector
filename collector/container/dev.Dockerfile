@@ -1,9 +1,7 @@
 FROM quay.io/centos/centos:stream10
 
-ARG ROOT_DIR=.
 ARG COLLECTOR_VERSION
 
-ENV ROOT_DIR=$ROOT_DIR
 ENV COLLECTOR_HOST_ROOT=/host
 
 LABEL name="collector" \
