@@ -13,7 +13,6 @@ RUN dnf install -y \
     --releasever=10 \
     --setopt=install_weak_deps=False \
     --nodocs \
-    --allowerasing \
     ca-certificates curl-minimal elfutils-libelf libcap-ng libstdc++ libuuid openssl tbb && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
