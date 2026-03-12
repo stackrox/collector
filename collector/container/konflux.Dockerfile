@@ -79,17 +79,15 @@ RUN ctest --no-tests=error -V --test-dir "${CMAKE_BUILD_DIR}"
 RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 
-# Stage: ubi-micro base (needed for copying to /out to preserve rpmdb)
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:093a704be0eaef9bb52d9bc0219c67ee9db13c2e797da400ddb5d5ae6849fa10 AS ubi-micro-base
 
-# Stage: Package installer with runtime packages
 FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:6ed9f6f637fe731d93ec60c065dbced79273f1e0b5f512951f2c0b0baedb16ad AS package_installer
 
-# Copy ubi-micro base to /out to preserve its rpmdb
 COPY --from=ubi-micro-base / /out/
 
 # Install packages directly to /out/ using --installroot
-# Note: --setopt=reposdir=/etc/yum.repos.d ensures dnf uses host repos (cachi2) not installroot repos (UBI)
+# Note: --setopt=reposdir=/etc/yum.repos.d instructs dnf to use repo configurations pointing to RPMs
+# prefetched by Cachi2 for hermetic builds, instead of installroot's default UBI repos
 RUN dnf install -y \
     --installroot=/out/ \
     --releasever=9 \
@@ -134,18 +132,7 @@ ARG CMAKE_BUILD_DIR
 
 ENV COLLECTOR_HOST_ROOT=/host
 
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
-
-COPY LICENSE /licenses/LICENSE
-
 COPY --from=package_installer /out/ /
-COPY --from=package_installer /out/ /
-
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
-
-COPY LICENSE /licenses/LICENSE
 
 EXPOSE 8080 9090
 
