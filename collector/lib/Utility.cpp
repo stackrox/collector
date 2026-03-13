@@ -67,9 +67,13 @@ std::string GetContainerID(sinsp_threadinfo& tinfo) {
 }
 
 std::string GetContainerID(sinsp_evt* event) {
-  if (!event) return {};
+  if (!event) {
+    return {};
+  }
   sinsp_threadinfo* tinfo = event->get_thread_info();
-  if (!tinfo) return {};
+  if (!tinfo) {
+    return {};
+  }
   return GetContainerID(*tinfo);
 }
 
