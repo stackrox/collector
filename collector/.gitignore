@@ -14,7 +14,7 @@ cmake-build-rhel/
 generated/
 collector/protoc-*
 
-# Generated dockerfiles
+# Leftover generated dockerfiles from former process, can be removed after a while
 container/Dockerfile.dev
 
 # clangd specific files
