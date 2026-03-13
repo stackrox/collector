@@ -1,4 +1,4 @@
-# Analyse CI Results
+# Analyze CI Results
 
 You are helping investigate CI failures for the StackRox collector project. This skill describes how to navigate the CI infrastructure, download logs, and diagnose common failure modes.
 
@@ -273,3 +273,13 @@ set(MODERN_BPF_EXCLUDE_PROGS "^(openat2|ppoll|...)$" CACHE STRING "..." FORCE)
 The regex matches against BPF source file stems (e.g., `pread64` matches `pread64.bpf.c`). Excluded programs are not compiled into the skeleton. The loader in `maps.c:add_bpf_program_to_tail_table()` handles missing programs gracefully (logs debug message, returns success).
 
 Only exclude programs for syscalls that collector does not subscribe to. Collector's syscall list is in `collector/lib/CollectorConfig.h` (`kSyscalls[]` and `kSendRecvSyscalls[]`).
+
+## Cleanup
+
+Once the analysis is complete and you have reported your findings, delete all downloaded log artifacts (zip files and extracted directories) from `/tmp/`:
+
+```bash
+rm -rf /tmp/*-logs /tmp/*-logs.zip
+```
+
+This prevents stale logs from accumulating across investigations.
