@@ -94,7 +94,6 @@ RUN dnf install -y \
     --setopt=install_weak_deps=False \
     --setopt=reposdir=/etc/yum.repos.d \
     --nodocs \
-    --allowerasing \
     c-ares ca-certificates crypto-policies-scripts elfutils-libelf libcap-ng libcurl-minimal libstdc++ libuuid openssl tbb && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
@@ -133,6 +132,11 @@ ARG CMAKE_BUILD_DIR
 ENV COLLECTOR_HOST_ROOT=/host
 
 COPY --from=package_installer /out/ /
+
+COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
+COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
+
+COPY LICENSE /licenses/LICENSE
 
 EXPOSE 8080 9090
 
