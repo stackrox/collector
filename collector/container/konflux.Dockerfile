@@ -94,7 +94,7 @@ RUN dnf install -y \
     --setopt=install_weak_deps=False \
     --setopt=reposdir=/etc/yum.repos.d \
     --nodocs \
-    c-ares ca-certificates crypto-policies-scripts elfutils-libelf libcap-ng libcurl-minimal libstdc++ libuuid openssl tbb && \
+    c-ares ca-certificates crypto-policies-scripts elfutils-libelf gzip less libcap-ng libcurl-minimal libstdc++ libuuid openssl tar tbb && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
