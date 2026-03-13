@@ -87,7 +87,6 @@ set(USE_BUNDLED_DEPS OFF CACHE BOOL "Enable bundled dependencies instead of usin
 set(USE_BUNDLED_CARES OFF CACHE BOOL "Enable bundled dependencies instead of using the system ones" FORCE)
 set(BUILD_LIBSCAP_GVISOR OFF CACHE BOOL "Do not build gVisor support" FORCE)
 set(MINIMAL_BUILD OFF CACHE BOOL "Minimal" FORCE)
-set(SINSP_SLIM_THREADINFO ON CACHE BOOL "Slim threadinfo" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build position independent libraries and executables" FORCE)
 set(LIBELF_LIB_SUFFIX ".so" CACHE STRING "Use libelf.so" FORCE)
 
@@ -101,6 +100,6 @@ set(SCAP_HOST_ROOT_ENV_VAR_NAME "COLLECTOR_HOST_ROOT" CACHE STRING "Host root en
 set(BUILD_LIBSCAP_MODERN_BPF ON CACHE BOOL "Enable modern bpf engine" FORCE)
 set(MODERN_BPF_DEBUG_MODE ${BPF_DEBUG_MODE} CACHE BOOL "Enable BPF debug prints" FORCE)
 
-set(MODERN_BPF_EXCLUDE_PROGS "^(openat2|ppoll|setsockopt|io_uring_setup|nanosleep)$" CACHE STRING "Set of syscalls to exclude from modern bpf engine " FORCE)
+set(MODERN_BPF_EXCLUDE_PROGS "^(openat2|ppoll|setsockopt|io_uring_setup|nanosleep|pread64|preadv|pwritev|read|readv|writev|recv|process_vm_readv|process_vm_writev)$" CACHE STRING "Set of syscalls to exclude from modern bpf engine " FORCE)
 
 add_subdirectory(${FALCO_DIR} falco)
