@@ -87,7 +87,7 @@ COPY --from=ubi-micro-base / /out/
 
 # Install packages directly to /out/ using --installroot
 # Note: --setopt=reposdir=/etc/yum.repos.d instructs dnf to use repo configurations pointing to RPMs
-# prefetched by Cachi2 for hermetic builds, instead of installroot's default UBI repos
+# prefetched by Hermeto/Cachi2, instead of installroot's default UBI repos.
 RUN dnf install -y \
     --installroot=/out/ \
     --releasever=9 \
