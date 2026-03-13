@@ -79,18 +79,27 @@ RUN ctest --no-tests=error -V --test-dir "${CMAKE_BUILD_DIR}"
 RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:c7d44146f826037f6873d99da479299b889473492d3c1ab8af86f08af04ec8a0
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:093a704be0eaef9bb52d9bc0219c67ee9db13c2e797da400ddb5d5ae6849fa10 AS ubi-micro-base
 
-RUN microdnf -y install --nobest \
-      tbb \
-      c-ares \
-      crypto-policies-scripts \
-      elfutils-libelf && \
-    # Enable post-quantum cryptography key exchange for TLS.
-    update-crypto-policies --set DEFAULT:PQ && \
-    microdnf -y clean all && \
-    rpm --verbose -e --nodeps $(rpm -qa 'curl' '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*' 'libyaml*' 'libarchive*') && \
-    rm -rf /var/cache/dnf /var/cache/yum
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:cecb1cde7bda7c8165ae27841c2335667f8a3665a349c0d051329c61660a496c AS package_installer
+
+COPY --from=ubi-micro-base / /out/
+
+# Install packages directly to /out/ using --installroot
+# Note: --setopt=reposdir=/etc/yum.repos.d instructs dnf to use repo configurations pointing to RPMs
+# prefetched by Hermeto/Cachi2, instead of installroot's default UBI repos.
+RUN dnf install -y \
+    --installroot=/out/ \
+    --releasever=9 \
+    --setopt=install_weak_deps=False \
+    --setopt=reposdir=/etc/yum.repos.d \
+    --nodocs \
+    c-ares ca-certificates crypto-policies-scripts elfutils-libelf libcap-ng libcurl-minimal libstdc++ libuuid openssl tbb && \
+    dnf clean all --installroot=/out/ && \
+    rm -rf /out/var/cache/dnf /out/var/cache/yum
+
+
+FROM ubi-micro-base
 
 ARG COLLECTOR_TAG
 
@@ -121,6 +130,8 @@ ARG BUILD_DIR
 ARG CMAKE_BUILD_DIR
 
 ENV COLLECTOR_HOST_ROOT=/host
+
+COPY --from=package_installer /out/ /
 
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/

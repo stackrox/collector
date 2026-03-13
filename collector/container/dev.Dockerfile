@@ -1,21 +1,4 @@
-FROM registry.access.redhat.com/ubi10/ubi-micro:latest AS ubi-micro-base
-
-FROM registry.access.redhat.com/ubi10/ubi:latest AS package_installer
-
-# Copy ubi-micro base to /out to preserve its rpmdb
-COPY --from=ubi-micro-base / /out/
-
-# Install packages directly to /out/ using --installroot
-RUN dnf install -y \
-    --installroot=/out/ \
-    --releasever=10 \
-    --setopt=install_weak_deps=False \
-    --nodocs \
-    ca-certificates curl-minimal elfutils-libelf libcap-ng libstdc++ libuuid openssl tbb && \
-    dnf clean all --installroot=/out/ && \
-    rm -rf /out/var/cache/dnf /out/var/cache/yum
-
-FROM ubi-micro-base
+FROM quay.io/centos/centos:stream10
 
 ARG COLLECTOR_VERSION
 
@@ -30,7 +13,8 @@ LABEL name="collector" \
 
 WORKDIR /
 
-COPY --from=package_installer /out/ /
+RUN dnf upgrade -y && \
+    dnf install -y libasan libubsan libtsan elfutils-libelf
 
 # Uncomment this line to enable generation of core for collector
 # RUN echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
@@ -43,7 +27,7 @@ COPY container/status-check.sh /usr/local/bin/status-check.sh
 
 EXPOSE 8080 9090
 
-HEALTHCHECK	\
+HEALTHCHECK \
 	# health checks within the first 5s are not counted as failure
 	--start-period=5s \
 	# perform health check every 5s
