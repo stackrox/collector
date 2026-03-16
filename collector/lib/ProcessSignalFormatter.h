@@ -10,7 +10,6 @@
 
 #include "CollectorConfig.h"
 #include "CollectorStats.h"
-#include "ContainerMetadata.h"
 #include "EventNames.h"
 #include "ProtoSignalFormatter.h"
 
@@ -55,8 +54,8 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
   void CountLineage(const std::vector<LineageInfo>& lineage);
 
   const EventNames& event_names_;
+  sinsp* inspector_;
   std::unique_ptr<system_inspector::EventExtractor> event_extractor_;
-  ContainerMetadata container_metadata_;
 
   const CollectorConfig& config_;
 };
