@@ -24,10 +24,16 @@ packages:
 - patch
 - systemtap-sdt-devel
 # final stage in collector/container/konflux.Dockerfile
+- libcurl-minimal
 - tbb
 - c-ares
 - crypto-policies-scripts
 - elfutils-libelf
+- ca-certificates
+- openssl
+- libuuid
+- libstdc++
+- libcap-ng
 contentOrigin:
   repofiles: [ "rpms.rhel.repo" ]
 context:
