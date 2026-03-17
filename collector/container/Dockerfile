@@ -42,7 +42,6 @@ COPY --from=package_installer /out/ /
 # RUN echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
 
 
-
 EXPOSE 8080 9090
 
 HEALTHCHECK	\
