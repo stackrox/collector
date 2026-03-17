@@ -823,27 +823,27 @@ arches:
     name: groff-base
     evr: 1.22.3-18.el8
     sourcerpm: groff-1.22.3-18.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/g/grub2-common-2.02-169.el8_10.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/g/grub2-common-2.02-170.el8_10.1.noarch.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 918448
-    checksum: sha256:4439fe4a6403508b74d5d8913543a74195411f69acbc81213ca32e5645939004
+    size: 918752
+    checksum: sha256:05b456f481d2d33aa14d692e6e6a30905122615be8b6fd39fd10f94bcaa264d1
     name: grub2-common
-    evr: 1:2.02-169.el8_10
-    sourcerpm: grub2-2.02-169.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/g/grub2-tools-2.02-169.el8_10.aarch64.rpm
+    evr: 1:2.02-170.el8_10.1
+    sourcerpm: grub2-2.02-170.el8_10.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/g/grub2-tools-2.02-170.el8_10.1.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 1897992
-    checksum: sha256:f188b34d5aaf1867da1d5c4af4eb66c32d8a80b731e58958c749528c1447faf7
+    size: 1898748
+    checksum: sha256:feb84a090743edf7b0f05c514158c960e154d6dbc077ef7042c60bb8198e9a69
     name: grub2-tools
-    evr: 1:2.02-169.el8_10
-    sourcerpm: grub2-2.02-169.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/g/grub2-tools-minimal-2.02-169.el8_10.aarch64.rpm
+    evr: 1:2.02-170.el8_10.1
+    sourcerpm: grub2-2.02-170.el8_10.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/g/grub2-tools-minimal-2.02-170.el8_10.1.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 210524
-    checksum: sha256:ad5f0700bf2194a3c04cd0ea69e39c5bf33c776949f023e7c6e88aa9764227f5
+    size: 211000
+    checksum: sha256:f5beb0f90d42661cb04aadbfac493009c00c214ea7f256f1d6aa368aa229fe37
     name: grub2-tools-minimal
-    evr: 1:2.02-169.el8_10
-    sourcerpm: grub2-2.02-169.el8_10.src.rpm
+    evr: 1:2.02-170.el8_10.1
+    sourcerpm: grub2-2.02-170.el8_10.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/g/grubby-8.40-49.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
     size: 51500
@@ -2653,12 +2653,12 @@ arches:
     checksum: sha256:3d70ed8c7784143119218a32b413fa210c04f380018c6c801a33f7e33885ed19
     name: groff
     evr: 1.22.3-18.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/g/grub2-2.02-169.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/g/grub2-2.02-170.el8_10.1.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
-    size: 8327955
-    checksum: sha256:1f583a9551862935908b05cfe9c75f5d0fd7b3eb46896a938341fbdc700d51c2
+    size: 8335932
+    checksum: sha256:7b5f90d79ff6c2bebbcad1a44b9234c147d825e7e55bb5d5318cb0c4c983872b
     name: grub2
-    evr: 1:2.02-169.el8_10
+    evr: 1:2.02-170.el8_10.1
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/g/grubby-8.40-49.el8.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
     size: 233771
@@ -4253,27 +4253,27 @@ arches:
     name: groff-base
     evr: 1.22.3-18.el8
     sourcerpm: groff-1.22.3-18.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/g/grub2-common-2.02-169.el8_10.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/g/grub2-common-2.02-170.el8_10.1.noarch.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
-    size: 918448
-    checksum: sha256:4439fe4a6403508b74d5d8913543a74195411f69acbc81213ca32e5645939004
+    size: 918752
+    checksum: sha256:05b456f481d2d33aa14d692e6e6a30905122615be8b6fd39fd10f94bcaa264d1
     name: grub2-common
-    evr: 1:2.02-169.el8_10
-    sourcerpm: grub2-2.02-169.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/g/grub2-tools-2.02-169.el8_10.ppc64le.rpm
+    evr: 1:2.02-170.el8_10.1
+    sourcerpm: grub2-2.02-170.el8_10.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/g/grub2-tools-2.02-170.el8_10.1.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
-    size: 1979556
-    checksum: sha256:4a27cd5fd83b7d7c6d82bb73740651ad53c726e32931aa95048819e613a19cf6
+    size: 1980576
+    checksum: sha256:989a991221b9d3622a1f792b4def49342eb79328c18d8eebde9c97beba8c999b
     name: grub2-tools
-    evr: 1:2.02-169.el8_10
-    sourcerpm: grub2-2.02-169.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/g/grub2-tools-minimal-2.02-169.el8_10.ppc64le.rpm
+    evr: 1:2.02-170.el8_10.1
+    sourcerpm: grub2-2.02-170.el8_10.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/g/grub2-tools-minimal-2.02-170.el8_10.1.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
-    size: 218912
-    checksum: sha256:bcc7b436c2711954b2ea5df032402b658a6cf1628d1d8b9f9d37496aa8a5453e
+    size: 219572
+    checksum: sha256:d1721765f7351830bc19719a9355ddc4d7e90393d440dde3c95482db270e7dde
     name: grub2-tools-minimal
-    evr: 1:2.02-169.el8_10
-    sourcerpm: grub2-2.02-169.el8_10.src.rpm
+    evr: 1:2.02-170.el8_10.1
+    sourcerpm: grub2-2.02-170.el8_10.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/g/grubby-8.40-49.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
     size: 52660
@@ -6090,12 +6090,12 @@ arches:
     checksum: sha256:3d70ed8c7784143119218a32b413fa210c04f380018c6c801a33f7e33885ed19
     name: groff
     evr: 1.22.3-18.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/g/grub2-2.02-169.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/g/grub2-2.02-170.el8_10.1.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
-    size: 8327955
-    checksum: sha256:1f583a9551862935908b05cfe9c75f5d0fd7b3eb46896a938341fbdc700d51c2
+    size: 8335932
+    checksum: sha256:7b5f90d79ff6c2bebbcad1a44b9234c147d825e7e55bb5d5318cb0c4c983872b
     name: grub2
-    evr: 1:2.02-169.el8_10
+    evr: 1:2.02-170.el8_10.1
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/g/grubby-8.40-49.el8.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
     size: 233771
@@ -10980,27 +10980,27 @@ arches:
     name: groff-base
     evr: 1.22.3-18.el8
     sourcerpm: groff-1.22.3-18.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/g/grub2-common-2.02-169.el8_10.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/g/grub2-common-2.02-170.el8_10.1.noarch.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
-    size: 918448
-    checksum: sha256:4439fe4a6403508b74d5d8913543a74195411f69acbc81213ca32e5645939004
+    size: 918752
+    checksum: sha256:05b456f481d2d33aa14d692e6e6a30905122615be8b6fd39fd10f94bcaa264d1
     name: grub2-common
-    evr: 1:2.02-169.el8_10
-    sourcerpm: grub2-2.02-169.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/g/grub2-tools-2.02-169.el8_10.x86_64.rpm
+    evr: 1:2.02-170.el8_10.1
+    sourcerpm: grub2-2.02-170.el8_10.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/g/grub2-tools-2.02-170.el8_10.1.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
-    size: 2090060
-    checksum: sha256:f5d4afedb52f80b63712b765e3207334ffeafdd95115b09222f283aa1e428711
+    size: 2090852
+    checksum: sha256:020217ae5909d6433bbb2ecb6a6b1e7d1f27c75c65adf7ea07c0f47591e859cc
     name: grub2-tools
-    evr: 1:2.02-169.el8_10
-    sourcerpm: grub2-2.02-169.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/g/grub2-tools-minimal-2.02-169.el8_10.x86_64.rpm
+    evr: 1:2.02-170.el8_10.1
+    sourcerpm: grub2-2.02-170.el8_10.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/g/grub2-tools-minimal-2.02-170.el8_10.1.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
-    size: 220844
-    checksum: sha256:c659e85e2f20340e9251dcbaf2cbf9f3c2eb12cfc5667d7f17f106e4a66592c0
+    size: 221364
+    checksum: sha256:f218f9b9eebdb5c67012e0a36de1a2f81aa63ce44fe57337847a3cb93b725e62
     name: grub2-tools-minimal
-    evr: 1:2.02-169.el8_10
-    sourcerpm: grub2-2.02-169.el8_10.src.rpm
+    evr: 1:2.02-170.el8_10.1
+    sourcerpm: grub2-2.02-170.el8_10.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/g/grubby-8.40-49.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
     size: 51660
@@ -12796,12 +12796,12 @@ arches:
     checksum: sha256:3d70ed8c7784143119218a32b413fa210c04f380018c6c801a33f7e33885ed19
     name: groff
     evr: 1.22.3-18.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/g/grub2-2.02-169.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/g/grub2-2.02-170.el8_10.1.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
-    size: 8327955
-    checksum: sha256:1f583a9551862935908b05cfe9c75f5d0fd7b3eb46896a938341fbdc700d51c2
+    size: 8335932
+    checksum: sha256:7b5f90d79ff6c2bebbcad1a44b9234c147d825e7e55bb5d5318cb0c4c983872b
     name: grub2
-    evr: 1:2.02-169.el8_10
+    evr: 1:2.02-170.el8_10.1
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/g/grubby-8.40-49.el8.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
     size: 233771
