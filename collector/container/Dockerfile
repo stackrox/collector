@@ -15,7 +15,13 @@ RUN dnf install -y \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
-FROM ubi-micro-base
+COPY container/THIRD_PARTY_NOTICES/ /out/THIRD_PARTY_NOTICES/
+COPY kernel-modules /out/kernel-modules
+COPY container/bin/collector /out/usr/local/bin/
+COPY container/bin/self-checks /out/usr/local/bin/self-checks
+COPY container/status-check.sh /out/usr/local/bin/status-check.sh
+
+FROM scratch
 
 ARG COLLECTOR_VERSION
 
@@ -35,11 +41,7 @@ COPY --from=package_installer /out/ /
 # Uncomment this line to enable generation of core for collector
 # RUN echo '/core/core.%e.%p.%t' > /proc/sys/kernel/core_pattern
 
-COPY container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
-COPY kernel-modules /kernel-modules
-COPY container/bin/collector /usr/local/bin/
-COPY container/bin/self-checks /usr/local/bin/self-checks
-COPY container/status-check.sh /usr/local/bin/status-check.sh
+
 
 EXPOSE 8080 9090
 
