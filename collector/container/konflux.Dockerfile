@@ -99,7 +99,7 @@ RUN dnf install -y \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
 
-FROM ubi-micro-base
+FROM scratch
 
 ARG COLLECTOR_TAG
 
