@@ -21,8 +21,8 @@ Run the following in the `falcosecurity-libs/` submodule:
 3. `git fetch falco --tags` — get latest upstream tags
 4. `git tag -l '0.*' | sort -V | tail -10` — find latest upstream releases
 5. `git branch -a | grep stackrox` — find existing StackRox branches
-6. Count upstream commits: `git log --oneline <current_tag>..<target_tag> | wc -l`
-7. Find StackRox-only patches: `git log --oneline HEAD --not --remotes=falco`
+6. `git log --oneline <current_tag>..<target_tag> | wc -l` — count upstream commits
+7. `git log --oneline HEAD --not --remotes=falco` — find StackRox-only patches
 
 Report: current version, target version, number of StackRox patches, number of upstream commits.
 
@@ -31,7 +31,6 @@ Report: current version, target version, number of StackRox patches, number of u
 For each StackRox patch, determine if it has been upstreamed:
 
 ```sh
-# For each patch commit, search upstream for equivalent
 git log --oneline <current_tag>..<target_tag> --grep="<keyword_from_patch>"
 ```
 
@@ -40,110 +39,100 @@ Categorize each patch as:
 - **Still needed** — must be carried forward
 - **Conflict risk** — touches files heavily modified upstream
 
-### Current StackRox Patches (as of 0.23.1-stackrox-rc1)
+### Current StackRox Patches (as of 0.23.1-stackrox)
 
-20 patches in these categories:
+These are squashed into a single commit on the stackrox branch. Categories:
 
 **BPF verifier fixes** (keep — not upstreamed):
-- `2291f61ec` — clang > 19 verifier fixes (MAX_IOVCNT, volatile len_to_read, pragma unroll)
-- `8672099d6` — RHEL SAP verifier fix (const struct cred *)
-- `df93a9e42` — COS verifier fix (RCU pointer chain reads)
-- `d1a708bde` — explicit return in auxmap submit
+- clang > 19 verifier fixes (MAX_IOVCNT, volatile len_to_read, pragma unroll)
+- RHEL SAP verifier fix (const struct cred *)
+- COS verifier fix (RCU pointer chain reads)
+- explicit return in auxmap submit
+- `sys_exit` null-check optimization (single `maps__get_capture_settings()` lookup)
+- `volatile` on `push__bytebuf` `len_to_read` parameter (32-bit register bounds on kernel 4.18)
+- `#if 0` stubs for `t1_execveat_x` / `t2_execveat_x` (collector doesn't subscribe to execveat; frees instruction budget for volatile fix)
+
+**TOCTOU mitigation program disable** (keep):
+- Disable autoloading of 64-bit TOCTOU programs whose syscalls don't exist on the running kernel (e.g., `openat2_e` on kernels < 5.6). Uses tracepoint existence check (`/sys/kernel/tracing/events/syscalls/sys_enter_<syscall>`) with debugfs fallback. In `lifecycle.c`.
+
+**Exepath resolution** (keep):
+- Fallback in `parse_execve_exit` using Parameter 31 (`bprm->filename`) from exit event when enter events are unavailable
+- Filter fd-based execs (`/dev/fd/N`, `/proc/self/fd/N`) in the fallback — container runtimes use fexecve as an intermediate exec step
 
 **ppc64le platform support** (keep):
-- `255126d47` — ppc64le vmlinux.h (large, BTF-generated)
-- `a9cafe949` — ppc64le syscall compat header
-- `452679e2b` — IOC_PAGE_SHIFT fix
-- `dd5e86d40` / `bb733f64a` — thread_info guards (iterative, consider squashing)
+- ppc64le vmlinux.h (large, BTF-generated)
+- ppc64le syscall compat header
+- IOC_PAGE_SHIFT fix
+- thread_info guards
 
 **Performance optimizations** (keep):
-- `a982809e0` — cgroup subsys filtering (`INTERESTING_SUBSYS` compile flag)
-- `8dd26e3dc` — socket-only FD scan (`SCAP_SOCKET_ONLY_FD` compile flag)
+- cgroup subsys filtering (`INTERESTING_SUBSYS` compile flag)
+- socket-only FD scan (`SCAP_SOCKET_ONLY_FD` compile flag)
 
 **API/build adaptations** (keep):
-- `32f36f770` — expose `extract_single` in filterchecks (public API)
-- `b0ec4099f` — libelf suffix guard + initial filtercheck extract
-- `34d863440` — sinsp include directory fix
-- `a915789ec` / `16edb6bb1` — CMake/include fixes for logging integration
-- `5338014a7` — disable log timestamps API
+- libelf suffix guard + initial filtercheck extract
+- sinsp include directory fix
+- CMake/include fixes for logging integration
+- disable log timestamps API
 
 **Workarounds** (keep but monitor):
-- `8ba291e78` — disable trusted exepath (see "Exepath" section below)
-- `88d5093f4` — ASSERT_TO_LOG via falcosecurity_log_fn callback
-
-**BPF verifier null-check optimization** (keep — not upstreamed):
-- BPF verifier fix for `sys_exit` program: refactored `sampling_logic_exit()` and `sys_exit()` in `syscall_exit.bpf.c` to use a single `maps__get_capture_settings()` lookup instead of multiple inlined calls that clang optimizes into null-unsafe code. Without this, the BPF probe fails to load on kernels < 6.17 (RHEL 9, Ubuntu 22.04, COS, etc.)
-
-**Network signal handler fix** (keep — collector-side):
-- Skip `is_socket_failed()`/`is_socket_pending()` checks for send/recv events in `NetworkSignalHandler.cpp`. The sinsp parser marks sockets as "failed" on EAGAIN but never clears the flag on subsequent success for recv operations.
+- disable trusted exepath (see "Exepath" section below)
+- ASSERT_TO_LOG via falcosecurity_log_fn callback
 
 **Rebase fixups** (always regenerated):
-- `d0fb1702c` — fixes following rebase (CMake cycle, exepath fallback, assert macro)
+- CMake cycle fix, exepath fallback, assert macro fixes
 
 ### Upstream Candidates
 
 These patches are generic enough to propose upstream:
-- **Strong**: clang verifier fixes (2291f61ec, 8672099d6, df93a9e42), disable log timestamps (5338014a7)
-- **With discussion**: cgroup filtering (a982809e0), socket-only FD scan (8dd26e3dc), log asserts (88d5093f4) — upstream may prefer runtime flags over compile-time
+- **Strong**: clang verifier fixes, disable log timestamps, TOCTOU disable logic
+- **With discussion**: cgroup filtering, socket-only FD scan — upstream may prefer runtime flags over compile-time
 - **ppc64le bundle**: propose together if upstream is interested in the architecture
 
 ## Step 3: Identify Breaking API Changes
 
-Check what APIs changed between versions. Key areas to inspect:
+Check what APIs changed between versions:
 
 ```sh
-# Thread cgroup / container-related changes (collector uses cgroup extraction, not the container plugin)
-git log --oneline <current>..<target> -- userspace/libsinsp/threadinfo.h
-git log --oneline <current>..<target> --grep="cgroup\|container"
-
-# Thread manager changes
+# Thread/container changes
 git log --oneline <current>..<target> -- userspace/libsinsp/threadinfo.h userspace/libsinsp/thread_manager.h
 
-# sinsp API changes
+# sinsp API
 git diff <current>..<target> -- userspace/libsinsp/sinsp.h | grep -E '^\+|^\-' | head -80
 
-# Event format changes (parameter additions/removals)
+# Event format changes
 git diff <current>..<target> -- driver/event_table.c
 
-# Enter event deprecation (EF_OLD_VERSION flags)
-git log --oneline <current>..<target> --grep="OLD_VERSION\|enter event\|enter_event"
-
 # Breaking changes
-git log --oneline <current>..<target> --grep="BREAKING\|breaking\|!:"
+git log --oneline <current>..<target> --grep="BREAKING\|!:"
 ```
 
-Then grep the collector code for uses of changed/removed APIs:
-
+Then grep collector for uses of changed APIs:
 ```sh
 grep -rn '<removed_api_name>' collector/lib/ collector/test/ --include='*.cpp' --include='*.h'
 ```
 
-Key collector integration points to check:
-- `collector/lib/system-inspector/Service.cpp` — sinsp initialization, filter setup (`proc.pid != proc.vpid`)
-- `collector/lib/system-inspector/EventExtractor.h` — threadinfo field access macros (TINFO_FIELD, FIELD_RAW, FIELD_RAW_SAFE)
-- `collector/lib/ProcessSignalFormatter.cpp` — process signal creation, exepath access, container_id, lineage traversal
-- `collector/lib/NetworkSignalHandler.cpp` — container_id access via `GetContainerID(evt)`
-- `collector/lib/Process.cpp` — process info access, container_id via cgroup extraction
-- `collector/lib/Utility.cpp` — `GetContainerID()`, `ExtractContainerIDFromCgroup()`, threadinfo printing
-- `collector/test/ProcessSignalFormatterTest.cpp` — thread creation, thread_manager usage
-- `collector/test/SystemInspectorServiceTest.cpp` — service initialization
-- `collector/CMakeLists.txt` — falco build flags
+Key collector integration points:
+- `collector/lib/system-inspector/Service.cpp` — sinsp init, filter setup (`proc.pid != proc.vpid`)
+- `collector/lib/system-inspector/EventExtractor.h` — threadinfo field access macros
+- `collector/lib/ProcessSignalFormatter.cpp` — process signals, exepath, container_id, lineage
+- `collector/lib/NetworkSignalHandler.cpp` — container_id via `GetContainerID(evt)`
+- `collector/lib/Process.cpp` — container_id via cgroup extraction
+- `collector/lib/Utility.cpp` — `GetContainerID()`, `ExtractContainerIDFromCgroup()`
+- `collector/test/ProcessSignalFormatterTest.cpp` — thread creation, thread_manager
+- `collector/CMakeLists.txt` — falco build flags, `MODERN_BPF_EXCLUDE_PROGS`
 
 ## Step 4: Plan Staging Strategy
 
-If the gap is large (>200 commits), identify intermediate stopping points:
+If the gap is large (>200 commits), identify intermediate stopping points at version boundaries where major API changes happen.
 
-1. Look for version boundaries where major API changes happen
-2. Prefer stopping at versions where container/thread APIs change
-3. Each stage should be independently buildable and testable
+Known historical API breakpoints:
+- **0.20.0**: `set_import_users` lost second arg, `m_user.uid()`/`m_group.gid()` → `m_uid`/`m_gid`
+- **0.21.0**: Container engine removed. `m_container_id` removed from threadinfo. Enter events deprecated (`EF_OLD_VERSION`).
+- **0.22.0**: `get_thread_ref` removed (use `find_thread`). `extract_single` API changed in filterchecks.
+- **0.23.0+**: Parent traversal moved to thread_manager. `get_thread_info(bool)` → `get_thread_info()`. `m_user`/`m_group` structs removed.
 
-Known historical API breakpoints (update as upstream evolves):
-- **0.20.0**: `set_import_users` lost second arg, user/group structs on threadinfo replaced with `m_uid`/`m_gid`
-- **0.21.0**: Container engine subsystem removed entirely. `m_container_id` removed from threadinfo (collector uses cgroup extraction instead of upstream's container plugin). `m_thread_manager` changed to `shared_ptr`. `build_threadinfo()`/`add_thread()` removed from sinsp. Enter events for many syscalls deprecated (`EF_OLD_VERSION`).
-- **0.22.0**: `get_thread_ref` removed from sinsp (use `find_thread`). `get_container_id()` removed from threadinfo. `extract_single` API changed in filterchecks.
-- **0.23.0+**: Parent thread traversal moved to thread_manager. `get_thread_info(bool)` signature changed to `get_thread_info()` (no bool). `m_user`/`m_group` structs removed (use `m_uid`/`m_gid` directly).
-
-## Step 5: Execute Rebase (per stage)
+## Step 5: Execute Rebase
 
 ```sh
 cd falcosecurity-libs
@@ -152,8 +141,7 @@ git switch upstream-main && git merge --ff-only falco/master && git push origin 
 git switch <previous_branch>
 git switch -c <new_version>-stackrox
 git rebase <new_version_tag>
-# Resolve conflicts using categorization from Step 2
-# For each conflict: check if patch is still needed, compare against upstream equivalent
+# Resolve conflicts
 git push -u origin <new_version>-stackrox
 ```
 
@@ -161,62 +149,49 @@ Always rebase onto upstream **tags** (not master tip) per `docs/falco-update.md`
 
 ## Step 6: Update Collector Code
 
-After each rebase stage, update collector code for API changes found in Step 3.
-
 ### Common patterns of change
 
 **Container ID access** (from 0.21.0+):
-- Container plugin (`libcontainer.so`) is NOT used — collector extracts container IDs directly from thread cgroups
-- `GetContainerID(sinsp_threadinfo&)` iterates `tinfo.cgroups()` and calls `ExtractContainerIDFromCgroup()` (Utility.cpp)
-- `GetContainerID(sinsp_evt*)` extracts from event's thread info cgroups
-- sinsp filter uses `proc.pid != proc.vpid` (built-in field) instead of `container.id != 'host'` (plugin field)
-- No plugin loading, no `libcontainer.so`, no Go worker dependency
-- `ContainerMetadata` class was removed — namespace/label lookup is not available without the plugin
-- `ContainerInfoInspector` endpoint (`/state/containers/:id`) still exists but always returns empty namespace
+- Container plugin NOT used — collector extracts IDs from thread cgroups
+- `GetContainerID(sinsp_threadinfo&)` iterates `tinfo.cgroups()` → `ExtractContainerIDFromCgroup()` (Utility.cpp)
+- sinsp filter: `proc.pid != proc.vpid` (built-in) instead of `container.id != 'host'` (plugin)
 
 **Thread access** (from 0.22.0+):
-- Replace `get_thread_ref(tid, true)` with `m_thread_manager->find_thread(tid, false)` or `m_thread_manager->get_thread(tid, false)`
-- `get_thread_info(true)` → `get_thread_info()` (no bool parameter)
+- `get_thread_ref(tid, true)` → `m_thread_manager->get_thread(tid)`
+- `get_thread_info(true)` → `get_thread_info()`
 
 **User/group** (from 0.20.0+):
-- Replace `m_user.uid()` / `m_group.gid()` with `m_uid` / `m_gid`
+- `m_user.uid()` / `m_group.gid()` → `m_uid` / `m_gid`
 
 **Thread creation in tests**:
-- Replace `build_threadinfo()` with `inspector->get_threadinfo_factory().create()`
-- Replace `add_thread()` with `inspector->m_thread_manager->add_thread(std::move(tinfo), false)`
+- `build_threadinfo()` → `inspector->get_threadinfo_factory().create()`
+- `add_thread()` → `inspector->m_thread_manager->add_thread(std::move(tinfo), false)`
 
 **Lineage traversal** (from 0.23.0+):
-- Replace `mt->traverse_parent_state(visitor)` with `inspector_->m_thread_manager->traverse_parent_state(*mt, visitor)`
-- Visitor type: `sinsp_thread_manager::visitor_func_t` instead of `sinsp_threadinfo::visitor_func_t`
+- `mt->traverse_parent_state(visitor)` → `inspector_->m_thread_manager->traverse_parent_state(*mt, visitor)`
+- `sinsp_threadinfo::visitor_func_t` → `sinsp_thread_manager::visitor_func_t`
 
 **FilterCheck API** (from 0.22.0+):
-- `extract_single(event, &len)` → `extract(event, vals)` vector-based API
-- Add null guards for `filter_check` pointers (plugin-provided checks may not be initialized)
-
-**UDP test adjustments** (from 0.23.0+):
-- UDP tests need 30-second timeouts (vs 5-10s for TCP) due to BPF event delivery pipeline latency
-- `TestMultipleDestinations`: sendmmsg message count × server count must not exceed `MAX_SENDMMSG_RECVMMSG_SIZE` (16)
-- File: `integration-tests/suites/udp_networkflow.go`
+- `extract_single(event, &len)` → `extract(event, vals)` vector-based
+- Add null guards for `filter_check` pointers
 
 ## Step 7: Known Gotchas
 
 ### Exepath Resolution (CRITICAL)
 
-Modern drivers (0.21.0+) **no longer send execve enter events** (marked `EF_OLD_VERSION`). The exepath is supposed to come from the `trusted_exepath` parameter (param 28) in the exit event, which uses the kernel's `d_path()`.
+Modern drivers **no longer send execve enter events** (`EF_OLD_VERSION`). The exepath should come from `trusted_exepath` (param 28), but StackRox **disables it** because it resolves symlinks (breaking busybox container policies).
 
-However, the StackRox fork **disables trusted_exepath** (`USE_TRUSTED_EXEPATH=false`) because it resolves symlinks — giving `/bin/busybox` instead of `/bin/ls` in busybox containers, breaking ACS policies.
+**Without either source, `m_exepath` inherits the parent's value** (e.g., `/usr/bin/podman`).
 
-**Without either source, `m_exepath` inherits the parent's value on clone** (e.g., `/usr/bin/podman`), causing all container processes to show the container runtime's path.
-
-**Fix**: Add a fallback in `parse_execve_exit` (parsers.cpp) that uses **Parameter 31** (`filename`, which is `bprm->filename`) from the exit event. This contains the first argument to execve as provided by the caller — same behavior as the old enter event reconstruction:
-
+**Fix**: Fallback in `parse_execve_exit` using Parameter 31 (`bprm->filename`):
 ```cpp
-// After the retrieve_enter_event() block, add:
 if(!exepath_set) {
-    /* Parameter 31: filename (type: PT_FSPATH) */
     if(const auto filename_param = evt.get_param(30); !filename_param->empty()) {
         std::string_view filename = filename_param->as<std::string_view>();
-        if(filename != "<NA>") {
+        // Skip fd-based execs — intermediate container runtime steps
+        if(filename != "<NA>" &&
+           filename.substr(0, 8) != "/dev/fd/" &&
+           filename.substr(0, 15) != "/proc/self/fd/") {
             std::string fullpath = sinsp_utils::concatenate_paths(
                 evt.get_tinfo()->get_cwd(), filename);
             evt.get_tinfo()->set_exepath(std::move(fullpath));
@@ -225,147 +200,106 @@ if(!exepath_set) {
 }
 ```
 
-**How to detect this bug**: Integration test `TestProcessViz` fails with all processes showing the container runtime binary (e.g., `/usr/bin/podman`) as their ExePath.
+The `/dev/fd/` filter is critical: container runtimes (runc/crun) use `fexecve()` (`/dev/fd/N`) as an intermediate exec step before the real entry point. Without the filter, phantom process signals appear with name like `"6"`, exepath `/dev/fd/6`, args `"init"`. This causes `TestProcessListeningOnPort` failures on platforms using this runtime pattern (rhcos-4.12, ppc64le).
 
-**Key event parameters** (PPME_SYSCALL_EXECVE_19_X, 0-indexed):
-- 1: exe (argv[0]), 6: cwd, 13: comm (always correct)
-- 27: trusted_exepath (kernel d_path, resolves symlinks — disabled)
-- 30: filename (bprm->filename, first arg to execve — use this)
+**Detection**: `TestProcessViz` shows all processes with container runtime path. `TestProcessListeningOnPort` shows wrong process name/path.
 
-### CMake Dependency Cycle
+### TOCTOU Mitigation Programs
 
-Upstream has a cyclic dependency: `events_dimensions_generator → scap_event_schema → scap → pman → ProbeSkeleton → EventsDimensions → generator`. Upstream doesn't hit it because their CI uses CMake 3.22; our builder uses 3.31+ which enforces cycle detection.
+TOCTOU mitigation programs are in `attached/events/toctou_mitigation/`, separate from regular `tail_called/` programs. They are **always autoloaded** — NOT covered by `MODERN_BPF_EXCLUDE_PROGS`.
 
-**Fix**: Compile the 3 required driver source files (`event_table.c`, `flags_table.c`, `dynamic_params_table.c`) directly into the generator instead of linking `scap_event_schema`. This fix lives in `driver/modern_bpf/CMakeLists.txt` and must be carried forward each rebase.
+If a TOCTOU program references kernel types that don't exist on the running kernel (e.g., `struct open_how` for `openat2` on kernels < 5.6), CO-RE relocation fails and the entire BPF skeleton fails to load.
 
-### ASSERT_TO_LOG Circular Dependency
+**Fix**: In `lifecycle.c`, before the ia32 TOCTOU loop, add a loop that checks tracepoint existence for each 64-bit TOCTOU program:
+```c
+for(int i = 0; i < TTM_MAX; i++) {
+    const char *prog_name = ttm_progs_table[i].ttm_64bit_prog.name;
+    if(prog_name == NULL) continue;
+    // Check /sys/kernel/tracing/events/syscalls/sys_enter_<syscall>
+    // Strip "_e" suffix from prog name to build tracepoint path
+    // Fallback to /sys/kernel/debug/tracing/... (debugfs mount)
+    // If neither exists, call disable_prog_autoloading()
+}
+```
 
-Collector compiles with `-DASSERT_TO_LOG` so assertions log instead of aborting. The old approach using `libsinsp_logger()` causes circular includes because `logger.h` includes `sinsp_public.h`.
-
-**Fix**: Use `falcosecurity_log_fn` callback from `scap_log.h` (same pattern as `scap_assert.h`). This is a tiny header with no dependencies. The callback is set by sinsp when it opens the scap handle.
-
-### Container Plugin Not Used
-
-The upstream container plugin (`libcontainer.so`) is NOT used by collector. Container IDs are extracted directly from thread cgroups via `ExtractContainerIDFromCgroup()` in `Utility.cpp`. This avoids the Go worker dependency, CGO bridge, container runtime dependency, startup race conditions, and silent event-dropping failure modes of the plugin. The sinsp filter uses `proc.pid != proc.vpid` (built-in) instead of `container.id != 'host'` (plugin-provided). If a future falcosecurity-libs update changes cgroup format or thread API, update `ExtractContainerIDFromCgroup()` and `GetContainerID()` in Utility.cpp.
+The ia32 programs already have disable logic (using `is_kernel_symbol_available()`), but the 64-bit programs previously assumed all syscalls exist.
 
 ### BPF Verifier Compatibility
 
-BPF verifier behavior varies significantly across:
-- **Kernel versions**: Older kernels have stricter limits (see kernel matrix below)
-- **Clang versions**: clang > 19 can produce code that exceeds instruction counts
-- **Platform kernels**: RHEL SAP, Google COS have custom verifiers or clang-compiled kernels with different BTF attributes
+**32-bit sub-register bounds (kernel 4.18)**: When clang emits `w2 = w8` (32-bit move), kernel 4.18's verifier loses the upper-bound tracking. A `uint16_t` with known max 15999 becomes unbounded after the move. `bpf_probe_read` rejects the size argument.
 
-**The most insidious class of bug**: Clang inlines `__always_inline` BPF helper functions and optimizes away null checks that the BPF verifier requires. This happens when:
-1. Multiple inlined functions each call `bpf_map_lookup_elem()` on the same map
-2. The compiler deduces from the first successful lookup that subsequent lookups can't return NULL
-3. It removes the null check, but the verifier tracks each lookup independently as `map_value_or_null`
-4. Result: `R0 invalid mem access 'map_value_or_null'` on older kernels
+**Clang is smarter than the verifier**: `& 0xFFFF` on a `uint16_t` is a compile-time no-op — clang removes it. Even `unsigned long safe = len; safe &= 0xFFFF;` gets optimized away if clang can track that `len` was `uint16_t`. Only `volatile` prevents this.
 
-**Example** (found in 0.23.1): `syscall_exit.bpf.c:sampling_logic_exit()` called `maps__get_dropping_mode()` then `maps__get_sampling_ratio()` — both inlined functions that do `bpf_map_lookup_elem(&capture_settings, &key)`. Clang kept the null check for the first but dropped it for the second. Fix: do a single `maps__get_capture_settings()` call and access fields directly.
+**volatile tradeoff**: `volatile` increases instruction count. The `push__bytebuf` function is called from many programs. When making `len_to_read` volatile, verify that all calling programs stay under the 1M instruction limit. If needed, stub out unused programs with `#if 0` to free instruction budget (e.g., `t1_execveat_x`/`t2_execveat_x` when collector doesn't subscribe to execveat).
 
-**Fix applied**: Refactored `sys_exit` BPF program to do one `maps__get_capture_settings()` lookup in the caller, pass the pointer to `sampling_logic_exit()`, and reuse it for `drop_failed` check. No redundant map lookups = no optimized-away null checks.
+**Clang null-check elimination**: Multiple inlined calls to `bpf_map_lookup_elem()` on the same map — clang drops null checks after the first. Fix: single lookup in caller, pass pointer down.
 
 Common fix patterns:
-- **Single lookup + direct field access**: Call the map lookup once, pass the pointer, access fields directly (preferred)
-- **`volatile` qualifier**: Mark map lookup result as `volatile` to prevent optimization
-- **Compiler barriers**: `asm volatile("")` after null check
-- **Reduce loop bounds**: e.g., `MAX_IOVCNT` 32 → 16
+- **`volatile` qualifier**: Prevent clang from optimizing away bounds narrowing
+- **Single lookup + pass pointer**: Prevent null-check elimination across inlined functions
 - **`#pragma unroll`**: For loops the verifier can't bound
-- **Break pointer chains**: Read through intermediate variables with null checks (e.g., `task->cred` on COS where kernel is clang-compiled with RCU attributes)
-- **`const` qualifiers**: On credential struct pointers
+- **`const` on credential pointers**: For COS clang-compiled kernels with RCU attributes
+- **Reduce loop bounds**: e.g., `MAX_IOVCNT` 32 → 16
 
-### CI Kernel Compatibility Matrix
+### CMake Dependency Cycle
 
-The BPF probe must load on all CI platforms. After each update, verify against this matrix:
+Upstream has a cyclic dependency that newer CMake (3.31+) rejects. Fix: compile the 3 required driver source files (`event_table.c`, `flags_table.c`, `dynamic_params_table.c`) directly into the generator. Lives in `driver/modern_bpf/CMakeLists.txt`.
 
-| Platform | Kernel | Notes |
-|---|---|---|
-| Fedora CoreOS | 6.18+ | Newest kernel, most permissive verifier |
-| Ubuntu 24.04 | 6.17+ | GCP VM, works with modern BPF |
-| Ubuntu 22.04 | 6.8 | GCP VM, stricter verifier — **common failure point** |
-| COS stable | 6.6 | Google kernel, clang-compiled — RCU/BTF differences |
-| RHEL 9 | 5.14 | Oldest supported kernel — **most restrictive verifier** |
-| RHEL SAP | 5.14 | Same kernel as RHEL 9 but different config |
-| Flatcar | varies | Container Linux |
-| ARM64 variants | varies | rhcos-arm64, cos-arm64, ubuntu-arm, fcarm |
-| s390x | varies | rhel-s390x |
-| ppc64le | varies | rhel-ppc64le |
+### ASSERT_TO_LOG Circular Dependency
 
-**ubuntu-os** CI job runs on BOTH Ubuntu 22.04 AND 24.04 VMs. A failure on either fails the whole job.
+Collector uses `-DASSERT_TO_LOG`. Use `falcosecurity_log_fn` callback from `scap_log.h` (no dependency issues) instead of `libsinsp_logger()`.
 
-**How to diagnose BPF loading failures from CI**:
-1. Download the logs artifact (e.g., `ubuntu-os-logs`) from the GitHub Actions run
-2. Find `collector.log` under `container-logs/<vm>/core-bpf/<TestName>/`
-3. Search for `failed to load` — the line before it shows the verifier error
-4. The verifier log shows exact instruction and register state at the point of rejection
-5. Compare against master's CI run to confirm it's a regression
+### Container Plugin Not Used
 
-### Network Signal Handler: UDP send/recv Socket State (CRITICAL)
+The upstream container plugin (`libcontainer.so`) is NOT used. Container IDs come from cgroup extraction via `ExtractContainerIDFromCgroup()`. The sinsp filter uses `proc.pid != proc.vpid` (built-in) instead of `container.id != 'host'` (plugin-provided). No plugin loading, no Go worker, no container runtime dependency.
 
-**Problem**: `sinsp::parse_rw_exit()` marks socket fd as "failed" (`set_socket_failed()`) when ANY send/recv syscall returns negative (e.g., EAGAIN from timeout). Unlike `connect()`, the success path for send/recv does NOT call `set_socket_connected()` to clear the flag. Result: once a UDP socket gets a single EAGAIN (common with `SO_RCVTIMEO`), all subsequent events on that fd are rejected by `GetConnection()`.
+### Network Signal Handler: UDP Socket State
 
-**Fix applied** in `collector/lib/NetworkSignalHandler.cpp`: Skip `is_socket_failed()` / `is_socket_pending()` checks for send/recv events (identified by `strncmp(evt_name, "send", 4)` or `strncmp(evt_name, "recv", 4)`). These checks are only relevant for TCP connection establishment (connect/accept/getsockopt).
+`sinsp::parse_rw_exit()` marks sockets "failed" on EAGAIN but never clears on success for recv. Fix in `NetworkSignalHandler.cpp`: skip `is_socket_failed()`/`is_socket_pending()` for send/recv events. Detection: UDP network flow tests fail for `recvfrom`/`recvmsg` with `SO_RCVTIMEO`.
 
-**How to detect**: UDP network flow tests fail — connections from containers using `recvfrom`/`recvmsg`/`recvmmsg` with `SO_RCVTIMEO` are never reported. The server's receive call times out → EAGAIN → fd marked failed → all subsequent successful receives ignored.
-
-## Step 8: Validate Each Stage
+## Step 8: Validate
 
 ### Build Commands
 
 ```bash
-# Build collector image (from repo root, NOT from collector/ subdirectory)
-make image
+# From repo root (NOT collector/ subdirectory)
+make image      # Build collector image
+make unittest   # Run unit tests
 
-# Run unit tests
-make unittest
-
-# Run specific integration test (from integration-tests/ directory)
+# Integration tests (from integration-tests/ directory)
 cd integration-tests
 DOCKER_HOST=unix:///run/podman/podman.sock COLLECTOR_LOG_LEVEL=debug make TestProcessNetwork
 DOCKER_HOST=unix:///run/podman/podman.sock COLLECTOR_LOG_LEVEL=debug make TestUdpNetworkFlow
 ```
 
-**Important**: Use `make image` from the repo root. Do NOT use `make -C collector image` — there is no `image` target in the collector subdirectory Makefile.
-
 ### Validation Checklist
 
-Run this checklist after each stage:
-
-- [ ] `falcosecurity-libs` builds via cmake `add_subdirectory`
-- [ ] Each surviving patch verified: diff against original to ensure no content loss
-- [ ] `make image` succeeds on amd64 (builds collector binary + container image)
-- [ ] `make unittest` passes (all test suites, especially ProcessSignalFormatterTest)
-- [ ] Integration tests pass (see key tests below)
-- [ ] Multi-arch compilation: arm64, ppc64le, s390x
-- [ ] Container ID attribution works via cgroup extraction (not all showing empty or host)
-- [ ] Process exepaths are correct (not showing container runtime binary like `/usr/bin/podman`)
-- [ ] Network signal handler receives correct container IDs
-- [ ] Runtime self-checks pass
-- [ ] BPF probe loads on older kernels (check CI results for RHEL 9, Ubuntu 22.04, COS)
+- [ ] `make image` succeeds
+- [ ] `make unittest` passes
+- [ ] Container ID attribution works (not all empty or host)
+- [ ] Process exepaths correct (not showing `/usr/bin/podman`)
+- [ ] No phantom `/dev/fd/N` processes in TestProcessListeningOnPort
+- [ ] BPF probe loads on all CI platforms (check RHEL 8, COS, Ubuntu 22.04)
+- [ ] No CO-RE relocation failures on kernels < 5.6
 
 ### Key Integration Tests
 
-- **TestProcessNetwork** (TestProcessViz + TestNetworkFlows + TestProcessLineageInfo):
-  - Verifies process ExePath, Name, Args for container processes
-  - Catches exepath regression (all paths show container runtime)
-  - Verifies network connections attributed to correct containers
-  - Verifies parent process lineage chains stop at container boundaries
-- **TestUdpNetworkFlow**: Verifies UDP connection tracking across all send/recv syscall combinations:
-  - Tests: sendto, sendmsg, sendmmsg × recvfrom, recvmsg, recvmmsg (9 combinations)
-  - TestMultipleDestinations: one client → multiple servers (watch `MAX_SENDMMSG_RECVMMSG_SIZE=16`)
-  - TestMultipleSources: multiple clients → one server
-  - Uses 30-second timeouts (UDP BPF event pipeline is slower than TCP)
-  - **If `recvfrom` tests fail but `recvmsg` passes**: check `is_socket_failed()` handling in NetworkSignalHandler
-- **TestConnectionsAndEndpointsUDPNormal**: UDP endpoint detection without send/recv tracking
-- **TestCollectorStartup**: Basic smoke test — catches BPF loading failures immediately
+- **TestProcessNetwork**: Process ExePath, Name, Args, network connections, lineage
+- **TestProcessListeningOnPort**: Process-to-endpoint attribution. Catches phantom exec issues.
+- **TestUdpNetworkFlow**: UDP connection tracking (30s timeouts, `MAX_SENDMMSG_RECVMMSG_SIZE=16`)
+- **TestDuplicateEndpoints**: Endpoint deduplication. Also catches phantom exec issues.
+- **TestCollectorStartup**: Smoke test — catches BPF loading failures
 
-### Diagnosing CI Failures
+### CI Kernel Compatibility Matrix
 
-1. Check if the failure is a **BPF loading crash** (exit code 139, `scap_init` error) vs a **test logic failure**
-2. Compare against master's CI run — if master passes on the same platform, it's a regression
-3. Download log artifacts: `gh api repos/stackrox/collector/actions/artifacts/<id>/zip > logs.zip`
-4. The `collector.log` file in the artifact contains full libbpf output including verifier errors
-5. The test framework only shows the last few lines of collector logs in the CI output — always check the full artifact
+| Platform | Kernel | Verifier Strictness |
+|---|---|---|
+| RHEL 8 / RHCOS 4.12 / s390x / ppc64le | 4.18 | **Most restrictive** |
+| RHEL 9 / RHEL SAP | 5.14 | Moderate (SAP can hit 1M insn limit) |
+| COS | 6.6 | Clang-compiled kernel — different BTF |
+| Ubuntu 22.04 | 6.8 | Moderate |
+| Ubuntu 24.04 | 6.17 | Permissive |
+| Fedora CoreOS / Flatcar | latest | Most permissive |
 
 ## Step 9: Final Update
 
@@ -375,55 +309,43 @@ cd falcosecurity-libs && git checkout <final_version>-stackrox
 cd .. && git add falcosecurity-libs
 ```
 
-Update `docs/falco-update.md` with:
-- Version transition (e.g., "0.23.1 → 0.25.0")
-- Any new upstream API changes requiring collector-side fixes
-- New StackRox patches added, patches dropped (upstreamed)
-- Known issues or workarounds
+Update `docs/falco-update.md` with version transition, new patches, dropped patches, known issues.
 
 ## PR Strategy
 
-Each stage should produce **two PRs**:
-1. **Fork PR** targeting `upstream-main` in `stackrox/falcosecurity-libs` (the rebased branch)
-2. **Collector PR** updating the submodule pointer and making collector-side code changes
+Each update should produce **two PRs**:
+1. **Fork PR** targeting `upstream-main` in `stackrox/falcosecurity-libs`
+2. **Collector PR** updating the submodule pointer and collector-side code
 
 ## Quick Reference: Event Architecture
 
 ### How Process Events Flow
 
-1. **Kernel BPF** captures syscall events → writes to ring buffer
-2. **libscap** reads ring buffer → produces `scap_evt` structs
-3. **libsinsp parsers** (`parsers.cpp`) process events:
-   - `reset()`: looks up/creates thread info, validates enter/exit event matching
-   - `parse_clone_exit_caller/child()`: creates child thread info, inherits parent fields
-   - `parse_execve_exit()`: updates thread info with new process details
-4. **Collector** (`ProcessSignalFormatter`) reads thread info fields via `EventExtractor`
+1. **Kernel BPF** (`sched_process_exec`) → ring buffer
+2. **libscap** reads ring buffer → `scap_evt`
+3. **libsinsp parsers** (`parsers.cpp`) → updates thread info
+4. **Collector** (`ProcessSignalFormatter`) → reads via `EventExtractor` → sends to sensor
 
 ### Key Thread Info Fields
 
 | Field | Source | Notes |
 |-------|--------|-------|
-| `m_comm` | Exit event param 13 | Always correct (kernel task_struct->comm) |
+| `m_comm` | Exit event param 13 | Always correct |
 | `m_exe` | Exit event param 1 | argv[0], may be relative |
-| `m_exepath` | Enter event reconstruction OR param 27/30 | See "Exepath Resolution" gotcha |
+| `m_exepath` | Param 27 (trusted, disabled) or param 30 (bprm->filename fallback) | See Exepath gotcha |
 | `m_pid` | Exit event param 4 | |
-| `m_uid`/`m_gid` | Exit event param 26/29 | Was `m_user.uid()`/`m_group.gid()` before 0.20.0 |
-| container_id | Extracted from thread cgroups via `GetContainerID()` | Was `m_container_id` before 0.21.0; plugin not used |
+| `m_uid`/`m_gid` | Exit event param 26/29 | Was `m_user.uid()`/`m_group.gid()` |
+| container_id | Extracted from cgroups via `GetContainerID()` | Was `m_container_id` |
 
-### Enter Event Deprecation
+### PPME_SYSCALL_EXECVE_19_X Parameters (0-indexed)
 
-Upstream removed enter events to reduce ~50% of kernel/userspace overhead (proposal: `proposals/20240901-disable-support-for-syscall-enter-events.md`). All parameters moved to exit events. A scap converter handles old capture files. Any code depending on `retrieve_enter_event()` will silently fail with modern drivers — check for fallbacks using exit event parameters.
+0: res, 1: exe, 2: args, 3: tid, 4: pid, 5: ptid, 6: cwd, 13: comm, 14: cgroups, 15: env, 26: uid, 27: trusted_exepath (disabled), 28: pgid, 29: gid, 30: filename (bprm->filename — used by exepath fallback)
 
 ## Step 10: Update This Skill
 
-**This step is mandatory.** After completing an update, review and update this skill file (`.claude/commands/update-falco-libs.md`) with anything learned during the process:
-
-- **New API breakpoints**: Add entries to "Known historical API breakpoints" (Step 4) for any new breaking changes encountered
-- **New StackRox patches**: Update the "Current StackRox Patches" list (Step 2) — add new patches, remove ones that were upstreamed
-- **New gotchas**: Add to "Step 7: Known Gotchas" if you discovered new pitfalls (BPF verifier issues, parser bugs, build problems)
-- **Outdated steps**: Remove or correct any steps that no longer apply (e.g., if an API listed as "changed in 0.22.0" is now the only way and doesn't need a migration note)
-- **CI matrix updates**: Update the kernel compatibility matrix if CI platforms changed (new VM images, new kernel versions, platforms added/removed)
-- **Fix patterns**: Add new "Common patterns of change" (Step 6) for any collector-side adaptations that future updates will likely need
-- **Build/test changes**: Update build commands or test expectations if they changed
-
-The goal is that the next person (or AI) performing an update has all the context from previous updates available, without needing to rediscover issues that were already solved.
+**Mandatory.** After completing an update, review and update this file with:
+- New API breakpoints (Step 4)
+- Updated StackRox patches list (Step 2)
+- New gotchas (Step 7)
+- CI matrix changes (Step 8)
+- Corrected or removed outdated information
