@@ -4,6 +4,7 @@
 # Usage:
 #   .devcontainer/run.sh "fix the connect() handler to capture IPv6 scope IDs"
 #   .devcontainer/run.sh --interactive
+#   .devcontainer/run.sh --local "debug the build failure"
 #   .devcontainer/run.sh --shell
 #
 # The agent works on an isolated git worktree so your working tree is untouched.
@@ -11,7 +12,7 @@
 #
 # Prerequisites:
 #   - Docker
-#   - gh (GitHub CLI, authenticated)
+#   - gh (GitHub CLI, authenticated — only needed for task mode)
 #   - gcloud auth login && gcloud auth application-default login
 #   - CLAUDE_CODE_USE_VERTEX=1 and related env vars (see CLAUDE.md)
 
@@ -117,6 +118,18 @@ case "${1:-}" in
       "${CLAUDE_INTERACTIVE[@]}"
     ;;
 
+  --local|-l)
+    shift
+    build_docker_args "$REPO_ROOT"
+    if [[ -z "${1:-}" ]]; then
+      docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" \
+        "${CLAUDE_INTERACTIVE[@]}"
+    else
+      docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" \
+        "${CLAUDE_INTERACTIVE[@]}" -p "$*"
+    fi
+    ;;
+
   --shell|-s)
     WORKTREE=$(setup_worktree)
     trap "cleanup_worktree '$WORKTREE'" EXIT
@@ -125,25 +138,13 @@ case "${1:-}" in
     docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" zsh
     ;;
 
-  --no-worktree)
-    shift
-    build_docker_args "$REPO_ROOT"
-    if [[ -z "${1:-}" ]]; then
-      docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" \
-        "${CLAUDE_INTERACTIVE[@]}"
-    else
-      docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
-        "${CLAUDE_AUTONOMOUS[@]}" -p "$*"
-    fi
-    ;;
-
   ""|--help|-h)
     cat <<USAGE
 Usage:
-  $0 "task description"          Run a task end-to-end (implement → CI green)
-  $0 --interactive               Interactive Claude session (isolated worktree)
+  $0 "task description"          Run a task end-to-end (worktree + PR + CI loop)
+  $0 --interactive               Interactive session (isolated worktree, no PR)
+  $0 --local ["task"]            Edit your working tree directly (no worktree, no PR)
   $0 --shell                     Shell into the container (isolated worktree)
-  $0 --no-worktree [task]        Run directly on repo (no isolation)
 
 Environment:
   COLLECTOR_DEV_IMAGE            Docker image (default: collector-dev:test)
@@ -152,7 +153,7 @@ Environment:
   GOOGLE_CLOUD_LOCATION          Vertex AI region (e.g., us-east5)
 
 Prerequisites:
-  gh auth login                  GitHub CLI (for draft PR creation)
+  gh auth login                  GitHub CLI (for task mode PR creation)
   gcloud auth login              Vertex AI authentication
 USAGE
     exit 0
