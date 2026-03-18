@@ -133,7 +133,7 @@ case "${1:-}" in
   ""|--help|-h)
     cat <<USAGE
 Usage:
-  $0 "task description"          Run a task autonomously (isolated worktree + draft PR)
+  $0 "task description"          Run a task end-to-end (implement → CI green)
   $0 --interactive               Interactive Claude session (isolated worktree)
   $0 --shell                     Shell into the container (isolated worktree)
   $0 --no-worktree [task]        Run directly on repo (no isolation)
@@ -169,10 +169,11 @@ USAGE
 
     build_docker_args "$WORKTREE"
     docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
-      claude --dangerously-skip-permissions -p "You are working on branch '$BRANCH'. A draft PR has been created at: $PR_URL
+      claude --dangerously-skip-permissions -p \
+      "/collector-dev:task You are working on branch '$BRANCH'. A draft PR has been created at: $PR_URL
 
 Your task: $TASK
 
-The branch is already pushed. After making changes, commit and push with git. Use /collector-dev:ci-status to check CI results. Do not create new branches or PRs."
+The branch is already pushed. Do not create new branches or PRs. Commit and push with git."
     ;;
 esac
