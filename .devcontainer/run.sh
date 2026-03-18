@@ -21,7 +21,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 IMAGE="${COLLECTOR_DEV_IMAGE:-collector-dev:test}"
 PLUGIN_DIR="/workspace/.claude/plugins/collector-dev"
-CLAUDE_CMD=(claude --dangerously-skip-permissions --plugin-dir "$PLUGIN_DIR")
+
+# Interactive mode: normal TUI
+CLAUDE_INTERACTIVE=(claude --dangerously-skip-permissions --plugin-dir "$PLUGIN_DIR")
+
+# Autonomous mode: stream all messages to stdout as JSON
+CLAUDE_AUTONOMOUS=(claude --dangerously-skip-permissions --plugin-dir "$PLUGIN_DIR" --output-format stream-json --verbose)
 
 # --- Worktree isolation ---
 setup_worktree() {
@@ -109,7 +114,7 @@ case "${1:-}" in
     echo "Branch: $BRANCH"
     build_docker_args "$WORKTREE"
     docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" \
-      "${CLAUDE_CMD[@]}"
+      "${CLAUDE_INTERACTIVE[@]}"
     ;;
 
   --shell|-s)
@@ -125,10 +130,10 @@ case "${1:-}" in
     build_docker_args "$REPO_ROOT"
     if [[ -z "${1:-}" ]]; then
       docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" \
-        "${CLAUDE_CMD[@]}"
+        "${CLAUDE_INTERACTIVE[@]}"
     else
       docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
-        "${CLAUDE_CMD[@]}" -p "$*"
+        "${CLAUDE_AUTONOMOUS[@]}" -p "$*"
     fi
     ;;
 
@@ -171,7 +176,7 @@ USAGE
 
     build_docker_args "$WORKTREE"
     docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
-      "${CLAUDE_CMD[@]}" -p \
+      "${CLAUDE_AUTONOMOUS[@]}" -p \
       "/collector-dev:task You are working on branch '$BRANCH'. A draft PR has been created at: $PR_URL
 
 Your task: $TASK
