@@ -10,32 +10,25 @@ Check CI pipeline status for the current branch/PR and diagnose failures.
 
 ## Steps
 
-1. Get the current branch and check for an open PR:
-   ```bash
-   gh pr view --json number,title,url,statusCheckRollup,headRefName
-   ```
-   If no PR exists, report that and suggest pushing or creating one.
+1. Get the current branch name from git.
 
-2. Parse the check results. Group by status:
-   - Passed checks
-   - Failed checks (show full names)
-   - Pending/running checks
+2. Use `mcp__github__search_pull_requests` to find an open PR for this branch
+   in `stackrox/collector`.
 
-3. For any **failed checks**:
-   - Identify which workflow failed (unit-tests, integration-tests, k8s-integration-tests, benchmarks, lint)
-   - Get the failed job logs:
-     ```bash
-     gh run view <run-id> --log-failed 2>&1 | tail -100
-     ```
-   - For integration test failures, identify:
-     - Which VM type failed (rhel, ubuntu, cos, flatcar, etc.)
-     - Which test suite failed (e.g., TestProcessNetwork, TestConnectionsAndEndpoints)
-     - The relevant error message
+3. If a PR exists, use `mcp__github__pull_request_read` to get its check status.
 
-4. **Diagnose** the failure:
-   - If a unit test failed: show the failing assertion and the relevant source file
-   - If an integration test failed: identify if it's a test infrastructure issue (VM creation, timeout) vs an actual test failure
-   - If lint failed: show which files need formatting
-   - If build failed: show the compiler error with file:line
+4. Use `mcp__github__actions_list` to get workflow runs for the branch.
 
-5. **Suggest next steps**: what code changes would fix the failure, or if it's a flaky test / infra issue.
+5. For any **failed runs**:
+   - Use `mcp__github__actions_get` to get the run details
+   - Use `mcp__github__get_job_logs` to fetch failure logs
+   - Identify which workflow failed (unit-tests, integration-tests, k8s-integration-tests, lint)
+   - For integration test failures, identify which VM type and test suite failed
+
+6. **Diagnose** the failure:
+   - Unit test failure: show the failing assertion and relevant source file
+   - Integration test failure: distinguish infra issues (VM creation, timeout) from test failures
+   - Lint failure: show which files need formatting
+   - Build failure: show the compiler error with file:line
+
+7. **Suggest next steps**: what code changes would fix the failure, or note if it's flaky/infra.
