@@ -7,13 +7,11 @@
 #   .devcontainer/run.sh --shell
 #
 # The agent works on an isolated git worktree so your working tree is untouched.
-# Changes are pushed to a branch and a PR is created for CI validation.
-#
-# GitHub access is via the official GitHub MCP server (OAuth, configured in .mcp.json).
-# Authenticate once with: /mcp in Claude Code, then select GitHub → Authenticate.
+# A draft PR is created upfront so the agent only needs to commit and push.
 #
 # Prerequisites:
 #   - Docker
+#   - gh (GitHub CLI, authenticated)
 #   - gcloud auth login && gcloud auth application-default login
 #   - CLAUDE_CODE_USE_VERTEX=1 and related env vars (see CLAUDE.md)
 
@@ -48,6 +46,35 @@ cleanup_worktree() {
   fi
 }
 
+# --- Create branch + draft PR ---
+setup_pr() {
+  local worktree_dir="$1"
+  local task="$2"
+  local branch
+  branch=$(git -C "$worktree_dir" branch --show-current)
+
+  # Push the branch
+  git -C "$worktree_dir" push -u origin "$branch" >/dev/null 2>&1
+
+  # Create draft PR
+  local pr_url
+  pr_url=$(gh pr create \
+    --repo stackrox/collector \
+    --head "$branch" \
+    --draft \
+    --title "claude: ${task:0:70}" \
+    --body "$(cat <<BODY
+## Task
+${task}
+
+---
+*Automated by Claude Code agent. Branch: \`${branch}\`*
+BODY
+)" 2>&1) || true
+
+  echo "$pr_url"
+}
+
 # --- Docker args ---
 build_docker_args() {
   local workspace="$1"
@@ -75,8 +102,9 @@ case "${1:-}" in
   --interactive|-i)
     WORKTREE=$(setup_worktree)
     trap "cleanup_worktree '$WORKTREE'" EXIT
+    BRANCH=$(git -C "$WORKTREE" branch --show-current)
     echo "Working in isolated worktree: $WORKTREE"
-    echo "Branch: $(git -C "$WORKTREE" branch --show-current)"
+    echo "Branch: $BRANCH"
     build_docker_args "$WORKTREE"
     docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" \
       claude --dangerously-skip-permissions
@@ -105,7 +133,7 @@ case "${1:-}" in
   ""|--help|-h)
     cat <<USAGE
 Usage:
-  $0 "task description"          Run a task autonomously (isolated worktree)
+  $0 "task description"          Run a task autonomously (isolated worktree + draft PR)
   $0 --interactive               Interactive Claude session (isolated worktree)
   $0 --shell                     Shell into the container (isolated worktree)
   $0 --no-worktree [task]        Run directly on repo (no isolation)
@@ -116,9 +144,9 @@ Environment:
   GOOGLE_CLOUD_PROJECT           GCP project ID
   GOOGLE_CLOUD_LOCATION          Vertex AI region (e.g., us-east5)
 
-GitHub:
-  Uses the official GitHub MCP server (OAuth). On first use, run /mcp
-  inside Claude Code and authenticate with GitHub.
+Prerequisites:
+  gh auth login                  GitHub CLI (for draft PR creation)
+  gcloud auth login              Vertex AI authentication
 USAGE
     exit 0
     ;;
@@ -126,15 +154,25 @@ USAGE
   *)
     WORKTREE=$(setup_worktree)
     BRANCH=$(git -C "$WORKTREE" branch --show-current)
+    TASK="$*"
+
     echo "Working in isolated worktree: $WORKTREE"
     echo "Branch: $BRANCH"
-    echo "Task: $*"
+    echo "Task: $TASK"
+    echo "---"
+    echo "Creating draft PR..."
+    PR_URL=$(setup_pr "$WORKTREE" "$TASK")
+    echo "PR: $PR_URL"
     echo "---"
 
     trap "cleanup_worktree '$WORKTREE'" EXIT
 
     build_docker_args "$WORKTREE"
     docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
-      claude --dangerously-skip-permissions -p "$*"
+      claude --dangerously-skip-permissions -p "You are working on branch '$BRANCH'. A draft PR has been created at: $PR_URL
+
+Your task: $TASK
+
+The branch is already pushed. After making changes, commit and push with git. Use /collector-dev:ci-status to check CI results. Do not create new branches or PRs."
     ;;
 esac

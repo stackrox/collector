@@ -1,12 +1,13 @@
 ---
 name: iterate
-description: Full development cycle — build, unit test, format check, commit, push, create PR
-allowed-tools: Bash(cmake *), Bash(make *), Bash(ctest *), Bash(nproc), Bash(git *), Bash(clang-format *), Read, Write, Edit, Glob, Grep, mcp__github__create_branch, mcp__github__push_files, mcp__github__create_pull_request, mcp__github__update_pull_request, mcp__github__pull_request_read, mcp__github__actions_list
+description: Full development cycle — build, unit test, format check, commit, push to existing branch
+allowed-tools: Bash(cmake *), Bash(make *), Bash(ctest *), Bash(nproc), Bash(git *), Bash(clang-format *), Read, Write, Edit, Glob, Grep, mcp__github__pull_request_read, mcp__github__actions_list, mcp__github__actions_get, mcp__github__get_job_logs
 ---
 
 # Iterate
 
-Run the full development inner loop. Stops at the first failure.
+Run the full development inner loop. The branch and PR already exist — just build, test, and push.
+Stops at the first failure.
 
 ## Steps
 
@@ -31,12 +32,11 @@ Run the full development inner loop. Stops at the first failure.
    - Stage changed files (source + any format fixes)
    - Create a commit with a descriptive message summarizing the changes
 
-5. **Push and create PR**:
-   - Push with `git push`
-   - Use `mcp__github__create_pull_request` to create a PR if none exists,
-     or `mcp__github__update_pull_request` to update the description
+5. **Push**:
+   - `git push` to the existing branch (branch and PR already created by run.sh)
+   - Do NOT create new branches or PRs
 
-6. **Report**:
-   - Summary: built, N tests passed, formatted M files, pushed to branch X
-   - Link to PR
-   - Note: CI will run integration tests — use `/collector-dev:ci-status` to check results later
+6. **Check CI**:
+   - Use `mcp__github__actions_list` to see if CI has started
+   - Report the PR URL and note that CI is running
+   - Use `/collector-dev:ci-status` for detailed CI results once checks complete
