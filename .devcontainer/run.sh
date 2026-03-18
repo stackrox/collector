@@ -105,6 +105,24 @@ build_docker_args() {
   done
 }
 
+# --- Task prompt ---
+task_prompt() {
+  local branch="$1"
+  local task="$2"
+  local pr_url="${3:-}"
+
+  local prompt="/collector-dev:task You are working on branch '$branch'."
+  if [[ -n "$pr_url" ]]; then
+    prompt="$prompt A draft PR has been created at: $pr_url"
+  fi
+  prompt="$prompt
+
+Your task: $task
+
+The branch is already pushed. Do not create new branches or PRs. Commit and push with git."
+  echo "$prompt"
+}
+
 # --- Main ---
 case "${1:-}" in
   --interactive|-i)
@@ -127,11 +145,15 @@ case "${1:-}" in
     WORKTREE=$(setup_worktree)
     trap "cleanup_worktree '$WORKTREE'" EXIT
     BRANCH=$(git -C "$WORKTREE" branch --show-current)
+    TASK="$*"
     echo "Working in isolated worktree: $WORKTREE" >&2
     echo "Branch: $BRANCH" >&2
+    echo "Task: $TASK" >&2
+    echo "---" >&2
+    PROMPT=$(task_prompt "$BRANCH" "$TASK")
     build_docker_args "$WORKTREE"
     docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
-      "${CLAUDE_AUTONOMOUS[@]}" -p "$*"
+      "${CLAUDE_AUTONOMOUS[@]}" -p "$PROMPT"
     ;;
 
   --local|-l)
@@ -158,7 +180,7 @@ case "${1:-}" in
     cat <<USAGE
 Usage:
   $0 "task"                      Full: worktree + draft PR + CI loop (stream-json)
-  $0 --headless "task"           Worktree + stream output, no PR
+  $0 --headless "task"           Same workflow, no PR (stream-json)
   $0 --interactive               Worktree + TUI, no PR
   $0 --local ["task"]            Edit working tree directly, TUI
   $0 --shell                     Shell into the container
@@ -192,13 +214,9 @@ USAGE
 
     trap "cleanup_worktree '$WORKTREE'" EXIT
 
+    PROMPT=$(task_prompt "$BRANCH" "$TASK" "$PR_URL")
     build_docker_args "$WORKTREE"
     docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
-      "${CLAUDE_AUTONOMOUS[@]}" -p \
-      "/collector-dev:task You are working on branch '$BRANCH'. A draft PR has been created at: $PR_URL
-
-Your task: $TASK
-
-The branch is already pushed. Do not create new branches or PRs. Commit and push with git."
+      "${CLAUDE_AUTONOMOUS[@]}" -p "$PROMPT"
     ;;
 esac
