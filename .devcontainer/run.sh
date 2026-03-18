@@ -20,6 +20,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 IMAGE="${COLLECTOR_DEV_IMAGE:-collector-dev:test}"
+PLUGIN_DIR="/workspace/.claude/plugins/collector-dev"
+CLAUDE_CMD=(claude --dangerously-skip-permissions --plugin-dir "$PLUGIN_DIR")
 
 # --- Worktree isolation ---
 setup_worktree() {
@@ -107,7 +109,7 @@ case "${1:-}" in
     echo "Branch: $BRANCH"
     build_docker_args "$WORKTREE"
     docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" \
-      claude --dangerously-skip-permissions
+      "${CLAUDE_CMD[@]}"
     ;;
 
   --shell|-s)
@@ -123,10 +125,10 @@ case "${1:-}" in
     build_docker_args "$REPO_ROOT"
     if [[ -z "${1:-}" ]]; then
       docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" \
-        claude --dangerously-skip-permissions
+        "${CLAUDE_CMD[@]}"
     else
       docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
-        claude --dangerously-skip-permissions -p "$*"
+        "${CLAUDE_CMD[@]}" -p "$*"
     fi
     ;;
 
@@ -169,7 +171,7 @@ USAGE
 
     build_docker_args "$WORKTREE"
     docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
-      claude --dangerously-skip-permissions -p \
+      "${CLAUDE_CMD[@]}" -p \
       "/collector-dev:task You are working on branch '$BRANCH'. A draft PR has been created at: $PR_URL
 
 Your task: $TASK
