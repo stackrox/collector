@@ -32,6 +32,11 @@ setup_worktree() {
   local worktree_dir="/tmp/collector-${task_id}"
 
   git -C "$REPO_ROOT" worktree add -b "$branch" "$worktree_dir" HEAD >/dev/null 2>&1
+
+  # Initialize submodules in the worktree
+  echo "Initializing submodules..." >&2
+  git -C "$worktree_dir" submodule update --init --recursive >/dev/null 2>&1
+
   echo "$worktree_dir"
 }
 
