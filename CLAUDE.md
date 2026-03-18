@@ -5,6 +5,77 @@ network, and container events from Linux kernels. It uses CO-RE BPF
 (Compile Once, Run Everywhere) via falcosecurity-libs and reports events
 to StackRox Sensor via gRPC.
 
+## Devcontainer Setup
+
+### Prerequisites
+
+1. Docker (Docker Desktop, OrbStack, or Colima)
+2. GCP access with Vertex AI enabled (for Claude Code)
+
+### Vertex AI Configuration
+
+Claude Code in the devcontainer authenticates to Vertex AI using your host's
+gcloud credentials (mounted read-only). Set up once on your host:
+
+```bash
+# Authenticate to GCP
+gcloud auth login
+gcloud auth application-default login
+
+# Set these environment variables (add to your shell profile)
+export CLAUDE_CODE_USE_VERTEX=1
+export GOOGLE_CLOUD_PROJECT=<your-gcp-project-id>
+export GOOGLE_CLOUD_LOCATION=<vertex-ai-region>       # e.g., us-east5
+export ANTHROPIC_VERTEX_PROJECT_ID=<your-gcp-project-id>
+```
+
+The devcontainer.json forwards these env vars into the container
+automatically via `${localEnv:*}`.
+
+### Launch
+
+**VSCode:** Open the repo, click "Reopen in Container" when prompted.
+
+**CLI:**
+```bash
+# Build and start the devcontainer
+devcontainer up --workspace-folder .
+
+# Or run Claude Code directly
+docker run --rm \
+  -v "$(pwd):/workspace" \
+  -v "$HOME/.config/gcloud:/home/dev/.config/gcloud:ro" \
+  -v "$HOME/.gitconfig:/home/dev/.gitconfig:ro" \
+  -e CLAUDE_CODE_USE_VERTEX=1 \
+  -e GOOGLE_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT \
+  -e GOOGLE_CLOUD_LOCATION=$GOOGLE_CLOUD_LOCATION \
+  -e ANTHROPIC_VERTEX_PROJECT_ID=$ANTHROPIC_VERTEX_PROJECT_ID \
+  -e CLOUDSDK_CONFIG=/home/dev/.config/gcloud \
+  -e GOOGLE_APPLICATION_CREDENTIALS=/home/dev/.config/gcloud/application_default_credentials.json \
+  -w /workspace \
+  collector-dev:latest \
+  claude --dangerously-skip-permissions
+```
+
+### Building Inside the Devcontainer
+
+The devcontainer IS the builder image — no nested Docker needed:
+
+```bash
+# Configure (first time or after CMakeLists.txt changes)
+cmake -S . -B cmake-build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCOLLECTOR_VERSION=$(git describe --tags --abbrev=10 --long)
+
+# Build (~30s incremental)
+cmake --build cmake-build -- -j$(nproc)
+
+# Unit tests (17 tests, ~13s)
+ctest --no-tests=error -V --test-dir cmake-build
+```
+
+### Building on the Host (without devcontainer)
+
 ## Quick Reference
 
 ```bash
