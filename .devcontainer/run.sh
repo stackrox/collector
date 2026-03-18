@@ -33,9 +33,12 @@ setup_worktree() {
 
   git -C "$REPO_ROOT" worktree add -b "$branch" "$worktree_dir" HEAD >/dev/null 2>&1
 
-  # Initialize submodules in the worktree
+  # Only init submodules needed for building collector (not builder/third_party)
   echo "Initializing submodules..." >&2
-  git -C "$worktree_dir" submodule update --init --recursive >/dev/null 2>&1
+  git -C "$worktree_dir" submodule update --init \
+    falcosecurity-libs \
+    collector/proto/third_party/stackrox \
+    >/dev/null 2>&1
 
   echo "$worktree_dir"
 }
