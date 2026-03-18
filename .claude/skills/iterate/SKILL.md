@@ -1,6 +1,6 @@
 ---
 name: iterate
-description: Full development cycle — build, unit test, format check, commit, push
+description: Full development cycle — build, unit test, format check, commit, push, create PR
 tags: [collector, build, test, workflow]
 ---
 
@@ -30,14 +30,15 @@ Run the full development inner loop. Stops at the first failure.
 4. **Commit**:
    - Stage changed files (source + any format fixes)
    - Create a commit with a descriptive message summarizing the changes
-   - Follow the repository's commit conventions
 
-5. **Push**:
-   - Push to the current branch
-   - If a PR exists, report the PR URL
-   - If no PR exists, suggest creating one
+5. **Push and create PR**:
+   - Use `mcp__github__create_branch` if the branch doesn't exist on remote
+   - Use `mcp__github__push_files` to push committed changes
+   - Use `mcp__github__create_pull_request` to create a PR if none exists,
+     or `mcp__github__update_pull_request` to update the description
+   - Alternatively, use `git push` and then create the PR via MCP
 
 6. **Report**:
    - Summary: built, N tests passed, formatted M files, pushed to branch X
-   - Link to PR if it exists
-   - Note: CI will run integration tests on the PR — use `/ci-status` to check results later
+   - Link to PR
+   - Note: CI will run integration tests — use `/ci-status` to check results later

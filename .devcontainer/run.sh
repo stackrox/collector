@@ -9,11 +9,13 @@
 # The agent works on an isolated git worktree so your working tree is untouched.
 # Changes are pushed to a branch and a PR is created for CI validation.
 #
+# GitHub access is via the official GitHub MCP server (OAuth, configured in .mcp.json).
+# Authenticate once with: /mcp in Claude Code, then select GitHub → Authenticate.
+#
 # Prerequisites:
 #   - Docker
 #   - gcloud auth login && gcloud auth application-default login
 #   - CLAUDE_CODE_USE_VERTEX=1 and related env vars (see CLAUDE.md)
-#   - GITHUB_TOKEN with repo scope, or gh auth login on host
 
 set -euo pipefail
 
@@ -22,15 +24,13 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 IMAGE="${COLLECTOR_DEV_IMAGE:-collector-dev:test}"
 
 # --- Worktree isolation ---
-# Create a temporary git worktree so the agent doesn't touch your checkout.
-# The worktree is cleaned up when the container exits.
 setup_worktree() {
   local task_id
   task_id="agent-$(date +%s)-$$"
   local branch="claude/${task_id}"
   local worktree_dir="/tmp/collector-${task_id}"
 
-  git -C "$REPO_ROOT" worktree add -b "$branch" "$worktree_dir" HEAD 2>/dev/null
+  git -C "$REPO_ROOT" worktree add -b "$branch" "$worktree_dir" HEAD >/dev/null 2>&1
   echo "$worktree_dir"
 }
 
@@ -41,7 +41,6 @@ cleanup_worktree() {
     branch=$(git -C "$worktree_dir" branch --show-current 2>/dev/null || true)
     git -C "$REPO_ROOT" worktree remove --force "$worktree_dir" 2>/dev/null || true
     if [[ -n "$branch" ]]; then
-      # Only delete the branch if it was never pushed
       if ! git -C "$REPO_ROOT" config "branch.${branch}.remote" &>/dev/null; then
         git -C "$REPO_ROOT" branch -D "$branch" 2>/dev/null || true
       fi
@@ -52,7 +51,7 @@ cleanup_worktree() {
 # --- Docker args ---
 build_docker_args() {
   local workspace="$1"
-  local -a args=(
+  DOCKER_ARGS=(
     --rm
     -v "$workspace:/workspace"
     -v "$HOME/.config/gcloud:/home/dev/.config/gcloud:ro"
@@ -66,18 +65,9 @@ build_docker_args() {
   # Forward Vertex AI env vars
   for var in CLAUDE_CODE_USE_VERTEX GOOGLE_CLOUD_PROJECT GOOGLE_CLOUD_LOCATION ANTHROPIC_VERTEX_PROJECT_ID; do
     if [[ -n "${!var:-}" ]]; then
-      args+=(-e "$var=${!var}")
+      DOCKER_ARGS+=(-e "$var=${!var}")
     fi
   done
-
-  # Forward GitHub token (fine-grained PAT preferred)
-  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    args+=(-e "GITHUB_TOKEN=$GITHUB_TOKEN" -e "GH_TOKEN=$GITHUB_TOKEN")
-  elif [[ -d "$HOME/.config/gh" ]]; then
-    args+=(-v "$HOME/.config/gh:/home/dev/.config/gh:ro")
-  fi
-
-  echo "${args[@]}"
 }
 
 # --- Main ---
@@ -87,8 +77,8 @@ case "${1:-}" in
     trap "cleanup_worktree '$WORKTREE'" EXIT
     echo "Working in isolated worktree: $WORKTREE"
     echo "Branch: $(git -C "$WORKTREE" branch --show-current)"
-    DOCKER_ARGS=$(build_docker_args "$WORKTREE")
-    eval docker run -it $DOCKER_ARGS "$IMAGE" \
+    build_docker_args "$WORKTREE"
+    docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" \
       claude --dangerously-skip-permissions
     ;;
 
@@ -96,19 +86,18 @@ case "${1:-}" in
     WORKTREE=$(setup_worktree)
     trap "cleanup_worktree '$WORKTREE'" EXIT
     echo "Working in isolated worktree: $WORKTREE"
-    DOCKER_ARGS=$(build_docker_args "$WORKTREE")
-    eval docker run -it $DOCKER_ARGS "$IMAGE" zsh
+    build_docker_args "$WORKTREE"
+    docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" zsh
     ;;
 
   --no-worktree)
-    # Run directly on the repo (no isolation, for debugging)
     shift
-    DOCKER_ARGS=$(build_docker_args "$REPO_ROOT")
+    build_docker_args "$REPO_ROOT"
     if [[ -z "${1:-}" ]]; then
-      eval docker run -it $DOCKER_ARGS "$IMAGE" \
+      docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" \
         claude --dangerously-skip-permissions
     else
-      eval docker run $DOCKER_ARGS "$IMAGE" \
+      docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
         claude --dangerously-skip-permissions -p "$*"
     fi
     ;;
@@ -123,15 +112,13 @@ Usage:
 
 Environment:
   COLLECTOR_DEV_IMAGE            Docker image (default: collector-dev:test)
-  GITHUB_TOKEN                   Fine-grained PAT for push/PR (recommended)
   CLAUDE_CODE_USE_VERTEX=1       Enable Vertex AI
   GOOGLE_CLOUD_PROJECT           GCP project ID
   GOOGLE_CLOUD_LOCATION          Vertex AI region (e.g., us-east5)
 
-GitHub Token:
-  Create a fine-grained PAT at https://github.com/settings/tokens?type=beta
-  Repository: stackrox/collector
-  Permissions: Contents (write), Pull requests (write), Actions (read)
+GitHub:
+  Uses the official GitHub MCP server (OAuth). On first use, run /mcp
+  inside Claude Code and authenticate with GitHub.
 USAGE
     exit 0
     ;;
@@ -144,11 +131,10 @@ USAGE
     echo "Task: $*"
     echo "---"
 
-    # Cleanup worktree on exit, but only delete branch if it wasn't pushed
     trap "cleanup_worktree '$WORKTREE'" EXIT
 
-    DOCKER_ARGS=$(build_docker_args "$WORKTREE")
-    eval docker run $DOCKER_ARGS "$IMAGE" \
+    build_docker_args "$WORKTREE"
+    docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
       claude --dangerously-skip-permissions -p "$*"
     ;;
 esac

@@ -25,16 +25,11 @@ RUN dnf install -y \
 
 # Determine architecture strings used by various download URLs
 # uname -m gives aarch64 or x86_64
-# Go uses arm64/amd64, gh uses arm64/amd64, ripgrep/fd use aarch64/x86_64
+# Go uses arm64/amd64, ripgrep/fd use aarch64/x86_64
 RUN ARCH=$(uname -m) \
     && GOARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "amd64") \
-    && GH_ARCH=$GOARCH \
     # Install Go
     && curl -fsSL "https://go.dev/dl/go1.23.6.linux-${GOARCH}.tar.gz" | tar -C /usr/local -xzf - \
-    # Install gh CLI
-    && GH_VER=$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'].lstrip('v'))") \
-    && curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VER}/gh_${GH_VER}_linux_${GH_ARCH}.tar.gz" \
-       | tar -xzf - --strip-components=1 -C /usr/local \
     # Install ripgrep
     && curl -fsSL "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-${ARCH}-unknown-linux-gnu.tar.gz" \
        | tar -xzf - --strip-components=1 -C /usr/local/bin "ripgrep-14.1.1-${ARCH}-unknown-linux-gnu/rg" \
@@ -61,6 +56,9 @@ RUN curl -fsSL https://sdk.cloud.google.com > /tmp/install-gcloud.sh \
     && rm /tmp/install-gcloud.sh
 ENV PATH="/opt/google-cloud-sdk/bin:${PATH}"
 
+# Pull GitHub MCP server image (used by Claude Code for GitHub operations)
+# Configured in .claude/settings.json as an MCP server
+
 # Create non-root dev user with passwordless sudo
 RUN useradd -m -s /bin/zsh dev \
     && echo "dev ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/dev
@@ -78,5 +76,5 @@ WORKDIR /workspace
 # Persist shell history and Claude state across rebuilds (volumes in devcontainer.json)
 ENV HISTFILE=/home/dev/.commandhistory/.zsh_history
 
-# Default to zsh
 ENV SHELL=/bin/zsh
+ENV DEVCONTAINER=true
