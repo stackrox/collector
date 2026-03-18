@@ -2,17 +2,15 @@
 # Launch Claude Code in the collector devcontainer with a task.
 #
 # Usage:
-#   .devcontainer/run.sh "fix the connect() handler to capture IPv6 scope IDs"
-#   .devcontainer/run.sh --interactive
-#   .devcontainer/run.sh --local "debug the build failure"
-#   .devcontainer/run.sh --shell
-#
-# The agent works on an isolated git worktree so your working tree is untouched.
-# A draft PR is created upfront so the agent only needs to commit and push.
+#   .devcontainer/run.sh "task description"              Full: worktree + PR + CI loop
+#   .devcontainer/run.sh --headless "task description"   Worktree + stream output, no PR
+#   .devcontainer/run.sh --interactive                   Worktree + TUI, no PR
+#   .devcontainer/run.sh --local ["task"]                Edit working tree directly
+#   .devcontainer/run.sh --shell                         Shell into container
 #
 # Prerequisites:
 #   - Docker
-#   - gh (GitHub CLI, authenticated — only needed for task mode)
+#   - gh (GitHub CLI, authenticated — only needed for default task mode)
 #   - gcloud auth login && gcloud auth application-default login
 #   - CLAUDE_CODE_USE_VERTEX=1 and related env vars (see CLAUDE.md)
 
@@ -23,10 +21,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 IMAGE="${COLLECTOR_DEV_IMAGE:-collector-dev:test}"
 PLUGIN_DIR="/workspace/.claude/plugins/collector-dev"
 
-# Interactive mode: normal TUI
 CLAUDE_INTERACTIVE=(claude --dangerously-skip-permissions --plugin-dir "$PLUGIN_DIR")
-
-# Autonomous mode: stream all messages to stdout as JSON
 CLAUDE_AUTONOMOUS=(claude --dangerously-skip-permissions --plugin-dir "$PLUGIN_DIR" --output-format stream-json --verbose)
 
 # --- Worktree isolation ---
@@ -61,10 +56,8 @@ setup_pr() {
   local branch
   branch=$(git -C "$worktree_dir" branch --show-current)
 
-  # Push the branch
   git -C "$worktree_dir" push -u origin "$branch" >/dev/null 2>&1
 
-  # Create draft PR
   local pr_url
   pr_url=$(gh pr create \
     --repo stackrox/collector \
@@ -97,7 +90,6 @@ build_docker_args() {
     -w /workspace
   )
 
-  # Forward Vertex AI env vars
   for var in CLAUDE_CODE_USE_VERTEX GOOGLE_CLOUD_PROJECT GOOGLE_CLOUD_LOCATION ANTHROPIC_VERTEX_PROJECT_ID; do
     if [[ -n "${!var:-}" ]]; then
       DOCKER_ARGS+=(-e "$var=${!var}")
@@ -116,6 +108,22 @@ case "${1:-}" in
     build_docker_args "$WORKTREE"
     docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" \
       "${CLAUDE_INTERACTIVE[@]}"
+    ;;
+
+  --headless|-H)
+    shift
+    if [[ -z "${1:-}" ]]; then
+      echo "Usage: $0 --headless \"task description\"" >&2
+      exit 1
+    fi
+    WORKTREE=$(setup_worktree)
+    trap "cleanup_worktree '$WORKTREE'" EXIT
+    BRANCH=$(git -C "$WORKTREE" branch --show-current)
+    echo "Working in isolated worktree: $WORKTREE" >&2
+    echo "Branch: $BRANCH" >&2
+    build_docker_args "$WORKTREE"
+    docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
+      "${CLAUDE_AUTONOMOUS[@]}" -p "$*"
     ;;
 
   --local|-l)
@@ -141,10 +149,11 @@ case "${1:-}" in
   ""|--help|-h)
     cat <<USAGE
 Usage:
-  $0 "task description"          Run a task end-to-end (worktree + PR + CI loop)
-  $0 --interactive               Interactive session (isolated worktree, no PR)
-  $0 --local ["task"]            Edit your working tree directly (no worktree, no PR)
-  $0 --shell                     Shell into the container (isolated worktree)
+  $0 "task"                      Full: worktree + draft PR + CI loop (stream-json)
+  $0 --headless "task"           Worktree + stream output, no PR
+  $0 --interactive               Worktree + TUI, no PR
+  $0 --local ["task"]            Edit working tree directly, TUI
+  $0 --shell                     Shell into the container
 
 Environment:
   COLLECTOR_DEV_IMAGE            Docker image (default: collector-dev:test)
@@ -153,7 +162,7 @@ Environment:
   GOOGLE_CLOUD_LOCATION          Vertex AI region (e.g., us-east5)
 
 Prerequisites:
-  gh auth login                  GitHub CLI (for task mode PR creation)
+  gh auth login                  GitHub CLI (only for default task mode)
   gcloud auth login              Vertex AI authentication
 USAGE
     exit 0
@@ -164,14 +173,14 @@ USAGE
     BRANCH=$(git -C "$WORKTREE" branch --show-current)
     TASK="$*"
 
-    echo "Working in isolated worktree: $WORKTREE"
-    echo "Branch: $BRANCH"
-    echo "Task: $TASK"
-    echo "---"
-    echo "Creating draft PR..."
+    echo "Working in isolated worktree: $WORKTREE" >&2
+    echo "Branch: $BRANCH" >&2
+    echo "Task: $TASK" >&2
+    echo "---" >&2
+    echo "Creating draft PR..." >&2
     PR_URL=$(setup_pr "$WORKTREE" "$TASK")
-    echo "PR: $PR_URL"
-    echo "---"
+    echo "PR: $PR_URL" >&2
+    echo "---" >&2
 
     trap "cleanup_worktree '$WORKTREE'" EXIT
 
