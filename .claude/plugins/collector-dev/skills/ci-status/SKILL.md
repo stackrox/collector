@@ -1,7 +1,7 @@
 ---
 name: ci-status
 description: Check CI status on current PR, fetch failure logs, diagnose issues
-tags: [collector, ci, github, testing]
+allowed-tools: Bash(git branch *), Bash(git log *), mcp__github__search_pull_requests, mcp__github__pull_request_read, mcp__github__actions_list, mcp__github__actions_get, mcp__github__get_job_logs, Read
 ---
 
 # CI Status

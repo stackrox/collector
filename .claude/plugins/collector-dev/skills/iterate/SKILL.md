@@ -1,7 +1,7 @@
 ---
 name: iterate
 description: Full development cycle — build, unit test, format check, commit, push, create PR
-tags: [collector, build, test, workflow]
+allowed-tools: Bash(cmake *), Bash(make *), Bash(ctest *), Bash(nproc), Bash(git *), Bash(clang-format *), Read, Write, Edit, Glob, Grep, mcp__github__create_branch, mcp__github__push_files, mcp__github__create_pull_request, mcp__github__update_pull_request, mcp__github__pull_request_read, mcp__github__actions_list
 ---
 
 # Iterate
@@ -32,13 +32,11 @@ Run the full development inner loop. Stops at the first failure.
    - Create a commit with a descriptive message summarizing the changes
 
 5. **Push and create PR**:
-   - Use `mcp__github__create_branch` if the branch doesn't exist on remote
-   - Use `mcp__github__push_files` to push committed changes
+   - Push with `git push`
    - Use `mcp__github__create_pull_request` to create a PR if none exists,
      or `mcp__github__update_pull_request` to update the description
-   - Alternatively, use `git push` and then create the PR via MCP
 
 6. **Report**:
    - Summary: built, N tests passed, formatted M files, pushed to branch X
    - Link to PR
-   - Note: CI will run integration tests — use `/ci-status` to check results later
+   - Note: CI will run integration tests — use `/collector-dev:ci-status` to check results later

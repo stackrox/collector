@@ -1,7 +1,7 @@
 ---
 name: build
 description: Build collector binary with options (debug, asan, tsan, clean)
-tags: [collector, build, cmake, cpp]
+allowed-tools: Bash(cmake *), Bash(make *), Bash(nproc), Bash(git describe *), Bash(strip *), Read, Glob
 ---
 
 # Build Collector
@@ -16,7 +16,7 @@ Build the collector binary. Supports optional arguments:
 ## Steps
 
 1. Determine build environment:
-   - If inside the devcontainer (check: `/usr/local/bin/cmake` exists and we're on Linux), run cmake directly.
+   - If inside the devcontainer (check: `DEVCONTAINER=true` env var), run cmake directly.
    - If on the host (macOS), use `make start-builder && make collector`.
 
 2. If `clean` argument is provided, remove `cmake-build/` directory first.
