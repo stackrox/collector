@@ -100,6 +100,10 @@ setup_clone() {
 
   echo "Cloning repo..." >&2
   git clone --local --no-checkout "$REPO_ROOT" "$clone_dir" >/dev/null 2>&1
+  # Fix remote to point to GitHub, not the local path
+  local github_url
+  github_url=$(git -C "$REPO_ROOT" remote get-url origin)
+  git -C "$clone_dir" remote set-url origin "$github_url"
   git -C "$clone_dir" checkout -b "$branch" HEAD >/dev/null 2>&1
 
   if [[ "$SKIP_SUBMODULES" != "true" ]]; then
