@@ -9,6 +9,7 @@
 #
 # Options:
 #   --branch <name>                                      Branch name (default: claude/agent-<timestamp>)
+#   --no-tui                                             Stream JSON instead of TUI
 #   --debug                                              Verbose MCP/auth logging
 #
 # Prerequisites:
@@ -24,6 +25,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 IMAGE="${COLLECTOR_DEV_IMAGE:-collector-dev:test}"
 WORKTREE_BASE="/tmp/collector-worktrees"
 DEBUG=false
+NO_TUI=false
 BRANCH_NAME=""
 
 # Parse global flags
@@ -31,6 +33,7 @@ ARGS=()
 for arg in "$@"; do
   case "$arg" in
     --debug) DEBUG=true ;;
+    --no-tui) NO_TUI=true ;;
     --branch=*) BRANCH_NAME="${arg#--branch=}" ;;
     --branch) BRANCH_NAME="__NEXT__" ;;
     *)
@@ -44,12 +47,14 @@ for arg in "$@"; do
 done
 set -- "${ARGS[@]+"${ARGS[@]}"}"
 
-CLAUDE_INTERACTIVE=(claude --dangerously-skip-permissions)
-CLAUDE_AUTONOMOUS=(claude --dangerously-skip-permissions --output-format stream-json --verbose)
+CLAUDE_CMD=(claude --dangerously-skip-permissions)
 
 if [[ "$DEBUG" == "true" ]]; then
-  CLAUDE_INTERACTIVE+=(--debug)
-  CLAUDE_AUTONOMOUS+=(--debug)
+  CLAUDE_CMD+=(--debug)
+fi
+
+if [[ "$NO_TUI" == "true" ]]; then
+  CLAUDE_CMD+=(--output-format stream-json --verbose)
 fi
 
 # --- Preflight checks ---
@@ -176,7 +181,7 @@ case "${1:-}" in
     echo "Working in isolated worktree: $WORKTREE"
     echo "Branch: $BRANCH"
     build_docker_args "$WORKTREE"
-    docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" "${CLAUDE_INTERACTIVE[@]}"
+    docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" "${CLAUDE_CMD[@]}"
     ;;
 
   --local|-l)
@@ -188,9 +193,9 @@ case "${1:-}" in
     preflight
     build_docker_args "$REPO_ROOT"
     if [[ -z "${1:-}" ]]; then
-      docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" "${CLAUDE_INTERACTIVE[@]}"
+      docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" "${CLAUDE_CMD[@]}"
     else
-      docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" "${CLAUDE_INTERACTIVE[@]}" -p "$*"
+      docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" "${CLAUDE_CMD[@]}" -p "$*"
     fi
     ;;
 
@@ -206,13 +211,15 @@ case "${1:-}" in
   ""|--help|-h)
     cat <<USAGE
 Usage:
-  $0 "task"                 Autonomous: implement, PR, CI loop (stream-json)
-  $0 --interactive          Worktree + TUI (manual control)
+  $0 "task"                 Run /dev-loop with TUI (implement → PR → CI green)
+  $0 "/skill args"          Run a specific skill with TUI
+  $0 --interactive          Worktree + TUI (no task, manual control)
   $0 --local ["task"]       Edit working tree directly, TUI
   $0 --shell                Shell into the container
 
 Options:
   --branch <name>           Branch name (default: claude/agent-<timestamp>)
+  --no-tui                  Stream JSON output instead of TUI
   --debug                   Verbose MCP/auth logging
 
 Environment:
@@ -237,20 +244,23 @@ USAGE
       git -C "$WORKTREE" push -u origin "$BRANCH" >/dev/null 2>&1
     fi
 
-    echo "Working in isolated worktree: $WORKTREE" >&2
-    echo "Branch: $BRANCH" >&2
-    echo "Task: $TASK" >&2
-    echo "---" >&2
+    echo "Working in isolated worktree: $WORKTREE"
+    echo "Branch: $BRANCH"
+    echo "Task: $TASK"
+    echo "---"
 
     trap "cleanup_worktree '$WORKTREE'" EXIT
 
     build_docker_args "$WORKTREE"
-    # If task starts with /, treat as a skill invocation; otherwise default to /dev-loop
     PROMPT="/dev-loop $TASK"
     if [[ "$TASK" == /* ]]; then
       PROMPT="$TASK"
     fi
-    docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
-      "${CLAUDE_AUTONOMOUS[@]}" -p "$PROMPT"
+
+    if [[ "$NO_TUI" == "true" ]]; then
+      docker run "${DOCKER_ARGS[@]}" "$IMAGE" "${CLAUDE_CMD[@]}" -p "$PROMPT"
+    else
+      docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" "${CLAUDE_CMD[@]}" -p "$PROMPT"
+    fi
     ;;
 esac
