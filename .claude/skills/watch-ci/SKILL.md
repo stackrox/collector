@@ -1,53 +1,59 @@
 ---
 name: watch-ci
-description: Check CI status and react to failures — diagnose, fix, rebuild, push. Designed to run in a loop.
-allowed-tools: Bash(cmake *), Bash(make *), Bash(ctest *), Bash(nproc), Bash(git *), Bash(clang-format *), Read, Write, Edit, Glob, Grep
+description: Push to existing remote branch via GitHub MCP, create PR if needed, monitor CI, fix failures until green
+disable-model-invocation: true
+allowed-tools: Bash(cmake *), Bash(ctest *), Bash(nproc), Bash(git add *), Bash(git commit *), Bash(git diff *), Bash(git describe *), Bash(git branch *), Bash(git status), Bash(git log *), Bash(git rev-parse *), Bash(clang-format *), Bash(sleep *), Read, Write, Edit, Glob, Grep
 ---
 
 # Watch CI
 
-Monitor CI for the current branch's PR and react to failures. Designed to be run
-with `/loop 30m /collector-dev:watch-ci`.
+Push commits via the GitHub MCP server, create PR if needed, and monitor CI until green.
+Do NOT use `git push` — it is blocked. Use the GitHub MCP push_files tool instead.
+
+## Prerequisites
+
+The current branch must already have a remote tracking branch. Check with:
+`git rev-parse --abbrev-ref --symbolic-full-name @{u}`
+If this fails, stop and report: "No remote branch. Push from host first."
 
 ## Steps
 
-1. **Find the PR** for the current branch:
-   - Get branch name: `git branch --show-current`
-   - Use the GitHub MCP server to search for the open PR in stackrox/collector
-   - If no PR found, report and stop
+1. **Check remote branch exists**:
+   - `git rev-parse --abbrev-ref --symbolic-full-name @{u}`
+   - If this fails, stop
 
-2. **Check CI status**:
+2. **Push** current commits:
+   - Use the GitHub MCP server push_files tool to push committed changes
+   - Do NOT use `git push`
+
+3. **Find or create PR**:
+   - Use the GitHub MCP server to search for an open PR for this branch
+   - If no PR exists, create a draft PR via the GitHub MCP server
+
+4. **Monitor CI loop** (repeat until all checks pass or blocked):
+   - Wait 10 minutes: `sleep 600`
    - Use the GitHub MCP server to get PR check status and workflow runs
+   - Evaluate:
+     - **All checks passed** → report success and stop
+     - **Checks still running** → report progress, continue loop
+     - **Checks failed** →
+       - Get job logs via the GitHub MCP server
+       - Diagnose:
+         - Build failure: read error, fix code
+         - Unit test failure: read assertion, fix code
+         - Lint failure: run `clang-format --style=file -i`
+         - Integration test infra flake (VM timeout, network): report as flake, continue
+         - Integration test real failure: analyze and fix code
+       - If fixable: fix → build → test → commit → push via MCP → continue loop
+       - If not fixable: report diagnosis and stop
 
-3. **Evaluate state and act**:
+5. **Safety limits**:
+   - Maximum 6 CI cycles (about 3 hours of monitoring)
+   - If exceeded, report status and stop
 
-   **If all checks pass:**
-   - Report: "All CI checks passed. PR is ready for review."
-   - Stop — no further action needed
-
-   **If checks are still running:**
-   - Report: "CI still running (X of Y checks complete). Will check again next loop."
-   - Stop — wait for next loop iteration
-
-   **If checks failed:**
-   - Use the GitHub MCP server to get job logs for the failed run
-   - Identify the failure type:
-     - **Build failure**: read compiler error, find the file:line, fix the code
-     - **Unit test failure**: read the assertion, find the test and source, fix the code
-     - **Integration test failure**: determine if it's a real failure or infra flake
-       - If infra flake (VM creation timeout, network issue): report and skip
-       - If real test failure: analyze the test expectation vs actual, fix the code
-     - **Lint failure**: run `clang-format --style=file -i` on the affected files
-   - After fixing:
-     - Build: `cmake --build cmake-build -- -j$(nproc)`
-     - Unit test: `ctest --no-tests=error -V --test-dir cmake-build`
-     - If build+test pass: `git add`, `git commit`, `git push`
-     - Report what was fixed and that a new CI run should start
-   - If the failure can't be fixed automatically, report the diagnosis and stop
-
-4. **Summary**: always end with a clear status line:
+6. **Summary**: end with a status line:
    - `PASSED` — all checks green
-   - `PENDING` — checks still running, will retry
-   - `FIXED` — failure diagnosed and fix pushed, awaiting new CI run
+   - `PENDING` — checks still running
+   - `FIXED` — failure diagnosed and fix pushed
    - `FLAKE` — infra failure, not a code issue
    - `BLOCKED` — failure requires human intervention
