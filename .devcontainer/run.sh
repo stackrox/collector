@@ -9,7 +9,6 @@
 #
 # Options:
 #   --branch <name>                                      Branch name (default: claude/agent-<timestamp>)
-#   --symlink-submodules                                 Mount submodules from main repo (fast, read-only)
 #   --debug                                              Verbose MCP/auth logging
 #
 # Prerequisites:
@@ -24,7 +23,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 IMAGE="${COLLECTOR_DEV_IMAGE:-collector-dev:test}"
 WORKTREE_BASE="/tmp/collector-worktrees"
-SYMLINK_SUBMODULES=false
 DEBUG=false
 BRANCH_NAME=""
 
@@ -32,7 +30,6 @@ BRANCH_NAME=""
 ARGS=()
 for arg in "$@"; do
   case "$arg" in
-    --symlink-submodules) SYMLINK_SUBMODULES=true ;;
     --debug) DEBUG=true ;;
     --branch=*) BRANCH_NAME="${arg#--branch=}" ;;
     --branch) BRANCH_NAME="__NEXT__" ;;
@@ -116,18 +113,17 @@ setup_worktree() {
 
   mkdir -p "$WORKTREE_BASE"
   git -C "$REPO_ROOT" worktree add -b "$branch" "$worktree_dir" HEAD >/dev/null 2>&1
+
   # Make worktree git dir writable by container user (different uid)
   local worktree_git_name
   worktree_git_name=$(basename "$worktree_dir")
   chmod -R a+rwX "$REPO_ROOT/.git/worktrees/$worktree_git_name"
 
-  if [[ "$SYMLINK_SUBMODULES" != "true" ]]; then
-    echo "Initializing submodules..." >&2
-    git -C "$worktree_dir" submodule update --init --depth 1 \
-      falcosecurity-libs \
-      collector/proto/third_party/stackrox \
-      >/dev/null 2>&1
-  fi
+  echo "Initializing submodules..." >&2
+  git -C "$worktree_dir" submodule update --init --depth 1 \
+    falcosecurity-libs \
+    collector/proto/third_party/stackrox \
+    2>&1 | sed 's/^/  /' >&2
 
   echo "$worktree_dir"
 }
@@ -160,16 +156,8 @@ build_docker_args() {
     -w /workspace
   )
 
-  # Mount .git read-write so worktree git operations work
-  # (commits, submodule state, index.lock all write here)
-  # Agent can't push (no SSH keys) so risk is limited to local git state
+  # Mount .git so worktree resolves (agent can't push — no SSH keys)
   DOCKER_ARGS+=(-v "$REPO_ROOT/.git:$REPO_ROOT/.git")
-
-  # Optionally mount submodules from main repo instead of cloning
-  if [[ "$SYMLINK_SUBMODULES" == "true" ]]; then
-    DOCKER_ARGS+=(-v "$REPO_ROOT/falcosecurity-libs:/workspace/falcosecurity-libs:ro")
-    DOCKER_ARGS+=(-v "$REPO_ROOT/collector/proto/third_party/stackrox:/workspace/collector/proto/third_party/stackrox:ro")
-  fi
 
   for var in CLAUDE_CODE_USE_VERTEX GOOGLE_CLOUD_PROJECT GOOGLE_CLOUD_LOCATION ANTHROPIC_VERTEX_PROJECT_ID GITHUB_TOKEN; do
     if [[ -n "${!var:-}" ]]; then
@@ -225,7 +213,6 @@ Usage:
 
 Options:
   --branch <name>           Branch name (default: claude/agent-<timestamp>)
-  --symlink-submodules      Mount submodules from main repo (faster, read-only)
   --debug                   Verbose MCP/auth logging
 
 Environment:
