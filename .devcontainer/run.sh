@@ -239,7 +239,14 @@ USAGE
     trap "cleanup_worktree '$WORKTREE'" EXIT
 
     build_docker_args "$WORKTREE"
+    # If task starts with /, treat as a skill invocation; otherwise default to /dev-loop
+    local prompt
+    if [[ "$TASK" == /* ]]; then
+      prompt="$TASK"
+    else
+      prompt="/dev-loop $TASK"
+    fi
     docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
-      "${CLAUDE_AUTONOMOUS[@]}" -p "/dev-loop $TASK"
+      "${CLAUDE_AUTONOMOUS[@]}" -p "$prompt"
     ;;
 esac
