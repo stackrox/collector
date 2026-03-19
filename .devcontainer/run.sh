@@ -102,7 +102,7 @@ setup_worktree() {
 
   if [[ "$SKIP_SUBMODULES" != "true" ]]; then
     echo "Initializing submodules..." >&2
-    git -C "$worktree_dir" submodule update --init \
+    git -C "$worktree_dir" submodule update --init --depth 1 \
       falcosecurity-libs \
       collector/proto/third_party/stackrox \
       >/dev/null 2>&1
