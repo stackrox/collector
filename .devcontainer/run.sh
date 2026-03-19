@@ -8,6 +8,7 @@
 #   .devcontainer/run.sh --shell                         Shell into container
 #
 # Options:
+#   --branch <name>                                      Branch name (default: claude/agent-<timestamp>)
 #   --symlink-submodules                                 Mount submodules from main repo (fast, read-only)
 #   --debug                                              Verbose MCP/auth logging
 #
@@ -22,8 +23,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 IMAGE="${COLLECTOR_DEV_IMAGE:-collector-dev:test}"
+WORKTREE_BASE="/tmp/collector-worktrees"
 SYMLINK_SUBMODULES=false
 DEBUG=false
+BRANCH_NAME=""
 
 # Parse global flags
 ARGS=()
@@ -31,7 +34,15 @@ for arg in "$@"; do
   case "$arg" in
     --symlink-submodules) SYMLINK_SUBMODULES=true ;;
     --debug) DEBUG=true ;;
-    *) ARGS+=("$arg") ;;
+    --branch=*) BRANCH_NAME="${arg#--branch=}" ;;
+    --branch) BRANCH_NAME="__NEXT__" ;;
+    *)
+      if [[ "$BRANCH_NAME" == "__NEXT__" ]]; then
+        BRANCH_NAME="$arg"
+      else
+        ARGS+=("$arg")
+      fi
+      ;;
   esac
 done
 set -- "${ARGS[@]+"${ARGS[@]}"}"
@@ -94,10 +105,16 @@ preflight() {
 
 # --- Worktree ---
 setup_worktree() {
-  local task_id="agent-$(date +%s)-$$"
-  local branch="claude/${task_id}"
-  local worktree_dir="/tmp/collector-${task_id}"
+  local branch
+  if [[ -n "$BRANCH_NAME" ]]; then
+    branch="$BRANCH_NAME"
+  else
+    branch="claude/agent-$(date +%s)-$$"
+  fi
+  local safe_name="${branch//\//-}"
+  local worktree_dir="${WORKTREE_BASE}/${safe_name}"
 
+  mkdir -p "$WORKTREE_BASE"
   git -C "$REPO_ROOT" worktree add -b "$branch" "$worktree_dir" HEAD >/dev/null 2>&1
 
   if [[ "$SYMLINK_SUBMODULES" != "true" ]]; then
@@ -197,6 +214,7 @@ Usage:
   $0 --shell                Shell into the container
 
 Options:
+  --branch <name>           Branch name (default: claude/agent-<timestamp>)
   --symlink-submodules      Mount submodules from main repo (faster, read-only)
   --debug                   Verbose MCP/auth logging
 
