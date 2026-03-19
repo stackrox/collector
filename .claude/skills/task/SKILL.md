@@ -2,7 +2,7 @@
 name: task
 description: End-to-end autonomous workflow — implement a task, push, create PR, monitor CI, fix failures until green
 disable-model-invocation: true
-allowed-tools: Bash(cmake *), Bash(make *), Bash(ctest *), Bash(nproc), Bash(git *), Bash(clang-format *), Bash(sleep *), Read, Write, Edit, Glob, Grep, Agent, mcp__github__create_pull_request, mcp__github__create_branch, mcp__github__pull_request_read, mcp__github__update_pull_request, mcp__github__search_pull_requests, mcp__github__actions_list, mcp__github__actions_get, mcp__github__get_job_logs
+allowed-tools: Bash(cmake *), Bash(make *), Bash(ctest *), Bash(nproc), Bash(git *), Bash(clang-format *), Bash(sleep *), Read, Write, Edit, Glob, Grep, Agent
 ---
 
 # Task
@@ -36,7 +36,7 @@ The task description is provided via $ARGUMENTS or in the initial prompt context
    - `git commit` with a descriptive message
    - `git push -u origin HEAD`
 8. Create a draft PR:
-   - Use `mcp__github__create_pull_request` to create a draft PR in `stackrox/collector`
+   - Use the GitHub MCP server to create a draft PR in stackrox/collector
    - Title: brief summary of the task
    - Body: describe what was changed and why
 
@@ -49,9 +49,7 @@ After pushing, enter a monitoring loop. CI typically takes 30-90 minutes.
 1. Wait 10 minutes: `sleep 600`
 2. Check CI status:
    - Get current branch: `git branch --show-current`
-   - Use `mcp__github__search_pull_requests` to find the PR
-   - Use `mcp__github__actions_list` to get workflow runs
-   - Use `mcp__github__pull_request_read` for check status
+   - Use the GitHub MCP server to search for the PR and get workflow run status
 
 3. Evaluate:
 
@@ -60,7 +58,7 @@ After pushing, enter a monitoring loop. CI typically takes 30-90 minutes.
    **Checks still running** → report progress ("X of Y complete"), continue loop
 
    **Checks failed** →
-   - Use `mcp__github__actions_get` and `mcp__github__get_job_logs` to get failure logs
+   - Use the GitHub MCP server to get job logs for the failed run
    - Diagnose the failure:
      - Build failure: read error, fix code
      - Unit test failure: read assertion, fix code

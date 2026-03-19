@@ -61,14 +61,16 @@ ENV PATH="/opt/google-cloud-sdk/bin:${PATH}"
 
 # Create non-root dev user with passwordless sudo
 RUN useradd -m -s /bin/zsh dev \
-    && echo "dev ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/dev
+    && echo "dev ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/dev \
+    && mkdir -p /home/dev/.claude/debug /home/dev/.commandhistory \
+    && chown -R dev:dev /home/dev/.claude /home/dev/.commandhistory
 
 # Install ansible for VM-based testing (optional, lightweight)
 RUN pip3 install ansible-core
 
 # Firewall script for network isolation (optional, used with --dangerously-skip-permissions)
-COPY init-firewall.sh /usr/local/bin/init-firewall.sh
-RUN chmod +x /usr/local/bin/init-firewall.sh
+COPY --chmod=755 init-firewall.sh /usr/local/bin/init-firewall.sh
+COPY --chmod=755 entrypoint.sh /usr/local/bin/entrypoint.sh
 
 USER dev
 WORKDIR /workspace
@@ -78,3 +80,5 @@ ENV HISTFILE=/home/dev/.commandhistory/.zsh_history
 
 ENV SHELL=/bin/zsh
 ENV DEVCONTAINER=true
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

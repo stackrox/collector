@@ -1,7 +1,7 @@
 ---
 name: ci-status
 description: Check CI status on current PR, fetch failure logs, diagnose issues
-allowed-tools: Bash(git branch *), Bash(git log *), mcp__github__search_pull_requests, mcp__github__pull_request_read, mcp__github__actions_list, mcp__github__actions_get, mcp__github__get_job_logs, Read
+allowed-tools: Bash(git branch *), Bash(git log *), Read
 ---
 
 # CI Status
@@ -12,16 +12,15 @@ Check CI pipeline status for the current branch/PR and diagnose failures.
 
 1. Get the current branch name from git.
 
-2. Use `mcp__github__search_pull_requests` to find an open PR for this branch
-   in `stackrox/collector`.
+2. Use the GitHub MCP server to search for an open PR for this branch
+   in stackrox/collector.
 
-3. If a PR exists, use `mcp__github__pull_request_read` to get its check status.
+3. If a PR exists, get its check status via the GitHub MCP server.
 
-4. Use `mcp__github__actions_list` to get workflow runs for the branch.
+4. Get workflow runs for the branch via the GitHub MCP server.
 
 5. For any **failed runs**:
-   - Use `mcp__github__actions_get` to get the run details
-   - Use `mcp__github__get_job_logs` to fetch failure logs
+   - Get the run details and job logs via the GitHub MCP server
    - Identify which workflow failed (unit-tests, integration-tests, k8s-integration-tests, lint)
    - For integration test failures, identify which VM type and test suite failed
 

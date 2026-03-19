@@ -1,9 +1,0 @@
-{
-  "name": "collector-dev",
-  "description": "Collector development workflows — build, test, CI status, and PR management",
-  "version": "1.0.0",
-  "author": {
-    "name": "RHACS Collector Team"
-  },
-  "repository": "https://github.com/stackrox/collector"
-}

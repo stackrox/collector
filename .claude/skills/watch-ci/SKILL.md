@@ -1,7 +1,7 @@
 ---
 name: watch-ci
 description: Check CI status and react to failures — diagnose, fix, rebuild, push. Designed to run in a loop.
-allowed-tools: Bash(cmake *), Bash(make *), Bash(ctest *), Bash(nproc), Bash(git *), Bash(clang-format *), Read, Write, Edit, Glob, Grep, mcp__github__pull_request_read, mcp__github__search_pull_requests, mcp__github__actions_list, mcp__github__actions_get, mcp__github__get_job_logs
+allowed-tools: Bash(cmake *), Bash(make *), Bash(ctest *), Bash(nproc), Bash(git *), Bash(clang-format *), Read, Write, Edit, Glob, Grep
 ---
 
 # Watch CI
@@ -13,12 +13,11 @@ with `/loop 30m /collector-dev:watch-ci`.
 
 1. **Find the PR** for the current branch:
    - Get branch name: `git branch --show-current`
-   - Use `mcp__github__search_pull_requests` to find the open PR in `stackrox/collector`
+   - Use the GitHub MCP server to search for the open PR in stackrox/collector
    - If no PR found, report and stop
 
 2. **Check CI status**:
-   - Use `mcp__github__pull_request_read` to get check status
-   - Use `mcp__github__actions_list` to get workflow runs
+   - Use the GitHub MCP server to get PR check status and workflow runs
 
 3. **Evaluate state and act**:
 
@@ -31,7 +30,7 @@ with `/loop 30m /collector-dev:watch-ci`.
    - Stop — wait for next loop iteration
 
    **If checks failed:**
-   - Use `mcp__github__actions_get` and `mcp__github__get_job_logs` to get failure details
+   - Use the GitHub MCP server to get job logs for the failed run
    - Identify the failure type:
      - **Build failure**: read compiler error, find the file:line, fix the code
      - **Unit test failure**: read the assertion, find the test and source, fix the code

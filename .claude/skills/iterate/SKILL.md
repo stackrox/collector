@@ -1,7 +1,7 @@
 ---
 name: iterate
 description: Full development cycle — build, unit test, format check, commit, push to existing branch
-allowed-tools: Bash(cmake *), Bash(make *), Bash(ctest *), Bash(nproc), Bash(git *), Bash(clang-format *), Read, Write, Edit, Glob, Grep, mcp__github__pull_request_read, mcp__github__actions_list, mcp__github__actions_get, mcp__github__get_job_logs
+allowed-tools: Bash(cmake *), Bash(make *), Bash(ctest *), Bash(nproc), Bash(git *), Bash(clang-format *), Read, Write, Edit, Glob, Grep
 ---
 
 # Iterate
@@ -37,6 +37,6 @@ Stops at the first failure.
    - Do NOT create new branches or PRs
 
 6. **Check CI**:
-   - Use `mcp__github__actions_list` to see if CI has started
+   - Use the GitHub MCP server to check if CI has started
    - Report the PR URL and note that CI is running
    - Use `/collector-dev:ci-status` for detailed CI results once checks complete
