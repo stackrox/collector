@@ -29,7 +29,7 @@ DEBUG=false
 ARGS=()
 for arg in "$@"; do
   case "$arg" in
-    --skip-submodules) SKIP_SUBMODULES=true ;;
+    --skip-submodules) ;; # no-op, submodules are mounted
     --debug) DEBUG=true ;;
     *) ARGS+=("$arg") ;;
   esac
@@ -100,13 +100,8 @@ setup_worktree() {
 
   git -C "$REPO_ROOT" worktree add -b "$branch" "$worktree_dir" HEAD >/dev/null 2>&1
 
-  if [[ "$SKIP_SUBMODULES" != "true" ]]; then
-    echo "Initializing submodules..." >&2
-    git -C "$worktree_dir" submodule update --init --depth 1 \
-      falcosecurity-libs \
-      collector/proto/third_party/stackrox \
-      >/dev/null 2>&1
-  fi
+  # Submodules are mounted read-only into the container via docker args
+  # No need to init them in the worktree
 
   echo "$worktree_dir"
 }
@@ -141,6 +136,10 @@ build_docker_args() {
 
   # Mount .git at the same absolute path so worktree .git file resolves
   DOCKER_ARGS+=(-v "$REPO_ROOT/.git:$REPO_ROOT/.git:ro")
+
+  # Mount submodules read-only from main repo (avoids cloning per worktree)
+  DOCKER_ARGS+=(-v "$REPO_ROOT/falcosecurity-libs:/workspace/falcosecurity-libs:ro")
+  DOCKER_ARGS+=(-v "$REPO_ROOT/collector/proto/third_party/stackrox:/workspace/collector/proto/third_party/stackrox:ro")
 
   for var in CLAUDE_CODE_USE_VERTEX GOOGLE_CLOUD_PROJECT GOOGLE_CLOUD_LOCATION ANTHROPIC_VERTEX_PROJECT_ID GITHUB_TOKEN; do
     if [[ -n "${!var:-}" ]]; then
