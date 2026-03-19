@@ -3,7 +3,7 @@
 #
 # Usage:
 #   .devcontainer/run.sh "task description"              Autonomous: /task then /watch-ci
-#   .devcontainer/run.sh --interactive                   Isolated clone + TUI
+#   .devcontainer/run.sh --interactive                   Worktree + TUI
 #   .devcontainer/run.sh --local ["task"]                Edit working tree directly
 #   .devcontainer/run.sh --shell                         Shell into container
 #
@@ -92,35 +92,36 @@ preflight() {
   fi
 }
 
-# --- Isolated clone (replaces worktree) ---
-setup_clone() {
+# --- Worktree ---
+setup_worktree() {
   local task_id="agent-$(date +%s)-$$"
   local branch="claude/${task_id}"
-  local clone_dir="/tmp/collector-${task_id}"
+  local worktree_dir="/tmp/collector-${task_id}"
 
-  echo "Cloning repo..." >&2
-  git clone --local --no-checkout "$REPO_ROOT" "$clone_dir" >/dev/null 2>&1
-  # Fix remote to point to GitHub, not the local path
-  local github_url
-  github_url=$(git -C "$REPO_ROOT" remote get-url origin)
-  git -C "$clone_dir" remote set-url origin "$github_url"
-  git -C "$clone_dir" checkout -b "$branch" HEAD >/dev/null 2>&1
+  git -C "$REPO_ROOT" worktree add -b "$branch" "$worktree_dir" HEAD >/dev/null 2>&1
 
   if [[ "$SKIP_SUBMODULES" != "true" ]]; then
     echo "Initializing submodules..." >&2
-    git -C "$clone_dir" submodule update --init \
+    git -C "$worktree_dir" submodule update --init \
       falcosecurity-libs \
       collector/proto/third_party/stackrox \
       >/dev/null 2>&1
   fi
 
-  echo "$clone_dir"
+  echo "$worktree_dir"
 }
 
-cleanup_clone() {
-  local clone_dir="$1"
-  if [[ -d "$clone_dir" ]]; then
-    rm -rf "$clone_dir"
+cleanup_worktree() {
+  local worktree_dir="$1"
+  if [[ -d "$worktree_dir" ]]; then
+    local branch
+    branch=$(git -C "$worktree_dir" branch --show-current 2>/dev/null || true)
+    git -C "$REPO_ROOT" worktree remove --force "$worktree_dir" 2>/dev/null || true
+    if [[ -n "$branch" ]]; then
+      if ! git -C "$REPO_ROOT" config "branch.${branch}.remote" &>/dev/null; then
+        git -C "$REPO_ROOT" branch -D "$branch" 2>/dev/null || true
+      fi
+    fi
   fi
 }
 
@@ -137,6 +138,10 @@ build_docker_args() {
     -e GOOGLE_APPLICATION_CREDENTIALS=/home/dev/.config/gcloud/application_default_credentials.json
     -w /workspace
   )
+
+  # Mount .git at the same absolute path so worktree .git file resolves
+  DOCKER_ARGS+=(-v "$REPO_ROOT/.git:$REPO_ROOT/.git:ro")
+
   for var in CLAUDE_CODE_USE_VERTEX GOOGLE_CLOUD_PROJECT GOOGLE_CLOUD_LOCATION ANTHROPIC_VERTEX_PROJECT_ID GITHUB_TOKEN; do
     if [[ -n "${!var:-}" ]]; then
       DOCKER_ARGS+=(-e "$var=${!var}")
@@ -148,12 +153,12 @@ build_docker_args() {
 case "${1:-}" in
   --interactive|-i)
     preflight
-    CLONE=$(setup_clone)
-    trap "cleanup_clone '$CLONE'" EXIT
-    BRANCH=$(git -C "$CLONE" branch --show-current)
-    echo "Working in isolated clone: $CLONE"
+    WORKTREE=$(setup_worktree)
+    trap "cleanup_worktree '$WORKTREE'" EXIT
+    BRANCH=$(git -C "$WORKTREE" branch --show-current)
+    echo "Working in isolated worktree: $WORKTREE"
     echo "Branch: $BRANCH"
-    build_docker_args "$CLONE"
+    build_docker_args "$WORKTREE"
     docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" "${CLAUDE_INTERACTIVE[@]}"
     ;;
 
@@ -170,18 +175,18 @@ case "${1:-}" in
 
   --shell|-s)
     check_docker; check_image
-    CLONE=$(setup_clone)
-    trap "cleanup_clone '$CLONE'" EXIT
-    echo "Working in isolated clone: $CLONE"
-    build_docker_args "$CLONE"
+    WORKTREE=$(setup_worktree)
+    trap "cleanup_worktree '$WORKTREE'" EXIT
+    echo "Working in isolated worktree: $WORKTREE"
+    build_docker_args "$WORKTREE"
     docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" zsh
     ;;
 
   ""|--help|-h)
     cat <<USAGE
 Usage:
-  $0 "task"                 Autonomous: implement → PR → CI loop (stream-json)
-  $0 --interactive          Isolated clone + TUI (manual control)
+  $0 "task"                 Autonomous: implement, PR, CI loop (stream-json)
+  $0 --interactive          Worktree + TUI (manual control)
   $0 --local ["task"]       Edit working tree directly, TUI
   $0 --shell                Shell into the container
 
@@ -201,18 +206,18 @@ USAGE
 
   *)
     preflight
-    CLONE=$(setup_clone)
-    BRANCH=$(git -C "$CLONE" branch --show-current)
+    WORKTREE=$(setup_worktree)
+    BRANCH=$(git -C "$WORKTREE" branch --show-current)
     TASK="$*"
 
-    echo "Working in isolated clone: $CLONE" >&2
+    echo "Working in isolated worktree: $WORKTREE" >&2
     echo "Branch: $BRANCH" >&2
     echo "Task: $TASK" >&2
     echo "---" >&2
 
-    trap "cleanup_clone '$CLONE'" EXIT
+    trap "cleanup_worktree '$WORKTREE'" EXIT
 
-    build_docker_args "$CLONE"
+    build_docker_args "$WORKTREE"
     docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
       "${CLAUDE_AUTONOMOUS[@]}" -p \
       "/task $TASK
