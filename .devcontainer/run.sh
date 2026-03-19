@@ -128,7 +128,6 @@ build_docker_args() {
     -v "$workspace:/workspace"
     -v "$HOME/.config/gcloud:/home/dev/.config/gcloud:ro"
     -v "$HOME/.gitconfig:/home/dev/.gitconfig:ro"
-    -v "$HOME/.ssh:/home/dev/.ssh:ro"
     -v "collector-dev-claude:/home/dev/.claude"
     -e CLOUDSDK_CONFIG=/home/dev/.config/gcloud
     -e GOOGLE_APPLICATION_CREDENTIALS=/home/dev/.config/gcloud/application_default_credentials.json

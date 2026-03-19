@@ -2,18 +2,6 @@
 # Ensure Claude Code directories exist (volumes may mount as empty)
 mkdir -p /home/dev/.claude/debug /home/dev/.commandhistory
 
-# Write container-only settings (deny git push — use GitHub MCP instead)
-cat > /home/dev/.claude/settings.json <<'EOF'
-{
-  "permissions": {
-    "deny": [
-      "Bash(git push *)",
-      "Bash(git push)"
-    ]
-  }
-}
-EOF
-
 # Register GitHub MCP server if token is available
 if [[ -n "${GITHUB_TOKEN:-}" ]]; then
   if ! claude mcp add-json github \
