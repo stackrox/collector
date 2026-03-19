@@ -1,17 +1,17 @@
 ---
 name: task
-description: End-to-end autonomous workflow — implement a task, push, monitor CI, fix failures until green
+description: End-to-end autonomous workflow — implement a task, push, create PR, monitor CI, fix failures until green
 disable-model-invocation: true
-allowed-tools: Bash(cmake *), Bash(make *), Bash(ctest *), Bash(nproc), Bash(git *), Bash(clang-format *), Bash(sleep *), Read, Write, Edit, Glob, Grep, Agent, mcp__github__pull_request_read, mcp__github__search_pull_requests, mcp__github__actions_list, mcp__github__actions_get, mcp__github__get_job_logs
+allowed-tools: Bash(cmake *), Bash(make *), Bash(ctest *), Bash(nproc), Bash(git *), Bash(clang-format *), Bash(sleep *), Read, Write, Edit, Glob, Grep, Agent, mcp__github__create_pull_request, mcp__github__create_branch, mcp__github__pull_request_read, mcp__github__update_pull_request, mcp__github__search_pull_requests, mcp__github__actions_list, mcp__github__actions_get, mcp__github__get_job_logs
 ---
 
 # Task
 
-Complete a development task end-to-end: implement, build, test, push, and monitor CI until all checks pass.
+Complete a development task end-to-end: implement, build, test, push, create PR, and monitor CI until all checks pass.
 
 ## Input
 
-The task description is provided via $ARGUMENTS or in the initial prompt context (branch name, PR URL, task).
+The task description is provided via $ARGUMENTS or in the initial prompt context (branch name, task).
 
 ## Workflow
 
@@ -34,7 +34,11 @@ The task description is provided via $ARGUMENTS or in the initial prompt context
 7. Commit and push:
    - `git add` the changed files
    - `git commit` with a descriptive message
-   - `git push`
+   - `git push -u origin HEAD`
+8. Create a draft PR:
+   - Use `mcp__github__create_pull_request` to create a draft PR in `stackrox/collector`
+   - Title: brief summary of the task
+   - Body: describe what was changed and why
 
 ### Phase 2: Monitor CI
 
