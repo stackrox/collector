@@ -15,7 +15,6 @@
     "source=collector-dev-claude,target=/home/dev/.claude,type=volume",
     "source=${localEnv:HOME}/.gitconfig,target=/home/dev/.gitconfig,type=bind,readonly",
     "source=${localEnv:HOME}/.config/gcloud,target=/home/dev/.config/gcloud,type=bind,readonly",
-    "source=${localEnv:HOME}/.ssh,target=/home/dev/.ssh,type=bind,readonly",
     "source=${localWorkspaceFolder}/.devcontainer,target=/workspace/.devcontainer,type=bind,readonly"
   ],
 
