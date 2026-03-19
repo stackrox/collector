@@ -157,7 +157,8 @@ build_docker_args() {
   )
 
   # Mount .git at the same absolute path so worktree .git file resolves
-  DOCKER_ARGS+=(-v "$REPO_ROOT/.git:$REPO_ROOT/.git:ro")
+  # Read-write needed: git commit writes to .git/worktrees/<name>/
+  DOCKER_ARGS+=(-v "$REPO_ROOT/.git:$REPO_ROOT/.git")
 
   # Optionally mount submodules from main repo instead of cloning
   if [[ "$SYMLINK_SUBMODULES" == "true" ]]; then
