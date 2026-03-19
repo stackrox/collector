@@ -24,6 +24,84 @@ PLUGIN_DIR="/workspace/.claude/plugins/collector-dev"
 CLAUDE_INTERACTIVE=(claude --dangerously-skip-permissions --plugin-dir "$PLUGIN_DIR")
 CLAUDE_AUTONOMOUS=(claude --dangerously-skip-permissions --plugin-dir "$PLUGIN_DIR" --output-format stream-json --verbose)
 
+# --- Preflight checks ---
+check_docker() {
+  if ! command -v docker &>/dev/null; then
+    echo "ERROR: docker not found. Install Docker Desktop, OrbStack, or Colima." >&2
+    exit 1
+  fi
+  if ! docker info &>/dev/null 2>&1; then
+    echo "ERROR: Docker daemon not running." >&2
+    exit 1
+  fi
+}
+
+check_image() {
+  if ! docker image inspect "$IMAGE" &>/dev/null 2>&1; then
+    echo "ERROR: Docker image '$IMAGE' not found." >&2
+    echo "Build it with: docker build --platform linux/$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') -t $IMAGE -f .devcontainer/Dockerfile .devcontainer/" >&2
+    exit 1
+  fi
+}
+
+check_gcloud() {
+  local adc="$HOME/.config/gcloud/application_default_credentials.json"
+  if [[ ! -f "$adc" ]]; then
+    echo "ERROR: GCloud application default credentials not found at $adc" >&2
+    echo "Run: gcloud auth application-default login" >&2
+    exit 1
+  fi
+}
+
+check_vertex_env() {
+  local missing=()
+  [[ -z "${CLAUDE_CODE_USE_VERTEX:-}" ]] && missing+=(CLAUDE_CODE_USE_VERTEX)
+  [[ -z "${GOOGLE_CLOUD_PROJECT:-}" ]] && missing+=(GOOGLE_CLOUD_PROJECT)
+  [[ -z "${GOOGLE_CLOUD_LOCATION:-}" ]] && missing+=(GOOGLE_CLOUD_LOCATION)
+
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "ERROR: Missing Vertex AI environment variables: ${missing[*]}" >&2
+    echo "Set them in your shell profile (see CLAUDE.md):" >&2
+    echo "  export CLAUDE_CODE_USE_VERTEX=1" >&2
+    echo "  export GOOGLE_CLOUD_PROJECT=<your-project>" >&2
+    echo "  export GOOGLE_CLOUD_LOCATION=<region>  # e.g., us-east5" >&2
+    echo "  export ANTHROPIC_VERTEX_PROJECT_ID=<your-project>" >&2
+    exit 1
+  fi
+}
+
+check_gh() {
+  if ! command -v gh &>/dev/null; then
+    echo "ERROR: gh (GitHub CLI) not found. Install: brew install gh" >&2
+    exit 1
+  fi
+  if ! gh auth status &>/dev/null 2>&1; then
+    echo "ERROR: gh not authenticated. Run: gh auth login" >&2
+    exit 1
+  fi
+}
+
+check_git_config() {
+  if [[ ! -f "$HOME/.gitconfig" ]]; then
+    echo "WARNING: ~/.gitconfig not found. Git operations inside container may fail." >&2
+  fi
+  if [[ ! -d "$HOME/.ssh" ]]; then
+    echo "WARNING: ~/.ssh not found. Git push via SSH will not work." >&2
+  fi
+}
+
+preflight() {
+  local need_gh="${1:-false}"
+  check_docker
+  check_image
+  check_gcloud
+  check_vertex_env
+  check_git_config
+  if [[ "$need_gh" == "true" ]]; then
+    check_gh
+  fi
+}
+
 # --- Worktree isolation ---
 setup_worktree() {
   local task_id
@@ -64,8 +142,13 @@ setup_pr() {
   local branch
   branch=$(git -C "$worktree_dir" branch --show-current)
 
-  git -C "$worktree_dir" push -u origin "$branch" >/dev/null 2>&1
+  echo "Pushing branch $branch..." >&2
+  if ! git -C "$worktree_dir" push -u origin "$branch" 2>&1 >&2; then
+    echo "ERROR: Failed to push branch $branch" >&2
+    exit 1
+  fi
 
+  echo "Creating draft PR..." >&2
   local pr_url
   pr_url=$(gh pr create \
     --repo stackrox/collector \
@@ -79,7 +162,13 @@ ${task}
 ---
 *Automated by Claude Code agent. Branch: \`${branch}\`*
 BODY
-)" 2>&1) || true
+)" 2>&1)
+
+  if [[ $? -ne 0 || -z "$pr_url" ]]; then
+    echo "ERROR: Failed to create draft PR" >&2
+    echo "$pr_url" >&2
+    exit 1
+  fi
 
   echo "$pr_url"
 }
@@ -126,6 +215,7 @@ The branch is already pushed. Do not create new branches or PRs. Commit and push
 # --- Main ---
 case "${1:-}" in
   --interactive|-i)
+    preflight false
     WORKTREE=$(setup_worktree)
     trap "cleanup_worktree '$WORKTREE'" EXIT
     BRANCH=$(git -C "$WORKTREE" branch --show-current)
@@ -142,6 +232,7 @@ case "${1:-}" in
       echo "Usage: $0 --headless \"task description\"" >&2
       exit 1
     fi
+    preflight false
     WORKTREE=$(setup_worktree)
     trap "cleanup_worktree '$WORKTREE'" EXIT
     BRANCH=$(git -C "$WORKTREE" branch --show-current)
@@ -158,6 +249,7 @@ case "${1:-}" in
 
   --local|-l)
     shift
+    preflight false
     build_docker_args "$REPO_ROOT"
     if [[ -z "${1:-}" ]]; then
       docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" \
@@ -169,6 +261,8 @@ case "${1:-}" in
     ;;
 
   --shell|-s)
+    check_docker
+    check_image
     WORKTREE=$(setup_worktree)
     trap "cleanup_worktree '$WORKTREE'" EXIT
     echo "Working in isolated worktree: $WORKTREE"
@@ -199,6 +293,7 @@ USAGE
     ;;
 
   *)
+    preflight true
     WORKTREE=$(setup_worktree)
     BRANCH=$(git -C "$WORKTREE" branch --show-current)
     TASK="$*"
@@ -207,7 +302,6 @@ USAGE
     echo "Branch: $BRANCH" >&2
     echo "Task: $TASK" >&2
     echo "---" >&2
-    echo "Creating draft PR..." >&2
     PR_URL=$(setup_pr "$WORKTREE" "$TASK")
     echo "PR: $PR_URL" >&2
     echo "---" >&2
