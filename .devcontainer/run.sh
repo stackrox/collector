@@ -8,7 +8,7 @@
 #   .devcontainer/run.sh --shell                         Shell into container
 #
 # Options:
-#   --skip-submodules                                    Skip submodule init
+#   --symlink-submodules                                 Mount submodules from main repo (fast, read-only)
 #   --debug                                              Verbose MCP/auth logging
 #
 # Prerequisites:
@@ -22,14 +22,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 IMAGE="${COLLECTOR_DEV_IMAGE:-collector-dev:test}"
-SKIP_SUBMODULES=false
+SYMLINK_SUBMODULES=false
 DEBUG=false
 
 # Parse global flags
 ARGS=()
 for arg in "$@"; do
   case "$arg" in
-    --skip-submodules) ;; # no-op, submodules are mounted
+    --symlink-submodules) SYMLINK_SUBMODULES=true ;;
     --debug) DEBUG=true ;;
     *) ARGS+=("$arg") ;;
   esac
@@ -100,8 +100,13 @@ setup_worktree() {
 
   git -C "$REPO_ROOT" worktree add -b "$branch" "$worktree_dir" HEAD >/dev/null 2>&1
 
-  # Submodules are mounted read-only into the container via docker args
-  # No need to init them in the worktree
+  if [[ "$SYMLINK_SUBMODULES" != "true" ]]; then
+    echo "Initializing submodules..." >&2
+    git -C "$worktree_dir" submodule update --init --depth 1 \
+      falcosecurity-libs \
+      collector/proto/third_party/stackrox \
+      >/dev/null 2>&1
+  fi
 
   echo "$worktree_dir"
 }
@@ -137,9 +142,11 @@ build_docker_args() {
   # Mount .git at the same absolute path so worktree .git file resolves
   DOCKER_ARGS+=(-v "$REPO_ROOT/.git:$REPO_ROOT/.git:ro")
 
-  # Mount submodules read-only from main repo (avoids cloning per worktree)
-  DOCKER_ARGS+=(-v "$REPO_ROOT/falcosecurity-libs:/workspace/falcosecurity-libs:ro")
-  DOCKER_ARGS+=(-v "$REPO_ROOT/collector/proto/third_party/stackrox:/workspace/collector/proto/third_party/stackrox:ro")
+  # Optionally mount submodules from main repo instead of cloning
+  if [[ "$SYMLINK_SUBMODULES" == "true" ]]; then
+    DOCKER_ARGS+=(-v "$REPO_ROOT/falcosecurity-libs:/workspace/falcosecurity-libs:ro")
+    DOCKER_ARGS+=(-v "$REPO_ROOT/collector/proto/third_party/stackrox:/workspace/collector/proto/third_party/stackrox:ro")
+  fi
 
   for var in CLAUDE_CODE_USE_VERTEX GOOGLE_CLOUD_PROJECT GOOGLE_CLOUD_LOCATION ANTHROPIC_VERTEX_PROJECT_ID GITHUB_TOKEN; do
     if [[ -n "${!var:-}" ]]; then
@@ -190,7 +197,7 @@ Usage:
   $0 --shell                Shell into the container
 
 Options:
-  --skip-submodules         Skip submodule init (faster startup)
+  --symlink-submodules      Mount submodules from main repo (faster, read-only)
   --debug                   Verbose MCP/auth logging
 
 Environment:
