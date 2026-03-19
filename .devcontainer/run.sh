@@ -240,13 +240,11 @@ USAGE
 
     build_docker_args "$WORKTREE"
     # If task starts with /, treat as a skill invocation; otherwise default to /dev-loop
-    local prompt
+    PROMPT="/dev-loop $TASK"
     if [[ "$TASK" == /* ]]; then
-      prompt="$TASK"
-    else
-      prompt="/dev-loop $TASK"
+      PROMPT="$TASK"
     fi
     docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
-      "${CLAUDE_AUTONOMOUS[@]}" -p "$prompt"
+      "${CLAUDE_AUTONOMOUS[@]}" -p "$PROMPT"
     ;;
 esac
