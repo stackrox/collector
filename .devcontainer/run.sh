@@ -119,7 +119,7 @@ setup_worktree() {
   # Export worktree name for docker mount scoping
   WORKTREE_GIT_NAME=$(basename "$worktree_dir")
   # Make worktree git dir writable by container user (different uid)
-  chmod -R a+rw "$REPO_ROOT/.git/worktrees/$WORKTREE_GIT_NAME"
+  chmod -R a+rwX "$REPO_ROOT/.git/worktrees/$WORKTREE_GIT_NAME"
 
   if [[ "$SYMLINK_SUBMODULES" != "true" ]]; then
     echo "Initializing submodules..." >&2
