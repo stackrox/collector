@@ -29,7 +29,10 @@ integration-tests/      Go test framework (26 suites, needs privileged)
 - eBPF changes CANNOT be tested locally — push PR, CI runs on real kernels
 - CI matrix: rhel, ubuntu, cos, flatcar, fedora-coreos (amd64/arm64/s390x/ppc64le)
 
-## Conventions
+## Git Rules
 
+- NEVER run `git push` unless you are explicitly executing the /watch-ci skill
+- NEVER create new branches
+- You may use: git add, git commit, git diff, git status, git describe, git branch, git log
+- Do NOT create PRs unless executing /watch-ci
 - C++17, clang, `clang-format --style=file`
-- Do not push to remote without explicit permission

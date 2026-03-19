@@ -13,6 +13,7 @@ FROM quay.io/stackrox-io/collector-builder:${COLLECTOR_BUILDER_TAG}
 # bubblewrap: Claude Code uses this for built-in command sandboxing
 RUN dnf install -y \
         bubblewrap \
+        clang-tools-extra \
         jq \
         socat \
         zsh \
@@ -55,9 +56,6 @@ RUN curl -fsSL https://sdk.cloud.google.com > /tmp/install-gcloud.sh \
     && bash /tmp/install-gcloud.sh --disable-prompts --install-dir=/opt \
     && rm /tmp/install-gcloud.sh
 ENV PATH="/opt/google-cloud-sdk/bin:${PATH}"
-
-# Pull GitHub MCP server image (used by Claude Code for GitHub operations)
-# Configured in .claude/settings.json as an MCP server
 
 # Create non-root dev user with passwordless sudo
 RUN useradd -m -s /bin/zsh dev \
