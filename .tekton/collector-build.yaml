@@ -48,6 +48,8 @@ spec:
     value: 'true'
   - name: build-source-image
     value: 'true'
+  - name: enable-build-cache
+    value: 'true'
   - name: extra-labels
     value:
     # X.Y in the cpe label must be adjusted for every version stream.
