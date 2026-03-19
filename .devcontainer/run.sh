@@ -2,15 +2,13 @@
 # Launch Claude Code in the collector devcontainer with a task.
 #
 # Usage:
-#   .devcontainer/run.sh "task description"              Full: worktree + PR + CI loop
-#   .devcontainer/run.sh --headless "task description"   Worktree + stream output, no PR
-#   .devcontainer/run.sh --interactive                   Worktree + TUI, no PR
-#   .devcontainer/run.sh --local ["task"]                Edit working tree directly
+#   .devcontainer/run.sh "task description"              Worktree + /collector-dev:task (stream-json)
+#   .devcontainer/run.sh --interactive                   Worktree + TUI
+#   .devcontainer/run.sh --local ["task"]                Edit working tree directly, TUI
 #   .devcontainer/run.sh --shell                         Shell into container
 #
 # Prerequisites:
 #   - Docker
-#   - gh (GitHub CLI, authenticated — only needed for default task mode)
 #   - gcloud auth login && gcloud auth application-default login
 #   - CLAUDE_CODE_USE_VERTEX=1 and related env vars (see CLAUDE.md)
 
@@ -70,17 +68,6 @@ check_vertex_env() {
   fi
 }
 
-check_gh() {
-  if ! command -v gh &>/dev/null; then
-    echo "ERROR: gh (GitHub CLI) not found. Install: brew install gh" >&2
-    exit 1
-  fi
-  if ! gh auth status &>/dev/null 2>&1; then
-    echo "ERROR: gh not authenticated. Run: gh auth login" >&2
-    exit 1
-  fi
-}
-
 check_git_config() {
   if [[ ! -f "$HOME/.gitconfig" ]]; then
     echo "WARNING: ~/.gitconfig not found. Git operations inside container may fail." >&2
@@ -91,15 +78,11 @@ check_git_config() {
 }
 
 preflight() {
-  local need_gh="${1:-false}"
   check_docker
   check_image
   check_gcloud
   check_vertex_env
   check_git_config
-  if [[ "$need_gh" == "true" ]]; then
-    check_gh
-  fi
 }
 
 # --- Worktree isolation ---
@@ -111,7 +94,6 @@ setup_worktree() {
 
   git -C "$REPO_ROOT" worktree add -b "$branch" "$worktree_dir" HEAD >/dev/null 2>&1
 
-  # Only init submodules needed for building collector (not builder/third_party)
   echo "Initializing submodules..." >&2
   git -C "$worktree_dir" submodule update --init \
     falcosecurity-libs \
@@ -135,44 +117,6 @@ cleanup_worktree() {
   fi
 }
 
-# --- Create branch + draft PR ---
-setup_pr() {
-  local worktree_dir="$1"
-  local task="$2"
-  local branch
-  branch=$(git -C "$worktree_dir" branch --show-current)
-
-  echo "Pushing branch $branch..." >&2
-  if ! git -C "$worktree_dir" push -u origin "$branch" 2>&1 >&2; then
-    echo "ERROR: Failed to push branch $branch" >&2
-    exit 1
-  fi
-
-  echo "Creating draft PR..." >&2
-  local pr_url
-  pr_url=$(gh pr create \
-    --repo stackrox/collector \
-    --head "$branch" \
-    --draft \
-    --title "claude: ${task:0:70}" \
-    --body "$(cat <<BODY
-## Task
-${task}
-
----
-*Automated by Claude Code agent. Branch: \`${branch}\`*
-BODY
-)" 2>&1)
-
-  if [[ $? -ne 0 || -z "$pr_url" ]]; then
-    echo "ERROR: Failed to create draft PR" >&2
-    echo "$pr_url" >&2
-    exit 1
-  fi
-
-  echo "$pr_url"
-}
-
 # --- Docker args ---
 build_docker_args() {
   local workspace="$1"
@@ -194,28 +138,10 @@ build_docker_args() {
   done
 }
 
-# --- Task prompt ---
-task_prompt() {
-  local branch="$1"
-  local task="$2"
-  local pr_url="${3:-}"
-
-  local prompt="/collector-dev:task You are working on branch '$branch'."
-  if [[ -n "$pr_url" ]]; then
-    prompt="$prompt A draft PR has been created at: $pr_url"
-  fi
-  prompt="$prompt
-
-Your task: $task
-
-The branch is already pushed. Do not create new branches or PRs. Commit and push with git."
-  echo "$prompt"
-}
-
 # --- Main ---
 case "${1:-}" in
   --interactive|-i)
-    preflight false
+    preflight
     WORKTREE=$(setup_worktree)
     trap "cleanup_worktree '$WORKTREE'" EXIT
     BRANCH=$(git -C "$WORKTREE" branch --show-current)
@@ -226,30 +152,9 @@ case "${1:-}" in
       "${CLAUDE_INTERACTIVE[@]}"
     ;;
 
-  --headless|-H)
-    shift
-    if [[ -z "${1:-}" ]]; then
-      echo "Usage: $0 --headless \"task description\"" >&2
-      exit 1
-    fi
-    preflight false
-    WORKTREE=$(setup_worktree)
-    trap "cleanup_worktree '$WORKTREE'" EXIT
-    BRANCH=$(git -C "$WORKTREE" branch --show-current)
-    TASK="$*"
-    echo "Working in isolated worktree: $WORKTREE" >&2
-    echo "Branch: $BRANCH" >&2
-    echo "Task: $TASK" >&2
-    echo "---" >&2
-    PROMPT=$(task_prompt "$BRANCH" "$TASK")
-    build_docker_args "$WORKTREE"
-    docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
-      "${CLAUDE_AUTONOMOUS[@]}" -p "$PROMPT"
-    ;;
-
   --local|-l)
     shift
-    preflight false
+    preflight
     build_docker_args "$REPO_ROOT"
     if [[ -z "${1:-}" ]]; then
       docker run -it "${DOCKER_ARGS[@]}" "$IMAGE" \
@@ -273,11 +178,12 @@ case "${1:-}" in
   ""|--help|-h)
     cat <<USAGE
 Usage:
-  $0 "task"                      Full: worktree + draft PR + CI loop (stream-json)
-  $0 --headless "task"           Same workflow, no PR (stream-json)
-  $0 --interactive               Worktree + TUI, no PR
+  $0 "task"                      Run task end-to-end: worktree → implement → PR → CI (stream-json)
+  $0 --interactive               Worktree + TUI (manual control)
   $0 --local ["task"]            Edit working tree directly, TUI
   $0 --shell                     Shell into the container
+
+The agent creates the PR via GitHub MCP server — no gh CLI needed.
 
 Environment:
   COLLECTOR_DEV_IMAGE            Docker image (default: collector-dev:test)
@@ -286,14 +192,14 @@ Environment:
   GOOGLE_CLOUD_LOCATION          Vertex AI region (e.g., us-east5)
 
 Prerequisites:
-  gh auth login                  GitHub CLI (only for default task mode)
   gcloud auth login              Vertex AI authentication
+  gcloud auth application-default login
 USAGE
     exit 0
     ;;
 
   *)
-    preflight true
+    preflight
     WORKTREE=$(setup_worktree)
     BRANCH=$(git -C "$WORKTREE" branch --show-current)
     TASK="$*"
@@ -302,15 +208,16 @@ USAGE
     echo "Branch: $BRANCH" >&2
     echo "Task: $TASK" >&2
     echo "---" >&2
-    PR_URL=$(setup_pr "$WORKTREE" "$TASK")
-    echo "PR: $PR_URL" >&2
-    echo "---" >&2
 
     trap "cleanup_worktree '$WORKTREE'" EXIT
 
-    PROMPT=$(task_prompt "$BRANCH" "$TASK" "$PR_URL")
     build_docker_args "$WORKTREE"
     docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
-      "${CLAUDE_AUTONOMOUS[@]}" -p "$PROMPT"
+      "${CLAUDE_AUTONOMOUS[@]}" -p \
+      "/collector-dev:task You are working on branch '$BRANCH'.
+
+Your task: $TASK
+
+After implementing and testing, push with git and create a draft PR via the GitHub MCP server. Do not use gh CLI."
     ;;
 esac
