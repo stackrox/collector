@@ -187,6 +187,10 @@ case "${1:-}" in
 
   --local|-l)
     shift
+    if [[ -n "$BRANCH_NAME" ]]; then
+      echo "ERROR: --branch cannot be used with --local" >&2
+      exit 1
+    fi
     preflight
     build_docker_args "$REPO_ROOT"
     if [[ -z "${1:-}" ]]; then
