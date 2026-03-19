@@ -231,9 +231,11 @@ USAGE
     BRANCH=$(git -C "$WORKTREE" branch --show-current)
     TASK="$*"
 
-    # Push branch so the agent can use GitHub MCP push_files
-    echo "Pushing branch $BRANCH..." >&2
-    git -C "$WORKTREE" push -u origin "$BRANCH" >/dev/null 2>&1
+    # Push branch for /dev-loop so the agent can use GitHub MCP push_files
+    if [[ "$TASK" != /* ]]; then
+      echo "Pushing branch $BRANCH..." >&2
+      git -C "$WORKTREE" push -u origin "$BRANCH" >/dev/null 2>&1
+    fi
 
     echo "Working in isolated worktree: $WORKTREE" >&2
     echo "Branch: $BRANCH" >&2
