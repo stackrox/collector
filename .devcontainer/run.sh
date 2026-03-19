@@ -241,8 +241,11 @@ USAGE
     build_docker_args "$WORKTREE"
     docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
       "${CLAUDE_AUTONOMOUS[@]}" -p \
-      "/task $TASK
+      "Complete this task end-to-end. Do NOT stop until CI is green.
 
-When /task completes, run /watch-ci to push, create a PR, and monitor CI until green."
+Step 1: Implement the task — edit code, build, test, format, commit locally.
+Step 2: Run /watch-ci to push via GitHub MCP, create a PR, and monitor CI until green.
+
+Your task: $TASK"
     ;;
 esac
