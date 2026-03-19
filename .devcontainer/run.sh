@@ -2,10 +2,14 @@
 # Launch Claude Code in the collector devcontainer with a task.
 #
 # Usage:
-#   .devcontainer/run.sh "task description"              Worktree + /collector-dev:task (stream-json)
+#   .devcontainer/run.sh "task description"              Worktree + /task (stream-json)
 #   .devcontainer/run.sh --interactive                   Worktree + TUI
-#   .devcontainer/run.sh --local ["task"]                Edit working tree directly, TUI
+#   .devcontainer/run.sh --local ["task"]                Edit working tree directly
 #   .devcontainer/run.sh --shell                         Shell into container
+#
+# Options:
+#   --skip-submodules                                    Skip submodule init (faster startup)
+#   --debug                                              Pass --debug to claude for verbose logging
 #
 # Prerequisites:
 #   - Docker
@@ -17,10 +21,27 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 IMAGE="${COLLECTOR_DEV_IMAGE:-collector-dev:test}"
-PLUGIN_DIR="/workspace/.claude/plugins/collector-dev"
+SKIP_SUBMODULES=false
+DEBUG=false
 
-CLAUDE_INTERACTIVE=(claude --dangerously-skip-permissions --plugin-dir "$PLUGIN_DIR")
-CLAUDE_AUTONOMOUS=(claude --dangerously-skip-permissions --plugin-dir "$PLUGIN_DIR" --output-format stream-json --verbose)
+# Parse global flags
+ARGS=()
+for arg in "$@"; do
+  case "$arg" in
+    --skip-submodules) SKIP_SUBMODULES=true ;;
+    --debug) DEBUG=true ;;
+    *) ARGS+=("$arg") ;;
+  esac
+done
+set -- "${ARGS[@]+"${ARGS[@]}"}"
+
+CLAUDE_INTERACTIVE=(claude --dangerously-skip-permissions)
+CLAUDE_AUTONOMOUS=(claude --dangerously-skip-permissions --output-format stream-json --verbose)
+
+if [[ "$DEBUG" == "true" ]]; then
+  CLAUDE_INTERACTIVE+=(--debug)
+  CLAUDE_AUTONOMOUS+=(--debug)
+fi
 
 # --- Preflight checks ---
 check_docker() {
@@ -94,11 +115,15 @@ setup_worktree() {
 
   git -C "$REPO_ROOT" worktree add -b "$branch" "$worktree_dir" HEAD >/dev/null 2>&1
 
-  echo "Initializing submodules..." >&2
-  git -C "$worktree_dir" submodule update --init \
-    falcosecurity-libs \
-    collector/proto/third_party/stackrox \
-    >/dev/null 2>&1
+  if [[ "$SKIP_SUBMODULES" != "true" ]]; then
+    echo "Initializing submodules..." >&2
+    git -C "$worktree_dir" submodule update --init \
+      falcosecurity-libs \
+      collector/proto/third_party/stackrox \
+      >/dev/null 2>&1
+  else
+    echo "Skipping submodule init (--skip-submodules)" >&2
+  fi
 
   echo "$worktree_dir"
 }
@@ -126,12 +151,13 @@ build_docker_args() {
     -v "$HOME/.config/gcloud:/home/dev/.config/gcloud:ro"
     -v "$HOME/.gitconfig:/home/dev/.gitconfig:ro"
     -v "$HOME/.ssh:/home/dev/.ssh:ro"
+    -v "collector-dev-claude:/home/dev/.claude"
     -e CLOUDSDK_CONFIG=/home/dev/.config/gcloud
     -e GOOGLE_APPLICATION_CREDENTIALS=/home/dev/.config/gcloud/application_default_credentials.json
     -w /workspace
   )
 
-  for var in CLAUDE_CODE_USE_VERTEX GOOGLE_CLOUD_PROJECT GOOGLE_CLOUD_LOCATION ANTHROPIC_VERTEX_PROJECT_ID; do
+  for var in CLAUDE_CODE_USE_VERTEX GOOGLE_CLOUD_PROJECT GOOGLE_CLOUD_LOCATION ANTHROPIC_VERTEX_PROJECT_ID GITHUB_TOKEN; do
     if [[ -n "${!var:-}" ]]; then
       DOCKER_ARGS+=(-e "$var=${!var}")
     fi
@@ -178,21 +204,27 @@ case "${1:-}" in
   ""|--help|-h)
     cat <<USAGE
 Usage:
-  $0 "task"                      Run task end-to-end: worktree → implement → PR → CI (stream-json)
+  $0 "task"                      Run task end-to-end: implement → PR → CI (stream-json)
   $0 --interactive               Worktree + TUI (manual control)
   $0 --local ["task"]            Edit working tree directly, TUI
   $0 --shell                     Shell into the container
 
-The agent creates the PR via GitHub MCP server — no gh CLI needed.
+Options:
+  --skip-submodules              Skip submodule init (faster startup)
+  --debug                        Pass --debug to Claude Code for verbose logging
 
 Environment:
   COLLECTOR_DEV_IMAGE            Docker image (default: collector-dev:test)
+  GITHUB_TOKEN                   Fine-grained PAT (optional, for GitHub MCP)
   CLAUDE_CODE_USE_VERTEX=1       Enable Vertex AI
   GOOGLE_CLOUD_PROJECT           GCP project ID
   GOOGLE_CLOUD_LOCATION          Vertex AI region (e.g., us-east5)
 
+GitHub MCP Setup (one-time, inside container):
+  claude mcp add-json github '{"type":"http","url":"https://api.githubcopilot.com/mcp","headers":{"Authorization":"Bearer YOUR_PAT"}}'
+
 Prerequisites:
-  gcloud auth login              Vertex AI authentication
+  gcloud auth login
   gcloud auth application-default login
 USAGE
     exit 0
@@ -214,7 +246,7 @@ USAGE
     build_docker_args "$WORKTREE"
     docker run "${DOCKER_ARGS[@]}" "$IMAGE" \
       "${CLAUDE_AUTONOMOUS[@]}" -p \
-      "/collector-dev:task You are working on branch '$BRANCH'.
+      "/task You are working on branch '$BRANCH'.
 
 Your task: $TASK
 

@@ -1,7 +1,6 @@
 {
   "permissions": {
     "deny": [
-      "Read(.devcontainer/**)",
       "mcp__github__merge_pull_request",
       "mcp__github__delete_file",
       "mcp__github__fork_repository",
