@@ -116,10 +116,10 @@ setup_worktree() {
 
   mkdir -p "$WORKTREE_BASE"
   git -C "$REPO_ROOT" worktree add -b "$branch" "$worktree_dir" HEAD >/dev/null 2>&1
-  # Export worktree name for docker mount scoping
-  WORKTREE_GIT_NAME=$(basename "$worktree_dir")
   # Make worktree git dir writable by container user (different uid)
-  chmod -R a+rwX "$REPO_ROOT/.git/worktrees/$WORKTREE_GIT_NAME"
+  local worktree_git_name
+  worktree_git_name=$(basename "$worktree_dir")
+  chmod -R a+rwX "$REPO_ROOT/.git/worktrees/$worktree_git_name"
 
   if [[ "$SYMLINK_SUBMODULES" != "true" ]]; then
     echo "Initializing submodules..." >&2
@@ -160,12 +160,10 @@ build_docker_args() {
     -w /workspace
   )
 
-  # Mount .git read-only, then override the worktree subdir as read-write
-  # so git commit works but the agent can't modify shared refs/objects/config
-  DOCKER_ARGS+=(-v "$REPO_ROOT/.git:$REPO_ROOT/.git:ro")
-  if [[ -n "${WORKTREE_GIT_NAME:-}" ]]; then
-    DOCKER_ARGS+=(-v "$REPO_ROOT/.git/worktrees/$WORKTREE_GIT_NAME:$REPO_ROOT/.git/worktrees/$WORKTREE_GIT_NAME")
-  fi
+  # Mount .git read-write so worktree git operations work
+  # (commits, submodule state, index.lock all write here)
+  # Agent can't push (no SSH keys) so risk is limited to local git state
+  DOCKER_ARGS+=(-v "$REPO_ROOT/.git:$REPO_ROOT/.git")
 
   # Optionally mount submodules from main repo instead of cloning
   if [[ "$SYMLINK_SUBMODULES" == "true" ]]; then
