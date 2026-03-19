@@ -24,9 +24,18 @@ Do NOT stop until CI is green or you are blocked.
 
 ## Phase 2: Push and create PR
 
-1. Check if remote branch exists: `git rev-parse --abbrev-ref --symbolic-full-name @{u}`
-   - If no remote branch, stop and report: "No remote branch. Push from host first."
-2. Push via the GitHub MCP server push_files tool (do NOT use `git push`)
+Use the GitHub MCP server to push files and create a PR.
+Do NOT use `git push` — it will fail (no SSH keys in this container).
+
+1. Get the current branch name and the list of changed files:
+   - `git branch --show-current` for the branch
+   - `git diff --name-only origin/HEAD..HEAD` for changed files
+2. Use the GitHub MCP `push_files` tool to push the changed files directly to
+   the remote branch. This creates a commit via the GitHub API using the file
+   contents from your local workspace — it does not sync git history.
+   - owner: stackrox, repo: collector, branch: <current branch>
+   - Read each changed file and include its content
+   - Provide a commit message
 3. Search for an open PR for this branch via GitHub MCP
 4. If no PR exists, create a draft PR via GitHub MCP
 
@@ -40,7 +49,6 @@ Loop until all checks pass or blocked (max 6 cycles, ~3 hours):
    ```
    ## Agent Status
    **Last updated:** <`date -u +"%Y-%m-%d %H:%M UTC"`>
-   **Last commit:** <`git rev-parse --short HEAD`>
    **CI cycle:** N of 6
    **Status:** PENDING | PASSED | FIXED | FLAKE | BLOCKED
    **Details:** <one-line summary>
@@ -51,7 +59,7 @@ Loop until all checks pass or blocked (max 6 cycles, ~3 hours):
    - **Failed** →
      - Get job logs via GitHub MCP
      - Diagnose: build error, test assertion, lint, infra flake
-     - If fixable: fix → build → test → commit → push via MCP → continue
+     - If fixable: fix → build → test → push changed files via MCP → continue
      - If infra flake: note as FLAKE, continue
      - If not fixable: update PR body, report BLOCKED, stop
 
@@ -61,7 +69,7 @@ Before each CI cycle, check if there are new PR review comments via GitHub MCP.
 If a reviewer left feedback:
 - Address the feedback (edit code, fix issues)
 - Build and test
-- Commit and push via MCP
+- Push changed files via MCP
 - Note in the Agent Status section what feedback was addressed
 
 ## Completion
