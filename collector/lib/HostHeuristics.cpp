@@ -1,6 +1,7 @@
 #include "HostHeuristics.h"
 
 #include "Logging.h"
+#include "NetworkConnection.h"  // for enumerating local addresses
 
 namespace collector {
 
@@ -93,11 +94,38 @@ class CPUHeuristic : public Heuristic {
   }
 };
 
+class NetworkInterfaceHeuristic : public Heuristic {
+ public:
+  // Log local network interface addresses and warn if any are public.
+  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
+    auto interfaces = GetLocalInterfaceAddresses();
+
+    for (const auto& iface : interfaces) {
+      const auto& addr = iface.address();
+
+      // Skip loopback addresses
+      if (addr.IsLocal()) {
+        continue;
+      }
+
+      CLOG(INFO) << "Local interface address: " << iface;
+
+      // Warn if the address is not private (i.e., it is public)
+      if (addr.IsPublic()) {
+        CLOG(WARNING)
+            << "Interface address " << addr << " is public (not in private IP ranges). "
+            << "Network flows will not work unless you set 'ROX_NON_AGGREGATED_NETWORKS'";
+      }
+    }
+  }
+};
+
 const std::unique_ptr<Heuristic> g_host_heuristics[] = {
     std::unique_ptr<Heuristic>(new CollectionHeuristic),
     std::unique_ptr<Heuristic>(new DockerDesktopHeuristic),
     std::unique_ptr<Heuristic>(new PowerHeuristic),
     std::unique_ptr<Heuristic>(new CPUHeuristic),
+    std::unique_ptr<Heuristic>(new NetworkInterfaceHeuristic),
 };
 
 }  // namespace
