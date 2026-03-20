@@ -1,5 +1,6 @@
 #include "NetworkConnection.h"
 
+#include <ifaddrs.h>
 #include <netdb.h>
 
 #include <netinet/in.h>
@@ -133,6 +134,74 @@ std::optional<IPNet> IPNet::parse(const std::string& ipnet_string) {
   }
 
   return IPNet(address.value(), prefix_length, prefix_length != 0);
+}
+
+static size_t netmask_to_prefix_length(const struct sockaddr* netmask) {
+  if (!netmask) {
+    return 0;
+  }
+
+  size_t prefix_length = 0;
+
+  if (netmask->sa_family == AF_INET) {
+    const auto* sin = reinterpret_cast<const struct sockaddr_in*>(netmask);
+    uint32_t mask = ntohl(sin->sin_addr.s_addr);
+    for (int i = 31; i >= 0; --i) {
+      if (mask & (1U << i)) {
+        prefix_length++;
+      } else {
+        break;
+      }
+    }
+  } else if (netmask->sa_family == AF_INET6) {
+    const auto* sin6 = reinterpret_cast<const struct sockaddr_in6*>(netmask);
+    const uint8_t* addr_bytes = sin6->sin6_addr.s6_addr;
+    for (size_t i = 0; i < 16; ++i) {
+      uint8_t byte = addr_bytes[i];
+      for (int j = 7; j >= 0; --j) {
+        if (byte & (1U << j)) {
+          prefix_length++;
+        } else {
+          return prefix_length;
+        }
+      }
+    }
+  }
+
+  return prefix_length;
+}
+
+std::vector<IPNet> GetLocalInterfaceAddresses() {
+  std::vector<IPNet> result;
+  struct ifaddrs* ifaddr = nullptr;
+
+  if (getifaddrs(&ifaddr) == -1) {
+    return result;
+  }
+
+  for (struct ifaddrs* ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
+    if (!ifa->ifa_addr) {
+      continue;
+    }
+
+    Address::Family family = get_family(*reinterpret_cast<struct sockaddr_storage*>(ifa->ifa_addr));
+    if (family == Address::Family::UNKNOWN) {
+      continue;
+    }
+
+    const uint8_t* raw_address = get_raw_address(*reinterpret_cast<struct sockaddr_storage*>(ifa->ifa_addr));
+    if (!raw_address) {
+      continue;
+    }
+
+    Address addr(family, reinterpret_cast<const std::array<uint8_t, Address::kMaxLen>&>(*raw_address));
+    size_t prefix_length = netmask_to_prefix_length(ifa->ifa_netmask);
+
+    result.emplace_back(addr, prefix_length, true);
+  }
+
+  freeifaddrs(ifaddr);
+  return result;
 }
 
 }  // namespace collector

@@ -488,4 +488,8 @@ static inline const std::vector<IPNet>& PrivateNetworks() {
   return *ret;
 }
 
+// GetLocalInterfaceAddresses returns a list of IPNet objects representing
+// the local system's network interface addresses with their netmasks.
+std::vector<IPNet> GetLocalInterfaceAddresses();
+
 }  // namespace collector
