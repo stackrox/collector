@@ -136,7 +136,7 @@ std::optional<IPNet> IPNet::parse(const std::string& ipnet_string) {
   return IPNet(address.value(), prefix_length, prefix_length != 0);
 }
 
-static size_t netmask_to_prefix_length(const struct sockaddr* netmask) {
+size_t netmask_to_prefix_length(const struct sockaddr* netmask) {
   if (!netmask) {
     return 0;
   }
