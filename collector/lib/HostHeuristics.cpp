@@ -110,8 +110,10 @@ class NetworkInterfaceHeuristic : public Heuristic {
       }
 
       if (addr.IsPublic()) {
-        CLOG(WARNING) << "Local interface " << iface << " uses an address in a public IP range";
+        CLOG(WARNING) << "Local interface : " << iface << " uses an address in a public IP range";
         found_a_public_address = true;
+      } else {
+        CLOG(INFO) << "Local interface : " << iface;
       }
     }
 
