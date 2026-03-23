@@ -99,6 +99,7 @@ class NetworkInterfaceHeuristic : public Heuristic {
   // Log local network interface addresses and warn if any are public.
   void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
     auto interfaces = GetLocalInterfaceAddresses();
+    bool found_a_public_address = false;
 
     for (const auto& iface : interfaces) {
       const auto& addr = iface.address();
@@ -108,14 +109,17 @@ class NetworkInterfaceHeuristic : public Heuristic {
         continue;
       }
 
-      CLOG(INFO) << "Local interface address: " << iface;
-
-      // Warn if the address is not private (i.e., it is public)
       if (addr.IsPublic()) {
-        CLOG(WARNING)
-            << "Interface address " << addr << " is public (not in private IP ranges). "
-            << "Network flows will not work unless you set 'ROX_NON_AGGREGATED_NETWORKS'";
+        CLOG(WARNING) << "Local interface " << iface << " uses an address in a public IP range";
+        found_a_public_address = true;
       }
+    }
+
+    if (found_a_public_address) {
+      CLOG(WARNING)
+          << "Some network interface have public addresses. "
+          << "Network flows going through those interfaces will not be displayed properly unless "
+          << "you set 'ROX_NON_AGGREGATED_NETWORKS'";
     }
   }
 };
