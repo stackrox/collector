@@ -31,4 +31,15 @@ if [ "$image_name" == "null" ]; then
     echo "Failed to parse JSON data or path does not exist"
     exit 1
 fi
-echo "$image_name"
+
+# When using the split format (rhel-variant specified), output both a display
+# name (with OCP version embedded) and the actual GCP image name, separated
+# by '|'. This allows VMs to be easily distinguishable by OCP version.
+# e.g., rhcos-422-10-2-20260217-0-gcp-x86-64|rhcos-10-2-20260217-0-gcp-x86-64
+if [ -n "$RHEL_VARIANT" ]; then
+    ocp_short="${OCP_VERSION//./}"
+    display_name="${image_name/rhcos-/rhcos-${ocp_short}-}"
+    echo "${display_name}|${image_name}"
+else
+    echo "$image_name"
+fi
