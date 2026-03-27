@@ -22,6 +22,11 @@ reviews:
         security, resource cleanup, and signal handling. Prefer modern C++
         idioms (smart pointers, std::string_view, structured bindings).
         Flag any raw new/delete.
+    - path: "**/*.c"
+      instructions: >
+        eBPF C code. Review for verifier constraints (bounded loops,
+        stack/memory safety, helper-call correctness), and stable ABI
+        contracts with userspace (map key/value layout compatibility).
     - path: "**/*.{h,hpp}"
       instructions: >
         C++ headers. Check include guards, minimal includes, and clean
