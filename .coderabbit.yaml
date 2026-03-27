@@ -39,7 +39,7 @@ reviews:
         (no flaky assertions, proper timeouts, cleanup of test resources),
         clear failure messages, and correct use of the testing package.
         Tests run in CI VMs, so be mindful of environment assumptions.
-    - path: "**/*.yml"
+    - path: "**/*.{yml,yaml}"
       instructions: >
         YAML files may be Ansible playbooks, CI workflows, or configuration.
         For Ansible: review for idempotency, proper use of handlers and
