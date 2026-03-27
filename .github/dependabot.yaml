@@ -45,3 +45,7 @@ updates:
     directory: utilities/shellcheck-all/
     schedule:
       interval: "weekly"
+  - package-ecosystem: 'gomod'
+    directory: integration-tests/
+    schedule:
+      interval: "weekly"
