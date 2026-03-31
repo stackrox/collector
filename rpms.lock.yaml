@@ -319,20 +319,20 @@ arches:
     name: pinentry
     evr: 1.1.0-2.el8
     sourcerpm: pinentry-1.1.0-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/python3.12-3.12.12-3.el8_10.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/python3.12-3.12.12-4.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 31484
-    checksum: sha256:15a8c928360511b7207b08b030b31e47634730b9cd31855d5fef84d447c2c82c
+    size: 31600
+    checksum: sha256:30519b03200e75afc05d21ed53799f23c16fb7f55e2af77d445fd306c8872fcc
     name: python3.12
-    evr: 3.12.12-3.el8_10
-    sourcerpm: python3.12-3.12.12-3.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/python3.12-libs-3.12.12-3.el8_10.aarch64.rpm
+    evr: 3.12.12-4.el8_10
+    sourcerpm: python3.12-3.12.12-4.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/python3.12-libs-3.12.12-4.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 10270612
-    checksum: sha256:ce776ead5e9333a95850b978f20f07435b56fac652704a1beb2807640cb03d1d
+    size: 10270120
+    checksum: sha256:8eda9d7c272c72bb23db4d59529548f58a7b6b12b8927c9abed4fb310fc2e409
     name: python3.12-libs
-    evr: 3.12.12-3.el8_10
-    sourcerpm: python3.12-3.12.12-3.el8_10.src.rpm
+    evr: 3.12.12-4.el8_10
+    sourcerpm: python3.12-3.12.12-4.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/python3.12-pip-wheel-23.2.1-4.el8.noarch.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 1539820
@@ -2353,12 +2353,12 @@ arches:
     checksum: sha256:92ffd89c003f55df70a8d0da36e85a6fad8ef8d8799e5d0c8bc278d1d7dae0e0
     name: pinentry
     evr: 1.1.0-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-3.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-4.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
-    size: 20876689
-    checksum: sha256:b9b5d0db667ac952e1261f8409cb13828f1c1945549159f26f200732b5d50fad
+    size: 20877879
+    checksum: sha256:9e6eabe1054f7c3d999cfbdf4bf0ac3bce84f04ef54fa6760cc6b99ba2469993
     name: python3.12
-    evr: 3.12.12-3.el8_10
+    evr: 3.12.12-4.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/p/python3.12-pip-23.2.1-4.el8.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
     size: 9393232
@@ -3428,10 +3428,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/d27b8bc9db0a3ff39d9177bab814aa2aca7469a27ec169c869a95a57fef6cc7b-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/14f84e9776d5e4156e4acc2462c70bb87e399cd1954e298c9cfff8c21e68fb4b-modules.yaml.gz
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 776254
-    checksum: sha256:d27b8bc9db0a3ff39d9177bab814aa2aca7469a27ec169c869a95a57fef6cc7b
+    checksum: sha256:14f84e9776d5e4156e4acc2462c70bb87e399cd1954e298c9cfff8c21e68fb4b
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -3749,20 +3749,20 @@ arches:
     name: pinentry
     evr: 1.1.0-2.el8
     sourcerpm: pinentry-1.1.0-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/python3.12-3.12.12-3.el8_10.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/python3.12-3.12.12-4.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 31680
-    checksum: sha256:09bf019c344df5811bbc0357bba3f917448cbf5fc870c3e81d1c9e960dcf222a
+    size: 31796
+    checksum: sha256:ee49a72d6a1b80b080fa8ed0e6db0955ab402577b6b87bf3e79e5ea790a677ea
     name: python3.12
-    evr: 3.12.12-3.el8_10
-    sourcerpm: python3.12-3.12.12-3.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/python3.12-libs-3.12.12-3.el8_10.ppc64le.rpm
+    evr: 3.12.12-4.el8_10
+    sourcerpm: python3.12-3.12.12-4.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/python3.12-libs-3.12.12-4.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 10776752
-    checksum: sha256:77109cce7fe540fe6e9646e982436ec2eba735d4308f9b8f5e147b2442035d98
+    size: 10778732
+    checksum: sha256:3d68fbaf63d5614d27cd0342acba0222fcdcb2a260bea3c543d68d9cdd26aab6
     name: python3.12-libs
-    evr: 3.12.12-3.el8_10
-    sourcerpm: python3.12-3.12.12-3.el8_10.src.rpm
+    evr: 3.12.12-4.el8_10
+    sourcerpm: python3.12-3.12.12-4.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/python3.12-pip-wheel-23.2.1-4.el8.noarch.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 1539820
@@ -5790,12 +5790,12 @@ arches:
     checksum: sha256:92ffd89c003f55df70a8d0da36e85a6fad8ef8d8799e5d0c8bc278d1d7dae0e0
     name: pinentry
     evr: 1.1.0-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-3.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-4.el8_10.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
-    size: 20876689
-    checksum: sha256:b9b5d0db667ac952e1261f8409cb13828f1c1945549159f26f200732b5d50fad
+    size: 20877879
+    checksum: sha256:9e6eabe1054f7c3d999cfbdf4bf0ac3bce84f04ef54fa6760cc6b99ba2469993
     name: python3.12
-    evr: 3.12.12-3.el8_10
+    evr: 3.12.12-4.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/p/python3.12-pip-23.2.1-4.el8.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
     size: 9393232
@@ -6871,10 +6871,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/0f0eb1c9f302d12bf3a182ab45ad22466008c31b53ace5ddd693909435fd3141-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/5195e62aeecd06029654b5791ef59b80315805f9fbf167fcc114517a68289222-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 771901
-    checksum: sha256:0f0eb1c9f302d12bf3a182ab45ad22466008c31b53ace5ddd693909435fd3141
+    checksum: sha256:5195e62aeecd06029654b5791ef59b80315805f9fbf167fcc114517a68289222
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -7192,20 +7192,20 @@ arches:
     name: pinentry
     evr: 1.1.0-2.el8
     sourcerpm: pinentry-1.1.0-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/python3.12-3.12.12-3.el8_10.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/python3.12-3.12.12-4.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 31240
-    checksum: sha256:b5c49b955ab1759726d36356a22bf50491c241352fb863b3fc9805c846e74aff
+    size: 31348
+    checksum: sha256:5fb96ca0be62b61edb3a8e248085dda94a118fd5552c882725957cefd40572f0
     name: python3.12
-    evr: 3.12.12-3.el8_10
-    sourcerpm: python3.12-3.12.12-3.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/python3.12-libs-3.12.12-3.el8_10.s390x.rpm
+    evr: 3.12.12-4.el8_10
+    sourcerpm: python3.12-3.12.12-4.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/python3.12-libs-3.12.12-4.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 10208916
-    checksum: sha256:90a651b78586c77ca94c27bfdde72db06d89ae4d3357089c598813f854af653e
+    size: 10207168
+    checksum: sha256:bacd1cf9e4b9875284f29c8ed359c3c693b20d384852c67662870b319a6f68d5
     name: python3.12-libs
-    evr: 3.12.12-3.el8_10
-    sourcerpm: python3.12-3.12.12-3.el8_10.src.rpm
+    evr: 3.12.12-4.el8_10
+    sourcerpm: python3.12-3.12.12-4.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/python3.12-pip-wheel-23.2.1-4.el8.noarch.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 1539820
@@ -9128,12 +9128,12 @@ arches:
     checksum: sha256:92ffd89c003f55df70a8d0da36e85a6fad8ef8d8799e5d0c8bc278d1d7dae0e0
     name: pinentry
     evr: 1.1.0-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-3.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-4.el8_10.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
-    size: 20876689
-    checksum: sha256:b9b5d0db667ac952e1261f8409cb13828f1c1945549159f26f200732b5d50fad
+    size: 20877879
+    checksum: sha256:9e6eabe1054f7c3d999cfbdf4bf0ac3bce84f04ef54fa6760cc6b99ba2469993
     name: python3.12
-    evr: 3.12.12-3.el8_10
+    evr: 3.12.12-4.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/p/python3.12-pip-23.2.1-4.el8.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
     size: 9393232
@@ -10155,10 +10155,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/05ded7c6988b2640ddb4ff2088a32e62ac146d00d1859de6689fc84b498bd958-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/803913c3607238e83d03d1c08354dd09f3ccc7151bae443573a67f3542e85363-modules.yaml.gz
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 771951
-    checksum: sha256:05ded7c6988b2640ddb4ff2088a32e62ac146d00d1859de6689fc84b498bd958
+    checksum: sha256:803913c3607238e83d03d1c08354dd09f3ccc7151bae443573a67f3542e85363
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -10476,20 +10476,20 @@ arches:
     name: pinentry
     evr: 1.1.0-2.el8
     sourcerpm: pinentry-1.1.0-2.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/python3.12-3.12.12-3.el8_10.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/python3.12-3.12.12-4.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 31272
-    checksum: sha256:5d2ffff6190781b9455eb314c912096143fc824f7666d742eb868bfc341077a0
+    size: 31384
+    checksum: sha256:e706d058e5a8af88672c26e0b29942499fb8758e02d7704c43b2e7b9b4a70073
     name: python3.12
-    evr: 3.12.12-3.el8_10
-    sourcerpm: python3.12-3.12.12-3.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/python3.12-libs-3.12.12-3.el8_10.x86_64.rpm
+    evr: 3.12.12-4.el8_10
+    sourcerpm: python3.12-3.12.12-4.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/python3.12-libs-3.12.12-4.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 10506364
-    checksum: sha256:5239e7b6e98bf5b11b6355fdbc175bf46b639c7f792a70da8154db8881af1b03
+    size: 10506628
+    checksum: sha256:d02870c30b7e105de14ebbdf6573b98af8cbdb2c482836d4f7b4dcef2c02d5c1
     name: python3.12-libs
-    evr: 3.12.12-3.el8_10
-    sourcerpm: python3.12-3.12.12-3.el8_10.src.rpm
+    evr: 3.12.12-4.el8_10
+    sourcerpm: python3.12-3.12.12-4.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/python3.12-pip-wheel-23.2.1-4.el8.noarch.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 1539820
@@ -12496,12 +12496,12 @@ arches:
     checksum: sha256:92ffd89c003f55df70a8d0da36e85a6fad8ef8d8799e5d0c8bc278d1d7dae0e0
     name: pinentry
     evr: 1.1.0-2.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-3.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-4.el8_10.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
-    size: 20876689
-    checksum: sha256:b9b5d0db667ac952e1261f8409cb13828f1c1945549159f26f200732b5d50fad
+    size: 20877879
+    checksum: sha256:9e6eabe1054f7c3d999cfbdf4bf0ac3bce84f04ef54fa6760cc6b99ba2469993
     name: python3.12
-    evr: 3.12.12-3.el8_10
+    evr: 3.12.12-4.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/p/python3.12-pip-23.2.1-4.el8.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
     size: 9393232
@@ -13571,7 +13571,7 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/812d976b6a6d76d24924d3ddd165641d3eecd4df60c48bcdeaf8a684bef7cc78-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/780c642aecae8b9b6cbb3d13ec1f482e318400d1ca39e72c8d5b2d89ceb00d8d-modules.yaml.gz
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 797488
-    checksum: sha256:812d976b6a6d76d24924d3ddd165641d3eecd4df60c48bcdeaf8a684bef7cc78
+    checksum: sha256:780c642aecae8b9b6cbb3d13ec1f482e318400d1ca39e72c8d5b2d89ceb00d8d
