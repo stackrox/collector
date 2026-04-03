@@ -26,9 +26,8 @@ Here are few links to get more details:
    project, this is the best place to start. This section covers building and
    troubleshooting the project from scratch.
 
-2. [Design overview](docs/design-overview.md): When your goal is to better
-   understand how Collector works, and it's place in the grand scheme of
-   things, you may want to look here.
+2. [Architecture](docs/architecture.md): Comprehensive overview of how
+   Collector works — components, data flow, threading, configuration.
 
 3. [Troubleshooting](docs/troubleshooting.md): For common startup errors,
    ways of identifying and fixing them.
@@ -38,3 +37,30 @@ Here are few links to get more details:
 
 5. [References](docs/references.md): Contains a comprehensive list of
    configuration options for the project.
+
+## Deep Dives
+
+6. [eBPF Architecture](docs/ebpf-architecture.md): CO-RE BPF kernel
+   instrumentation — tracepoints, tail calls, ring buffers, verifier.
+
+7. [Build System](docs/build.md): CMake/Docker build pipeline, dependencies,
+   multi-arch support.
+
+8. [Integration Tests](docs/integration-tests.md): Test framework, 26 suites,
+   mock sensor, CI integration.
+
+9. [Deployment](docs/deployment.md): Ansible automation, VM lifecycle, K8s
+   DaemonSet deployment.
+
+10. [Falcosecurity-libs](docs/falcosecurity-libs.md): BPF driver architecture
+    and StackRox fork customizations.
+
+11. [Falco Fork Update](docs/falco-update.md): How to rebase the
+    falcosecurity-libs fork on upstream.
+
+12. [C++ Library Internals](docs/lib/README.md): Code-level documentation of
+    collector/lib/ components.
+
+13. [Driver Builds](docs/driver-builds.md): CPaaS/OSCI driver build pipeline.
+
+14. [CI Labels](docs/labels.md): GitHub Actions labels for CI control.
