@@ -29,11 +29,12 @@ RUN dnf install -y \
 # Go uses arm64/amd64, ripgrep/fd use aarch64/x86_64
 RUN ARCH=$(uname -m) \
     && GOARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "amd64") \
+    && RG_TARGET=$([ "$ARCH" = "x86_64" ] && echo "${ARCH}-unknown-linux-musl" || echo "${ARCH}-unknown-linux-gnu") \
     # Install Go
     && curl -fsSL "https://go.dev/dl/go1.23.6.linux-${GOARCH}.tar.gz" | tar -C /usr/local -xzf - \
-    # Install ripgrep
-    && curl -fsSL "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-${ARCH}-unknown-linux-gnu.tar.gz" \
-       | tar -xzf - --strip-components=1 -C /usr/local/bin "ripgrep-14.1.1-${ARCH}-unknown-linux-gnu/rg" \
+    # Install ripgrep (x86_64 uses musl, others use gnu)
+    && curl -fsSL "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-${RG_TARGET}.tar.gz" \
+       | tar -xzf - --strip-components=1 -C /usr/local/bin "ripgrep-14.1.1-${RG_TARGET}/rg" \
     # Install fd
     && curl -fsSL "https://github.com/sharkdp/fd/releases/download/v10.2.0/fd-v10.2.0-${ARCH}-unknown-linux-gnu.tar.gz" \
        | tar -xzf - --strip-components=1 -C /usr/local/bin "fd-v10.2.0-${ARCH}-unknown-linux-gnu/fd"
