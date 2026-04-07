@@ -7,7 +7,7 @@
         project: "{{ gcp_project }}"
         auth_kind: "{{ gcp_auth_kind }}"
         service_account_file: "{{ gcp_service_account_file }}"
-        zone: "{{ gcp_zone }}"
+        zone: "Any"
         machine_type: "{{ vm_machine_type | default('e2-standard-2') }}"
         disks:
           - auto_delete: true
