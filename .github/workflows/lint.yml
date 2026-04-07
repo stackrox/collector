@@ -6,10 +6,12 @@ jobs:
   lint:
     runs-on: ubuntu-24.04
     container:
-      image: fedora:41
+      image: quay.io/centos/centos:stream10
     steps:
       - name: dnf install dependencies
         run: |
+          dnf config-manager --set-enabled crb -y && \
+          dnf install epel-release -y && \
           dnf install -y \
             git \
             golang \
