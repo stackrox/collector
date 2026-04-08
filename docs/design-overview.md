@@ -1,3 +1,5 @@
+> **Note:** This document has been superseded by [Architecture](architecture.md), which provides a comprehensive overview of Collector's design, data flow, and internals.
+
 # Design overview
 
 ## Data gathering methods
