@@ -11,6 +11,7 @@ updates:
       interval: "weekly"
   - package-ecosystem: 'docker'
     directory: collector/container/
+    exclude-paths: [ '**/konflux*.Dockerfile' ]
     schedule:
       interval: "weekly"
   - package-ecosystem: 'docker'
