@@ -1187,13 +1187,13 @@ arches:
     name: libmount
     evr: 2.32.1-48.el8_10
     sourcerpm: util-linux-2.32.1-48.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/libnghttp2-1.33.0-6.el8_10.1.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/libnghttp2-1.33.0-6.el8_10.2.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 77144
-    checksum: sha256:52c4eda9f4614df88bda5252509435d544d93c5a0ab5c3d2ba7d028fbda39089
+    size: 76140
+    checksum: sha256:7742ec97305d556cd9accbb2f2cf5a926e2363fa8109782c060d1d5066a8f80e
     name: libnghttp2
-    evr: 1.33.0-6.el8_10.1
-    sourcerpm: nghttp2-1.33.0-6.el8_10.1.src.rpm
+    evr: 1.33.0-6.el8_10.2
+    sourcerpm: nghttp2-1.33.0-6.el8_10.2.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/libnsl2-1.2.0-2.20180605git4a062cf.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
     size: 56468
@@ -2989,12 +2989,12 @@ arches:
     checksum: sha256:6c9f6c3e1a7d9bfc9b824cb4ce6e48e13698cea554504628564e0b4fdcfa5ac3
     name: nettle
     evr: 3.4.1-7.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/n/nghttp2-1.33.0-6.el8_10.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/n/nghttp2-1.33.0-6.el8_10.2.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
-    size: 1589583
-    checksum: sha256:9cf44c14ea0a908468049f7d301662e5ee1e0769b0ad144cae10b2a9158c2cbe
+    size: 1589616
+    checksum: sha256:e772c6e8cf40297ecdbd0a022507eb5e7b116f9569ab0f2a4bb470b4cfa2eb00
     name: nghttp2
-    evr: 1.33.0-6.el8_10.1
+    evr: 1.33.0-6.el8_10.2
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/n/npth-1.5-4.el8.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
     size: 313409
@@ -3428,10 +3428,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/f57483b77bbe197777d50ef9f23de4010ef0cf79179cab9790d06cf8fc6e3749-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/44c2558efeca88f278204dc510f3264c63d4e4cfec6321ad064cae3e9ba05b74-modules.yaml.gz
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 778162
-    checksum: sha256:f57483b77bbe197777d50ef9f23de4010ef0cf79179cab9790d06cf8fc6e3749
+    size: 779767
+    checksum: sha256:44c2558efeca88f278204dc510f3264c63d4e4cfec6321ad064cae3e9ba05b74
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -4617,13 +4617,13 @@ arches:
     name: libmount
     evr: 2.32.1-48.el8_10
     sourcerpm: util-linux-2.32.1-48.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/libnghttp2-1.33.0-6.el8_10.1.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/libnghttp2-1.33.0-6.el8_10.2.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
-    size: 87792
-    checksum: sha256:d7a306526490b3f56de7963ecf10647981c112bb2f4ed75b97344d6e0eb58f47
+    size: 86764
+    checksum: sha256:6870765b541766dabe49c10aed638de1efa23fd52e80b43004f36e2bf18fc43e
     name: libnghttp2
-    evr: 1.33.0-6.el8_10.1
-    sourcerpm: nghttp2-1.33.0-6.el8_10.1.src.rpm
+    evr: 1.33.0-6.el8_10.2
+    sourcerpm: nghttp2-1.33.0-6.el8_10.2.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/libnsl2-1.2.0-2.20180605git4a062cf.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
     size: 64520
@@ -6432,12 +6432,12 @@ arches:
     checksum: sha256:6c9f6c3e1a7d9bfc9b824cb4ce6e48e13698cea554504628564e0b4fdcfa5ac3
     name: nettle
     evr: 3.4.1-7.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/n/nghttp2-1.33.0-6.el8_10.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/n/nghttp2-1.33.0-6.el8_10.2.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
-    size: 1589583
-    checksum: sha256:9cf44c14ea0a908468049f7d301662e5ee1e0769b0ad144cae10b2a9158c2cbe
+    size: 1589616
+    checksum: sha256:e772c6e8cf40297ecdbd0a022507eb5e7b116f9569ab0f2a4bb470b4cfa2eb00
     name: nghttp2
-    evr: 1.33.0-6.el8_10.1
+    evr: 1.33.0-6.el8_10.2
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/n/npth-1.5-4.el8.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
     size: 313409
@@ -6871,10 +6871,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/41a852afaff7db202569cf0233a2c1b83b0270d16eb14c5601ed378f8ef02e76-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/1736814e039b30e00533bb105864ab00026ee7d580722d944e1c3cdcfd24731e-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 775025
-    checksum: sha256:41a852afaff7db202569cf0233a2c1b83b0270d16eb14c5601ed378f8ef02e76
+    size: 775197
+    checksum: sha256:1736814e039b30e00533bb105864ab00026ee7d580722d944e1c3cdcfd24731e
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -7969,13 +7969,13 @@ arches:
     name: libmount
     evr: 2.32.1-48.el8_10
     sourcerpm: util-linux-2.32.1-48.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/libnghttp2-1.33.0-6.el8_10.1.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/libnghttp2-1.33.0-6.el8_10.2.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
-    size: 76440
-    checksum: sha256:479cb82739f1c976e2536cbfe1e4ca29f64154d53d11e76ba64f86b2879f59ab
+    size: 75428
+    checksum: sha256:194322cd4085d9197b073c008b44a4009284d0f4c05cc09a16c92a52486a3f35
     name: libnghttp2
-    evr: 1.33.0-6.el8_10.1
-    sourcerpm: nghttp2-1.33.0-6.el8_10.1.src.rpm
+    evr: 1.33.0-6.el8_10.2
+    sourcerpm: nghttp2-1.33.0-6.el8_10.2.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/libnsl2-1.2.0-2.20180605git4a062cf.el8.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
     size: 57660
@@ -9722,12 +9722,12 @@ arches:
     checksum: sha256:6c9f6c3e1a7d9bfc9b824cb4ce6e48e13698cea554504628564e0b4fdcfa5ac3
     name: nettle
     evr: 3.4.1-7.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/n/nghttp2-1.33.0-6.el8_10.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/n/nghttp2-1.33.0-6.el8_10.2.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
-    size: 1589583
-    checksum: sha256:9cf44c14ea0a908468049f7d301662e5ee1e0769b0ad144cae10b2a9158c2cbe
+    size: 1589616
+    checksum: sha256:e772c6e8cf40297ecdbd0a022507eb5e7b116f9569ab0f2a4bb470b4cfa2eb00
     name: nghttp2
-    evr: 1.33.0-6.el8_10.1
+    evr: 1.33.0-6.el8_10.2
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/n/npth-1.5-4.el8.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
     size: 313409
@@ -10155,10 +10155,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/8acd33156701f7677cddeef866e094d32a50da698f4d592cf0a7bd741a54d79f-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/059139e55cbfa165c1384b259424868ab258dede38f15f94a83b72c9050a7a39-modules.yaml.gz
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 774474
-    checksum: sha256:8acd33156701f7677cddeef866e094d32a50da698f4d592cf0a7bd741a54d79f
+    size: 775123
+    checksum: sha256:059139e55cbfa165c1384b259424868ab258dede38f15f94a83b72c9050a7a39
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -11337,13 +11337,13 @@ arches:
     name: libmount
     evr: 2.32.1-48.el8_10
     sourcerpm: util-linux-2.32.1-48.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/libnghttp2-1.33.0-6.el8_10.1.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/libnghttp2-1.33.0-6.el8_10.2.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
-    size: 80224
-    checksum: sha256:7db208659d8dd140ce766390f280dbf59178846fa261acfe8f834d405cd0ce5e
+    size: 79220
+    checksum: sha256:861f14d20f3a9d637198572ac7c9fcfbafa6847f3bb1ce753c9e8801d80b0d62
     name: libnghttp2
-    evr: 1.33.0-6.el8_10.1
-    sourcerpm: nghttp2-1.33.0-6.el8_10.1.src.rpm
+    evr: 1.33.0-6.el8_10.2
+    sourcerpm: nghttp2-1.33.0-6.el8_10.2.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/libnsl2-1.2.0-2.20180605git4a062cf.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
     size: 59120
@@ -13132,12 +13132,12 @@ arches:
     checksum: sha256:6c9f6c3e1a7d9bfc9b824cb4ce6e48e13698cea554504628564e0b4fdcfa5ac3
     name: nettle
     evr: 3.4.1-7.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/n/nghttp2-1.33.0-6.el8_10.1.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/n/nghttp2-1.33.0-6.el8_10.2.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
-    size: 1589583
-    checksum: sha256:9cf44c14ea0a908468049f7d301662e5ee1e0769b0ad144cae10b2a9158c2cbe
+    size: 1589616
+    checksum: sha256:e772c6e8cf40297ecdbd0a022507eb5e7b116f9569ab0f2a4bb470b4cfa2eb00
     name: nghttp2
-    evr: 1.33.0-6.el8_10.1
+    evr: 1.33.0-6.el8_10.2
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/n/npth-1.5-4.el8.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
     size: 313409
@@ -13571,7 +13571,7 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/faeb3e87faaf55dfc746e8471b21b27255a7bdd07d6ba9ebdec349c16548a8ca-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/1bb64fe6d4afd4c2bf4c989854b001ee555300c2bad4dfb63633ee0545b1b8fb-modules.yaml.gz
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 800562
-    checksum: sha256:faeb3e87faaf55dfc746e8471b21b27255a7bdd07d6ba9ebdec349c16548a8ca
+    size: 800730
+    checksum: sha256:1bb64fe6d4afd4c2bf4c989854b001ee555300c2bad4dfb63633ee0545b1b8fb
