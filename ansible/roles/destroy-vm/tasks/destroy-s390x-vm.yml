@@ -38,6 +38,15 @@
     zone: "{{ fip.resource.zone }}"
   when: fip.resource.id is defined
 
+- name: Check for existing Security Group
+  delegate_to: localhost
+  ibm.cloudcollection.ibm_is_security_group_info:
+    name: "{{ inventory_hostname }}-sg"
+  failed_when:
+    - sg.rc != 0
+    - '"No Security Group found" not in sg.stderr'
+  register: sg
+
 - name: Delete Security Group
   delegate_to: localhost
   ibm.cloudcollection.ibm_is_security_group:
