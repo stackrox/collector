@@ -11,7 +11,17 @@ RUN dnf install -y \
     --releasever=10 \
     --setopt=install_weak_deps=False \
     --nodocs \
-    ca-certificates curl-minimal elfutils-libelf gzip less libcap-ng libstdc++ libuuid openssl tar tbb && \
+    ca-certificates \
+    curl-minimal \
+    elfutils-libelf \
+    gzip \
+    less \
+    libcap-ng \
+    libstdc++ \
+    libuuid \
+    openssl \
+    tar \
+    tbb && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
