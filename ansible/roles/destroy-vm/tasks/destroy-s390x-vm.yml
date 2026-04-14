@@ -38,6 +38,13 @@
     zone: "{{ fip.resource.zone }}"
   when: fip.resource.id is defined
 
+- name: Delete Security Group
+  delegate_to: localhost
+  ibm.cloudcollection.ibm_is_security_group:
+    state: absent
+    id: "{{ sg.resource.id }}"
+  when: sg.resource.id is defined
+
 - name: Remove IBM inventory file (delete file)
   delegate_to: localhost
   file:
