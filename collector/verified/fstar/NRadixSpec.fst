@@ -11,7 +11,6 @@ module U64 = FStar.UInt64
 // Byte swap (ntohll on little-endian x86)
 // ============================================================
 
-[@@noextract_to "krml"]
 let bswap64 (x:U64.t) : U64.t =
   let open U64 in
   let b0 = logand x 0xffUL in
@@ -35,7 +34,6 @@ let bswap64 (x:U64.t) : U64.t =
 // Net mask computation (matches C++ IPNet::net_mask_array)
 // ============================================================
 
-[@@noextract_to "krml"]
 let net_mask_hi (prefix:U8.t) : U64.t =
   if U8.eq prefix 0uy then 0UL
   else if U8.gte prefix 64uy then 0xffffffffffffffffUL
@@ -43,7 +41,6 @@ let net_mask_hi (prefix:U8.t) : U64.t =
     U64.lognot (U64.shift_right 0xffffffffffffffffUL
       (FStar.Int.Cast.uint8_to_uint32 prefix))
 
-[@@noextract_to "krml"]
 let net_mask_lo (prefix:U8.t) : U64.t =
   if U8.lte prefix 64uy then 0UL
   else if U8.gte prefix 128uy then 0xffffffffffffffffUL
@@ -56,7 +53,6 @@ let net_mask_lo (prefix:U8.t) : U64.t =
 // Bit operations for tree traversal
 // ============================================================
 
-[@@noextract_to "krml"]
 let get_direction (host_hi host_lo:U64.t) (bit_pos:U32.t{U32.v bit_pos < 128}) : bool =
   let open U64 in
   if U32.lt bit_pos 64ul then
@@ -67,7 +63,6 @@ let get_direction (host_hi host_lo:U64.t) (bit_pos:U32.t{U32.v bit_pos < 128}) :
     let shift = U32.sub 63ul adj in
     not (eq (logand host_lo (shift_left 1UL shift)) 0UL)
 
-[@@noextract_to "krml"]
 let is_in_mask (bit_pos:U32.t{U32.v bit_pos < 128}) (mask_hi mask_lo:U64.t) : bool =
   let open U64 in
   if U32.lt bit_pos 64ul then
@@ -87,7 +82,7 @@ type find_result = {
   net:   ipnet;
 }
 
-[@@noextract_to "krml"]
+inline_for_extraction
 let no_result : find_result = { found = false; net = mk_ipnet null_address 0uy }
 
 // ============================================================
@@ -101,7 +96,7 @@ noeq type nradix_node =
 [@@noextract_to "krml"]
 let nradix_empty : nradix_node = NRNode false (mk_ipnet null_address 0uy) NRLeaf NRLeaf
 
-[@@noextract_to "krml"]
+inline_for_extraction
 let null_ipnet : ipnet = mk_ipnet null_address 0uy
 
 // ============================================================
