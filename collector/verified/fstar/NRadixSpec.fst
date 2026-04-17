@@ -223,3 +223,15 @@ let lemma_is_empty_nradix_empty ()
 let lemma_insert_not_empty (tree:nradix_node) (net:ipnet)
   : Lemma (requires U8.v net.prefix >= 1 /\ U8.v net.prefix <= 128)
           (ensures not (is_empty (insert tree net))) = ()
+
+[@@noextract_to "krml"]
+let lemma_find_returns_supernet (tree:nradix_node) (a:address)
+  : Lemma (requires (find_addr tree a).found = true)
+          (ensures ipnet_contains (find_addr tree a).net a = true)
+  = admit ()
+
+[@@noextract_to "krml"]
+let lemma_insert_then_find (tree:nradix_node) (net:ipnet)
+  : Lemma (requires U8.v net.prefix >= 1 /\ U8.v net.prefix <= 128)
+          (ensures (find (insert tree net) net).found = true)
+  = admit ()
