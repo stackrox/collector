@@ -1,17 +1,27 @@
 ---
 name: add-verified-component
-description: Add a new formally verified F*/Pulse component to the collector's verified library with differential property tests against the C++ implementation
+description: Add a new formally verified F*/Pulse component to the collector's verified library — replaces C++ internals with extracted verified C code
 ---
 
 # Add Verified Component
 
-Add a new formally verified component to `collector/verified/` that differential-tests against the existing C++ implementation in `collector/lib/`.
+Replace C++ component internals with a formally verified implementation written in F*/Pulse, extracted to C via Karamel. The verified code proves both memory safety and functional correctness. The C++ class becomes a thin wrapper around the extracted C API.
+
+## Architecture
+
+Each verified component follows the ghost-spec-as-invariant pattern:
+
+1. **Spec module** (`XSpec.fst`) — pure functional implementation + correctness lemmas. Marked `[@@noextract_to "krml"]`. Never extracted. Serves as ground truth.
+2. **Pulse module** (`XPulse.fst`) — heap implementation using `Pulse.Lib.Box` for allocation. Maintains a ghost invariant linking heap state to the spec. This IS the code that runs.
+3. **C++ wrapper** — thin class forwarding to the extracted C API via `extern "C"`. Preserves the existing public API so callers don't change.
+
+Proofs compose: each component's spec can reference other components' specs.
 
 ## Prerequisites
 
 - F* 2026.03.24~dev with Pulse: `opam exec -- fstar.exe --version`
 - Karamel: `~/code/go/src/github.com/FStarLang/FStar/karamel/krml`
-- Collector builder container running: `docker ps | grep collector_builder`
+- Collector builder container running: `DOCKER_HOST=unix:///run/podman/podman.sock docker ps | grep collector_builder`
 
 ## Process
 
@@ -19,144 +29,258 @@ Add a new formally verified component to `collector/verified/` that differential
 
 Read the target header and implementation files in `collector/lib/`. Identify:
 
-- **Pure functions** (no I/O, no sinsp, no gRPC) — these are candidates for verification
-- **Data types** used by those functions
-- **Key properties** that should hold (invariants, boundary conditions, classification correctness)
-- **Byte-order concerns** — the collector stores IPv4 addresses in two `uint64_t`s in network byte order on a little-endian machine. Any address constants need careful LE byte layout. Use `debug_addr`-style tools to verify constants empirically.
+- **Operations** to verify (insert, find, delete, etc.)
+- **Data types** used — which are value types vs heap-allocated structures
+- **Key properties** that should hold (invariants, boundary conditions, correctness)
+- **Byte-order concerns** — the collector stores IPv4 addresses in two `uint64_t`s in network byte order on a little-endian machine
 
-### 2. Write the F* implementation
+### 2. Write the spec module (XSpec.fst)
 
-Add new `.fst` files to `collector/verified/fstar/`. Follow these conventions:
+Create `collector/verified/fstar/XSpec.fst` with:
 
-- **Machine integers only** in extractable code: `U8.t`, `U16.t`, `U32.t`, `U64.t`, `SZ.t`
-- **Never use `U8.v`, `U16.v` etc. in extractable code** — these produce mathematical integers that Karamel cannot extract. Use `U8.gte`, `U8.eq`, `U16.gte` etc. for comparisons.
-- **`inline_for_extraction`** for helper functions that should be inlined in the C output
-- **`[@@noextract_to "krml"]`** for spec-only lemmas and proof helpers
-- **Unroll rather than recurse** where possible — F* `list` extracts to heap-allocated linked lists with static initialisers. For small fixed sets (like private network ranges), use `||` chains instead.
-- **z3rlimit 80** is needed for bit-manipulation proofs
-
-Verify as you go:
-```bash
-cd collector/verified
-opam exec -- fstar.exe --z3rlimit 80 --include fstar fstar/YourModule.fst
-```
-
-### 3. Add proved properties
-
-Write lemmas that prove the security-critical properties. These don't extract — they catch logic errors at compile time.
+- Pure functional data types (algebraic types are fine here — they're never extracted)
+- Pure functions implementing the algorithm
+- Correctness lemmas (use `admit()` initially, discharge later)
+- Everything marked `[@@noextract_to "krml"]` EXCEPT pure helper functions that the Pulse module will call directly (those need `inline_for_extraction`)
 
 ```fstar
+module XSpec
+
 [@@noextract_to "krml"]
-let lemma_name (x:input_type)
-  : Lemma (requires precondition)
-          (ensures postcondition) = ()
+noeq type my_tree =
+  | Leaf : my_tree
+  | Node : value:my_type -> left:my_tree -> right:my_tree -> my_tree
+
+[@@noextract_to "krml"]
+let rec find (tree:my_tree) (key:key_t) : option my_type = ...
+
+[@@noextract_to "krml"]
+let lemma_find_correct (tree:my_tree) (key:key_t)
+  : Lemma (ensures ...) = admit ()  // discharge later
 ```
 
-If a lemma fails, **fix the implementation, not the lemma**. The lemma represents the correct behaviour.
+Verify:
+```bash
+cd collector/verified
+opam exec -- fstar.exe --z3rlimit 80 --include fstar fstar/XSpec.fst
+```
 
-**Be careful about conforming to the C++ when the C++ might be wrong.** If the verified spec disagrees with C++, investigate whether the C++ has a bug before changing the spec.
+### 3. Write the Pulse module (XPulse.fst)
+
+Create `collector/verified/fstar/XPulse.fst` with `#lang-pulse`.
+
+**Key conventions:**
+
+- Use `Pulse.Lib.Box` for heap-allocated pointers (`box a`, `alloc`, `free`, `!`, `:=`)
+- Use `option (box node_t)` for nullable pointers (NOT raw `box` with `is_null` — the option pattern works better with Karamel extraction)
+- Define a recursive `slprop` invariant linking heap to ghost spec
+- Write ghost helper functions for `fold`/`unfold` of the invariant
+- Each operation proves its postcondition matches the spec
+- Use `fn rec` with `decreases` for recursive traversals
+
+```fstar
+module XPulse
+#lang-pulse
+
+open Pulse.Lib.Pervasives
+module Box = Pulse.Lib.Box
+open Pulse.Lib.Box { box, (:=), (!) }
+open XSpec
+
+// Heap node type
+noeq type node_t = {
+  value: my_type;
+  left:  tree_ptr;
+  right: tree_ptr;
+}
+and node_box = box node_t
+and tree_ptr = option node_box
+
+// Ghost invariant: links heap to spec
+let rec is_tree (ct: tree_ptr) (ft: XSpec.my_tree)
+  : Tot slprop (decreases ft) = ...
+
+// Operations with proof obligations
+fn find (t: handle) (#ft: erased XSpec.my_tree) (key: key_t)
+  requires is_tree t.root ft
+  returns result: find_result
+  ensures is_tree t.root ft **
+          pure (result == XSpec.find (reveal ft) key)
+{ ... }
+```
+
+Verify:
+```bash
+cd collector/verified
+opam exec -- fstar.exe --z3rlimit 80 --include fstar \
+  --include /home/ghutton/.opam/default/lib/fstar/pulse \
+  fstar/XPulse.fst
+```
+
+**Important Karamel constraints:**
+- Recursive algebraic types (like `noeq type tree = Leaf | Node ...`) cause Karamel to hang. Use `option (box node_t)` instead — Pulse's Box extracts to C malloc/free pointers which Karamel handles.
+- Avoid `FStar.Pervasives.Native.option` in types unless you bundle `FStar.Pervasives.Native` in the extraction.
+- Use `bool` flags instead of `option` for return types where possible.
+- Machine integers only (`U8.t`, `U32.t`, `U64.t`) in extractable code — `nat`/`int` produce `krml_checked_int_t`.
 
 ### 4. Update the Makefile and extract to C
 
-Add your new module to `collector/verified/Makefile`:
+Add your modules to `collector/verified/Makefile`:
 
-- Add the `.fst` file to `FST_FILES` (in dependency order)
-- Add the module name to `EXTRACT_MODULES`
-- Update `EXTRACT_ROOT` if your module is the new top-level
-- Update the `-bundle` flag in `KRML_FLAGS` to include your module
+- Add spec file to `SPEC_FILES`
+- Add Pulse module to `MODULES`
+- Add explicit `verify-X` and `extract-X` targets
+
+For the extraction command, include dependent modules in `--extract` and `-bundle`:
+```makefile
+extract-XPulse: verify-XPulse
+	$(FSTAR_EXE) $(FSTAR_FLAGS) --codegen krml \
+		--extract 'NetworkTypes,XSpec,XPulse,FStar.Pervasives.Native' \
+		fstar/XPulse.fst
+	mv out.krml out_XPulse.krml
+	rm -f extracted/XPulse.c extracted/XPulse.h extracted/Prims.h extracted/Makefile.include
+	$(KRML_EXE) $(KRML_BASE_FLAGS) \
+		-bundle 'NetworkTypes' \
+		-bundle 'XPulse=XPulse,XSpec,FStar.Pervasives.Native' \
+		out_XPulse.krml
+```
 
 Run extraction:
 ```bash
-cd collector/verified && make clean && make all
+cd collector/verified && make extract-XPulse
 ```
 
 Check for clean extraction — no `krml_checked_int_t` in the generated `.c`/`.h` files.
 
-The generated C files must not be modified. If they need standard includes or KRML macros, those come from `extracted/krml_compat.h` which is force-included via CMake's `-include` flag.
+### 5. Add to the verified static library
 
-### 5. Write differential property tests
-
-Add a new test file in `collector/verified/tests/`. Follow the pattern in `test_network.cpp`:
-
-```cpp
-#include <rapidcheck.h>
-#include "TheCollectorHeader.h"
-
-extern "C" {
-#include "YourExtractedHeader.h"
-}
-
-// 1. Conversion helper: C++ type -> verified C struct
-// 2. RapidCheck generator for the C++ type (with edge cases)
-// 3. Property tests: generate random input, run both, assert agreement
-
-int main() {
-    int failures = 0;
-    auto check = [&](const char* name, auto prop) {
-        auto result = rc::check(name, prop);
-        if (!result) failures++;
-    };
-
-    check("PropertyName agrees", [](CppType input) {
-        auto verified_input = to_verified(input);
-        RC_ASSERT(cpp_function(input) == Verified_function(verified_input));
-    });
-
-    printf("\n=== Results: %d failures ===\n", failures);
-    return failures;
-}
-```
-
-### 6. Register the test in CMake
-
-Add to `collector/verified/tests/CMakeLists.txt`:
+Add the new `.c` file to `collector/verified/CMakeLists.txt`:
 
 ```cmake
-add_executable(test_verified_yourcomponent test_yourcomponent.cpp)
-target_link_libraries(test_verified_yourcomponent collector_lib verified_yourlib rapidcheck)
-add_test(NAME test_verified_yourcomponent COMMAND test_verified_yourcomponent)
+add_library(verified STATIC
+    extracted/NetworkTypes.c
+    extracted/NetworkOps.c
+    extracted/XPulse.c        # new
+)
 ```
 
-The test links against `collector_lib` (the real C++ implementation), not stubs.
+The library is already linked to `collector_lib` — no other CMake changes needed.
 
-### 7. Run and iterate
+### 6. Write the C++ wrapper
+
+Replace the C++ class internals to forward to the extracted C API:
+
+```cpp
+extern "C" {
+#include "extracted/XPulse.h"
+#include "extracted/NetworkTypes.h"
+}
+
+class MyClass {
+  XPulse_handle handle_;
+public:
+  MyClass() : handle_(XPulse_create()) {}
+  ~MyClass() { XPulse_destroy(handle_); }
+  Result Find(Key k) const {
+    auto result = XPulse_find(handle_, to_verified(k));
+    return from_verified(result);
+  }
+};
+```
+
+Conversion functions (`to_verified`/`from_verified`) handle the type boundary. Keep them in an anonymous namespace in the `.cpp` file.
+
+### 7. Write property tests
+
+Add a test file in `collector/verified/tests/`. Two categories:
+
+**Public API tests** — exercise the C++ wrapper to validate integration:
+```cpp
+check("Find after insert returns containing network", [](IPNet net) {
+    RC_PRE(!net.IsNull() && net.bits() >= 1u);
+    MyClass obj;
+    obj.Insert(net);
+    auto result = obj.Find(net.address());
+    RC_ASSERT(!result.IsNull());
+    RC_ASSERT(result.Contains(net.address()));
+});
+```
+
+**Raw verified API tests** — exercise the extracted C directly:
+```cpp
+check("Verified: insert then find succeeds", [](IPNet net) {
+    RC_PRE(!net.IsNull() && net.bits() >= 1u);
+    auto tree = XPulse_create();
+    tree = XPulse_insert(tree, to_verified(net));
+    auto result = XPulse_find(tree, to_verified(net.address()));
+    RC_ASSERT(result.found);
+    XPulse_destroy(tree);
+});
+```
+
+Register in `collector/verified/tests/CMakeLists.txt`:
+```cmake
+add_executable(test_verified_x test_x.cpp)
+target_link_libraries(test_verified_x collector_lib verified rapidcheck)
+add_test(NAME test_verified_x COMMAND test_verified_x)
+```
+
+### 8. Build and test
 
 ```bash
-# From collector root:
-make -C collector verified-tests
+# Build everything
+make -C collector collector
 
-# Or directly:
-cd collector/verified && make all
-docker exec collector_builder_amd64 \
-  cmake --build cmake-build --target test_verified_yourcomponent -- -j 12
-docker exec collector_builder_amd64 \
-  ctest -V -R test_verified --test-dir cmake-build
+# Run all tests
+DOCKER_HOST=unix:///run/podman/podman.sock docker exec collector_builder_amd64 \
+  ctest -V --test-dir <worktree>/cmake-build
+
+# Run just verified tests
+DOCKER_HOST=unix:///run/podman/podman.sock docker exec collector_builder_amd64 \
+  ctest -V -R test_verified --test-dir <worktree>/cmake-build
 ```
 
-If a property test fails, RapidCheck prints a shrunk counterexample. Possible causes:
-1. **Byte-order mismatch** — the most common issue. Build a debug tool to print the raw uint64 values and compare.
-2. **Spec bug** — fix the F* implementation.
-3. **C++ bug** — investigate and fix. This is the whole point.
+All existing tests must pass unchanged — the public API is preserved.
+
+### 9. Discharge admitted proofs
+
+Go back and replace `admit()` in spec lemmas with actual proofs. Work iteratively — verify after each lemma.
 
 ## Existing verified components
 
-| Component | F* Module | C++ Source | Properties verified |
-|-----------|-----------|------------|-------------------|
-| NetworkConnection | NetworkTypes.fst, NetworkOps.fst | NetworkConnection.h/cpp | IsLocal, IsPublic, IsEphemeralPort, IsCanonicalExternal, CIDR containment |
+| Component | Spec | Pulse | C++ Wrapper | Properties |
+|-----------|------|-------|-------------|------------|
+| NetworkConnection | NetworkTypes.fst | — (pure functions only) | — (differential tests) | IsLocal, IsPublic, IsEphemeralPort, IsCanonicalExternal, CIDR containment |
+| NRadix tree | NRadixSpec.fst | NRadixPulse.fst | NRadix.h/cpp | create, destroy, insert (with duplicate detection), find, is_empty. Ghost invariant links heap tree to functional spec. |
 
 ## File layout
 
 ```
 collector/verified/
-  Makefile              — verify → extract pipeline
+  .gitignore              — Ignores .checked and .krml files
+  CMakeLists.txt          — Builds libverified.a static library
+  Makefile                — F* verify + Karamel extract pipeline
   fstar/
-    NetworkTypes.fst    — Address, IPNet, Endpoint, L4Proto types
-    NetworkOps.fst      — Classification functions + proved properties
+    NetworkTypes.fst      — Address, IPNet, Endpoint types (shared)
+    NetworkOps.fst        — Classification functions (pure)
+    NRadixSpec.fst        — Functional tree spec + correctness lemmas (not extracted)
+    NRadixPulse.fst       — Pulse heap tree implementation (extracted)
   extracted/
-    krml_compat.h       — Standard includes + KRML macros (hand-written, stable)
-    NetworkOps.c        — Generated (do not modify)
-    NetworkOps.h        — Generated (do not modify)
+    krml_compat.h         — Standard includes + KRML macros (hand-written, stable)
+    NetworkTypes.c/h      — Shared type definitions (generated)
+    NetworkOps.c/h        — Classification functions (generated)
+    NRadixPulse.c/h       — Heap tree operations (generated)
   tests/
-    CMakeLists.txt      — Build config, links against collector_lib + rapidcheck
-    test_network.cpp    — Differential property tests for NetworkConnection
+    CMakeLists.txt        — Test targets, links collector_lib + verified + rapidcheck
+    test_network.cpp      — Property tests for NetworkOps
+    test_nradix.cpp       — Property tests for NRadix tree
 ```
+
+## Lessons learned
+
+- **Karamel cannot extract recursive algebraic types** (its inlining phase hangs). Use `option (box node_t)` for tree structures — Pulse's Box extracts to C pointers which Karamel handles.
+- **Pulse's `option (box _)` pattern** is the idiomatic way to model nullable pointers (used by Pulse.Lib.LinkedList and Pulse.Lib.AVLTree).
+- **Ghost helpers are essential.** Write `intro_`/`elim_` ghost functions for fold/unfold of the recursive `slprop` invariant. Every operation needs them.
+- **Use `fn rec` with `decreases`** for recursive traversals. Decrease on the ghost spec tree for read-only operations, on a counter for mutating operations.
+- **`remove_definitions()` in CMakeLists.txt** — the parent CMake scope may have `add_definitions` with problematic values (e.g. commas). Use `remove_definitions()` to isolate the verified library.
+- **Name verified modules to avoid header clashes** — e.g. `NRadixPulse.h` not `NRadix.h` (which is the C++ header). Include with `extracted/` prefix for clarity.
