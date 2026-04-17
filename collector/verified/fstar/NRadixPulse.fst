@@ -343,3 +343,166 @@ fn find_addr (t: nradix_tree) (#ft: erased NRadixSpec.nradix_node) (a: address)
   let net = mk_ipnet a (if a.family = FamilyIPv4 then 32uy else 128uy);
   find t net
 }
+
+// ============================================================
+// insert: mutating tree traversal that adds a network
+//         (proved equal to NRadixSpec.insert_aux / insert)
+// ============================================================
+
+// place_value on a None (NRLeaf): allocate a new node
+fn place_value_leaf (net: ipnet)
+  requires emp
+  returns new_ct: tree_ptr
+  ensures is_tree new_ct (NRNode true net NRLeaf NRLeaf)
+{
+  let b = Box.alloc ({ has_value = true; value = net; left = null_tree_ptr; right = null_tree_ptr });
+  intro_is_tree_leaf null_tree_ptr;
+  intro_is_tree_leaf null_tree_ptr;
+  intro_is_tree_node (Some b) b;
+  (Some b)
+}
+
+// place_value on a Some p (NRNode): set value if not already set
+fn place_value_node (ct: tree_ptr) (p: node_box) (net: ipnet)
+                    (#node: erased node_t)
+                    (#ltree #rtree: erased NRadixSpec.nradix_node)
+  requires
+    (p |-> reveal node) **
+    is_tree (reveal node).left ltree **
+    is_tree (reveal node).right rtree **
+    pure (ct == Some p)
+  returns new_ct: tree_ptr
+  ensures is_tree new_ct
+    (if (reveal node).has_value
+     then NRNode (reveal node).has_value (reveal node).value (reveal ltree) (reveal rtree)
+     else NRNode true net (reveal ltree) (reveal rtree))
+{
+  let n = !p;
+  if n.has_value {
+    intro_is_tree_node ct p;
+    ct
+  } else {
+    p := { n with has_value = true; value = net };
+    intro_is_tree_node ct p;
+    ct
+  }
+}
+
+fn rec insert_walk (ct: tree_ptr) (#ft: erased NRadixSpec.nradix_node)
+                   (net: ipnet)
+                   (host_hi host_lo mask_hi mask_lo: U64.t)
+                   (remaining: U8.t{U8.v remaining <= 128})
+  requires is_tree ct ft
+  returns new_ct: tree_ptr
+  ensures is_tree new_ct (NRadixSpec.insert_aux (reveal ft) net host_hi host_lo mask_hi mask_lo (U8.v remaining))
+  decreases (U8.v remaining)
+{
+  cases_of_is_tree ct ft;
+  match ct {
+    None -> {
+      // ct is None, ft is NRLeaf
+      unfold is_tree_cases;
+      // place_value on NRLeaf:
+      //   insert_aux NRLeaf ... remaining =
+      //     if remaining = 0 then place_value NRLeaf
+      //     else if not (is_in_mask ...) then place_value NRLeaf
+      //     else NRNode false null_ipnet (recurse ...) NRLeaf  (or vice versa)
+      if (U8.eq remaining 0uy) {
+        // remaining = 0: place_value NRLeaf = NRNode true net NRLeaf NRLeaf
+        place_value_leaf net
+      } else {
+        let remaining' : U8.t = U8.sub remaining 1uy;
+        let bit_pos : U8.t = U8.sub 128uy remaining;
+        let bp : U32.t = FStar.Int.Cast.uint8_to_uint32 bit_pos;
+        if not (NRadixSpec.is_in_mask bp mask_hi mask_lo) {
+          // mask exhausted: place_value NRLeaf
+          place_value_leaf net
+        } else {
+          let go_right = NRadixSpec.get_direction host_hi host_lo bp;
+          if go_right {
+            // Recurse into right child (which is NRLeaf)
+            intro_is_tree_leaf null_tree_ptr;
+            let new_right = insert_walk null_tree_ptr #NRLeaf net host_hi host_lo mask_hi mask_lo remaining';
+            // Build: NRNode false null_ipnet NRLeaf new_right
+            intro_is_tree_leaf null_tree_ptr;
+            let b = Box.alloc ({ has_value = false; value = NRadixSpec.null_ipnet; left = null_tree_ptr; right = new_right });
+            intro_is_tree_node (Some b) b;
+            (Some b)
+          } else {
+            // Recurse into left child (which is NRLeaf)
+            intro_is_tree_leaf null_tree_ptr;
+            let new_left = insert_walk null_tree_ptr #NRLeaf net host_hi host_lo mask_hi mask_lo remaining';
+            // Build: NRNode false null_ipnet new_left NRLeaf
+            intro_is_tree_leaf null_tree_ptr;
+            let b = Box.alloc ({ has_value = false; value = NRadixSpec.null_ipnet; left = new_left; right = null_tree_ptr });
+            intro_is_tree_node (Some b) b;
+            (Some b)
+          }
+        }
+      }
+    }
+    Some p -> {
+      unfold is_tree_cases;
+      with node ltree rtree. _;
+      let n = !p;
+      if (U8.eq remaining 0uy) {
+        // remaining = 0: place_value (NRNode ...)
+        if n.has_value {
+          intro_is_tree_node ct p;
+          ct
+        } else {
+          p := { n with has_value = true; value = net };
+          intro_is_tree_node ct p;
+          ct
+        }
+      } else {
+        let remaining' : U8.t = U8.sub remaining 1uy;
+        let bit_pos : U8.t = U8.sub 128uy remaining;
+        let bp : U32.t = FStar.Int.Cast.uint8_to_uint32 bit_pos;
+        if not (NRadixSpec.is_in_mask bp mask_hi mask_lo) {
+          // mask exhausted: place_value
+          if n.has_value {
+            intro_is_tree_node ct p;
+            ct
+          } else {
+            p := { n with has_value = true; value = net };
+            intro_is_tree_node ct p;
+            ct
+          }
+        } else {
+          let go_right = NRadixSpec.get_direction host_hi host_lo bp;
+          if go_right {
+            let new_right = insert_walk n.right #rtree net host_hi host_lo mask_hi mask_lo remaining';
+            p := { n with right = new_right };
+            intro_is_tree_node ct p;
+            ct
+          } else {
+            let new_left = insert_walk n.left #ltree net host_hi host_lo mask_hi mask_lo remaining';
+            p := { n with left = new_left };
+            intro_is_tree_node ct p;
+            ct
+          }
+        }
+      }
+    }
+  }
+}
+
+fn insert (t: nradix_tree) (#ft: erased NRadixSpec.nradix_node) (net: ipnet)
+  requires is_tree t.root ft
+  returns new_t: nradix_tree
+  ensures is_tree new_t.root (NRadixSpec.insert (reveal ft) net)
+{
+  if (U8.eq net.prefix 0uy) {
+    t
+  } else if (U8.gt net.prefix 128uy) {
+    t
+  } else {
+    let host_hi = NRadixSpec.bswap64 net.addr.hi;
+    let host_lo = NRadixSpec.bswap64 net.addr.lo;
+    let mask_hi = NRadixSpec.net_mask_hi net.prefix;
+    let mask_lo = NRadixSpec.net_mask_lo net.prefix;
+    let new_root = insert_walk t.root net host_hi host_lo mask_hi mask_lo 128uy;
+    ({ root = new_root })
+  }
+}
