@@ -208,3 +208,50 @@ fn destroy (t: nradix_tree) (#ft: erased NRadixSpec.nradix_node)
 {
   destroy_subtree t.root;
 }
+
+// ============================================================
+// is_empty: check whether the tree contains no networks
+// ============================================================
+
+ghost
+fn is_tree_none_iff_leaf (x: tree_ptr) (#ft: NRadixSpec.nradix_node)
+  requires is_tree x ft
+  ensures is_tree x ft ** pure (None? x == NRLeaf? ft)
+{
+  cases_of_is_tree x ft;
+  match x {
+    None -> {
+      unfold is_tree_cases;
+      intro_is_tree_leaf x;
+    }
+    Some p -> {
+      unfold is_tree_cases;
+      with node ltree rtree. _;
+      intro_is_tree_node x p;
+    }
+  }
+}
+
+fn is_empty (t: nradix_tree) (#ft: erased NRadixSpec.nradix_node)
+  requires is_tree t.root ft
+  returns b: bool
+  ensures is_tree t.root ft ** pure (b == NRadixSpec.is_empty (reveal ft))
+{
+  cases_of_is_tree t.root ft;
+  match t.root {
+    None -> {
+      unfold is_tree_cases;
+      intro_is_tree_leaf t.root;
+      true
+    }
+    Some p -> {
+      unfold is_tree_cases;
+      with node ltree rtree. _;
+      let n = !p;
+      is_tree_none_iff_leaf n.left #ltree;
+      is_tree_none_iff_leaf n.right #rtree;
+      intro_is_tree_node t.root p;
+      (not n.has_value && None? n.left && None? n.right)
+    }
+  }
+}
