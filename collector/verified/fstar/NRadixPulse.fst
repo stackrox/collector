@@ -159,3 +159,52 @@ fn is_tree_case_some (x: tree_ptr) (v: node_box) (#ft: NRadixSpec.nradix_node)
   cases_of_is_tree (Some v) ft;
   unfold is_tree_cases;
 }
+
+// ============================================================
+// create: allocate an empty tree
+// ============================================================
+
+fn create ()
+  requires emp
+  returns t: nradix_tree
+  ensures is_tree t.root nradix_empty
+{
+  let root = Box.alloc ({ has_value = false; value = null_ipnet; left = null_tree_ptr; right = null_tree_ptr });
+  intro_is_tree_leaf null_tree_ptr;
+  intro_is_tree_leaf null_tree_ptr;
+  intro_is_tree_node (Some root) root;
+  ({ root = Some root })
+}
+
+// ============================================================
+// destroy: recursively free all nodes in the tree
+// ============================================================
+
+fn rec destroy_subtree (ct: tree_ptr) (#ft: erased NRadixSpec.nradix_node)
+  requires is_tree ct ft
+  ensures emp
+  decreases ft
+{
+  cases_of_is_tree ct ft;
+  match ct {
+    None -> {
+      unfold is_tree_cases;
+      ()
+    }
+    Some p -> {
+      unfold is_tree_cases;
+      with node ltree rtree. _;
+      let n = !p;
+      destroy_subtree n.left #ltree;
+      destroy_subtree n.right #rtree;
+      Box.free p;
+    }
+  }
+}
+
+fn destroy (t: nradix_tree) (#ft: erased NRadixSpec.nradix_node)
+  requires is_tree t.root ft
+  ensures emp
+{
+  destroy_subtree t.root;
+}
