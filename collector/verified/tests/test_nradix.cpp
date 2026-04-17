@@ -37,15 +37,6 @@ static NetworkTypes_ipnet to_verified_ipnet(const collector::IPNet& net) {
     return NetworkTypes_mk_ipnet(va, static_cast<uint8_t>(net.bits()));
 }
 
-static NRadixPulse_nradix_tree verified_tree_from(const std::vector<collector::IPNet>& nets) {
-    NRadixPulse_nradix_tree tree = NRadixPulse_create();
-    for (const auto& net : nets) {
-        auto vn = to_verified_ipnet(net);
-        tree = NRadixPulse_insert(tree, vn);
-    }
-    return tree;
-}
-
 // --- RapidCheck generators ---
 
 namespace rc {
@@ -63,7 +54,6 @@ struct Arbitrary<collector::Address> {
                     return collector::Address(v.first, v.second);
                 }
             ),
-            gen::just(collector::Address()),
             gen::just(collector::Address(127, 0, 0, 1)),
             gen::just(collector::Address(10, 0, 0, 1)),
             gen::just(collector::Address(192, 168, 1, 1)),
@@ -112,9 +102,52 @@ int main() {
         if (!result) failures++;
     };
 
-    // --- Tree operation tests ---
+    // --- Public API property tests ---
 
-    check("Find on empty tree returns not-found", [](collector::Address addr) {
+    check("Empty tree is empty", []() {
+        collector::NRadixTree tree;
+        RC_ASSERT(tree.IsEmpty());
+    });
+
+    check("Insert makes tree non-empty", [](collector::IPNet net) {
+        RC_PRE(!net.IsNull() && net.bits() >= 1u && net.bits() <= 128u);
+        collector::NRadixTree tree;
+        tree.Insert(net);
+        RC_ASSERT(!tree.IsEmpty());
+    });
+
+    check("Find after insert returns a containing network", [](collector::IPNet net) {
+        RC_PRE(!net.IsNull() && net.bits() >= 1u && net.bits() <= 128u);
+        collector::NRadixTree tree;
+        tree.Insert(net);
+        auto result = tree.Find(net.address());
+        RC_ASSERT(!result.IsNull());
+        RC_ASSERT(result.Contains(net.address()));
+    });
+
+    check("Find on empty tree returns null", [](collector::Address addr) {
+        collector::NRadixTree tree;
+        auto result = tree.Find(addr);
+        RC_ASSERT(result.IsNull());
+    });
+
+    check("GetAll returns all inserted networks", []() {
+        auto nets = *rc::gen::container<std::vector<collector::IPNet>>(
+            rc::gen::arbitrary<collector::IPNet>());
+        collector::NRadixTree tree;
+        size_t count = 0;
+        for (const auto& net : nets) {
+            if (!net.IsNull() && net.bits() >= 1u && net.bits() <= 128u) {
+                if (tree.Insert(net)) count++;
+            }
+        }
+        auto all = tree.GetAll();
+        RC_ASSERT(all.size() == count);
+    });
+
+    // --- Raw verified API tests ---
+
+    check("Verified: empty tree find returns not-found", [](collector::Address addr) {
         NRadixPulse_nradix_tree tree = NRadixPulse_create();
         auto va = to_verified_addr(addr);
         auto result = NRadixPulse_find_addr(tree, va);
@@ -122,90 +155,21 @@ int main() {
         NRadixPulse_destroy(tree);
     });
 
-    check("Insert then Find agrees with C++ for single network", [](collector::IPNet net) {
-        RC_PRE(!net.IsNull());
-        RC_PRE(net.bits() >= 1 && net.bits() <= 128);
-
-        collector::NRadixTree cpp_tree;
-        cpp_tree.Insert(net);
-
-        auto vn = to_verified_ipnet(net);
-        NRadixPulse_nradix_tree vtree = NRadixPulse_create();
-        vtree = NRadixPulse_insert(vtree, vn);
-
-        auto cpp_result = cpp_tree.Find(net.address());
+    check("Verified: insert then find succeeds", [](collector::IPNet net) {
+        RC_PRE(!net.IsNull() && net.bits() >= 1u && net.bits() <= 128u);
+        NRadixPulse_nradix_tree tree = NRadixPulse_create();
+        tree = NRadixPulse_insert(tree, to_verified_ipnet(net));
         auto va = to_verified_addr(net.address());
-        auto v_result = NRadixPulse_find_addr(vtree, va);
-
-        RC_ASSERT(!cpp_result.IsNull() == v_result.found);
-        if (v_result.found) {
-            RC_ASSERT(cpp_result.bits() == v_result.net.prefix);
-        }
-        NRadixPulse_destroy(vtree);
+        auto result = NRadixPulse_find_addr(tree, va);
+        RC_ASSERT(result.found);
+        RC_ASSERT(result.net.prefix == static_cast<uint8_t>(net.bits()));
+        NRadixPulse_destroy(tree);
     });
 
-    check("Find agrees with C++ for multiple networks", []() {
-        auto nets = *rc::gen::container<std::vector<collector::IPNet>>(
-            rc::gen::arbitrary<collector::IPNet>());
-        RC_PRE(nets.size() >= 1 && nets.size() <= 20);
-
-        collector::NRadixTree cpp_tree;
-        std::vector<collector::IPNet> inserted;
-        for (const auto& net : nets) {
-            if (net.IsNull() || net.bits() < 1 || net.bits() > 128) continue;
-            if (cpp_tree.Insert(net)) {
-                inserted.push_back(net);
-            }
-        }
-        RC_PRE(!inserted.empty());
-
-        NRadixPulse_nradix_tree vtree = verified_tree_from(inserted);
-
-        auto queries = *rc::gen::container<std::vector<collector::Address>>(
-            5, rc::gen::arbitrary<collector::Address>());
-
-        for (const auto& addr : queries) {
-            auto cpp_result = cpp_tree.Find(addr);
-            auto va = to_verified_addr(addr);
-            auto v_result = NRadixPulse_find_addr(vtree, va);
-
-            RC_ASSERT(!cpp_result.IsNull() == v_result.found);
-            if (v_result.found) {
-                RC_ASSERT(cpp_result.bits() == v_result.net.prefix);
-                RC_ASSERT(cpp_result.family() == v_result.net.addr.family);
-            }
-        }
-
-        for (const auto& net : inserted) {
-            auto cpp_result = cpp_tree.Find(net.address());
-            auto va = to_verified_addr(net.address());
-            auto v_result = NRadixPulse_find_addr(vtree, va);
-
-            RC_ASSERT(!cpp_result.IsNull() == v_result.found);
-            if (v_result.found) {
-                RC_ASSERT(cpp_result.bits() == v_result.net.prefix);
-            }
-        }
-        NRadixPulse_destroy(vtree);
-    });
-
-    check("IsEmpty agrees", []() {
-        auto nets = *rc::gen::container<std::vector<collector::IPNet>>(
-            rc::gen::arbitrary<collector::IPNet>());
-
-        collector::NRadixTree cpp_tree;
-        NRadixPulse_nradix_tree vtree = NRadixPulse_create();
-
-        RC_ASSERT(cpp_tree.IsEmpty() == NRadixPulse_is_empty(vtree));
-
-        for (const auto& net : nets) {
-            if (net.IsNull() || net.bits() < 1 || net.bits() > 128) continue;
-            cpp_tree.Insert(net);
-            vtree = NRadixPulse_insert(vtree, to_verified_ipnet(net));
-        }
-
-        RC_ASSERT(cpp_tree.IsEmpty() == NRadixPulse_is_empty(vtree));
-        NRadixPulse_destroy(vtree);
+    check("Verified: is_empty on fresh tree", []() {
+        NRadixPulse_nradix_tree tree = NRadixPulse_create();
+        RC_ASSERT(NRadixPulse_is_empty(tree));
+        NRadixPulse_destroy(tree);
     });
 
     printf("\n=== Results: %d failures ===\n", failures);

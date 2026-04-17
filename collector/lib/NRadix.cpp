@@ -101,8 +101,9 @@ bool NRadixTree::Insert(const IPNet& network) {
     return false;
   }
 
-  tree_ = NRadixPulse_insert(tree_, to_verified_ipnet(network));
-  return true;
+  auto result = NRadixPulse_try_insert(tree_, to_verified_ipnet(network));
+  tree_ = result.tree;
+  return result.inserted;
 }
 
 IPNet NRadixTree::Find(const IPNet& network) const {
