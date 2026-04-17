@@ -9,6 +9,10 @@ open Pulse.Lib.Box { box, (:=), (!) }
 open NetworkTypes
 open NRadixSpec
 
+module U8 = FStar.UInt8
+module U32 = FStar.UInt32
+module U64 = FStar.UInt64
+
 // Heap node type for the radix tree
 noeq
 type node_t = {
@@ -254,4 +258,88 @@ fn is_empty (t: nradix_tree) (#ft: erased NRadixSpec.nradix_node)
       (not n.has_value && None? n.left && None? n.right)
     }
   }
+}
+
+// ============================================================
+// find: read-only tree traversal returning the most specific
+//       containing network (proved equal to NRadixSpec.find_aux)
+// ============================================================
+
+fn rec find_walk (ct: tree_ptr) (#ft: erased NRadixSpec.nradix_node)
+                 (host_hi host_lo mask_hi mask_lo: U64.t)
+                 (remaining: U8.t{U8.v remaining <= 128})
+                 (best: NRadixSpec.find_result)
+  requires is_tree ct ft
+  returns result: NRadixSpec.find_result
+  ensures is_tree ct ft **
+          pure (result == NRadixSpec.find_aux (reveal ft) host_hi host_lo mask_hi mask_lo (U8.v remaining) best)
+  decreases ft
+{
+  cases_of_is_tree ct ft;
+  match ct {
+    None -> {
+      unfold is_tree_cases;
+      intro_is_tree_leaf ct;
+      best
+    }
+    Some p -> {
+      unfold is_tree_cases;
+      with node ltree rtree. _;
+      let n = !p;
+      let best' : NRadixSpec.find_result =
+        (if n.has_value
+         then ({ NRadixSpec.found = true; NRadixSpec.net = n.value })
+         else best);
+      if (U8.eq remaining 0uy) {
+        intro_is_tree_node ct p;
+        best'
+      } else {
+        let remaining' : U8.t = U8.sub remaining 1uy;
+        let bit_pos : U8.t = U8.sub 128uy remaining;
+        let bp : U32.t = FStar.Int.Cast.uint8_to_uint32 bit_pos;
+        if not (NRadixSpec.is_in_mask bp mask_hi mask_lo) {
+          intro_is_tree_node ct p;
+          best'
+        } else {
+          let go_right = NRadixSpec.get_direction host_hi host_lo bp;
+          if go_right {
+            let result = find_walk n.right #rtree host_hi host_lo mask_hi mask_lo remaining' best';
+            intro_is_tree_node ct p;
+            result
+          } else {
+            let result = find_walk n.left #ltree host_hi host_lo mask_hi mask_lo remaining' best';
+            intro_is_tree_node ct p;
+            result
+          }
+        }
+      }
+    }
+  }
+}
+
+fn find (t: nradix_tree) (#ft: erased NRadixSpec.nradix_node) (net: ipnet)
+  requires is_tree t.root ft
+  returns result: NRadixSpec.find_result
+  ensures is_tree t.root ft **
+          pure (result == NRadixSpec.find (reveal ft) net)
+{
+  if (U8.eq net.prefix 0uy) {
+    NRadixSpec.no_result
+  } else {
+    let host_hi = NRadixSpec.bswap64 net.addr.hi;
+    let host_lo = NRadixSpec.bswap64 net.addr.lo;
+    let mask_hi = NRadixSpec.net_mask_hi net.prefix;
+    let mask_lo = NRadixSpec.net_mask_lo net.prefix;
+    find_walk t.root host_hi host_lo mask_hi mask_lo 128uy NRadixSpec.no_result
+  }
+}
+
+fn find_addr (t: nradix_tree) (#ft: erased NRadixSpec.nradix_node) (a: address)
+  requires is_tree t.root ft
+  returns result: NRadixSpec.find_result
+  ensures is_tree t.root ft **
+          pure (result == NRadixSpec.find_addr (reveal ft) a)
+{
+  let net = mk_ipnet a (if a.family = FamilyIPv4 then 32uy else 128uy);
+  find t net
 }
