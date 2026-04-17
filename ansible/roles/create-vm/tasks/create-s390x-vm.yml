@@ -2,6 +2,16 @@
   include_vars:
     file: s390x.yml
 
+- name: Get Ansible public IP
+  uri:
+    url: https://api.ipify.org?format=json
+    return_content: yes
+  register: ipify_response
+
+- name: Set Ansible host IP fact
+  set_fact:
+    ansible_host_ip: "{{ (ipify_response.content | from_json).ip }}"
+
 - name: Create s390x VM
   block:
     - name: Check for existing VSI
@@ -11,6 +21,28 @@
         - vsi.rc != 0
         - '"No Instance found" not in vsi.stderr'
       register: vsi
+
+    - name: Create Security Group for VSI
+      ibm.cloudcollection.ibm_is_security_group:
+        name: "{{ vsi_name }}-sg"
+        vpc: "{{ s390x.vpc_id }}"
+        resource_group: "{{ s390x.vsi_resource_group_id }}"
+      register: vsi_sg
+
+    - name: Add Inbound SSH Rule for Ansible Host
+      ibm.cloudcollection.ibm_is_security_group_rule:
+        group: "{{ vsi_sg.resource.id }}"
+        direction: inbound
+        remote: "{{ ansible_host_ip }}/32"
+        tcp:
+          - port_min: 22
+            port_max: 22
+
+    - name: Add Outbound Rule (Allow All)
+      ibm.cloudcollection.ibm_is_security_group_rule:
+        group: "{{ vsi_sg.resource.id }}"
+        direction: outbound
+        remote: "0.0.0.0/0"
 
     - name: Configure VSI
       ibm.cloudcollection.ibm_is_instance:
@@ -25,6 +57,8 @@
           - "{{ s390x.ssh_key_id }}"
         primary_network_interface:
           - subnet: "{{ s390x.subnet_id }}"
+            security_groups:
+              - "{{ vsi_sg.resource.id }}"
         zone: "{{ s390x.zone }}"
         boot_volume:
           - size: "{{ s390x.disk_size }}"
