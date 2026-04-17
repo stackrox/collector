@@ -22,6 +22,15 @@ typedef struct NetworkTypes_address_s
 }
 NetworkTypes_address;
 
+typedef struct NetworkTypes_ipnet_s
+{
+  NetworkTypes_address addr;
+  uint64_t mask_hi;
+  uint64_t mask_lo;
+  uint8_t prefix;
+}
+NetworkTypes_ipnet;
+
 
 #define NetworkTypes_H_DEFINED
 #endif /* NetworkTypes_H */
