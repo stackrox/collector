@@ -160,7 +160,7 @@ bool NRadixTree::IsAnyIPNetSubset(Address::Family family, const NRadixTree& othe
   auto otherNets = other.GetAll();
   for (const auto& net : otherNets) {
     if (family != Address::Family::UNKNOWN && net.family() != family) continue;
-    auto found = this->Find(net.address());
+    auto found = this->Find(net);
     if (!found.IsNull() && found.family() == net.family()) return true;
   }
   return false;
