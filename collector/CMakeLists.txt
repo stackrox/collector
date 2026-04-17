@@ -69,8 +69,8 @@ add_definitions(-DSCAP_SOCKET_ONLY_FD)
 # Filter out some cgroup subsys
 add_definitions("-DINTERESTING_SUBSYS=\"perf_event\", \"cpu\", \"cpuset\", \"memory\"")
 
-add_subdirectory(verified)
 add_subdirectory(lib)
+add_subdirectory(verified)
 
 add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)

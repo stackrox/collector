@@ -1,3 +1,10 @@
+remove_definitions(
+    "-DINTERESTING_SUBSYS=\"perf_event\", \"cpu\", \"cpuset\", \"memory\""
+    -DASSERT_TO_LOG
+    -DSCAP_SOCKET_ONLY_FD
+    -DUSE_PROTO_ARENAS
+)
+
 add_library(verified STATIC
     extracted/NetworkTypes.c
     extracted/NetworkOps.c
