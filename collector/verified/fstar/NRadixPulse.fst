@@ -506,3 +506,24 @@ fn insert (t: nradix_tree) (#ft: erased NRadixSpec.nradix_node) (net: ipnet)
     ({ root = new_root })
   }
 }
+
+// ============================================================
+// try_insert: insert with duplicate detection
+// ============================================================
+
+noeq
+type insert_result = {
+  tree: nradix_tree;
+  inserted: bool;
+}
+
+fn try_insert (t: nradix_tree) (#ft: erased NRadixSpec.nradix_node) (net: ipnet)
+  requires is_tree t.root ft
+  returns r: insert_result
+  ensures is_tree r.tree.root (NRadixSpec.insert (reveal ft) net)
+{
+  let existing = find t net;
+  let was_dup = existing.found && U8.eq existing.net.prefix net.prefix;
+  let new_t = insert t net;
+  ({ tree = new_t; inserted = not was_dup })
+}

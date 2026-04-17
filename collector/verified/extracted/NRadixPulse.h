@@ -113,6 +113,19 @@ NRadixPulse_insert(
   NetworkTypes_ipnet net
 );
 
+typedef struct NRadixPulse_insert_result_s
+{
+  FStar_Pervasives_Native_option___NRadixPulse_node_t_ tree;
+  bool inserted;
+}
+NRadixPulse_insert_result;
+
+NRadixPulse_insert_result
+NRadixPulse_try_insert(
+  FStar_Pervasives_Native_option___NRadixPulse_node_t_ t,
+  NetworkTypes_ipnet net
+);
+
 
 #define NRadixPulse_H_DEFINED
 #endif /* NRadixPulse_H */

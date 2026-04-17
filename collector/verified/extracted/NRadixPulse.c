@@ -526,3 +526,15 @@ NRadixPulse_insert(
   }
 }
 
+NRadixPulse_insert_result
+NRadixPulse_try_insert(
+  FStar_Pervasives_Native_option___NRadixPulse_node_t_ t,
+  NetworkTypes_ipnet net
+)
+{
+  NRadixSpec_find_result existing = NRadixPulse_find(t, net);
+  bool was_dup = existing.found && existing.net.prefix == net.prefix;
+  FStar_Pervasives_Native_option___NRadixPulse_node_t_ new_t = NRadixPulse_insert(t, net);
+  return ((NRadixPulse_insert_result){ .tree = new_t, .inserted = !was_dup });
+}
+
