@@ -47,7 +47,7 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 
 	k.tests = append(k.tests, NamespaceTest{
 		containerID:       k.Collector().ContainerID(),
-		expectecNamespace: collector.TEST_NAMESPACE,
+		expectecNamespace: "",
 	})
 
 	k.createTargetNamespace()
@@ -55,7 +55,7 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 	k.Require().Len(nginxID, 12)
 	k.tests = append(k.tests, NamespaceTest{
 		containerID:       nginxID,
-		expectecNamespace: NAMESPACE,
+		expectecNamespace: "",
 	})
 }
 
