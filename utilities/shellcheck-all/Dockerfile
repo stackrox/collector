@@ -1,4 +1,4 @@
-FROM centos:7
+FROM centos:8
 
 # Used to run the shellcheck-all.sh script, which checks for potential errors/smells in all shell script files in a directory
 # To run 
