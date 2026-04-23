@@ -1,0 +1,17 @@
+---
+plugin: ibm.cloudcollection.vpc_inventory
+regions:
+  - us-east
+#ibmcloud_api_key: "{{ lookup('env', 'IBM_CLOUD_S390X_API_KEY') }}"
+ansible_host_type: name
+fail_on_duplicate: false
+compose:
+  ibm_cloud_vm: "true"
+  vm_arch: "tags | select('match', '^vm_arch:') | map('split', ':') | map('last') | first"
+  vm_config: "tags | select('match', '^vm_config:') | map('split', ':') | map('last') | first"
+  vm_image_family: "tags | select('match', '^vm_image_family:') | map('split', ':') | map('last') | first"
+filters:
+  resource_group: 1a33a6a9bd6e498f8115e9b1064bfa97
+keyed_groups:
+  - key: "tags | select('match', '^job_id:') | map('split', ':') | map('last') | first"
+    prefix: job_id
