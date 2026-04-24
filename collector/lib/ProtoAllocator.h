@@ -30,7 +30,7 @@ class ArenaProtoAllocator {
       : pool_(new char[pool_size]), pool_size_(pool_size), arena_(ArenaOptionsForInitialBlock(pool_.get(), pool_size_)) {}
 
   void Reset() {
-    google::protobuf::uint64 bytes_used = arena_.Reset();
+    uint64_t bytes_used = arena_.Reset();
     if (bytes_used > pool_size_) {
       size_t new_pool_size = (bytes_used / kDefaultPoolSize + 1) * kDefaultPoolSize;
       CLOG(WARNING) << "Used " << bytes_used << " bytes in the arena, which is more than the pre-allocated "
@@ -48,11 +48,11 @@ class ArenaProtoAllocator {
 
   template <typename T, typename... Args>
   T* Allocate(Args&&... args) {
-    return google::protobuf::Arena::CreateMessage<T>(&arena_, std::forward<Args>(args)...);
+    return google::protobuf::Arena::Create<T>(&arena_, std::forward<Args>(args)...);
   }
 
   Message* AllocateRoot() {
-    return google::protobuf::Arena::CreateMessage<Message>(&arena_);
+    return google::protobuf::Arena::Create<Message>(&arena_);
   }
 
  private:
