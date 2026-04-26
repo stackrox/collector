@@ -22,8 +22,6 @@ cmake-build-*/
 
 # vscode configuration files
 .vscode/
-.devcontainer/
-.devcontainer.json
 cmake-build/
 out/
 
