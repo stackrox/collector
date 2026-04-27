@@ -38,3 +38,4 @@ if (COVERAGE)
 endif()
 
 target_link_libraries(collector_lib z ssl crypto bpf)
+target_link_libraries(collector_lib verified)
