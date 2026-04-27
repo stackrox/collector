@@ -35,4 +35,12 @@ endforeach()
 if (ADDRESS_SANITIZER)
     # This test has a false positive when running under asan
     set_property(TEST "ConfigLoaderTest" PROPERTY ENVIRONMENT "ASAN_OPTIONS=detect_container_overflow=0")
+
+    # GCC bug #71962 / abseil#1634: -fsanitize=undefined breaks constexpr
+    # evaluation of function pointer comparisons to nullptr in abseil's
+    # hash_policy_traits.h, pulled in via protobuf's message_differencer.h.
+    set_source_files_properties(
+        ${PROJECT_SOURCE_DIR}/test/ConfigLoaderTest.cpp
+        PROPERTIES COMPILE_OPTIONS "-fno-sanitize=undefined"
+    )
 endif()

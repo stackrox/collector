@@ -141,7 +141,7 @@ ParserResult ParserYaml::ParseArrayEnum(google::protobuf::Message* msg, const YA
     const EnumValueDescriptor* value = desc->FindValueByName(enum_name);
     if (value == nullptr) {
       ParserError err;
-      err << file_ << ": Invalid enum value '" << enum_name << "' for field " << (read_camelcase_ ? SnakeCaseToCamel(field->name()) : field->name());
+      err << file_ << ": Invalid enum value '" << enum_name << "' for field " << (read_camelcase_ ? SnakeCaseToCamel(std::string(field->name())) : std::string(field->name()));
       errors.emplace_back(err);
       continue;
     }
@@ -202,43 +202,41 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
                                const google::protobuf::FieldDescriptor* field, const std::string& path) {
   using namespace google::protobuf;
 
-  std::string camel;
-  const std::string* name = &field->name();
+  std::string name(field->name());
   if (read_camelcase_) {
-    camel = SnakeCaseToCamel(*name);
-    name = &camel;
+    name = SnakeCaseToCamel(name);
   }
 
-  if (!node[*name]) {
+  if (!node[name]) {
     if (validation_mode_ == STRICT) {
       ParserError err;
-      err << file_ << ": Missing field '" << ConcatPath(path, *name) << "'";
+      err << file_ << ": Missing field '" << ConcatPath(path, name) << "'";
       return {{err}};
     }
     return {};
   }
 
   if (field->label() == FieldDescriptor::LABEL_REPEATED) {
-    if (!node[*name].IsSequence()) {
+    if (!node[name].IsSequence()) {
       ParserError err;
-      YAML::NodeType::value type = node[*name].Type();
-      err << file_ << ": Type mismatch for '" << *name << "' - expected Sequence, got "
+      YAML::NodeType::value type = node[name].Type();
+      err << file_ << ": Type mismatch for '" << name << "' - expected Sequence, got "
           << NodeTypeToString(type);
       return {{err}};
     }
-    return ParseArray(msg, node[*name], field);
+    return ParseArray(msg, node[name], field);
   }
 
   if (field->type() == FieldDescriptor::TYPE_MESSAGE) {
-    if (node[*name].IsNull()) {
+    if (node[name].IsNull()) {
       // Ignore empty objects
       return {};
     }
 
-    if (!node[*name].IsMap()) {
+    if (!node[name].IsMap()) {
       ParserError err;
-      YAML::NodeType::value type = node[*name].Type();
-      err << file_ << ": Type mismatch for '" << *name << "' - expected Map, got "
+      YAML::NodeType::value type = node[name].Type();
+      err << file_ << ": Type mismatch for '" << name << "' - expected Map, got "
           << NodeTypeToString(type);
       return {{err}};
     }
@@ -249,7 +247,7 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
     for (int i = 0; i < descriptor->field_count(); i++) {
       const FieldDescriptor* f = descriptor->field(i);
 
-      auto err = Parse(m, node[*name], f, ConcatPath(path, *name));
+      auto err = Parse(m, node[name], f, ConcatPath(path, name));
       if (err) {
         errors.insert(errors.end(), err->begin(), err->end());
       }
@@ -261,13 +259,13 @@ ParserResult ParserYaml::Parse(google::protobuf::Message* msg, const YAML::Node&
     return {};
   }
 
-  if (!node[*name].IsScalar()) {
+  if (!node[name].IsScalar()) {
     ParserError err;
     err << file_ << ": Attempting to parse non-scalar field as scalar";
     return {{err}};
   }
 
-  return ParseScalar(msg, node[*name], field, *name);
+  return ParseScalar(msg, node[name], field, name);
 }
 
 ParserResult ParserYaml::ParseScalar(google::protobuf::Message* msg, const YAML::Node& node, const google::protobuf::FieldDescriptor* field, const std::string& name) {
