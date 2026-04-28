@@ -18,9 +18,8 @@ std::shared_ptr<grpc::ChannelCredentials> TLSCredentialsFromConfig(const TlsConf
       60);
 
   grpc::experimental::TlsChannelCredentialsOptions options;
-  options.set_certificate_provider(provider);
-  options.watch_root_certs();
-  options.watch_identity_key_cert_pairs();
+  options.set_root_certificate_provider(provider);
+  options.set_identity_certificate_provider(provider);
 
   return grpc::experimental::TlsCredentials(options);
 }
