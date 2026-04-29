@@ -142,6 +142,10 @@ jobs:
 
       - name: Store artifacts
         if: always()
+        # Don't fail the job on upload errors (e.g. ECONNRESET) —
+        # these are debug logs, not consumed by downstream jobs.
+        # Test failures still fail the job via the Run Tests step.
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.vm_type }}-logs
