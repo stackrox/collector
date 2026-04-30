@@ -1,34 +1,27 @@
 #include "GRPC.h"
 
-#include <fstream>
-#include <sstream>
 #include <string>
 
 #include <grpcpp/create_channel.h>
+#include <grpcpp/security/tls_certificate_provider.h>
+#include <grpcpp/security/tls_credentials_options.h>
 
 #include "optionparser.h"
 
 namespace collector {
 
-namespace {
-
-std::string ReadFileContents(const std::string& filename) {
-  std::stringstream buffer;
-  std::ifstream ifs(filename);
-  buffer << ifs.rdbuf();
-  return buffer.str();
-}
-
-}  // namespace
-
 std::shared_ptr<grpc::ChannelCredentials> TLSCredentialsFromConfig(const TlsConfig& config) {
-  grpc::SslCredentialsOptions sslOptions;
+  auto provider = std::make_shared<grpc::experimental::FileWatcherCertificateProvider>(
+      config.GetClientKey(),
+      config.GetClientCert(),
+      config.GetCa(),
+      60);
 
-  sslOptions.pem_root_certs = ReadFileContents(config.GetCa());
-  sslOptions.pem_private_key = ReadFileContents(config.GetClientKey());
-  sslOptions.pem_cert_chain = ReadFileContents(config.GetClientCert());
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_root_certificate_provider(provider);
+  options.set_identity_certificate_provider(provider);
 
-  return grpc::SslCredentials(sslOptions);
+  return grpc::experimental::TlsCredentials(options);
 }
 
 std::shared_ptr<grpc::Channel> CreateChannel(const std::string& server_address, const std::string& hostname_override, const std::shared_ptr<grpc::ChannelCredentials>& creds) {
