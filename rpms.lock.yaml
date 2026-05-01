@@ -1285,13 +1285,13 @@ arches:
     name: libblkid
     evr: 2.37.4-21.el9_7
     sourcerpm: util-linux-2.37.4-21.el9_7.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/l/libcap-2.48-10.el9.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/l/libcap-2.48-10.el9_7.1.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 71186
-    checksum: sha256:d6323aa2737cb8e19ea4566a9fa14839d553bd81ff4f04d7d69aec679a8d3ceb
+    size: 78022
+    checksum: sha256:3ea8b606ad8357faca4e134858c09ee824bc5c625caf1214a8f85412c997c007
     name: libcap
-    evr: 2.48-10.el9
-    sourcerpm: libcap-2.48-10.el9.src.rpm
+    evr: 2.48-10.el9_7.1
+    sourcerpm: libcap-2.48-10.el9_7.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/l/libcap-ng-0.8.2-7.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 36033
@@ -2551,12 +2551,12 @@ arches:
     checksum: sha256:69ee18f9881f3768c7b01d03185f3fba9637c0477e585a113fd3641c7dcd3d41
     name: libarchive
     evr: 3.5.3-9.el9_7
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/l/libcap-2.48-10.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/l/libcap-2.48-10.el9_7.1.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
-    size: 200754
-    checksum: sha256:6489ac53fc6ac70a0bd748739d9caed850a93eafcd0e069ede69bd4d05c86521
+    size: 208035
+    checksum: sha256:cd7b587671c0160d85802c044be0dc5a61366db815656a2a4210067a2d2c7303
     name: libcap
-    evr: 2.48-10.el9
+    evr: 2.48-10.el9_7.1
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/l/libcap-ng-0.8.2-7.el9.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
     size: 470599
@@ -4243,13 +4243,13 @@ arches:
     name: libblkid
     evr: 2.37.4-21.el9_7
     sourcerpm: util-linux-2.37.4-21.el9_7.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/l/libcap-2.48-10.el9.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/l/libcap-2.48-10.el9_7.1.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 76082
-    checksum: sha256:f3df556c418c721832a8c887e81ce4bcbe15632d177fb90f8c070bd7c08d210e
+    size: 82822
+    checksum: sha256:d9b3609a24a45a47919d9eafd3099d10f64b2b89b0c51c686386bb1336c3b5dd
     name: libcap
-    evr: 2.48-10.el9
-    sourcerpm: libcap-2.48-10.el9.src.rpm
+    evr: 2.48-10.el9_7.1
+    sourcerpm: libcap-2.48-10.el9_7.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/l/libcap-ng-0.8.2-7.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 37600
@@ -5516,12 +5516,12 @@ arches:
     checksum: sha256:69ee18f9881f3768c7b01d03185f3fba9637c0477e585a113fd3641c7dcd3d41
     name: libarchive
     evr: 3.5.3-9.el9_7
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/l/libcap-2.48-10.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/l/libcap-2.48-10.el9_7.1.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
-    size: 200754
-    checksum: sha256:6489ac53fc6ac70a0bd748739d9caed850a93eafcd0e069ede69bd4d05c86521
+    size: 208035
+    checksum: sha256:cd7b587671c0160d85802c044be0dc5a61366db815656a2a4210067a2d2c7303
     name: libcap
-    evr: 2.48-10.el9
+    evr: 2.48-10.el9_7.1
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/l/libcap-ng-0.8.2-7.el9.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
     size: 470599
@@ -7221,13 +7221,13 @@ arches:
     name: libblkid
     evr: 2.37.4-21.el9_7
     sourcerpm: util-linux-2.37.4-21.el9_7.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/l/libcap-2.48-10.el9.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/l/libcap-2.48-10.el9_7.1.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 71162
-    checksum: sha256:28e75f5a56dbc4a43b6dfc35df113daa48cbd3bf96f364fb6bbe8cb358252dbe
+    size: 77732
+    checksum: sha256:78d75f7e2c991425bde05308d29f6f10e850010168a802e1fa59bb0b78fc3b6f
     name: libcap
-    evr: 2.48-10.el9
-    sourcerpm: libcap-2.48-10.el9.src.rpm
+    evr: 2.48-10.el9_7.1
+    sourcerpm: libcap-2.48-10.el9_7.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/l/libcap-ng-0.8.2-7.el9.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 36348
@@ -8487,12 +8487,12 @@ arches:
     checksum: sha256:69ee18f9881f3768c7b01d03185f3fba9637c0477e585a113fd3641c7dcd3d41
     name: libarchive
     evr: 3.5.3-9.el9_7
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/l/libcap-2.48-10.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/l/libcap-2.48-10.el9_7.1.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
-    size: 200754
-    checksum: sha256:6489ac53fc6ac70a0bd748739d9caed850a93eafcd0e069ede69bd4d05c86521
+    size: 208035
+    checksum: sha256:cd7b587671c0160d85802c044be0dc5a61366db815656a2a4210067a2d2c7303
     name: libcap
-    evr: 2.48-10.el9
+    evr: 2.48-10.el9_7.1
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/l/libcap-ng-0.8.2-7.el9.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
     size: 470599
@@ -10179,13 +10179,13 @@ arches:
     name: libblkid
     evr: 2.37.4-21.el9_7
     sourcerpm: util-linux-2.37.4-21.el9_7.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/l/libcap-2.48-10.el9.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/l/libcap-2.48-10.el9_7.1.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 71887
-    checksum: sha256:2bb46ce572661112552e403f86480af37a2b6c0a4566a36d8e931d3c310047b9
+    size: 78926
+    checksum: sha256:47a89779b20db77b425aa7cafc4c9af3912d197e2abd07ab74cf540cc123357d
     name: libcap
-    evr: 2.48-10.el9
-    sourcerpm: libcap-2.48-10.el9.src.rpm
+    evr: 2.48-10.el9_7.1
+    sourcerpm: libcap-2.48-10.el9_7.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/l/libcap-ng-0.8.2-7.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 36752
@@ -11445,12 +11445,12 @@ arches:
     checksum: sha256:69ee18f9881f3768c7b01d03185f3fba9637c0477e585a113fd3641c7dcd3d41
     name: libarchive
     evr: 3.5.3-9.el9_7
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/l/libcap-2.48-10.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/l/libcap-2.48-10.el9_7.1.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
-    size: 200754
-    checksum: sha256:6489ac53fc6ac70a0bd748739d9caed850a93eafcd0e069ede69bd4d05c86521
+    size: 208035
+    checksum: sha256:cd7b587671c0160d85802c044be0dc5a61366db815656a2a4210067a2d2c7303
     name: libcap
-    evr: 2.48-10.el9
+    evr: 2.48-10.el9_7.1
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/l/libcap-ng-0.8.2-7.el9.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
     size: 470599
