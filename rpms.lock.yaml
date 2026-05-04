@@ -1019,13 +1019,13 @@ arches:
     name: libblkid
     evr: 2.32.1-48.el8_10
     sourcerpm: util-linux-2.32.1-48.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/libcap-2.48-6.el8_9.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/libcap-2.48-6.el8_10.1.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
-    size: 75344
-    checksum: sha256:f07e8f86419435b9b22cbbec364a248e560c5c330cf86a8ea8be3fa828c7fd08
+    size: 74600
+    checksum: sha256:5914a5b8a6411e50bc3ad284ec36e3c268c7135f03ec645e498b462610a18df3
     name: libcap
-    evr: 2.48-6.el8_9
-    sourcerpm: libcap-2.48-6.el8_9.src.rpm
+    evr: 2.48-6.el8_10.1
+    sourcerpm: libcap-2.48-6.el8_10.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/libcap-ng-0.7.11-1.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
     size: 33600
@@ -2737,12 +2737,12 @@ arches:
     checksum: sha256:61f54a4fe6a5666ca3767aeb0e1dfc6348126b0f25c2b43440e35c3375d8c221
     name: libassuan
     evr: 2.5.1-3.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/l/libcap-2.48-6.el8_9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/l/libcap-2.48-6.el8_10.1.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
-    size: 208927
-    checksum: sha256:b9a60d012b2102ff8df1d03e949c13ffe1090e11a00422c16992cb897f1c50da
+    size: 210077
+    checksum: sha256:20172acc8896bcbd8754e798044db712f4fa845b40ff19a138d8f46fe8d0d146
     name: libcap
-    evr: 2.48-6.el8_9
+    evr: 2.48-6.el8_10.1
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/l/libcap-ng-0.7.11-1.el8.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
     size: 81626
@@ -4449,13 +4449,13 @@ arches:
     name: libblkid
     evr: 2.32.1-48.el8_10
     sourcerpm: util-linux-2.32.1-48.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/libcap-2.48-6.el8_9.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/libcap-2.48-6.el8_10.1.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
-    size: 81276
-    checksum: sha256:81cf8f60099fd3e16caa0e478781ace2c3e590d82eadfd74ef934c0803f9ca4b
+    size: 80572
+    checksum: sha256:66541e2bdda745a9d940d421e1daae372d11d5e0985af3d57a12f9074a55495c
     name: libcap
-    evr: 2.48-6.el8_9
-    sourcerpm: libcap-2.48-6.el8_9.src.rpm
+    evr: 2.48-6.el8_10.1
+    sourcerpm: libcap-2.48-6.el8_10.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/libcap-ng-0.7.11-1.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
     size: 35484
@@ -6174,12 +6174,12 @@ arches:
     checksum: sha256:61f54a4fe6a5666ca3767aeb0e1dfc6348126b0f25c2b43440e35c3375d8c221
     name: libassuan
     evr: 2.5.1-3.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/l/libcap-2.48-6.el8_9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/l/libcap-2.48-6.el8_10.1.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
-    size: 208927
-    checksum: sha256:b9a60d012b2102ff8df1d03e949c13ffe1090e11a00422c16992cb897f1c50da
+    size: 210077
+    checksum: sha256:20172acc8896bcbd8754e798044db712f4fa845b40ff19a138d8f46fe8d0d146
     name: libcap
-    evr: 2.48-6.el8_9
+    evr: 2.48-6.el8_10.1
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/l/libcap-ng-0.7.11-1.el8.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
     size: 81626
@@ -6871,10 +6871,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/b134e60ff8cbdc21820c0aba957987bd6c68c40375476665986d1909a122e23d-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/9a22d80dd7b70faa57991e7df7d0c661e071cf1955f3ad58d4327953bba50ce8-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 782963
-    checksum: sha256:b134e60ff8cbdc21820c0aba957987bd6c68c40375476665986d1909a122e23d
+    checksum: sha256:9a22d80dd7b70faa57991e7df7d0c661e071cf1955f3ad58d4327953bba50ce8
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -7815,13 +7815,13 @@ arches:
     name: libblkid
     evr: 2.32.1-48.el8_10
     sourcerpm: util-linux-2.32.1-48.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/libcap-2.48-6.el8_9.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/libcap-2.48-6.el8_10.1.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
-    size: 75024
-    checksum: sha256:5035b6be992b0bda327a201671e64fcb86a306a9a923baf11db91084b1e2091b
+    size: 74260
+    checksum: sha256:cec3ce5c67bfc8a63dbd834e4ef678999a735284e9386452c13241e04aa3616a
     name: libcap
-    evr: 2.48-6.el8_9
-    sourcerpm: libcap-2.48-6.el8_9.src.rpm
+    evr: 2.48-6.el8_10.1
+    sourcerpm: libcap-2.48-6.el8_10.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/libcap-ng-0.7.11-1.el8.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
     size: 33724
@@ -9482,12 +9482,12 @@ arches:
     checksum: sha256:61f54a4fe6a5666ca3767aeb0e1dfc6348126b0f25c2b43440e35c3375d8c221
     name: libassuan
     evr: 2.5.1-3.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/l/libcap-2.48-6.el8_9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/l/libcap-2.48-6.el8_10.1.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
-    size: 208927
-    checksum: sha256:b9a60d012b2102ff8df1d03e949c13ffe1090e11a00422c16992cb897f1c50da
+    size: 210077
+    checksum: sha256:20172acc8896bcbd8754e798044db712f4fa845b40ff19a138d8f46fe8d0d146
     name: libcap
-    evr: 2.48-6.el8_9
+    evr: 2.48-6.el8_10.1
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/l/libcap-ng-0.7.11-1.el8.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
     size: 81626
@@ -11169,13 +11169,13 @@ arches:
     name: libblkid
     evr: 2.32.1-48.el8_10
     sourcerpm: util-linux-2.32.1-48.el8_10.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/libcap-2.48-6.el8_9.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/libcap-2.48-6.el8_10.1.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
-    size: 76264
-    checksum: sha256:53d1d3b3387e8fea15d204b277a6b47e07f8d53bc5e48de84db5242ae3391569
+    size: 75408
+    checksum: sha256:c3ac35bc53a12af3ebb92d74b815078c36ba6f855442769e1260c6a4b2626f35
     name: libcap
-    evr: 2.48-6.el8_9
-    sourcerpm: libcap-2.48-6.el8_9.src.rpm
+    evr: 2.48-6.el8_10.1
+    sourcerpm: libcap-2.48-6.el8_10.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/libcap-ng-0.7.11-1.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
     size: 34228
@@ -12880,12 +12880,12 @@ arches:
     checksum: sha256:61f54a4fe6a5666ca3767aeb0e1dfc6348126b0f25c2b43440e35c3375d8c221
     name: libassuan
     evr: 2.5.1-3.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/l/libcap-2.48-6.el8_9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/l/libcap-2.48-6.el8_10.1.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
-    size: 208927
-    checksum: sha256:b9a60d012b2102ff8df1d03e949c13ffe1090e11a00422c16992cb897f1c50da
+    size: 210077
+    checksum: sha256:20172acc8896bcbd8754e798044db712f4fa845b40ff19a138d8f46fe8d0d146
     name: libcap
-    evr: 2.48-6.el8_9
+    evr: 2.48-6.el8_10.1
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/l/libcap-ng-0.7.11-1.el8.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
     size: 81626
@@ -13571,7 +13571,7 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/022b7a7148ea86cf8833f24302c071e648075a35d8951502f4ab86ad8e695563-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/b9c6c8edafa33aca633aab36236e6f71f73e74f259c7da8c02d646f62193d1e4-modules.yaml.gz
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 809617
-    checksum: sha256:022b7a7148ea86cf8833f24302c071e648075a35d8951502f4ab86ad8e695563
+    checksum: sha256:b9c6c8edafa33aca633aab36236e6f71f73e74f259c7da8c02d646f62193d1e4
