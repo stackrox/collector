@@ -27,7 +27,7 @@ spec:
   - name: git-url
     value: '{{source_url}}'
   - name: image-expires-after
-    value: '13w'
+    value: '52w'
   - name: output-image-repo
     value: quay.io/rhacs-eng/release-collector
   - name: path-context
