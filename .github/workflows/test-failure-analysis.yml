@@ -1,0 +1,125 @@
+name: Test Failure Analysis with Claude
+
+on:
+  workflow_run:
+    workflows:
+      - "Collector Integration Tests"
+      - "Run unit tests"
+    types:
+      - completed
+
+jobs:
+  analyze-failures:
+    runs-on: ubuntu-24.04
+    # Only run on test failures, and not on PRs to avoid noise
+    if: |
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event != 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          path: test-artifacts
+        continue-on-error: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup GCP
+        uses: 'google-github-actions/setup-gcloud@v2'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r .github/scripts/requirements.txt
+
+      - name: Setup GCP authentication for Claude
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GCP_CLAUDE_SERVICE_ACCOUNT_KEY }}'
+
+      - name: Analyze test failures with Claude
+        id: analyze
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_CLAUDE_PROJECT_ID }}
+          GCP_CLAUDE_REGION: ${{ secrets.GCP_CLAUDE_REGION || 'us-central1' }}
+          GITHUB_RUN_URL: ${{ github.event.workflow_run.html_url }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+        run: |
+          python .github/scripts/analyze_test_failures.py \
+            --artifacts-dir test-artifacts \
+            --output-file /tmp/analysis.json \
+            --workflow-name "$WORKFLOW_NAME" \
+            --run-url "$GITHUB_RUN_URL"
+
+      - name: Read analysis results
+        id: read-analysis
+        run: |
+          if [ -f /tmp/analysis.json ]; then
+            ANALYSIS=$(cat /tmp/analysis.json | jq -r '.summary')
+            DETAILS=$(cat /tmp/analysis.json | jq -r '.details')
+            RECOMMENDATIONS=$(cat /tmp/analysis.json | jq -r '.recommendations')
+
+            # Escape for GitHub Actions
+            ANALYSIS="${ANALYSIS//'%'/'%25'}"
+            ANALYSIS="${ANALYSIS//$'\n'/'%0A'}"
+            ANALYSIS="${ANALYSIS//$'\r'/'%0D'}"
+
+            echo "summary=$ANALYSIS" >> $GITHUB_OUTPUT
+            echo "has_analysis=true" >> $GITHUB_OUTPUT
+          else
+            echo "summary=No analysis available" >> $GITHUB_OUTPUT
+            echo "has_analysis=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post to Slack with Claude analysis
+        if: steps.read-analysis.outputs.has_analysis == 'true'
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_ONCALL_WEBHOOK }}
+          SLACK_CHANNEL: team-acs-collector-oncall
+          SLACK_COLOR: failure
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: "🤖 ${{ github.event.workflow_run.name }} - AI Analysis"
+          SLACK_MESSAGE: |
+            @acs-collector-oncall
+
+            *Workflow*: ${{ github.event.workflow_run.name }}
+            *Status*: Failed
+            *Run*: <${{ github.event.workflow_run.html_url }}|View Details>
+
+            *🤖 Claude Analysis*:
+            ${{ steps.read-analysis.outputs.summary }}
+
+            *Recommendations*:
+            • Check the full analysis in the workflow logs
+            • Review failed test artifacts
+            • See <${{ github.event.workflow_run.html_url }}|workflow run> for details
+
+      - name: Fallback Slack notification
+        if: steps.read-analysis.outputs.has_analysis != 'true'
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_ONCALL_WEBHOOK }}
+          SLACK_CHANNEL: team-acs-collector-oncall
+          SLACK_COLOR: failure
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: "${{ github.event.workflow_run.name }} failed"
+          SLACK_MESSAGE: |
+            @acs-collector-oncall
+
+            Workflow failed but could not generate AI analysis.
+            <${{ github.event.workflow_run.html_url }}|View workflow run>
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f /tmp/gcp-key.json
+          rm -f /tmp/analysis.json

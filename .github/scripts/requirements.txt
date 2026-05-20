@@ -1,0 +1,4 @@
+# Requirements for test failure analysis
+anthropic>=0.40.0
+google-auth>=2.34.0
+google-cloud-aiplatform>=1.71.0
