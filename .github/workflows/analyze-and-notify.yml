@@ -112,18 +112,16 @@ jobs:
         run: |
           if [ -f analysis-report.md ]; then
             ANALYSIS=$(cat analysis-report.md)
-            {
-              echo "analysis<<EOF"
-              echo "$ANALYSIS"
-              echo "EOF"
-              echo "has_analysis=true"
-            } >> "$GITHUB_OUTPUT"
           else
-            echo "has_analysis=false" >> "$GITHUB_OUTPUT"
+            ANALYSIS="AI analysis unavailable. Check workflow logs."
           fi
+          {
+            echo "analysis<<EOF"
+            echo "$ANALYSIS"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
-      - name: Slack notification with AI analysis
-        if: steps.read-analysis.outputs.has_analysis == 'true'
+      - name: Slack notification
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_ONCALL_WEBHOOK }}
@@ -136,18 +134,3 @@ jobs:
             @acs-collector-oncall
 
             ${{ steps.read-analysis.outputs.analysis }}
-
-      - name: Slack notification (fallback)
-        if: steps.read-analysis.outputs.has_analysis != 'true'
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_ONCALL_WEBHOOK }}
-          SLACK_CHANNEL: team-acs-collector-oncall
-          SLACK_COLOR: failure
-          SLACK_LINK_NAMES: true
-          SLACK_TITLE: "${{ needs.analyze-failures.outputs.workflow_name }} failed"
-          MSG_MINIMAL: actions url,commit
-          SLACK_MESSAGE: |
-            @acs-collector-oncall
-
-            AI analysis unavailable. Check workflow logs.
