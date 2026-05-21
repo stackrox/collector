@@ -30,11 +30,11 @@ jobs:
         id: params
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "failed_jobs=test-label-trigger" >> $GITHUB_OUTPUT
-            echo "workflow_name=Test Workflow (Label Trigger)" >> $GITHUB_OUTPUT
+            echo "failed_jobs=test-label-trigger" >> "$GITHUB_OUTPUT"
+            echo "workflow_name=Test Workflow (Label Trigger)" >> "$GITHUB_OUTPUT"
           else
-            echo "failed_jobs=${{ inputs.failed-jobs }}" >> $GITHUB_OUTPUT
-            echo "workflow_name=${{ inputs.workflow-name }}" >> $GITHUB_OUTPUT
+            echo "failed_jobs=${{ inputs.failed-jobs }}" >> "$GITHUB_OUTPUT"
+            echo "workflow_name=${{ inputs.workflow-name }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Checkout repository
@@ -78,13 +78,13 @@ jobs:
           find . -name "analysis-report.md" -type f 2>/dev/null || echo "Not found anywhere"
 
           if [ -f analysis-report.md ]; then
-            echo "report_exists=true" >> $GITHUB_OUTPUT
+            echo "report_exists=true" >> "$GITHUB_OUTPUT"
             echo "✓ Analysis report exists in current directory"
             ls -lh analysis-report.md
             echo "--- First 20 lines ---"
             head -20 analysis-report.md
           else
-            echo "report_exists=false" >> $GITHUB_OUTPUT
+            echo "report_exists=false" >> "$GITHUB_OUTPUT"
             echo "✗ Analysis report not found in current directory"
           fi
 
@@ -112,12 +112,14 @@ jobs:
         run: |
           if [ -f analysis-report.md ]; then
             ANALYSIS=$(cat analysis-report.md)
-            echo "analysis<<EOF" >> $GITHUB_OUTPUT
-            echo "$ANALYSIS" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            echo "has_analysis=true" >> $GITHUB_OUTPUT
+            {
+              echo "analysis<<EOF"
+              echo "$ANALYSIS"
+              echo "EOF"
+              echo "has_analysis=true"
+            } >> "$GITHUB_OUTPUT"
           else
-            echo "has_analysis=false" >> $GITHUB_OUTPUT
+            echo "has_analysis=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Slack notification with AI analysis

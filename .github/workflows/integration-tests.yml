@@ -157,7 +157,7 @@ jobs:
           if [[ "${{ needs.ppc64le-integration-tests.result }}" == "failure" ]]; then
             FAILED_JOBS="${FAILED_JOBS:+$FAILED_JOBS,}ppc64le-integration-tests"
           fi
-          echo "failed_jobs=$FAILED_JOBS" >> $GITHUB_OUTPUT
+          echo "failed_jobs=$FAILED_JOBS" >> "$GITHUB_OUTPUT"
 
   analyze-and-notify:
     needs: collect-failures
