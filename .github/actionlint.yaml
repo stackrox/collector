@@ -1,4 +1,0 @@
-self-hosted-runner:
-  labels:
-    - ubuntu-24.04
-    - ubuntu-24.04-arm
