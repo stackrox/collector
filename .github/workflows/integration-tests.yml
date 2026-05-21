@@ -130,7 +130,7 @@ jobs:
       collector-repo: ${{ inputs.collector-repo }}
     secrets: inherit
 
-  notify:
+  collect-failures:
     runs-on: ubuntu-24.04
     if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name != 'pull_request'
     needs:
@@ -138,15 +138,31 @@ jobs:
       - arm64-integration-tests
       - s390x-integration-tests
       - ppc64le-integration-tests
+    outputs:
+      failed_jobs: ${{ steps.collect.outputs.failed_jobs }}
     steps:
-      - name: Slack notification
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_ONCALL_WEBHOOK }}
-          SLACK_CHANNEL: team-acs-collector-oncall
-          SLACK_COLOR: failure
-          SLACK_LINK_NAMES: true
-          SLACK_TITLE: "Integration tests failed."
-          MSG_MINIMAL: actions url,commit
-          SLACK_MESSAGE: |
-            @acs-collector-oncall
+      - name: Collect failed job names
+        id: collect
+        run: |
+          FAILED_JOBS=""
+          if [[ "${{ needs.amd64-integration-tests.result }}" == "failure" ]]; then
+            FAILED_JOBS="amd64-integration-tests"
+          fi
+          if [[ "${{ needs.arm64-integration-tests.result }}" == "failure" ]]; then
+            FAILED_JOBS="${FAILED_JOBS:+$FAILED_JOBS,}arm64-integration-tests"
+          fi
+          if [[ "${{ needs.s390x-integration-tests.result }}" == "failure" ]]; then
+            FAILED_JOBS="${FAILED_JOBS:+$FAILED_JOBS,}s390x-integration-tests"
+          fi
+          if [[ "${{ needs.ppc64le-integration-tests.result }}" == "failure" ]]; then
+            FAILED_JOBS="${FAILED_JOBS:+$FAILED_JOBS,}ppc64le-integration-tests"
+          fi
+          echo "failed_jobs=$FAILED_JOBS" >> $GITHUB_OUTPUT
+
+  analyze-and-notify:
+    needs: collect-failures
+    uses: ./.github/workflows/analyze-and-notify.yml
+    with:
+      failed-jobs: ${{ needs.collect-failures.outputs.failed_jobs }}
+      workflow-name: "Integration Tests"
+    secrets: inherit

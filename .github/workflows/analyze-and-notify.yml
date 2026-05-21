@@ -1,0 +1,151 @@
+name: Analyze Test Failures and Notify
+
+on:
+  workflow_call:
+    inputs:
+      failed-jobs:
+        description: 'Comma-separated list of failed job names'
+        required: true
+        type: string
+      workflow-name:
+        description: 'Name of the workflow that failed'
+        required: true
+        type: string
+  pull_request:
+    types: [labeled]
+
+jobs:
+  analyze-failures:
+    runs-on: ubuntu-24.04
+    if: |
+      always() && (
+        github.event_name == 'workflow_call' ||
+        (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'test-oncall-workflow'))
+      )
+    outputs:
+      workflow_name: ${{ steps.params.outputs.workflow_name }}
+      failed_jobs: ${{ steps.params.outputs.failed_jobs }}
+    steps:
+      - name: Set workflow parameters
+        id: params
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "failed_jobs=test-label-trigger" >> $GITHUB_OUTPUT
+            echo "workflow_name=Test Workflow (Label Trigger)" >> $GITHUB_OUTPUT
+          else
+            echo "failed_jobs=${{ inputs.failed-jobs }}" >> $GITHUB_OUTPUT
+            echo "workflow_name=${{ inputs.workflow-name }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: test-artifacts
+        continue-on-error: true
+
+      - name: Setup GCP authentication for Claude
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GCP_CLAUDE_SERVICE_ACCOUNT_KEY }}'
+        continue-on-error: true
+
+      - name: Analyze test failures with Claude
+        id: analyze
+        uses: anthropics/claude-code-base-action@beta
+        continue-on-error: true
+        env:
+          ANTHROPIC_VERTEX_PROJECT_ID: ${{ secrets.GCP_CLAUDE_PROJECT_ID }}
+          CLOUD_ML_REGION: us-east5
+        with:
+          use_vertex: true
+          allowed_tools: "Skill,Read,Grep,Glob,Bash"
+          prompt: |
+            /analyze-test-failures test-artifacts/ "${{ steps.params.outputs.workflow_name }}" "${{ steps.params.outputs.failed_jobs }}"
+
+      - name: Check if analysis report was created
+        id: check-report
+        if: always()
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Files in current directory:"
+          ls -la
+
+          echo ""
+          echo "Searching for analysis-report.md anywhere in workspace:"
+          find . -name "analysis-report.md" -type f 2>/dev/null || echo "Not found anywhere"
+
+          if [ -f analysis-report.md ]; then
+            echo "report_exists=true" >> $GITHUB_OUTPUT
+            echo "✓ Analysis report exists in current directory"
+            ls -lh analysis-report.md
+            echo "--- First 20 lines ---"
+            head -20 analysis-report.md
+          else
+            echo "report_exists=false" >> $GITHUB_OUTPUT
+            echo "✗ Analysis report not found in current directory"
+          fi
+
+      - name: Upload analysis report
+        if: steps.check-report.outputs.report_exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-analysis
+          path: analysis-report.md
+
+  notify:
+    runs-on: ubuntu-24.04
+    needs: analyze-failures
+    if: always() && github.event_name != 'pull_request'
+    steps:
+      - name: Download analysis report
+        uses: actions/download-artifact@v4
+        with:
+          name: failure-analysis
+          path: .
+        continue-on-error: true
+
+      - name: Read analysis report
+        id: read-analysis
+        run: |
+          if [ -f analysis-report.md ]; then
+            ANALYSIS=$(cat analysis-report.md)
+            echo "analysis<<EOF" >> $GITHUB_OUTPUT
+            echo "$ANALYSIS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "has_analysis=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_analysis=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Slack notification with AI analysis
+        if: steps.read-analysis.outputs.has_analysis == 'true'
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_ONCALL_WEBHOOK }}
+          SLACK_CHANNEL: team-acs-collector-oncall
+          SLACK_COLOR: failure
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: "${{ needs.analyze-failures.outputs.workflow_name }} failed"
+          MSG_MINIMAL: actions url,commit
+          SLACK_MESSAGE: |
+            @acs-collector-oncall
+
+            ${{ steps.read-analysis.outputs.analysis }}
+
+      - name: Slack notification (fallback)
+        if: steps.read-analysis.outputs.has_analysis != 'true'
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_ONCALL_WEBHOOK }}
+          SLACK_CHANNEL: team-acs-collector-oncall
+          SLACK_COLOR: failure
+          SLACK_LINK_NAMES: true
+          SLACK_TITLE: "${{ needs.analyze-failures.outputs.workflow_name }} failed"
+          MSG_MINIMAL: actions url,commit
+          SLACK_MESSAGE: |
+            @acs-collector-oncall
+
+            AI analysis unavailable. Check workflow logs.
