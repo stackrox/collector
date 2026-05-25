@@ -58,6 +58,7 @@ virtual_machines:
     images:
       - rhel-96-04282025
       - rhel-10-04252025
+    container_engine: podman
 
   rhel-sap:
     project: rhel-sap-cloud
