@@ -6,17 +6,6 @@
     stdin: "{{ quay_password }}"
   when: runtime_command == 'docker' or runtime_command == 'podman'
 
-- name: Debug podman auth locations
-  become: "{{ runtime_as_root }}"
-  shell: |
-    echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"
-    ls -la /run/containers/0/auth.json \
-            ${XDG_RUNTIME_DIR}/containers/auth.json \
-            $HOME/.config/containers/auth.json \
-            $HOME/.docker/config.json 2>&1
-  when: runtime_command == "podman"
-  tags: [print_action]
-
 # 'success' will be set to false in the Run Integration Tests step
 # if any test fails. After the tests run, the Check results step
 # will cause a global failure if 'success' is set to false.
