@@ -51,7 +51,7 @@
         id: "{{ vsi.resource.id | default(omit) }}"
         vpc: "{{ s390x.vpc_id }}"
         profile: "{{ s390x.vsi_profile }}"
-        image: "{{ s390x.vsi_image_id }}"
+        image: "{{ s390x.image_ids[vm_family] }}"
         resource_group: "{{ s390x.vsi_resource_group_id }}"
         keys:
           - "{{ s390x.ssh_key_id }}"
