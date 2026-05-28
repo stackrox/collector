@@ -14,8 +14,8 @@ metadata:
         event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")
       )
   labels:
-    appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: collector
+    appstudio.openshift.io/application: acs-4.11
+    appstudio.openshift.io/component: collector-4.11
     pipelines.appstudio.openshift.io/type: build
   name: collector-on-push
   namespace: rh-acs-tenant
@@ -51,7 +51,7 @@ spec:
   - name: extra-labels
     value:
     # X.Y in the cpe label must be adjusted for every version stream.
-    - "cpe=cpe:/a:redhat:advanced_cluster_security:X.Y::el9"
+    - "cpe=cpe:/a:redhat:advanced_cluster_security:4.11::el9"
 
   workspaces:
   - name: git-auth
@@ -117,7 +117,7 @@ spec:
       computeResources: *ta-resources
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-collector
+    serviceAccountName: build-pipeline-collector-4-11
 
   timeouts:
     # The pipeline regularly takes >1h to finish.
