@@ -1110,13 +1110,13 @@ arches:
     name: environment-modules
     evr: 5.3.0-2.el9
     sourcerpm: environment-modules-5.3.0-2.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/e/expat-2.5.0-6.el9.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/e/expat-2.5.0-6.el9_8.1.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 114418
-    checksum: sha256:acbb03d5e75b387a4cff967de7db4030a0299103acab30709c3b739082112017
+    size: 120882
+    checksum: sha256:7cc4e533f63bdec0ead003d176cb262b8d4d2583dfd57b2e9cfeeed4ead13475
     name: expat
-    evr: 2.5.0-6.el9
-    sourcerpm: expat-2.5.0-6.el9.src.rpm
+    evr: 2.5.0-6.el9_8.1
+    sourcerpm: expat-2.5.0-6.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/f/filesystem-3.16-5.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 5003914
@@ -2438,12 +2438,12 @@ arches:
     checksum: sha256:f990f48e0cc8aa4322d5b18fb7c548da3ad4fbf79614df275d7603dcfc7e8f5b
     name: environment-modules
     evr: 5.3.0-2.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/e/expat-2.5.0-6.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/e/expat-2.5.0-6.el9_8.1.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
-    size: 8380129
-    checksum: sha256:770b7a3482856c990fdedb23c930f071743a5f2dbd87af02b86b12471796612a
+    size: 8390481
+    checksum: sha256:3ef9a4df767dbc5e75944b5c197d186f8b5ca8745522e07cdf1a195229d381b4
     name: expat
-    evr: 2.5.0-6.el9
+    evr: 2.5.0-6.el9_8.1
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/f/filesystem-3.16-5.el9.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
     size: 20486
@@ -4075,13 +4075,13 @@ arches:
     name: environment-modules
     evr: 5.3.0-2.el9
     sourcerpm: environment-modules-5.3.0-2.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/e/expat-2.5.0-6.el9.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/e/expat-2.5.0-6.el9_8.1.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 125321
-    checksum: sha256:b9ae1a0a21a6a7469ce37d3c6823eda4be08f539959f965f27758159c774410d
+    size: 132202
+    checksum: sha256:eae0d2c0c23adc9b878e86d46a7cd176e991a84fc5780877dd58f15552b6a5c6
     name: expat
-    evr: 2.5.0-6.el9
-    sourcerpm: expat-2.5.0-6.el9.src.rpm
+    evr: 2.5.0-6.el9_8.1
+    sourcerpm: expat-2.5.0-6.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/f/filesystem-3.16-5.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 5003944
@@ -5410,12 +5410,12 @@ arches:
     checksum: sha256:f990f48e0cc8aa4322d5b18fb7c548da3ad4fbf79614df275d7603dcfc7e8f5b
     name: environment-modules
     evr: 5.3.0-2.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/e/expat-2.5.0-6.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/e/expat-2.5.0-6.el9_8.1.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
-    size: 8380129
-    checksum: sha256:770b7a3482856c990fdedb23c930f071743a5f2dbd87af02b86b12471796612a
+    size: 8390481
+    checksum: sha256:3ef9a4df767dbc5e75944b5c197d186f8b5ca8745522e07cdf1a195229d381b4
     name: expat
-    evr: 2.5.0-6.el9
+    evr: 2.5.0-6.el9_8.1
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/f/filesystem-3.16-5.el9.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
     size: 20486
@@ -7060,13 +7060,13 @@ arches:
     name: environment-modules
     evr: 5.3.0-2.el9
     sourcerpm: environment-modules-5.3.0-2.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/e/expat-2.5.0-6.el9.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/e/expat-2.5.0-6.el9_8.1.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 116325
-    checksum: sha256:0fa875cffe13bdca519605d13e913bc3d973ce813d490e424ca390aaf4bffe83
+    size: 123151
+    checksum: sha256:a5b24ad347a1722a948f417a7289a89b1aee9047350e88866173e05157239142
     name: expat
-    evr: 2.5.0-6.el9
-    sourcerpm: expat-2.5.0-6.el9.src.rpm
+    evr: 2.5.0-6.el9_8.1
+    sourcerpm: expat-2.5.0-6.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/f/filesystem-3.16-5.el9.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 5003897
@@ -8388,12 +8388,12 @@ arches:
     checksum: sha256:f990f48e0cc8aa4322d5b18fb7c548da3ad4fbf79614df275d7603dcfc7e8f5b
     name: environment-modules
     evr: 5.3.0-2.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/e/expat-2.5.0-6.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/e/expat-2.5.0-6.el9_8.1.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
-    size: 8380129
-    checksum: sha256:770b7a3482856c990fdedb23c930f071743a5f2dbd87af02b86b12471796612a
+    size: 8390481
+    checksum: sha256:3ef9a4df767dbc5e75944b5c197d186f8b5ca8745522e07cdf1a195229d381b4
     name: expat
-    evr: 2.5.0-6.el9
+    evr: 2.5.0-6.el9_8.1
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/f/filesystem-3.16-5.el9.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
     size: 20486
@@ -10025,13 +10025,13 @@ arches:
     name: environment-modules
     evr: 5.3.0-2.el9
     sourcerpm: environment-modules-5.3.0-2.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/e/expat-2.5.0-6.el9.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/e/expat-2.5.0-6.el9_8.1.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 120289
-    checksum: sha256:d3db74f301ef2aab029523c80fcd8744bff69aab442a6ee9f71f85934ad910c2
+    size: 126909
+    checksum: sha256:6a0c98d67b643fe620297e4cd7e990f99a86ed6bc90a8295a952c626ecbb9f62
     name: expat
-    evr: 2.5.0-6.el9
-    sourcerpm: expat-2.5.0-6.el9.src.rpm
+    evr: 2.5.0-6.el9_8.1
+    sourcerpm: expat-2.5.0-6.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/f/filesystem-3.16-5.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 5003807
@@ -11353,12 +11353,12 @@ arches:
     checksum: sha256:f990f48e0cc8aa4322d5b18fb7c548da3ad4fbf79614df275d7603dcfc7e8f5b
     name: environment-modules
     evr: 5.3.0-2.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/e/expat-2.5.0-6.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/e/expat-2.5.0-6.el9_8.1.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
-    size: 8380129
-    checksum: sha256:770b7a3482856c990fdedb23c930f071743a5f2dbd87af02b86b12471796612a
+    size: 8390481
+    checksum: sha256:3ef9a4df767dbc5e75944b5c197d186f8b5ca8745522e07cdf1a195229d381b4
     name: expat
-    evr: 2.5.0-6.el9
+    evr: 2.5.0-6.el9_8.1
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/f/filesystem-3.16-5.el9.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
     size: 20486
