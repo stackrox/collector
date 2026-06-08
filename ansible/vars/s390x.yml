@@ -2,8 +2,10 @@
 
 
 s390x:
-  #rhel-8-6-s390x
-  vsi_image_id: r014-bd269dc6-aa79-4998-b2bc-1eccbda68ed2
+  image_ids:
+    rhel-8-6-s390x: r014-bd269dc6-aa79-4998-b2bc-1eccbda68ed2
+    rhel-9-6-s390x: r014-f1042c04-7517-46ba-89d7-597c8273a1ba
+    rhel-10-s390x: r014-18b71370-7941-4ee5-8f07-93d8fb3803ce
   vsi_profile: bz2-2x8
 
   # IBM Cloud setup
