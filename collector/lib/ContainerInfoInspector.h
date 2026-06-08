@@ -2,22 +2,15 @@
 
 #include <CivetServer.h>
 #include <civetweb.h>
-#include <memory>
 #include <string>
-#include <unordered_map>
 
 #include "CivetWrapper.h"
-#include "ContainerMetadata.h"
 #include "json/writer.h"
 
 namespace collector {
 
-using QueryParams = std::unordered_map<std::string, std::string>;
-
 class ContainerInfoInspector : public CivetWrapper {
  public:
-  ContainerInfoInspector(const std::shared_ptr<ContainerMetadata>& cmi) : container_metadata_inspector_(cmi) {}
-
   // implementation of CivetHandler
   bool handleGet(CivetServer* server, struct mg_connection* conn) override;
 
@@ -28,7 +21,6 @@ class ContainerInfoInspector : public CivetWrapper {
  private:
   static const std::string kBaseRoute;
 
-  std::shared_ptr<ContainerMetadata> container_metadata_inspector_;
   Json::FastWriter writer_;
 };
 

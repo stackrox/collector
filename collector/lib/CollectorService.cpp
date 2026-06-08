@@ -65,7 +65,7 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
   civet_endpoints_.emplace_back(std::make_unique<ProfilerHandler>());
 
   if (config.IsIntrospectionEnabled()) {
-    civet_endpoints_.emplace_back(std::make_unique<ContainerInfoInspector>(system_inspector_.GetContainerMetadataInspector()));
+    civet_endpoints_.emplace_back(std::make_unique<ContainerInfoInspector>());
     civet_endpoints_.emplace_back(std::make_unique<NetworkStatusInspector>(conn_tracker_));
     civet_endpoints_.emplace_back(std::make_unique<CollectorConfigInspector>(config_));
   }
