@@ -123,7 +123,8 @@ func (c *DockerCollectorManager) createCollectorStartConfig() (config.ContainerS
 	startConfig := config.ContainerStartConfig{
 		Name:        "collector",
 		Image:       config.Images().CollectorImage(),
-		Privileged:  true,
+		Privileged:  false,
+		CapAdd:      []string{"BPF", "PERFMON", "SYS_PTRACE", "SYS_RESOURCE"},
 		NetworkMode: "host",
 		Mounts:      c.mounts,
 		Env:         c.env,
