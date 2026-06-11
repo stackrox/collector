@@ -120,11 +120,17 @@ func (c *DockerCollectorManager) IsRunning() (bool, error) {
 }
 
 func (c *DockerCollectorManager) createCollectorStartConfig() (config.ContainerStartConfig, error) {
+	privileged := config.NeedsPrivileged()
+	var capAdd []string
+	if !privileged {
+		capAdd = []string{"BPF", "PERFMON", "SYS_PTRACE", "SYS_RESOURCE"}
+	}
+
 	startConfig := config.ContainerStartConfig{
 		Name:        "collector",
 		Image:       config.Images().CollectorImage(),
-		Privileged:  false,
-		CapAdd:      []string{"BPF", "PERFMON", "SYS_PTRACE", "SYS_RESOURCE"},
+		Privileged:  privileged,
+		CapAdd:      capAdd,
 		NetworkMode: "host",
 		Mounts:      c.mounts,
 		Env:         c.env,

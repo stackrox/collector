@@ -129,22 +129,27 @@ func (k *K8sCollectorManager) Launch() error {
 		Labels:    map[string]string{"app": "collector"},
 	}
 
-	privileged := false
-	noPrivEsc := false
+	needsPrivileged := config.NeedsPrivileged()
+	secCtx := &coreV1.SecurityContext{}
+	if needsPrivileged {
+		secCtx.Privileged = &needsPrivileged
+	} else {
+		noPrivEsc := false
+		notPrivileged := false
+		secCtx.Privileged = &notPrivileged
+		secCtx.AllowPrivilegeEscalation = &noPrivEsc
+		secCtx.Capabilities = &coreV1.Capabilities{
+			Drop: []coreV1.Capability{"ALL"},
+			Add:  []coreV1.Capability{"BPF", "PERFMON", "SYS_PTRACE", "SYS_RESOURCE"},
+		}
+	}
 	container := coreV1.Container{
 		Name:            "collector",
 		Image:           config.Images().CollectorImage(),
 		Ports:           []coreV1.ContainerPort{{ContainerPort: 8080}},
 		Env:             k.env,
 		VolumeMounts:    k.volumeMounts,
-		SecurityContext: &coreV1.SecurityContext{
-			Privileged:               &privileged,
-			AllowPrivilegeEscalation: &noPrivEsc,
-			Capabilities: &coreV1.Capabilities{
-				Drop: []coreV1.Capability{"ALL"},
-				Add:  []coreV1.Capability{"BPF", "PERFMON", "SYS_PTRACE", "SYS_RESOURCE"},
-			},
-		},
+		SecurityContext: secCtx,
 	}
 
 	pod := &coreV1.Pod{
