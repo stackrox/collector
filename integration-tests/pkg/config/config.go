@@ -171,18 +171,23 @@ func LogPath() string {
 	return filepath.Join(".", "container-logs", VMInfo().Config, CollectionMethod())
 }
 
-// NeedsPrivileged returns true for VMs running RHEL 8-era kernels (4.18.0)
-// where CAP_BPF and CAP_PERFMON are not functional as discrete capabilities.
-// RHCOS 4.12-4.19 use RHEL 8 kernels; RHCOS 9.x and RHEL 9+ use kernel 5.14+.
+// NeedsPrivileged returns true for VMs where CAP_BPF and CAP_PERFMON are
+// not functional as discrete capabilities:
+//   - RHCOS 4.12-4.19: RHEL 8 kernel (4.18.0) lacks discrete CAP_BPF
+//   - RHEL 8: same kernel limitation
+//   - RHEL-SAP: SAP kernel builds restrict BPF capability probing even on 5.14+
+//   - s390x: RHEL 8 kernel
 func NeedsPrivileged() bool {
 	vmConfig := VMInfo().Config
-	rhel8Prefixes := []string{
+	privilegedPlatforms := []string{
 		"rhcos-412", "rhcos-413", "rhcos-414", "rhcos-415",
 		"rhcos-416", "rhcos-417", "rhcos-418", "rhcos-419",
 		"rhel_rhel-8", "rhel-8",
+		"rhel-sap",
+		"rhel-s390x",
 	}
-	for _, prefix := range rhel8Prefixes {
-		if strings.Contains(vmConfig, prefix) {
+	for _, pattern := range privilegedPlatforms {
+		if strings.Contains(vmConfig, pattern) {
 			return true
 		}
 	}
