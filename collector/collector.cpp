@@ -125,18 +125,28 @@ void DropCapabilities() {
   bool has_discrete_bpf = (kv.kernel > 5) || (kv.kernel == 5 && kv.major >= 8);
 
   capng_clear(CAPNG_SELECT_CAPS);
-  capng_updatev(CAPNG_ADD, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_SYS_PTRACE, -1);
 
-  if (!has_discrete_bpf) {
-    capng_updatev(CAPNG_ADD, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_SYS_ADMIN, -1);
-    CLOG(INFO) << "Kernel " << kv.release << " lacks discrete CAP_BPF, keeping CAP_SYS_ADMIN";
+  auto caps = static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED);
+
+  // CAP_SYS_PTRACE: ongoing /proc/<pid>/ reads across namespaces
+  capng_updatev(CAPNG_ADD, caps, CAP_SYS_PTRACE, -1);
+
+  if (has_discrete_bpf) {
+    // CAP_BPF: runtime BPF map lookups (stats) and potential capture restart
+    // CAP_PERFMON: BPF program re-attachment on capture restart
+    capng_updatev(CAPNG_ADD, caps, CAP_BPF, -1);
+    capng_updatev(CAPNG_ADD, caps, CAP_PERFMON, -1);
+  } else {
+    // On kernels < 5.8, CAP_SYS_ADMIN covers BPF and perf operations
+    capng_updatev(CAPNG_ADD, caps, CAP_SYS_ADMIN, -1);
   }
 
   if (capng_apply(CAPNG_SELECT_CAPS) < 0) {
     CLOG(WARNING) << "Failed to drop capabilities";
+  } else if (has_discrete_bpf) {
+    CLOG(INFO) << "Dropped capabilities, keeping CAP_SYS_PTRACE, CAP_BPF, CAP_PERFMON";
   } else {
-    CLOG(INFO) << "Dropped capabilities after BPF initialization, keeping CAP_SYS_PTRACE"
-               << (has_discrete_bpf ? "" : " and CAP_SYS_ADMIN");
+    CLOG(INFO) << "Dropped capabilities, keeping CAP_SYS_PTRACE, CAP_SYS_ADMIN";
   }
 }
 
