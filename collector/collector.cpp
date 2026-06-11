@@ -125,10 +125,10 @@ void DropCapabilities() {
   bool has_discrete_bpf = (kv.kernel > 5) || (kv.kernel == 5 && kv.major >= 8);
 
   capng_clear(CAPNG_SELECT_CAPS);
-  capng_updatev(CAPNG_ADD, CAPNG_EFFECTIVE | CAPNG_PERMITTED, CAP_SYS_PTRACE, -1);
+  capng_updatev(CAPNG_ADD, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_SYS_PTRACE, -1);
 
   if (!has_discrete_bpf) {
-    capng_updatev(CAPNG_ADD, CAPNG_EFFECTIVE | CAPNG_PERMITTED, CAP_SYS_ADMIN, -1);
+    capng_updatev(CAPNG_ADD, static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED), CAP_SYS_ADMIN, -1);
     CLOG(INFO) << "Kernel " << kv.release << " lacks discrete CAP_BPF, keeping CAP_SYS_ADMIN";
   }
 
