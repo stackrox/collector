@@ -150,6 +150,7 @@ func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConf
 		NetworkMode: container.NetworkMode(startConfig.NetworkMode),
 		Privileged:  startConfig.Privileged,
 		Binds:       binds,
+		CapAdd:      startConfig.CapAdd,
 	}
 	resp, err := d.client.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, startConfig.Name)
 	if err != nil {

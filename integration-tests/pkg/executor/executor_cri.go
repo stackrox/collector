@@ -226,18 +226,26 @@ func (c *criExecutor) StartContainer(config config.ContainerStartConfig) (string
 		})
 	}
 
+	secCtx := &pb.LinuxContainerSecurityContext{
+		Privileged: config.Privileged,
+		NamespaceOptions: &pb.NamespaceOption{
+			Network: network,
+		},
+	}
+	if len(config.CapAdd) > 0 {
+		secCtx.Capabilities = &pb.Capability{
+			AddCapabilities:  config.CapAdd,
+			DropCapabilities: []string{"ALL"},
+		}
+	}
+
 	containerConfig := pb.ContainerConfig{
 		Metadata: &pb.ContainerMetadata{Name: config.Name},
 		Image:    &pb.ImageSpec{Image: config.Image},
 		Envs:     envs,
 		Mounts:   mounts,
 		Linux: &pb.LinuxContainerConfig{
-			SecurityContext: &pb.LinuxContainerSecurityContext{
-				Privileged: config.Privileged,
-				NamespaceOptions: &pb.NamespaceOption{
-					Network: network,
-				},
-			},
+			SecurityContext: secCtx,
 		},
 		LogPath: config.Name,
 		Labels:  labels,
