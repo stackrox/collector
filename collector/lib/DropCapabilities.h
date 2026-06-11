@@ -12,17 +12,20 @@ extern "C" {
 namespace collector {
 
 // Drop all Linux capabilities except those specified.
-// Clears the bounding set too, preventing regain via execve.
+// If clear_bounding is true, also clears the bounding set (requires
+// CAP_SETPCAP — use only on the first drop before other caps are lost).
 // Logs the result but does not abort on failure.
-inline void DropCapabilities(std::initializer_list<unsigned int> keep) {
-  capng_clear(CAPNG_SELECT_ALL);
+inline void DropCapabilities(std::initializer_list<unsigned int> keep,
+                             bool clear_bounding = false) {
+  auto scope = clear_bounding ? CAPNG_SELECT_ALL : CAPNG_SELECT_CAPS;
+  capng_clear(scope);
 
   auto caps = static_cast<capng_type_t>(CAPNG_EFFECTIVE | CAPNG_PERMITTED);
   for (auto cap : keep) {
     capng_update(CAPNG_ADD, caps, cap);
   }
 
-  if (capng_apply(CAPNG_SELECT_ALL) != 0) {
+  if (capng_apply(scope) != 0) {
     CLOG(WARNING) << "Failed to drop capabilities";
   }
 }

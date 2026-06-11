@@ -143,10 +143,10 @@ void RunService(CollectorConfig& config) {
   bool has_discrete_bpf = (kv.kernel > 5) || (kv.kernel == 5 && kv.major >= 8);
 
   if (has_discrete_bpf) {
-    DropCapabilities({CAP_BPF, CAP_PERFMON, CAP_SYS_PTRACE});
+    DropCapabilities({CAP_BPF, CAP_PERFMON, CAP_SYS_PTRACE}, true);
     CLOG(INFO) << "Dropped capabilities, keeping CAP_BPF, CAP_PERFMON, CAP_SYS_PTRACE";
   } else {
-    DropCapabilities({CAP_SYS_ADMIN, CAP_SYS_PTRACE});
+    DropCapabilities({CAP_SYS_ADMIN, CAP_SYS_PTRACE}, true);
     CLOG(INFO) << "Kernel " << kv.release << " lacks discrete CAP_BPF, keeping CAP_SYS_ADMIN, CAP_SYS_PTRACE";
   }
 
