@@ -120,6 +120,26 @@ void initialChecks() {
   }
 }
 
+void DropCapabilities() {
+  auto kv = HostInfo::Instance().GetKernelVersion();
+  bool has_discrete_bpf = (kv.kernel > 5) || (kv.kernel == 5 && kv.major >= 8);
+
+  capng_clear(CAPNG_SELECT_CAPS);
+  capng_updatev(CAPNG_ADD, CAPNG_EFFECTIVE | CAPNG_PERMITTED, CAP_SYS_PTRACE, -1);
+
+  if (!has_discrete_bpf) {
+    capng_updatev(CAPNG_ADD, CAPNG_EFFECTIVE | CAPNG_PERMITTED, CAP_SYS_ADMIN, -1);
+    CLOG(INFO) << "Kernel " << kv.release << " lacks discrete CAP_BPF, keeping CAP_SYS_ADMIN";
+  }
+
+  if (capng_apply(CAPNG_SELECT_CAPS) < 0) {
+    CLOG(WARNING) << "Failed to drop capabilities";
+  } else {
+    CLOG(INFO) << "Dropped capabilities after BPF initialization, keeping CAP_SYS_PTRACE"
+               << (has_discrete_bpf ? "" : " and CAP_SYS_ADMIN");
+  }
+}
+
 void RunService(CollectorConfig& config) {
   auto& startup_diagnostics = StartupDiagnostics::GetInstance();
   CollectorService collector(config, &g_control, &g_signum);
@@ -133,6 +153,8 @@ void RunService(CollectorConfig& config) {
   gplNotice();
 
   startup_diagnostics.Log();
+
+  DropCapabilities();
 
   collector.RunForever();
 }
