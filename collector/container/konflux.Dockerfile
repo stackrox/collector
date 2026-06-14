@@ -138,6 +138,8 @@ COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
 
 COPY LICENSE /licenses/LICENSE
 
+RUN update-crypto-policies --set DEFAULT:PQ
+
 EXPOSE 8080 9090
 
 ENTRYPOINT ["collector"]
