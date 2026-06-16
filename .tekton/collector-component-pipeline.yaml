@@ -554,6 +554,38 @@ spec:
       operator: in
       values: [ "false" ]
 
+  - name: verify-crypto-policies
+    params:
+    - name: IMAGE_URL
+      value: $(tasks.build-image-index.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+    taskSpec:
+      params:
+      - name: IMAGE_URL
+        type: string
+      - name: IMAGE_DIGEST
+        type: string
+      steps:
+      - name: check-pq-crypto-policy
+        image: $(params.IMAGE_URL)@$(params.IMAGE_DIGEST)
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          echo "Verifying post-quantum crypto policy configuration..."
+          if grep -q X25519MLKEM768 /etc/crypto-policies/back-ends/opensslcnf.config; then
+            echo "PASS: X25519MLKEM768 found in /etc/crypto-policies/back-ends/opensslcnf.config"
+          else
+            echo "FAIL: X25519MLKEM768 not found in /etc/crypto-policies/back-ends/opensslcnf.config"
+            echo "The post-quantum crypto policy (DEFAULT:PQ) may not be properly applied."
+            cat /etc/crypto-policies/back-ends/opensslcnf.config
+            exit 1
+          fi
+
   - name: push-dockerfile
     params:
     - name: IMAGE
