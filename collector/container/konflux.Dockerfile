@@ -2,7 +2,7 @@ ARG BUILD_DIR=/build
 ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
 
 
-FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:034885f6a649b578f906a262df8f5d6e34e8d4266cca1d39fddc37fe7e30af5b AS builder
+FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:9465550ec4409ba8440c015f7da6e8ac48483f46494763d94b633d5f5390e586 AS builder
 
 RUN dnf -y install --nobest --allowerasing \
         make \
