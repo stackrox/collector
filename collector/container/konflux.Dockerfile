@@ -2,7 +2,7 @@ ARG BUILD_DIR=/build
 ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
 
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:151fc1b2c976f198779d740851436544fdf4e9449ccb4a47e2d0faad34f1733b AS builder
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:1b99266db480e8aa6dfda6900697a07ec99334095b4f87d1687edfc06c965132 AS builder
 
 RUN dnf -y install --nobest --allowerasing \
         make \
@@ -79,9 +79,9 @@ RUN ctest --no-tests=error -V --test-dir "${CMAKE_BUILD_DIR}"
 RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:4b45a7cbeab6b02e6db359ce007439ce612b296c29d9d0fb688a9d24d3b56f02 AS ubi-micro-base
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:b498b3ea26111ab4b81d65139f2ebd2ef9a2abb7a4588b7fdcc54889f95e9caa AS ubi-micro-base
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:151fc1b2c976f198779d740851436544fdf4e9449ccb4a47e2d0faad34f1733b AS package_installer
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:1b99266db480e8aa6dfda6900697a07ec99334095b4f87d1687edfc06c965132 AS package_installer
 
 COPY --from=ubi-micro-base / /out/
 
@@ -137,6 +137,8 @@ COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
 
 COPY LICENSE /licenses/LICENSE
+
+RUN update-crypto-policies --set DEFAULT:PQ
 
 EXPOSE 8080 9090
 

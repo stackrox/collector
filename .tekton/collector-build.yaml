@@ -91,10 +91,10 @@ spec:
       # We saw prefetch-dependencies _step_ also OOMKill-ed, therefore bumping its memory compared to default.
       computeResources:
         limits:
-          memory: 6Gi
+          memory: 7Gi
         requests:
           cpu: "1"
-          memory: 6Gi
+          memory: 7Gi
   - pipelineTaskName: build-source-image
     stepSpecs:
     - name: use-trusted-artifact
