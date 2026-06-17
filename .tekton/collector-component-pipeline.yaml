@@ -580,7 +580,9 @@ spec:
           if grep -q "${EXPECTED_GROUP}" "${CONFIG_FILE}"; then
             echo "PASS: ${EXPECTED_GROUP} found in ${CONFIG_FILE}"
           else
+            echo "Contents of ${CONFIG_FILE}:"
             cat "${CONFIG_FILE}"
+            echo
             echo "FAIL: The image's OpenSSL is not configured to support ML-KEM."
             echo "FAIL: ${EXPECTED_GROUP} not found in ${CONFIG_FILE}"
             exit 1
