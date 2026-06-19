@@ -554,39 +554,25 @@ spec:
       operator: in
       values: [ "false" ]
 
-  - name: verify-crypto-policies
+  - name: verify-pq-crypto-policies
+    params:
+    - name: IMAGE_URL
+      value: $(tasks.build-image-index.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
     when:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
-    taskSpec:
-      description: >-
-        Verify that OpenSSL in the built collector image is configured to support post-quantum
-        cryptography (more specifically, the ML-KEM algorithm group). Regressions can occur e.g.
-        if the crypto-policy setting is removed from the Dockerfile, or the base image is changed
-        to one that does not support post-quantum cryptography.
-      steps:
-      - name: check-pq-crypto-policy
-        image: $(tasks.build-image-index.results.IMAGE_URL)@$(tasks.build-image-index.results.IMAGE_DIGEST)
-        env:
-        - name: EXPECTED_GROUP
-          value: X25519MLKEM768
-        - name: CONFIG_FILE
-          value: /etc/crypto-policies/back-ends/opensslcnf.config
-        script: |
-          #!/bin/bash
-          set -euo pipefail
-          echo "Verifying post-quantum crypto policy configuration..."
-          if grep -q "${EXPECTED_GROUP}" "${CONFIG_FILE}"; then
-            echo "PASS: ${EXPECTED_GROUP} found in ${CONFIG_FILE}"
-          else
-            echo "Contents of ${CONFIG_FILE}:"
-            cat "${CONFIG_FILE}"
-            echo
-            echo "FAIL: The image's OpenSSL is not configured to support ML-KEM."
-            echo "FAIL: ${EXPECTED_GROUP} not found in ${CONFIG_FILE}"
-            exit 1
-          fi
+    taskRef:
+      params:
+      - name: name
+        value: verify-pq-crypto-policies
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:pr-105@sha256:bbda5ad1b1ffdffb4918d0c12542c0d603060a1690338a6592b0eaa46cf2119b
+      - name: kind
+        value: task
+      resolver: bundles
 
   - name: push-dockerfile
     params:
