@@ -554,6 +554,26 @@ spec:
       operator: in
       values: [ "false" ]
 
+  - name: verify-pq-crypto-policies
+    params:
+    - name: IMAGE_URL
+      value: $(tasks.build-image-index.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+    taskRef:
+      params:
+      - name: name
+        value: verify-pq-crypto-policies
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:4d05c7ad1bcf63015b6b67787e9f024466fd2c864b69f7939a1925e307afb9b0
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
   - name: push-dockerfile
     params:
     - name: IMAGE
