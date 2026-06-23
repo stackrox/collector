@@ -69,13 +69,22 @@ virtual_machines:
       - rhel-9-4-sap-ha
     container_engine: podman
 
+  # RHCOS lifecycle dates: https://access.redhat.com/support/policy/updates/openshift#dates
   rhcos:
     project: rhcos-cloud
     images:
-      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.19') }}"
+      # OCP 4.22 (RHEL 10.2 + 9.8), EUS until June 2029
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.22 x86_64.images.gcp.name rhel-10') }}"
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.22 x86_64.images.gcp.name rhel-9') }}"
+      # OCP 4.20 (RHEL 9.6), EUS until October 2028
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.20') }}"
+      # OCP 4.18 (RHEL 9.4), EUS until February 2028
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.18') }}"
+      # OCP 4.16 (RHEL 9.4), EUS until June 2027
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.16') }}"
+      # OCP 4.14 (RHEL 9.2), EUS until October 2026
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.14') }}"
+      # OCP 4.12 (RHEL 8.6), EUS until January 2027
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.12') }}"
     username: core
     ignition:
@@ -93,8 +102,14 @@ virtual_machines:
     arch: arm64
     machine_type: t2a-standard-2
     images:
-      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.19 aarch64.images.gcp.name') }}"
+      # OCP 4.22 (RHEL 10.2 + 9.8), EUS until June 2029
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.22 aarch64.images.gcp.name rhel-10') }}"
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.22 aarch64.images.gcp.name rhel-9') }}"
+      # OCP 4.20 (RHEL 9.6), EUS until October 2028
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.20 aarch64.images.gcp.name') }}"
+      # OCP 4.18 (RHEL 9.4), EUS until February 2028
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.18 aarch64.images.gcp.name') }}"
+      # OCP 4.16 (RHEL 9.4), EUS until June 2027
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.16 aarch64.images.gcp.name') }}"
     username: core
     ignition:
