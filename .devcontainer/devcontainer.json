@@ -1,0 +1,66 @@
+{
+  "name": "collector-dev",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "COLLECTOR_BUILDER_TAG": "master"
+    }
+  },
+  "containerUser": "dev",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
+  "workspaceFolder": "/workspace",
+
+  "mounts": [
+    "source=collector-dev-history,target=/home/dev/.commandhistory,type=volume",
+    "source=collector-dev-claude,target=/home/dev/.claude,type=volume",
+    "source=${localEnv:HOME}/.gitconfig,target=/home/dev/.gitconfig,type=bind,readonly",
+    "source=${localEnv:HOME}/.config/gcloud,target=/home/dev/.config/gcloud,type=bind,readonly",
+    "source=${localWorkspaceFolder}/.devcontainer,target=/workspace/.devcontainer,type=bind,readonly"
+  ],
+
+  "runArgs": [
+    "--init"
+  ],
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "golang.go",
+        "ms-python.python"
+      ],
+      "settings": {
+        "cmake.sourceDirectory": "${workspaceFolder}",
+        "cmake.buildDirectory": "${workspaceFolder}/cmake-build/${buildType}",
+        "clangd.path": "/usr/bin/clangd",
+        "files.associations": {
+          "*.bpf.c": "c",
+          "*.skel.h": "c"
+        }
+      }
+    }
+  },
+
+  "postCreateCommand": "/usr/local/bin/init-firewall.sh || true",
+
+  "containerEnv": {
+    "DEVCONTAINER": "true",
+    "NPM_CONFIG_IGNORE_SCRIPTS": "true",
+    "NPM_CONFIG_AUDIT": "true",
+    "NPM_CONFIG_FUND": "false",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+
+  "remoteEnv": {
+    "COLLECTOR_BUILDER_TAG": "master",
+    "CMAKE_BUILD_TYPE": "Release",
+    "CLOUDSDK_CONFIG": "/home/dev/.config/gcloud",
+    "GOOGLE_APPLICATION_CREDENTIALS": "/home/dev/.config/gcloud/application_default_credentials.json",
+    "CLAUDE_CODE_USE_VERTEX": "${localEnv:CLAUDE_CODE_USE_VERTEX}",
+    "GOOGLE_CLOUD_PROJECT": "${localEnv:GOOGLE_CLOUD_PROJECT}",
+    "GOOGLE_CLOUD_LOCATION": "${localEnv:GOOGLE_CLOUD_LOCATION}",
+    "ANTHROPIC_VERTEX_PROJECT_ID": "${localEnv:ANTHROPIC_VERTEX_PROJECT_ID}",
+    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
+  }
+}
