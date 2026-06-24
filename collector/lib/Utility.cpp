@@ -57,9 +57,29 @@ const char* SignalName(int signum) {
   }
 }
 
+std::string GetContainerID(sinsp_threadinfo& tinfo) {
+  for (const auto& [subsys, cgroup_path] : tinfo.cgroups()) {
+    if (auto id = ExtractContainerIDFromCgroup(cgroup_path)) {
+      return std::string(*id);
+    }
+  }
+  return {};
+}
+
+std::string GetContainerID(sinsp_evt* event) {
+  if (!event) {
+    return {};
+  }
+  sinsp_threadinfo* tinfo = event->get_thread_info();
+  if (!tinfo) {
+    return {};
+  }
+  return GetContainerID(*tinfo);
+}
+
 std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo* t) {
   if (t) {
-    os << "Container: \"" << t->m_container_id << "\", Name: " << t->m_comm << ", PID: " << t->m_pid << ", Args: " << t->m_exe;
+    os << "Name: " << t->m_comm << ", PID: " << t->m_pid << ", Args: " << t->m_exe;
   } else {
     os << "NULL\n";
   }
@@ -203,7 +223,7 @@ std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cg
   }
 
   auto container_id_part = cgroup.substr(cgroup.size() - (CONTAINER_ID_LENGTH + 1));
-  if (container_id_part[0] != '/' && container_id_part[0] != '-') {
+  if (container_id_part[0] != '/' && container_id_part[0] != '-' && container_id_part[0] != ':') {
     return {};
   }
 
