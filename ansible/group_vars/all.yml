@@ -48,6 +48,9 @@ virtual_machines:
     ssh_key_file: "~/.ssh/acs-s390x-rsa.prv"
     families:
       - rhel-8-6-s390x
+      - rhel-9-6-s390x
+      - rhel-10-s390x
+    container_engine: podman
 
   # We have taken families name as "p" since there is a character limit for instance name
   # in ibm cloud (56 chars max)
