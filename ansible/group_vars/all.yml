@@ -17,11 +17,13 @@ redhat_username: "{{ lookup('env', 'REDHAT_USERNAME', default='') }}"
 redhat_password: "{{ lookup('env', 'REDHAT_PASSWORD', default='') }}"
 
 excluded_vms:
-  # Specify, family, image, or platform
+  # Specify, family, image, or platform.
+  # Exclusion by image supports regex.
   # e.g.
   # - ubuntu-1804-lts
   # - rhel-arm64
   # - rhcos-413-86-202303151429-0-gcp-x86-64
+  # - rhcos-4[-0-9]+gcp-x86-64
   -
 
 virtual_machines:

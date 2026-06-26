@@ -11,8 +11,8 @@
 
 - name: Check image excluded
   set_fact:
-    excluded: "{{ vm_image in excluded_vms }}"
-  when: vm_image is defined and excluded == false
+    excluded: "{{ vm_image | regex_search(excluded_vms | join('|')) is not none }}"
+  when: vm_image is defined and not excluded
 
 - block:
   - name: Create IBM Z VM
