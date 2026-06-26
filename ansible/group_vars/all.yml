@@ -27,7 +27,6 @@ excluded_vms:
 excluded_images:
   # Images can be excluded by regex
   # - rhcos-4[-0-9]+gcp-x86-64
-  -
 
 virtual_machines:
   rhel:
