@@ -97,7 +97,8 @@ jobs:
           - cos-arm64
           - rhel-arm64
           - ubuntu-arm
-          - fcarm
+          # Disable due to ROX-35438
+          #- fcarm
 
     with:
       vm_type: ${{ matrix.vm_type }}
