@@ -68,7 +68,7 @@ std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo* t);
 
 // Extract container ID from a threadinfo's cgroups.
 // Returns an empty string if no container ID found.
-std::string GetContainerID(sinsp_threadinfo& tinfo);
+std::string GetContainerID(const sinsp_threadinfo& tinfo);
 
 // Extract container ID from an event's thread info cgroups.
 // Returns an empty string if no container ID found.

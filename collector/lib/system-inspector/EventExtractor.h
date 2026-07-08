@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <string>
 #include <vector>
 
@@ -41,12 +42,10 @@ class EventExtractor {
 #define FIELD_RAW(id, fieldname, type)                                                                     \
  public:                                                                                                   \
   const type* get_##id(sinsp_evt* event) {                                                                 \
-    if (!filter_check_##id##_.filter_check) return nullptr;                                                \
-    std::vector<extract_value_t> vals_##id;                                                                \
-    if (!filter_check_##id##_->extract(event, vals_##id)) return nullptr;                                  \
-    if (vals_##id.empty()) return nullptr;                                                                 \
-    auto len = vals_##id[0].len;                                                                           \
-    auto buf = vals_##id[0].ptr;                                                                           \
+    assert(filter_check_##id##_.filter_check && "filter check not initialized for " fieldname);            \
+    uint32_t len;                                                                                          \
+    auto buf = filter_check_##id##_->extract_single(event, &len);                                          \
+    if (!buf) return nullptr;                                                                              \
     if (len != sizeof(type)) {                                                                             \
       CLOG_THROTTLED(WARNING, std::chrono::seconds(30))                                                    \
           << "Failed to extract value for field " << fieldname << ": expected type " << #type << " (size " \
@@ -66,12 +65,10 @@ class EventExtractor {
   const std::optional<type> get_##id(sinsp_evt* event) {                                                   \
     static_assert(std::is_trivially_copyable_v<type>,                                                      \
                   "Attempted to create FIELD_RAW_SAFE on non trivial type");                               \
-    if (!filter_check_##id##_.filter_check) return {};                                                     \
-    std::vector<extract_value_t> vals_##id;                                                                \
-    if (!filter_check_##id##_->extract(event, vals_##id)) return {};                                       \
-    if (vals_##id.empty()) return {};                                                                      \
-    auto len = vals_##id[0].len;                                                                           \
-    auto buf = vals_##id[0].ptr;                                                                           \
+    assert(filter_check_##id##_.filter_check && "filter check not initialized for " fieldname);            \
+    uint32_t len;                                                                                          \
+    auto buf = filter_check_##id##_->extract_single(event, &len);                                          \
+    if (!buf) return {};                                                                                   \
     if (len != sizeof(type)) {                                                                             \
       CLOG_THROTTLED(WARNING, std::chrono::seconds(30))                                                    \
           << "Failed to extract value for field " << fieldname << ": expected type " << #type << " (size " \
@@ -86,17 +83,18 @@ class EventExtractor {
  private:                                                                                                  \
   DECLARE_FILTER_CHECK(id, fieldname)
 
-#define FIELD_CSTR(id, fieldname)                                         \
- public:                                                                  \
-  const char* get_##id(sinsp_evt* event) {                                \
-    if (!filter_check_##id##_.filter_check) return nullptr;               \
-    std::vector<extract_value_t> vals_##id;                               \
-    if (!filter_check_##id##_->extract(event, vals_##id)) return nullptr; \
-    if (vals_##id.empty()) return nullptr;                                \
-    return reinterpret_cast<const char*>(vals_##id[0].ptr);               \
-  }                                                                       \
-                                                                          \
- private:                                                                 \
+#define FIELD_CSTR(id, fieldname)                                 \
+ public:                                                          \
+  const char* get_##id(sinsp_evt* event) {                        \
+    assert(filter_check_##id##_.filter_check                      \
+           && "filter check not initialized for " fieldname);     \
+    uint32_t len;                                                 \
+    auto buf = filter_check_##id##_->extract_single(event, &len); \
+    if (!buf) return nullptr;                                     \
+    return reinterpret_cast<const char*>(buf);                    \
+  }                                                               \
+                                                                  \
+ private:                                                         \
   DECLARE_FILTER_CHECK(id, fieldname)
 
 #define EVT_ARG(name) FIELD_CSTR(evt_arg_##name, "evt.arg." #name)

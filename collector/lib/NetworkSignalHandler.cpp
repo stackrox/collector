@@ -1,6 +1,5 @@
 #include "NetworkSignalHandler.h"
 
-#include <cstring>
 #include <optional>
 
 #include <libsinsp/sinsp.h>
@@ -69,7 +68,6 @@ NetworkSignalHandler::~NetworkSignalHandler() = default;
  *     result:  nil
  */
 std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
-  const char* evt_name = evt->get_name();
   auto* fd_info = evt->get_fd_info();
 
   if (!fd_info) {
@@ -83,8 +81,9 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   // "failed" even when subsequent operations succeed, because the sinsp parser
   // (parse_rw_exit) does not clear the failed flag on successful send/recv.
   if (collect_connection_status_) {
-    bool is_send_recv = (strncmp(evt_name, "send", 4) == 0 ||
-                         strncmp(evt_name, "recv", 4) == 0);
+    auto type = evt->get_type();
+    bool is_send_recv = (type >= PPME_SOCKET_SENDTO_E && type <= PPME_SOCKET_RECVFROM_X) ||
+                        (type >= PPME_SOCKET_SENDMSG_E && type <= PPME_SOCKET_RECVMMSG_X);
     if (!is_send_recv) {
       if (fd_info->is_socket_failed()) {
         return std::nullopt;

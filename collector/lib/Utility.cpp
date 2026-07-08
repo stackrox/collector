@@ -57,7 +57,7 @@ const char* SignalName(int signum) {
   }
 }
 
-std::string GetContainerID(sinsp_threadinfo& tinfo) {
+std::string GetContainerID(const sinsp_threadinfo& tinfo) {
   for (const auto& [subsys, cgroup_path] : tinfo.cgroups()) {
     if (auto id = ExtractContainerIDFromCgroup(cgroup_path)) {
       return std::string(*id);
@@ -79,7 +79,7 @@ std::string GetContainerID(sinsp_evt* event) {
 
 std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo* t) {
   if (t) {
-    os << "Name: " << t->m_comm << ", PID: " << t->m_pid << ", Args: " << t->m_exe;
+    os << "Container: \"" << GetContainerID(*t) << "\", Name: " << t->m_comm << ", PID: " << t->m_pid << ", Args: " << t->m_exe;
   } else {
     os << "NULL\n";
   }

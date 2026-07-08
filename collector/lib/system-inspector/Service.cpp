@@ -33,7 +33,11 @@ namespace collector::system_inspector {
 Service::~Service() = default;
 
 Service::Service(const CollectorConfig& config)
-    : inspector_(std::make_unique<sinsp>(true)) {
+    : inspector_(std::make_unique<sinsp>(true)),
+      default_formatter_(std::make_unique<sinsp_evt_formatter>(
+          inspector_.get(),
+          DEFAULT_OUTPUT_STR,
+          EventExtractor::FilterList())) {
   // Setup the inspector.
   // peeking into arguments has a big overhead, so we prevent it from happening
   inspector_->set_snaplen(0);
@@ -55,21 +59,14 @@ Service::Service(const CollectorConfig& config)
     inspector_->get_parser()->set_track_connection_status(true);
   }
 
-  default_formatter_ = std::make_unique<sinsp_evt_formatter>(
-      inspector_.get(), DEFAULT_OUTPUT_STR, EventExtractor::FilterList());
-
   // Filter out host processes. In containers, pid != vpid due to PID
   // namespacing. This is a built-in sinsp field that doesn't require
-  // any plugin.
-  try {
-    auto factory = std::make_shared<sinsp_filter_factory>(
-        inspector_.get(), EventExtractor::FilterList());
-    sinsp_filter_compiler compiler(factory, "proc.pid != proc.vpid");
-    inspector_->set_filter(compiler.compile(), "proc.pid != proc.vpid");
-  } catch (const sinsp_exception& e) {
-    CLOG(WARNING) << "Could not set container filter: " << e.what()
-                  << ". Container filtering will not be active.";
-  }
+  // any plugin. If this fails, we let the exception propagate rather
+  // than silently processing all host events.
+  auto factory = std::make_shared<sinsp_filter_factory>(
+      inspector_.get(), EventExtractor::FilterList());
+  sinsp_filter_compiler compiler(factory, "proc.pid != proc.vpid");
+  inspector_->set_filter(compiler.compile(), "proc.pid != proc.vpid");
 
   // The self-check handlers should only operate during start up,
   // so they are added to the handler list first, so they have access

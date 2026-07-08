@@ -33,10 +33,9 @@ std::string Process::container_id() const {
   WaitForProcessInfo();
 
   if (system_inspector_threadinfo_) {
-    for (const auto& [subsys, cgroup_path] : system_inspector_threadinfo_->cgroups()) {
-      if (auto id = ExtractContainerIDFromCgroup(cgroup_path)) {
-        return std::string(*id);
-      }
+    auto id = GetContainerID(*system_inspector_threadinfo_);
+    if (!id.empty()) {
+      return id;
     }
   }
 
