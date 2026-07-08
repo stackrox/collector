@@ -1,0 +1,25 @@
+name: dependabot validate
+
+on:
+  pull_request:
+    paths:
+      - '.github/dependabot.yaml'
+      - '.github/workflows/dependabot-validate.yml'
+
+permissions:
+  pull-requests: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: marocchino/validate-dependabot@v2
+        id: validate
+        with:
+          path: .github/dependabot.yaml
+      - name: Comment on PR
+        uses: mshick/add-pr-comment@v2
+        with:
+          message: ${{ steps.validate.outputs.markdown }}
+          message-id: dependabot-validate
