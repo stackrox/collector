@@ -60,13 +60,12 @@ Service::Service(const CollectorConfig& config)
   }
 
   // Filter out host processes. In containers, pid != vpid due to PID
-  // namespacing. This is a built-in sinsp field that doesn't require
-  // any plugin. If this fails, we let the exception propagate rather
-  // than silently processing all host events.
+  // namespacing. The val() transformer is required so the parser treats
+  // proc.vpid as a field reference rather than a bare string value.
   auto factory = std::make_shared<sinsp_filter_factory>(
       inspector_.get(), EventExtractor::FilterList());
-  sinsp_filter_compiler compiler(factory, "proc.pid != proc.vpid");
-  inspector_->set_filter(compiler.compile(), "proc.pid != proc.vpid");
+  sinsp_filter_compiler compiler(factory, "proc.pid != val(proc.vpid)");
+  inspector_->set_filter(compiler.compile(), "proc.pid != val(proc.vpid)");
 
   // The self-check handlers should only operate during start up,
   // so they are added to the handler list first, so they have access
