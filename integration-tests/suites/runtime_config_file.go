@@ -18,6 +18,10 @@ import (
 )
 
 const (
+	// normalizedIp is the canonical placeholder that ConnectionTracker
+	// substitutes for all external addresses when external-IPs mode is
+	// disabled. Using a fixed sentinel lets the mock sensor assert on a
+	// deterministic value regardless of the real destination.
 	normalizedIp = "255.255.255.255"
 	externalIp   = "8.8.8.8"
 	serverPort   = 53
@@ -68,6 +72,13 @@ var (
 	collectorIP       = "localhost"
 )
 
+// RuntimeConfigFileTestSuite verifies that collector hot-reloads its
+// configuration when the runtime config YAML file is created, modified,
+// or deleted. In production this file is a Kubernetes ConfigMap mount
+// watched via inotify, allowing Sensor to push config changes (e.g.
+// toggling external-IPs mode) without restarting collector.
+// Each test mutates the file on disk and asserts that collector's
+// connection-reporting behaviour changes accordingly.
 type RuntimeConfigFileTestSuite struct {
 	IntegrationTestSuiteBase
 	ClientContainer string

@@ -1,5 +1,10 @@
 package mock_sensor
 
+// RingChan is a non-blocking ring buffer channel. When the output channel
+// is full, the oldest unread value is dropped to make room for the new one.
+// This prevents gRPC event handlers from blocking when tests consume events
+// slower than they arrive — critical because blocking the gRPC handler would
+// stall the entire collector→sensor stream.
 type RingChan[T any] struct {
 	in  chan T
 	out chan T

@@ -170,10 +170,19 @@ class ParserYaml {
   ValidationMode validation_mode_;
 };
 
-/**
- * Reload configuration based on inotify events received on a
- * configuration file.
- */
+/// Watches the runtime configuration file (default: /etc/stackrox/runtime_config.yaml)
+/// for changes via inotify and hot-reloads the CollectorConfig accordingly.
+///
+/// Uses protobuf reflection to map YAML fields to the sensor::CollectorConfig
+/// proto, so adding new config fields only requires updating the proto definition
+/// — no code changes needed in the loader itself.
+///
+/// Handles both direct files and symlinks (Kubernetes ConfigMaps are mounted
+/// as symlink chains that get atomically swapped, which generates different
+/// inotify events than a simple file write). Three watchers are maintained:
+///   - LOADER_PARENT_PATH: directory-level events (create/delete of the file)
+///   - LOADER_CONFIG_FILE: events on the config file/symlink itself
+///   - LOADER_CONFIG_REALPATH: events on the symlink target (for ConfigMap swaps)
 class ConfigLoader {
  public:
   ConfigLoader() = delete;

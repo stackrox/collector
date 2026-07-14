@@ -8,7 +8,11 @@
 
 namespace collector {
 
-// Encapsulates the configuration of the External-IPs feature
+/// Controls whether external (non-cluster) IPs are preserved or aggregated
+/// to a canonical sentinel address. Configurable per direction (ingress vs
+/// egress) because egress destinations are typically more security-relevant,
+/// while ingress sources are often load-balancer/CDN noise. Direction is a
+/// bitmask so BOTH can be tested with a single bitwise AND.
 class ExternalIPsConfig {
  public:
   enum Direction {

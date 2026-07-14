@@ -8,6 +8,13 @@
 
 namespace collector {
 
+// ProtoAllocator provides arena-based protobuf allocation to avoid per-message
+// heap allocations on the hot path (network connection info messages sent every
+// scrape interval). The arena is pre-allocated and grows adaptively if usage
+// exceeds the initial block — this was added after production crashes from
+// arena overflow (ROX-12576). When USE_PROTO_ARENAS is not defined, falls back
+// to a simple heap allocator that reuses a single root message object.
+
 namespace internal {
 
 #ifdef USE_PROTO_ARENAS
@@ -36,7 +43,10 @@ class ArenaProtoAllocator {
       CLOG(WARNING) << "Used " << bytes_used << " bytes in the arena, which is more than the pre-allocated "
                     << pool_size_ << " bytes. Increasing arena size to " << new_pool_size << " bytes.";
 
-      // This looks weird but is correct (search for `placement new/delete` on Google).
+      // Explicit destructor + placement new is required because Arena doesn't
+      // support resizing its initial block. We must destroy the old arena
+      // (freeing any overflow allocations), reallocate the backing buffer,
+      // then construct a new arena in-place using the larger buffer.
       arena_.~Arena();
 
       pool_.reset(new char[new_pool_size]);

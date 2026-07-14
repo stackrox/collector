@@ -10,6 +10,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// ProcessesAndEndpointsTestSuite exercises the PLOP (Processes Listening
+// On Ports) feature end-to-end. PLOP correlates listening sockets with
+// the process that owns them, which Sensor uses to build deployment-level
+// network policies. The suite verifies that collector correctly attributes
+// each endpoint to the originating process (name, exe path, args) — not
+// just that the port is open. This attribution is what distinguishes PLOP
+// from plain port scanning.
 type ProcessesAndEndpointsTestSuite struct {
 	IntegrationTestSuiteBase
 	container         string

@@ -42,7 +42,9 @@ Service::Service(const CollectorConfig& config)
           DEFAULT_OUTPUT_STR,
           EventExtractor::FilterList())) {
   // Setup the inspector.
-  // peeking into arguments has a big overhead, so we prevent it from happening
+  // Snaplen 0 disables argument capture in sinsp. Argument peeking causes
+  // significant overhead from additional memory copies per event, and
+  // collector handles argument extraction separately in ProcessSignalFormatter.
   inspector_->set_snaplen(0);
 
   auto log_level = (sinsp_logger::severity)logging::GetLogLevel();
@@ -55,14 +57,19 @@ Service::Service(const CollectorConfig& config)
   inspector_->set_auto_threads_purging_interval_s(60);
   inspector_->m_thread_manager->set_max_thread_table_size(config.GetSinspThreadCacheSize());
 
-  // Connection status tracking is used in NetworkSignalHandler,
-  // but only when trying to handle asynchronous connections
-  // as a special case.
+  // Connection status tracking adds overhead in sinsp's parser, so it's
+  // only enabled when needed. It allows NetworkSignalHandler to detect
+  // non-blocking connect() calls that complete asynchronously, which would
+  // otherwise be missed as the connect syscall returns EINPROGRESS.
   if (config.CollectConnectionStatus()) {
     inspector_->get_parser()->set_track_connection_status(true);
   }
 
   if (config.EnableRuntimeConfig()) {
+    // When runtime config is enabled, we use sinsp's built-in container
+    // engines (CRI, containerd, etc.) for container metadata. Otherwise,
+    // we register a custom ContainerEngine that derives container IDs
+    // from cgroup paths — simpler but less metadata-rich.
     uint64_t mask = 1 << CT_CRI |
                     1 << CT_CRIO |
                     1 << CT_CONTAINERD;
@@ -77,8 +84,8 @@ Service::Service(const CollectorConfig& config)
 
     inspector_->set_container_engine_mask(mask);
 
-    // k8s naming conventions specify that max length be 253 characters
-    // (the extra 2 are just for a nice 0xFF).
+    // K8s DNS naming conventions cap names at 253 characters; 255 rounds to
+    // 0xFF which is a clean byte boundary for the sinsp label buffer.
     inspector_->set_container_labels_max_len(255);
   } else {
     auto engine = std::make_shared<ContainerEngine>(inspector_->m_container_manager);
@@ -86,12 +93,16 @@ Service::Service(const CollectorConfig& config)
     container_engines->push_back(engine);
   }
 
+  // Filter out host-level events since collector only monitors containerized
+  // workloads. Without this filter sinsp would deliver events from every
+  // process on the node.
   inspector_->set_filter("container.id != 'host'");
 
-  // The self-check handlers should only operate during start up,
-  // so they are added to the handler list first, so they have access
-  // to self-check events before the network and process handlers have
-  // a chance to process them and send them to Sensor.
+  // Self-check handlers are registered first in the handler list so they
+  // intercept the self-check binary's events before ProcessSignalHandler
+  // or NetworkSignalHandler can forward them to Sensor. Once the self-check
+  // events have been verified, the handler returns FINISHED and removes
+  // itself from the list.
   AddSignalHandler(std::make_unique<SelfCheckProcessHandler>(inspector_.get()));
   AddSignalHandler(std::make_unique<SelfCheckNetworkHandler>(inspector_.get()));
 
@@ -152,10 +163,11 @@ sinsp_evt* Service::GetNext() {
 
   HostInfo& host_info = HostInfo::Instance();
 
-  // This additional userspace filter is a guard against additional events
-  // from the eBPF probe. This can occur when using sys_enter and sys_exit
-  // tracepoints rather than a targeted approach, which we currently only do
-  // on RHEL7 with backported eBPF
+  // RHEL 7.6 has a backported eBPF implementation that only supports
+  // sys_enter/sys_exit tracepoints (not per-syscall tracepoints). This
+  // means sinsp receives ALL syscall events, not just the ones we asked
+  // for. This userspace filter drops events that no handler cares about,
+  // preventing unnecessary processing overhead on those kernels.
   if (host_info.IsRHEL76() && !global_event_filter_[event->get_type()]) {
     return nullptr;
   }
@@ -182,13 +194,20 @@ bool Service::FilterEvent(const sinsp_threadinfo* tinfo) {
     return false;
   }
 
-  // exclude runc events
+  // runc with comm "6" is an internal container runtime process that
+  // generates noise events during container creation. Filtering these
+  // prevents false-positive process signals being sent to Sensor.
   if ((tinfo->m_exepath == "runc" ||
        tinfo->m_exepath == "/usr/bin/runc") &&
       tinfo->m_comm == "6") {
     return false;
   }
 
+  // In some container runtimes, exe_path can be prefixed with container
+  // metadata separated by ':'. Strip everything up to the last ':' to
+  // get the actual path, then filter out /proc/self references which are
+  // early container init processes (see ROX-11544 and the similar filter
+  // in Sensor's signal_service.go).
   std::string_view exepath_sv{tinfo->m_exepath};
   auto marker = exepath_sv.rfind(':');
   if (marker != std::string_view::npos) {

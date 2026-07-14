@@ -8,6 +8,8 @@ namespace {
 
 static const char* g_switch_collection_hint = "HINT: You may alternatively want to disable collection with collector.collectionMethod=NO_COLLECTION";
 
+// A single platform-specific check applied at startup. Chained via
+// g_host_heuristics — each may mutate HostConfig or CLOG(FATAL).
 class Heuristic {
  public:
   // Process the given HostInfo and CollectorConfig to adjust HostConfig as necessary.
@@ -17,6 +19,7 @@ class Heuristic {
   virtual void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {}
 };
 
+// Validates BPF support and suggests upgrades when available.
 class CollectionHeuristic : public Heuristic {
   void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
     // All our probes depend on eBPF.
@@ -60,9 +63,9 @@ class CollectionHeuristic : public Heuristic {
   }
 };
 
+// Docker Desktop lacks eBPF support.
 class DockerDesktopHeuristic : public Heuristic {
  public:
-  // Docker Desktop does not support eBPF so we don't support it.
   void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
     if (host.IsDockerDesktop()) {
       CLOG(FATAL) << host.GetDistro() << " does not support eBPF.";
@@ -70,6 +73,8 @@ class DockerDesktopHeuristic : public Heuristic {
   }
 };
 
+// Early RHEL 8.6 kernels on ppc64le have BPF verifier bugs.
+// Block those builds rather than letting users hit cryptic errors.
 class PowerHeuristic : public Heuristic {
  public:
   void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
@@ -85,9 +90,10 @@ class PowerHeuristic : public Heuristic {
   }
 };
 
+// BPF per-CPU maps must be sized to possible (not online) CPUs; wrong
+// values cause E2BIG or silent data loss.
 class CPUHeuristic : public Heuristic {
  public:
-  // Enrich HostConfig with the number of possible CPU cores.
   void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
     hconfig->SetNumPossibleCPUs(host.NumPossibleCPU());
   }

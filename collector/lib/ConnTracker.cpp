@@ -11,8 +11,14 @@ namespace collector {
 
 namespace {
 
+// Sentinel addresses representing "all external IPs" when external-IPs
+// mode is disabled. Public addresses that don't match any known network
+// are aggregated to these canonical addresses, reducing cardinality in
+// the network flow data sent to Sensor.
 static const Address canonical_external_ipv4_addr(255, 255, 255, 255);
 static const Address canonical_external_ipv6_addr(0xffffffffffffffffULL, 0xffffffffffffffffULL);
+// Pre-built radix tree of RFC 1918 / RFC 4193 private networks, used to
+// determine whether known_ip_networks overlap with private address space.
 static const NRadixTree private_networks_tree(PrivateNetworks());
 
 }  // namespace
@@ -167,7 +173,10 @@ void ConnectionTracker::CloseConnectionsOnExternalIPsConfigChange(ExternalIPsCon
 Connection ConnectionTracker::NormalizeConnectionNoLock(const Connection& conn) const {
   bool is_server = conn.is_server();
   if (conn.l4proto() == L4Proto::UDP) {
-    // Inference of server role is unreliable for UDP, so go by port.
+    // UDP is connectionless, so the kernel doesn't track client/server roles.
+    // We use a port-based heuristic: the side with the higher ephemeral port
+    // score is likely the client. See IsEphemeralPort() for the scoring
+    // system that accounts for different OS port range conventions.
     is_server = IsEphemeralPort(conn.remote().port()) > IsEphemeralPort(conn.local().port());
   }
 

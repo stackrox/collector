@@ -22,6 +22,17 @@ class sinsp_threadinfo;
 
 namespace collector::system_inspector {
 
+/// Wraps the Falco sinsp library to capture kernel events via modern BPF
+/// (CO-RE eBPF). Owns the sinsp inspector, event loop, and a pipeline of
+/// SignalHandlers that process events in registration order.
+///
+/// The event loop (Run) is driven by the main thread in CollectorService.
+/// Signal handlers are dispatched per-event based on a bitset filter of
+/// relevant event types, so each handler only sees the events it cares about.
+///
+/// Self-check handlers are registered first so they can intercept startup
+/// verification events before the process/network handlers forward them
+/// to Sensor.
 class Service : public SystemInspector {
  public:
   Service(const Service&) = delete;

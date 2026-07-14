@@ -12,6 +12,12 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 )
 
+// AsyncConnectionTestSuite validates collector's handling of non-blocking
+// (O_NONBLOCK) TCP connect calls. These are common in event-loop-based
+// applications (nginx, envoy, etc.) where connect() returns EINPROGRESS
+// and completion is signalled later via epoll/poll. Collector must not
+// report a connection until it actually succeeds; a connect that never
+// completes (e.g. blocked by a firewall) should produce no event.
 type AsyncConnectionTestSuite struct {
 	IntegrationTestSuiteBase
 	DisableConnectionStatusTracking bool
@@ -65,6 +71,9 @@ func (s *AsyncConnectionTestSuite) SetupSuite() {
 	target := s.serverIP
 
 	if s.BlockConnection {
+		// RFC 5737 documentation range — guaranteed non-routable, so the
+		// kernel's connect() will hang in SYN_SENT until it times out,
+		// simulating a firewall-blocked connection.
 		target = "10.255.255.1"
 	}
 

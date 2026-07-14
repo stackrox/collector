@@ -15,6 +15,16 @@
 
 namespace collector {
 
+/// Periodically scrapes /proc for active connections and listening endpoints,
+/// computes deltas against the previous scrape state (with optional afterglow),
+/// and streams the deltas to Sensor over a bidirectional gRPC stream.
+///
+/// Runs on its own StoppableThread. The gRPC stream also receives control
+/// messages from Sensor (known public IPs, known IP networks) which are
+/// forwarded to ConnectionTracker for address normalization.
+///
+/// Inherits from ProtoAllocator to arena-allocate protobuf messages, avoiding
+/// per-message heap allocations on the hot path.
 class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnectionInfoMessage> {
  public:
   NetworkStatusNotifier(std::shared_ptr<ConnectionTracker> conn_tracker,

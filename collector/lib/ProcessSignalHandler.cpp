@@ -13,6 +13,11 @@
 
 namespace collector {
 
+// Builds the rate-limiter key for process deduplication. The key combines
+// container ID, process name, args (truncated to 256 bytes), and exe path.
+// Args are truncated to prevent unbounded memory use in the rate-limit
+// cache — processes with extremely long argument lists would otherwise
+// each consume a separate cache entry.
 std::string compute_process_key(const ::storage::ProcessSignal& s) {
   std::stringstream ss;
   ss << s.container_id() << " " << s.name() << " ";
@@ -86,6 +91,9 @@ SignalHandler::Result ProcessSignalHandler::HandleExistingProcess(sinsp_threadin
 }
 
 std::vector<std::string> ProcessSignalHandler::GetRelevantEvents() {
+  // The '<' suffix means we only care about the exit (return) side of execve,
+  // not the entry. This is because we need the post-exec process state
+  // (new exe path, args) which is only available after the syscall completes.
   return {"execve<"};
 }
 

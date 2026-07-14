@@ -9,6 +9,10 @@ class sinsp_threadinfo;
 
 namespace collector {
 
+/// Interface for components that react to sinsp events from the BPF driver.
+/// Handlers are registered in a pipeline and offered matching events in turn.
+/// FINISHED tells the pipeline to permanently remove the handler — essential
+/// for one-shot handlers like self-checks that only need a single event.
 class SignalHandler {
  public:
   enum Result {
