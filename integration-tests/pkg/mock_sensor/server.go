@@ -21,19 +21,29 @@ import (
 )
 
 const (
+	// Port must match the GRPC_SERVER env var passed to the collector container.
 	gMockSensorPort = 9999
-	gMaxMsgSize     = 12 * 1024 * 1024
-
+	// 12MB matches the Sensor's max message size for network connection batches.
+	gMaxMsgSize = 12 * 1024 * 1024
+	// Ring channel size for live event streaming to test assertions. Small
+	// enough to avoid excessive memory use while reducing event drops during
+	// normal consumption gaps. RingChan discards the oldest unread event
+	// when full.
 	gDefaultRingSize = 32
 )
 
-// Using maps in this way allows us a very quick
-// way of identifying when specific events arrive. (Go allows
-// us to use any comparable type as the key)
+// Event stores use maps with the event struct as key, which provides O(1)
+// deduplication and lookup — tests can check for a specific event's presence
+// without iterating. Go's map semantics require the key types to be comparable,
+// which is why ProcessInfo/EndpointInfo are plain value structs without
+// pointer fields.
 type ProcessMap map[types.ProcessInfo]interface{}
 type LineageMap map[types.ProcessLineage]interface{}
 type EndpointMap map[types.EndpointInfo]interface{}
 
+// MockSensor implements the Sensor-side gRPC services (SignalService and
+// NetworkConnectionInfoService). It stores all received events and also
+// forwards them to ring-buffered channels for real-time test assertions.
 type MockSensor struct {
 	testName string
 	logger   *log.Logger
@@ -50,9 +60,9 @@ type MockSensor struct {
 	endpoints    map[string]EndpointMap
 	networkMutex sync.Mutex
 
-	// every event will be forwarded to these channels, to allow
-	// tests to look directly at the incoming data without
-	// losing anything underneath
+	// Ring channels provide a live event stream for test assertions.
+	// Using ring buffers (not unbuffered channels) prevents the gRPC
+	// handler from blocking if a test is slow to consume events.
 	processChannel    RingChan[*storage.ProcessSignal]
 	lineageChannel    RingChan[*storage.ProcessSignal_LineageInfo]
 	connectionChannel RingChan[*sensorAPI.NetworkConnection]

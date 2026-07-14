@@ -36,6 +36,8 @@
 
 namespace collector {
 
+// Radix tree node using raw pointers for left/right children and the stored
+// IPNet value. Based on NGINX's ngx_radix_tree.c implementation.
 struct nRadixNode {
   nRadixNode() : value_(nullptr), left_(nullptr), right_(nullptr) {}
   explicit nRadixNode(const IPNet& value) : value_(new IPNet(value)), left_(nullptr), right_(nullptr) {}
@@ -73,6 +75,13 @@ struct nRadixNode {
   nRadixNode* right_;
 };
 
+/// Radix tree for IP network (CIDR) lookups. Supports both IPv4 and IPv6
+/// in a single tree by using the full 128-bit address space. Used by
+/// ConnectionTracker to classify addresses into known networks, private
+/// networks, ignored networks, and non-aggregated networks.
+///
+/// Not thread-safe: callers must hold ConnectionTracker's mutex when
+/// accessing shared trees.
 class NRadixTree {
  public:
   NRadixTree() : root_(new nRadixNode()) {}

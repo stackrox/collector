@@ -14,10 +14,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// RepeatedNetworkFlowTestSuite validates the afterglow deduplication behaviour.
+// Afterglow suppresses redundant network-flow reports when connections to the
+// same destination are opened and closed repeatedly within a short window
+// (the "afterglow period"). Without this, high-frequency connect/disconnect
+// cycles (e.g. health-check probes) would generate a flood of identical events.
+// The suite is parameterized so the same test logic covers afterglow-enabled,
+// afterglow-disabled, and varying timing configurations.
 type RepeatedNetworkFlowTestSuite struct {
-	//The goal with these integration tests is to make sure we report the correct number of
-	//networking events. Sometimes if a connection is made multiple times within a short time
-	//called an "afterglow" period, we only want to report the connection once.
 	IntegrationTestSuiteBase
 	ClientContainer        string
 	ClientIP               string
@@ -31,13 +35,12 @@ type RepeatedNetworkFlowTestSuite struct {
 	NumIter                int
 	SleepBetweenCurlTime   int
 	SleepBetweenIterations int
-	// Due to connections having finite lifetimes it is possible to catch the connection
-	// during the short time that it is active, thus we cannot in all cases be certain
-	// of the number of active connections that are found, but we can be certain that the
-	// number of active connections will be in a certain range.
-	ExpectedMinActive int // minimum number of active connections expected
-	ExpectedMaxActive int // maximum number of active connections expected
-	ExpectedInactive  int // number of inactive connections expected
+	// Assertions use a range for active connections rather than an exact count
+	// because short-lived connections may or may not be caught in the "active"
+	// state depending on timing relative to the scrape interval.
+	ExpectedMinActive int
+	ExpectedMaxActive int
+	ExpectedInactive  int
 }
 
 // Launches collector
@@ -104,6 +107,9 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 	s.ClientIP, err = s.getIPAddress("nginx-curl")
 	s.Require().NoError(err)
 
+	// Wait for all curl iterations to complete, plus the full afterglow
+	// period, plus a 10s buffer. Events that arrive during afterglow are
+	// suppressed, so we must wait for it to expire before asserting counts.
 	totalTime := (s.SleepBetweenCurlTime*s.NumIter+s.SleepBetweenIterations)*s.NumMetaIter + s.AfterglowPeriod + 10
 	common.Sleep(time.Duration(totalTime) * time.Second)
 }

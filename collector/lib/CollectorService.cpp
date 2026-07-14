@@ -21,7 +21,11 @@
 
 namespace collector {
 
+// Civetweb configuration: serves HTTP introspection endpoints (status, log
+// level, profiler, container info, network state) on port 8080.
 static const char* OPTIONS[] = {"listening_ports", "8080", nullptr};
+// Prometheus metrics are exposed on a separate port to keep them isolated
+// from the introspection endpoints.
 static const std::string PROMETHEUS_PORT = "9090";
 
 CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlValue>* control,
@@ -36,11 +40,12 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
       config_loader_(config_) {
   CLOG(INFO) << "Config: " << config_;
 
-  // Network tracking
+  // Network tracking subsystem setup.
+  // When gRPC is disabled (no Sensor), we still initialize the networking
+  // infrastructure so that connections can be logged to stdout — this is
+  // useful for standalone debugging. NetworkConnectionInfoServiceComm
+  // detects the null channel and falls back to stdout output.
   if (!config_.grpc_channel || !config_.DisableNetworkFlows()) {
-    // In case if no GRPC is used, continue to setup networking infrasturcture
-    // with empty grpc_channel. NetworkConnectionInfoServiceComm will pick it
-    // up and use stdout instead.
     conn_tracker_ = std::make_shared<ConnectionTracker>();
     UnorderedSet<L4ProtoPortPair> ignored_l4proto_port_pairs(config_.IgnoredL4ProtoPortPairs());
     conn_tracker_->UpdateIgnoredL4ProtoPortPairs(std::move(ignored_l4proto_port_pairs));
@@ -87,7 +92,8 @@ CollectorService::~CollectorService() {
 
   exporter_.stop();
 
-  // system_inspector_ needs to be last, since other components relay on it.
+  // system_inspector_ must be torn down last because NetworkStatusNotifier
+  // and other components hold pointers into sinsp state (thread table, etc.).
   system_inspector_.CleanUp();
 }
 

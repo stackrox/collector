@@ -10,6 +10,14 @@ import (
 	"github.com/stackrox/collector/integration-tests/pkg/types"
 )
 
+// ProcfsScraperTestSuite verifies that collector discovers pre-existing
+// listening sockets by scraping /proc at startup, before the BPF event
+// stream is active. This is critical because connections and listeners
+// established before collector starts would otherwise be invisible.
+// The key ordering constraint: nginx must be started *before* collector
+// so that its listening socket exists in procfs at scrape time but the
+// corresponding bind/listen event is not observed by collector's BPF
+// handler (which attaches later).
 type ProcfsScraperTestSuite struct {
 	IntegrationTestSuiteBase
 	ServerContainer             string
@@ -18,12 +26,11 @@ type ProcfsScraperTestSuite struct {
 	Expected                    []types.EndpointInfo
 }
 
-// Launches nginx container
-// Launches gRPC server in insecure mode
-// Launches collector
-// Note it is important to launch the nginx container before collector, which is the opposite of
-// other tests. The purpose is that we want ProcfsScraper to see the nginx endpoint and we do not want
-// NetworkSignalHandler to see the nginx endpoint.
+// SetupSuite starts nginx *before* collector — the reverse of other
+// suites. This ordering is deliberate: the listening socket must already
+// exist in /proc when collector's procfs scraper runs at startup, but
+// must not trigger a BPF bind/listen event (which would be handled by
+// NetworkSignalHandler instead, defeating the purpose of the test).
 func (s *ProcfsScraperTestSuite) SetupSuite() {
 	s.RegisterCleanup("nginx")
 

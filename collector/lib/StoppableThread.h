@@ -12,6 +12,11 @@
 
 namespace collector {
 
+/// Thread wrapper with cooperative cancellation via an atomic flag (for
+/// hot-path polling) and a self-pipe fd (for waking threads blocked on
+/// I/O). The dual mechanism avoids the choice between busy-waiting and
+/// being stuck in a blocking syscall during shutdown. PauseUntil provides
+/// an interruptible sleep that wakes early when stop is requested.
 class StoppableThread {
  public:
   template <typename... Args>

@@ -138,8 +138,10 @@ struct KernelVersion {
   std::string machine;
 };
 
-// Singleton that provides ways of retrieving Host information to inform
-// runtime configuration of collector.
+/// Singleton providing host-level facts (kernel version, distro, BPF
+/// capabilities, CPU topology) used by HostHeuristics and startup logic.
+/// Gathered once from uname(2), /proc, /sys, and os-release — immutable
+/// during a collector lifetime and expensive to re-read.
 class HostInfo {
  public:
   // Singleton - we're not expecting this Host information to change
