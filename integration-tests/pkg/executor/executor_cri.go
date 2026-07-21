@@ -171,6 +171,11 @@ func (c *criExecutor) StartContainer(config config.ContainerStartConfig) (string
 		network = pb.NamespaceMode_NODE
 	}
 
+	pid := pb.NamespaceMode_CONTAINER
+	if config.PidMode == "host" {
+		pid = pb.NamespaceMode_NODE
+	}
+
 	sandboxConfig := pb.PodSandboxConfig{
 		Metadata: &pb.PodSandboxMetadata{
 			Name:      config.Name,
@@ -182,6 +187,7 @@ func (c *criExecutor) StartContainer(config config.ContainerStartConfig) (string
 				Privileged: config.Privileged,
 				NamespaceOptions: &pb.NamespaceOption{
 					Network: network,
+					Pid:     pid,
 				},
 			},
 		},
@@ -236,6 +242,7 @@ func (c *criExecutor) StartContainer(config config.ContainerStartConfig) (string
 				Privileged: config.Privileged,
 				NamespaceOptions: &pb.NamespaceOption{
 					Network: network,
+					Pid:     pid,
 				},
 			},
 		},

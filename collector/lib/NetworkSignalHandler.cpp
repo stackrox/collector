@@ -81,17 +81,30 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   // "failed" even when subsequent operations succeed, because the sinsp parser
   // (parse_rw_exit) does not clear the failed flag on successful send/recv.
   if (collect_connection_status_) {
-    auto type = evt->get_type();
-    bool is_send_recv = (type >= PPME_SOCKET_SENDTO_E && type <= PPME_SOCKET_RECVFROM_X) ||
-                        (type >= PPME_SOCKET_SENDMSG_E && type <= PPME_SOCKET_RECVMMSG_X);
-    if (!is_send_recv) {
-      if (fd_info->is_socket_failed()) {
-        return std::nullopt;
-      }
-
-      if (fd_info->is_socket_pending()) {
-        return std::nullopt;
-      }
+    switch (evt->get_type()) {
+      case PPME_SOCKET_SENDTO_E:
+      case PPME_SOCKET_SENDTO_X:
+      case PPME_SOCKET_RECV_E:
+      case PPME_SOCKET_RECV_X:
+      case PPME_SOCKET_RECVFROM_E:
+      case PPME_SOCKET_RECVFROM_X:
+      case PPME_SOCKET_SENDMSG_E:
+      case PPME_SOCKET_SENDMSG_X:
+      case PPME_SOCKET_SENDMMSG_E:
+      case PPME_SOCKET_SENDMMSG_X:
+      case PPME_SOCKET_RECVMSG_E:
+      case PPME_SOCKET_RECVMSG_X:
+      case PPME_SOCKET_RECVMMSG_E:
+      case PPME_SOCKET_RECVMMSG_X:
+        break;
+      default:
+        if (fd_info->is_socket_failed()) {
+          return std::nullopt;
+        }
+        if (fd_info->is_socket_pending()) {
+          return std::nullopt;
+        }
+        break;
     }
   }
 

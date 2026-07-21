@@ -138,6 +138,9 @@ func (s *UdpNetworkFlow) runTest(image, recv, send string, port uint32) {
 		CloseTimestamp: nil,
 	}
 
+	// UDP connection reporting can take longer than TCP due to the
+	// asynchronous nature of UDP event processing in the updated
+	// falcosecurity-libs.
 	s.Sensor().ExpectConnections(s.T(), client.id, 30*time.Second, clientConnection)
 	s.Sensor().ExpectConnections(s.T(), server.id, 30*time.Second, serverConnection)
 }

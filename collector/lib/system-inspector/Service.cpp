@@ -6,7 +6,6 @@
 
 #include <linux/ioctl.h>
 
-#include "libsinsp/filter.h"
 #include "libsinsp/parsers.h"
 #include "libsinsp/sinsp.h"
 
@@ -59,13 +58,35 @@ Service::Service(const CollectorConfig& config)
     inspector_->get_parser()->set_track_connection_status(true);
   }
 
-  // Filter out host processes. In containers, pid != vpid due to PID
-  // namespacing. The val() transformer is required so the parser treats
-  // proc.vpid as a field reference rather than a bare string value.
-  auto factory = std::make_shared<sinsp_filter_factory>(
-      inspector_.get(), EventExtractor::FilterList());
-  sinsp_filter_compiler compiler(factory, "proc.pid != val(proc.vpid)");
-  inspector_->set_filter(compiler.compile(), "proc.pid != val(proc.vpid)");
+  // Filter out host processes to avoid flooding Sensor with events it
+  // cannot associate with a container. The filter has two clauses:
+  //
+  //   1. pid != vpid — In a PID namespace (the common container case),
+  //      the kernel PID differs from the virtual PID visible inside the
+  //      container. The val() transformer makes the parser treat
+  //      proc.vpid as a field reference instead of a literal string.
+  //
+  //   2. cgroup regex — Catches containers that share the host PID
+  //      namespace (hostPID: true), where pid == vpid despite the
+  //      process running inside a container. Container runtimes always
+  //      place container processes in a cgroup whose path ends with the
+  //      64-hex-character container ID, so matching that pattern
+  //      identifies containerised processes regardless of PID namespace
+  //      configuration. This mirrors the cgroup-based container ID
+  //      extraction in ExtractContainerIDFromCgroup().
+  //
+  //      The memory cgroup is used because on cgroups v2 with systemd,
+  //      the memory controller is reliably delegated to the container's
+  //      leaf cgroup (where the path contains the container ID), while
+  //      cpuset is often only available at a higher level in the
+  //      hierarchy. The trailing (/.*) accounts for additional path
+  //      components some runtimes append (e.g. podman adds /container).
+  //
+  // The 'or' short-circuits: the regex only evaluates for events where
+  // the PID check fails, so the performance cost is negligible.
+  inspector_->set_filter(
+      "proc.pid != val(proc.vpid)"
+      " or thread.cgroup.memory regex \".*[/:-][0-9a-f]{64}(\\\\.scope)?(/.*)?\"");
 
   // The self-check handlers should only operate during start up,
   // so they are added to the handler list first, so they have access

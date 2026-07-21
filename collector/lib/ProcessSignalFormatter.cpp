@@ -2,8 +2,6 @@
 
 #include <uuid/uuid.h>
 
-#include <libsinsp/sinsp.h>
-
 #include <google/protobuf/util/time_util.h>
 
 #include "internalapi/sensor/signal_iservice.pb.h"
@@ -193,7 +191,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   }
 
   CLOG(DEBUG) << "Process (" << signal->container_id() << ": " << signal->pid() << "): "
-              << signal->name() << "[" << container_id << "]"
+              << signal->name()
               << " (" << signal->exec_file_path() << ")"
               << " " << signal->args();
 
@@ -257,7 +255,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   }
 
   CLOG(DEBUG) << "Process (" << signal->container_id() << ": " << signal->pid() << "): "
-              << signal->name() << "[" << signal->container_id() << "]"
+              << signal->name()
               << " (" << signal->exec_file_path() << ")"
               << " " << signal->args();
 
