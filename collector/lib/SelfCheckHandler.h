@@ -17,9 +17,9 @@ class EventExtractor;
 namespace collector {
 
 /// Base for startup self-check handlers. Collector forks a known binary
-/// and these handlers wait for the BPF driver to deliver matching events,
-/// proving the probe loaded and the event pipeline works end-to-end.
-/// Returns FINISHED on match or timeout to remove itself from the pipeline.
+/// and these handlers wait for matching BPF events to reach collector,
+/// verifying the probe loaded correctly. Returns FINISHED on match or
+/// timeout (which logs a warning) to remove itself from the pipeline.
 ///
 /// Matches on process name + exe path rather than PID because the driver
 /// reports host-namespace PIDs while the fork gives container-namespace PIDs.

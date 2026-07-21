@@ -45,8 +45,9 @@ COPY --from=package_installer /out/ /
 
 COPY container/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY kernel-modules /kernel-modules
-# self-checks is a separate binary for BPF driver validation at startup,
-# kept independent from the full collector dependency tree.
+# self-checks is a separate startup-validation executable for BPF driver
+# verification. It links collector_lib but runs independently of the main
+# collector daemon.
 COPY container/bin/collector /usr/local/bin/
 COPY container/bin/self-checks /usr/local/bin/self-checks
 COPY container/status-check.sh /usr/local/bin/status-check.sh

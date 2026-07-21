@@ -23,8 +23,8 @@ namespace collector {
 /// messages from Sensor (known public IPs, known IP networks) which are
 /// forwarded to ConnectionTracker for address normalization.
 ///
-/// Inherits from ProtoAllocator to arena-allocate protobuf messages, avoiding
-/// per-message heap allocations on the hot path.
+/// Inherits from ProtoAllocator for protobuf allocation — arena-based when
+/// USE_PROTO_ARENAS is defined, heap-based otherwise.
 class NetworkStatusNotifier : protected ProtoAllocator<sensor::NetworkConnectionInfoMessage> {
  public:
   NetworkStatusNotifier(std::shared_ptr<ConnectionTracker> conn_tracker,

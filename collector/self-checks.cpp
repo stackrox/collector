@@ -10,9 +10,10 @@
 #include <sys/wait.h>
 
 // Self-check binary: forks a child (listener) and parent (connector) to
-// generate a known TCP connection event. The BPF driver must capture this
-// event for the self-check to pass — if it doesn't, the driver is broken
-// and collector will abort at startup.
+// generate a known TCP connection event. SelfCheckHandlers in collector
+// watch for the corresponding BPF events to verify the driver loaded
+// correctly. If the events don't arrive within the timeout, a warning
+// is logged (collector continues running).
 //
 // This is a separate binary (not in-process) so that it appears as a
 // distinct process in the BPF event stream, allowing SelfCheckHandlers
@@ -54,11 +55,7 @@ bool startListeningPort(uint16_t port) {
   FD_ZERO(&sockets);
   FD_SET(listener, &sockets);
 
-  // nfds should be listener+1, not 1. However, since listener is
-  // always >= 0, and we only care about whether select returns at all
-  // (not which fd is ready), this works in practice because the fd
-  // value 0 is stdin which won't be the listener socket.
-  if (select(1, &sockets, NULL, NULL, &timeout) <= 0) {
+  if (select(listener + 1, &sockets, NULL, NULL, &timeout) <= 0) {
     // timeout or error
     goto err;
   }

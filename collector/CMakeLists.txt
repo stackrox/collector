@@ -114,8 +114,8 @@ set(MINIMAL_BUILD OFF CACHE BOOL "Minimal" FORCE)
 # Reduces per-thread memory from ~1KB to a few hundred bytes. Prevents OOM
 # on nodes with thousands of threads.
 set(SINSP_SLIM_THREADINFO ON CACHE BOOL "Slim threadinfo" FORCE)
-# Collector ships as a statically-linked binary in a minimal UBI-micro
-# container — dynamic linking would require shipping .so files.
+# Project libraries default to static linkage for the minimal UBI-micro
+# container. Required shared runtime deps (e.g. libelf) remain dynamic.
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build position independent libraries and executables" FORCE)
 # Exception to static linking: libbpf dlopen()s libelf at runtime to parse
 # BPF ELF objects, so libelf must remain a shared library.

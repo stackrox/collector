@@ -12,9 +12,9 @@ namespace collector {
 
 namespace {
 
-// Each syscall event either adds a connection to the tracker (the
-// connection was just established) or removes one (the socket was
-// closed). This enum drives that decision so HandleSignal does not
+// Each syscall event either adds/refreshes a connection in the tracker
+// (connect, accept, getsockopt, send/recv) or removes one (close,
+// shutdown). This enum drives that decision so HandleSignal does not
 // need a per-event-type switch.
 enum class Modifier : uint8_t {
   INVALID = 0,

@@ -179,10 +179,10 @@ class ParserYaml {
 ///
 /// Handles both direct files and symlinks (Kubernetes ConfigMaps are mounted
 /// as symlink chains that get atomically swapped, which generates different
-/// inotify events than a simple file write). Three watchers are maintained:
-///   - LOADER_PARENT_PATH: directory-level events (create/delete of the file)
-///   - LOADER_CONFIG_FILE: events on the config file/symlink itself
-///   - LOADER_CONFIG_REALPATH: events on the symlink target (for ConfigMap swaps)
+/// inotify events than a simple file write). Up to three watchers are used:
+///   - LOADER_PARENT_PATH: directory-level events (always present)
+///   - LOADER_CONFIG_FILE: events on the config file itself (when it exists)
+///   - LOADER_CONFIG_REALPATH: events on the symlink target (symlinks only)
 class ConfigLoader {
  public:
   ConfigLoader() = delete;

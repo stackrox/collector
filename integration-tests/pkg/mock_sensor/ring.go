@@ -1,10 +1,10 @@
 package mock_sensor
 
-// RingChan is a non-blocking ring buffer channel. When the output channel
-// is full, the oldest unread value is dropped to make room for the new one.
-// This prevents gRPC event handlers from blocking when tests consume events
-// slower than they arrive — critical because blocking the gRPC handler would
-// stall the entire collector→sensor stream.
+// RingChan is a lossy ring buffer channel. When the output channel is full,
+// the oldest unread value is dropped to make room for the new one. This
+// reduces the likelihood of gRPC event handlers blocking when tests consume
+// events slower than they arrive. Note: there is a small window between
+// detecting a full channel and draining it where the goroutine may block.
 type RingChan[T any] struct {
 	in  chan T
 	out chan T

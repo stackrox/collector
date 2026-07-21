@@ -11,7 +11,7 @@ namespace collector {
 struct TokenBucket {
   TokenBucket() : tokens(0), last_time(0) {}
   int64_t tokens;     // number of tokens in this bucket
-  int64_t last_time;  // amount of time since the bucket last updated in microseconds
+  int64_t last_time;  // timestamp of last refill in microseconds since epoch
 };
 
 /// Time-based rate limiter using the token bucket algorithm. Used by

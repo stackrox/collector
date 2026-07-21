@@ -73,8 +73,8 @@ class DockerDesktopHeuristic : public Heuristic {
   }
 };
 
-// Early RHEL 8.6 kernels on ppc64le have BPF verifier bugs.
-// Block those builds rather than letting users hit cryptic errors.
+// ppc64le kernels with version 4.18 and build number < 477 have BPF verifier
+// bugs that cause probe loading to fail. Block them with a clear diagnostic.
 class PowerHeuristic : public Heuristic {
  public:
   void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
