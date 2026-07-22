@@ -148,6 +148,7 @@ func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConf
 
 	hostConfig := &container.HostConfig{
 		NetworkMode: container.NetworkMode(startConfig.NetworkMode),
+		PidMode:     container.PidMode(startConfig.PidMode),
 		Privileged:  startConfig.Privileged,
 		Binds:       binds,
 	}

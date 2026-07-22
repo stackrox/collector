@@ -1,11 +1,11 @@
 #include "NetworkSignalHandler.h"
 
-#include <cstring>
 #include <optional>
 
 #include <libsinsp/sinsp.h>
 
 #include "EventMap.h"
+#include "Utility.h"
 #include "system-inspector/EventExtractor.h"
 
 namespace collector {
@@ -75,17 +75,36 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   }
 
   // With collect_connection_status_ set, we can prevent reporting of asynchronous
-  // connections which fail.
+  // connections which fail. This check is only relevant for connection
+  // establishment events (connect, accept, getsockopt). For send/recv events,
+  // a previous failed operation on the same fd can leave the socket marked as
+  // "failed" even when subsequent operations succeed, because the sinsp parser
+  // (parse_rw_exit) does not clear the failed flag on successful send/recv.
   if (collect_connection_status_) {
-    // note: connection status tracking enablement is managed in system_inspector::Service
-    if (fd_info->is_socket_failed()) {
-      // connect() failed or getsockopt(SO_ERROR) returned a failure
-      return std::nullopt;
-    }
-
-    if (fd_info->is_socket_pending()) {
-      // connect() returned E_INPROGRESS
-      return std::nullopt;
+    switch (evt->get_type()) {
+      case PPME_SOCKET_SENDTO_E:
+      case PPME_SOCKET_SENDTO_X:
+      case PPME_SOCKET_RECV_E:
+      case PPME_SOCKET_RECV_X:
+      case PPME_SOCKET_RECVFROM_E:
+      case PPME_SOCKET_RECVFROM_X:
+      case PPME_SOCKET_SENDMSG_E:
+      case PPME_SOCKET_SENDMSG_X:
+      case PPME_SOCKET_SENDMMSG_E:
+      case PPME_SOCKET_SENDMMSG_X:
+      case PPME_SOCKET_RECVMSG_E:
+      case PPME_SOCKET_RECVMSG_X:
+      case PPME_SOCKET_RECVMMSG_E:
+      case PPME_SOCKET_RECVMMSG_X:
+        break;
+      default:
+        if (fd_info->is_socket_failed()) {
+          return std::nullopt;
+        }
+        if (fd_info->is_socket_pending()) {
+          return std::nullopt;
+        }
+        break;
     }
   }
 
@@ -133,11 +152,12 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   const Endpoint* local = is_server ? &server : &client;
   const Endpoint* remote = is_server ? &client : &server;
 
-  const std::string* container_id = event_extractor_->get_container_id(evt);
-  if (!container_id) {
+  auto container_id = GetContainerID(evt);
+  if (container_id.empty()) {
     return std::nullopt;
   }
-  return {Connection(*container_id, *local, *remote, l4proto, is_server)};
+
+  return {Connection(container_id, *local, *remote, l4proto, is_server)};
 }
 
 SignalHandler::Result NetworkSignalHandler::HandleSignal(sinsp_evt* evt) {

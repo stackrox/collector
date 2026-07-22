@@ -6,7 +6,6 @@
 
 #include <linux/ioctl.h>
 
-#include "libsinsp/container_engine/sinsp_container_type.h"
 #include "libsinsp/parsers.h"
 #include "libsinsp/sinsp.h"
 
@@ -15,8 +14,6 @@
 #include "CollectionMethod.h"
 #include "CollectorException.h"
 #include "CollectorStats.h"
-#include "ContainerEngine.h"
-#include "ContainerMetadata.h"
 #include "EventExtractor.h"
 #include "EventNames.h"
 #include "HostInfo.h"
@@ -36,7 +33,6 @@ Service::~Service() = default;
 
 Service::Service(const CollectorConfig& config)
     : inspector_(std::make_unique<sinsp>(true)),
-      container_metadata_inspector_(std::make_unique<ContainerMetadata>(inspector_.get())),
       default_formatter_(std::make_unique<sinsp_evt_formatter>(
           inspector_.get(),
           DEFAULT_OUTPUT_STR,
@@ -50,7 +46,7 @@ Service::Service(const CollectorConfig& config)
   inspector_->disable_log_timestamps();
   inspector_->set_log_callback(logging::InspectorLogCallback);
 
-  inspector_->set_import_users(config.ImportUsers(), false);
+  inspector_->set_import_users(config.ImportUsers());
   inspector_->set_thread_timeout_s(30);
   inspector_->set_auto_threads_purging_interval_s(60);
   inspector_->m_thread_manager->set_max_thread_table_size(config.GetSinspThreadCacheSize());
@@ -62,31 +58,35 @@ Service::Service(const CollectorConfig& config)
     inspector_->get_parser()->set_track_connection_status(true);
   }
 
-  if (config.EnableRuntimeConfig()) {
-    uint64_t mask = 1 << CT_CRI |
-                    1 << CT_CRIO |
-                    1 << CT_CONTAINERD;
-
-    if (config.UseDockerCe()) {
-      mask |= 1 << CT_DOCKER;
-    }
-
-    if (config.UsePodmanCe()) {
-      mask |= 1 << CT_PODMAN;
-    }
-
-    inspector_->set_container_engine_mask(mask);
-
-    // k8s naming conventions specify that max length be 253 characters
-    // (the extra 2 are just for a nice 0xFF).
-    inspector_->set_container_labels_max_len(255);
-  } else {
-    auto engine = std::make_shared<ContainerEngine>(inspector_->m_container_manager);
-    auto* container_engines = inspector_->m_container_manager.get_container_engines();
-    container_engines->push_back(engine);
-  }
-
-  inspector_->set_filter("container.id != 'host'");
+  // Filter out host processes to avoid flooding Sensor with events it
+  // cannot associate with a container. The filter has two clauses:
+  //
+  //   1. pid != vpid — In a PID namespace (the common container case),
+  //      the kernel PID differs from the virtual PID visible inside the
+  //      container. The val() transformer makes the parser treat
+  //      proc.vpid as a field reference instead of a literal string.
+  //
+  //   2. cgroup regex — Catches containers that share the host PID
+  //      namespace (hostPID: true), where pid == vpid despite the
+  //      process running inside a container. Container runtimes always
+  //      place container processes in a cgroup whose path ends with the
+  //      64-hex-character container ID, so matching that pattern
+  //      identifies containerised processes regardless of PID namespace
+  //      configuration. This mirrors the cgroup-based container ID
+  //      extraction in ExtractContainerIDFromCgroup().
+  //
+  //      The memory cgroup is used because on cgroups v2 with systemd,
+  //      the memory controller is reliably delegated to the container's
+  //      leaf cgroup (where the path contains the container ID), while
+  //      cpuset is often only available at a higher level in the
+  //      hierarchy. The trailing (/.*) accounts for additional path
+  //      components some runtimes append (e.g. podman adds /container).
+  //
+  // The 'or' short-circuits: the regex only evaluates for events where
+  // the PID check fails, so the performance cost is negligible.
+  inspector_->set_filter(
+      "proc.pid != val(proc.vpid)"
+      " or thread.cgroup.memory regex \".*[/:-][0-9a-f]{64}(\\\\.scope)?(/.*)?\"");
 
   // The self-check handlers should only operate during start up,
   // so they are added to the handler list first, so they have access
@@ -182,10 +182,14 @@ bool Service::FilterEvent(const sinsp_threadinfo* tinfo) {
     return false;
   }
 
-  // exclude runc events
-  if ((tinfo->m_exepath == "runc" ||
-       tinfo->m_exepath == "/usr/bin/runc") &&
-      tinfo->m_comm == "6") {
+  // Exclude host processes that leak through the sinsp filter.
+  // The sinsp filter uses a cgroup regex to catch containers in
+  // the host PID namespace, but this can also match container
+  // runtime helpers (crun, runc, conmon, podman) that run on the
+  // host within cgroup paths containing container IDs. Checking
+  // GetContainerID catches all such cases without maintaining a
+  // list of runtime helper names.
+  if (GetContainerID(*tinfo).empty()) {
     return false;
   }
 
@@ -296,7 +300,7 @@ bool Service::SendExistingProcesses(SignalHandler* handler) {
   }
 
   return threads->loop([&](sinsp_threadinfo& tinfo) {
-    if (!tinfo.m_container_id.empty() && tinfo.is_main_thread()) {
+    if (!GetContainerID(tinfo).empty() && tinfo.is_main_thread()) {
       auto result = handler->HandleExistingProcess(&tinfo);
       if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
         CLOG(WARNING) << "Failed to write existing process signal: " << &tinfo;
@@ -398,7 +402,7 @@ void Service::ServePendingProcessRequests() {
     auto callback = request.second.lock();
 
     if (callback) {
-      (*callback)(inspector_->get_thread_ref(pid, true));
+      (*callback)(inspector_->m_thread_manager->get_thread(pid));
     }
 
     pending_process_requests_.pop_front();

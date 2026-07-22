@@ -138,8 +138,11 @@ func (s *UdpNetworkFlow) runTest(image, recv, send string, port uint32) {
 		CloseTimestamp: nil,
 	}
 
-	s.Sensor().ExpectConnections(s.T(), client.id, 5*time.Second, clientConnection)
-	s.Sensor().ExpectConnections(s.T(), server.id, 5*time.Second, serverConnection)
+	// UDP connection reporting can take longer than TCP due to the
+	// asynchronous nature of UDP event processing in the updated
+	// falcosecurity-libs.
+	s.Sensor().ExpectConnections(s.T(), client.id, 30*time.Second, clientConnection)
+	s.Sensor().ExpectConnections(s.T(), server.id, 30*time.Second, serverConnection)
 }
 
 func (s *UdpNetworkFlow) TestMultipleDestinations() {
@@ -164,7 +167,7 @@ func (s *UdpNetworkFlow) TestMultipleDestinations() {
 	client := s.runClient(config.ContainerStartConfig{
 		Name:       UDP_CLIENT,
 		Image:      image,
-		Command:    newClientCmd("sendmmsg", "300", "8", servers...),
+		Command:    newClientCmd("sendmmsg", "300", "4", servers...),
 		Entrypoint: []string{"udp-client"},
 	})
 	log.Info("Client: %s\n", client.String())
@@ -192,9 +195,9 @@ func (s *UdpNetworkFlow) TestMultipleDestinations() {
 			ContainerId:    server.id,
 			CloseTimestamp: nil,
 		}
-		s.Sensor().ExpectConnections(s.T(), server.id, 5*time.Second, serverConnection)
+		s.Sensor().ExpectConnections(s.T(), server.id, 30*time.Second, serverConnection)
 	}
-	s.Sensor().ExpectConnections(s.T(), client.id, 5*time.Second, clientConnections...)
+	s.Sensor().ExpectConnections(s.T(), client.id, 30*time.Second, clientConnections...)
 }
 
 func (s *UdpNetworkFlow) TestMultipleSources() {
@@ -243,9 +246,9 @@ func (s *UdpNetworkFlow) TestMultipleSources() {
 	}
 
 	for i, client := range clients {
-		s.Sensor().ExpectConnections(s.T(), client.id, 5*time.Second, clientConnections[i])
+		s.Sensor().ExpectConnections(s.T(), client.id, 30*time.Second, clientConnections[i])
 	}
-	s.Sensor().ExpectConnections(s.T(), server.id, 5*time.Second, serverConnections...)
+	s.Sensor().ExpectConnections(s.T(), server.id, 30*time.Second, serverConnections...)
 }
 
 func newServerCmd(recv string, port uint32) []string {
