@@ -71,3 +71,16 @@ func (s *HostPidProcessTestSuite) TestHostPidProcesses() {
 
 	s.Sensor().ExpectProcesses(s.T(), s.containerID, 30*time.Second, expectedProcesses...)
 }
+
+// TestNoHostProcesses verifies that host processes (those not in any
+// container) are filtered out and not reported to Sensor. Processes
+// with an empty container ID are host processes.
+func (s *HostPidProcessTestSuite) TestNoHostProcesses() {
+	// Give collector some time to process events, then check that no
+	// host processes (empty container ID) have been reported.
+	time.Sleep(10 * time.Second)
+
+	hostProcesses := s.Sensor().Processes("")
+	s.Assert().Empty(hostProcesses,
+		"Expected no host processes (empty container ID) to be reported, but found %d", len(hostProcesses))
+}

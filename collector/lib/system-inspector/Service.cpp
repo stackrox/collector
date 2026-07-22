@@ -182,10 +182,14 @@ bool Service::FilterEvent(const sinsp_threadinfo* tinfo) {
     return false;
   }
 
-  // exclude runc events
-  if ((tinfo->m_exepath == "runc" ||
-       tinfo->m_exepath == "/usr/bin/runc") &&
-      tinfo->m_comm == "6") {
+  // Exclude host processes that leak through the sinsp filter.
+  // The sinsp filter uses a cgroup regex to catch containers in
+  // the host PID namespace, but this can also match container
+  // runtime helpers (crun, runc, conmon, podman) that run on the
+  // host within cgroup paths containing container IDs. Checking
+  // GetContainerID catches all such cases without maintaining a
+  // list of runtime helper names.
+  if (GetContainerID(*tinfo).empty()) {
     return false;
   }
 
