@@ -1,0 +1,15 @@
+{
+  "status": "blocked",
+  "number": 3381,
+  "sha": "4b9e0a0c88bd3920da1f8186ee41acaff6b26878",
+  "summary": "All actionable feedback touches workflow infrastructure (excluded).",
+  "feedback_classification": {
+    "actionable": ["reviewer asked to simplify the workflow"],
+    "informational": ["overall sentiment: PR is over-engineered"],
+    "bot": ["codecov reported 72% coverage"],
+    "addressed": [],
+    "ambiguous": []
+  },
+  "changed_files": [],
+  "validation": []
+}
