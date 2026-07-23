@@ -4,6 +4,7 @@ type ContainerStartConfig struct {
 	Name        string
 	Image       string
 	Privileged  bool
+	CapAdd      []string
 	NetworkMode string
 	Mounts      map[string]string
 	Env         map[string]string
