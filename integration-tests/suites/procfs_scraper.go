@@ -15,8 +15,9 @@ import (
 // stream is active. This is critical because connections and listeners
 // established before collector starts would otherwise be invisible.
 // The key ordering constraint: nginx must be started *before* collector
-// so that its listening socket exists in procfs at scrape time but is
-// never seen via a BPF bind/listen event.
+// so that its listening socket exists in procfs at scrape time but the
+// corresponding bind/listen event is not observed by collector's BPF
+// handler (which attaches later).
 type ProcfsScraperTestSuite struct {
 	IntegrationTestSuiteBase
 	ServerContainer             string

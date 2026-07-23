@@ -26,8 +26,9 @@ const (
 	// 12MB matches the Sensor's max message size for network connection batches.
 	gMaxMsgSize = 12 * 1024 * 1024
 	// Ring channel size for live event streaming to test assertions. Small
-	// enough to avoid excessive memory use but large enough to buffer events
-	// between scrape intervals without dropping.
+	// enough to avoid excessive memory use while reducing event drops during
+	// normal consumption gaps. RingChan discards the oldest unread event
+	// when full.
 	gDefaultRingSize = 32
 )
 

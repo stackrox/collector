@@ -71,9 +71,10 @@ func (s *AsyncConnectionTestSuite) SetupSuite() {
 	target := s.serverIP
 
 	if s.BlockConnection {
-		// RFC 5737 documentation range — guaranteed non-routable, so the
-		// kernel's connect() will hang in SYN_SENT until it times out,
-		// simulating a firewall-blocked connection.
+		// RFC 1918 private address with no listener — expected to be
+		// non-routable in the test environment, so the kernel's connect()
+		// will hang in SYN_SENT until it times out, simulating a
+		// firewall-blocked connection.
 		target = "10.255.255.1"
 	}
 
