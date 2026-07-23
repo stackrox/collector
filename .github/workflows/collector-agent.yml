@@ -27,12 +27,18 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
-      operation: ${{ steps.validate.outputs.operation }}
-      number: ${{ steps.validate.outputs.number }}
+      operation: ${{ steps.resolve.outputs.operation }}
+      number: ${{ steps.resolve.outputs.number }}
       target_sha: ${{ steps.resolve.outputs.target_sha }}
     steps:
-      - name: Validate inputs
-        id: validate
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 1
+
+      - name: Validate and resolve target
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
@@ -44,139 +50,38 @@ jobs:
             exit 1
           fi
 
-          echo "operation=${operation}" >> "$GITHUB_OUTPUT"
-          echo "number=${number}" >> "$GITHUB_OUTPUT"
-
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: 1
-
-      - name: Resolve target
-        id: resolve
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          operation="${{ steps.validate.outputs.operation }}"
-          number="${{ steps.validate.outputs.number }}"
-          repo="${{ github.repository }}"
-
           if [[ "$operation" == "spike" ]]; then
             state="$(gh issue view "$number" --json state --jq .state)" \
               || { echo "::error::Could not fetch issue #${number}"; exit 1; }
-            if [[ "$state" == "CLOSED" ]]; then
-              echo "::error::Issue #${number} is closed"
-              exit 1
-            fi
+            [[ "$state" != "CLOSED" ]] || { echo "::error::Issue #${number} is closed"; exit 1; }
             target_sha="$(git rev-parse HEAD)"
           else
             pr_json="$(gh pr view "$number" --json state,headRefOid)" \
               || { echo "::error::Could not fetch PR #${number}"; exit 1; }
             state="$(echo "$pr_json" | jq -r .state)"
-            if [[ "$state" != "OPEN" ]]; then
-              echo "::error::PR #${number} is not open (state: ${state})"
-              exit 1
-            fi
+            [[ "$state" == "OPEN" ]] || { echo "::error::PR #${number} is not open (state: ${state})"; exit 1; }
             target_sha="$(echo "$pr_json" | jq -r .headRefOid)"
           fi
 
+          echo "operation=${operation}" >> "$GITHUB_OUTPUT"
+          echo "number=${number}" >> "$GITHUB_OUTPUT"
           echo "target_sha=${target_sha}" >> "$GITHUB_OUTPUT"
-          echo "Resolved target SHA: ${target_sha}"
 
-      - name: Prepare request
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          operation="${{ steps.validate.outputs.operation }}"
-          number="${{ steps.validate.outputs.number }}"
-          target_sha="${{ steps.resolve.outputs.target_sha }}"
-          repo="${{ github.repository }}"
-          workflow_sha="${{ github.sha }}"
+          op_suffix="issue"
+          [[ "$operation" == "spike" ]] || op_suffix="pr"
 
           mkdir -p artifacts
+          cat > artifacts/request.json <<ENDJSON
+          {
+            "operation": "${operation}-${op_suffix}",
+            "number": ${number},
+            "sha": "${target_sha}",
+            "publish": false
+          }
+          ENDJSON
 
-          if [[ "$operation" == "spike" ]]; then
-            issue_json="$(gh issue view "$number" --json title,body,state,updatedAt)"
-
-            jq -n \
-              --arg schema_version "1" \
-              --arg operation "spike-issue" \
-              --arg repository "$repo" \
-              --argjson number "$number" \
-              --arg issue_title "$(echo "$issue_json" | jq -r .title)" \
-              --arg issue_body "$(echo "$issue_json" | jq -r .body)" \
-              --arg base_sha "$target_sha" \
-              --arg requested_by "${{ github.actor }}" \
-              --arg workflow_sha "$workflow_sha" \
-              --argjson publish false \
-              '{
-                schema_version: $schema_version,
-                operation: $operation,
-                repository: $repository,
-                number: $number,
-                issue_title: $issue_title,
-                issue_body: $issue_body,
-                base_sha: $base_sha,
-                requested_by: $requested_by,
-                workflow_sha: $workflow_sha,
-                publish: $publish
-              }' > artifacts/request.json
-          else
-            pr_json="$(gh pr view "$number" --json title,body,state,headRefOid,baseRefOid,isDraft,author,labels,reviewDecision)"
-
-            reviews_json="$(gh api "repos/${repo}/pulls/${number}/reviews" \
-              --jq '[.[] | {author: .user.login, state: .state, body: .body, submitted_at: .submitted_at}]' 2>/dev/null || echo '[]')"
-
-            comments_json="$(gh api "repos/${repo}/issues/${number}/comments" \
-              --jq '[.[] | {author: .user.login, body: .body, created_at: .created_at, id: .id}]' 2>/dev/null || echo '[]')"
-
-            review_comments_json="$(gh api "repos/${repo}/pulls/${number}/comments" \
-              --jq '[.[] | {author: .user.login, body: .body, path: .path, line: .line, created_at: .created_at, id: .id}]' 2>/dev/null || echo '[]')"
-
-            checks_json="$(gh pr checks "$number" --json name,state,conclusion 2>/dev/null || echo '[]')"
-
-            labels_json="$(echo "$pr_json" | jq '[.labels[].name]')"
-
-            jq -n \
-              --arg schema_version "1" \
-              --arg operation "revise-pr" \
-              --arg repository "$repo" \
-              --argjson number "$number" \
-              --arg base_sha "$(echo "$pr_json" | jq -r .baseRefOid)" \
-              --arg head_sha "$target_sha" \
-              --arg pr_body "$(echo "$pr_json" | jq -r .body)" \
-              --argjson reviews "$reviews_json" \
-              --argjson unresolved_threads "$review_comments_json" \
-              --argjson comments "$comments_json" \
-              --argjson check_summary "$checks_json" \
-              --argjson labels "$labels_json" \
-              --arg requested_by "${{ github.actor }}" \
-              --arg workflow_sha "$workflow_sha" \
-              --argjson publish false \
-              '{
-                schema_version: $schema_version,
-                operation: $operation,
-                repository: $repository,
-                number: $number,
-                base_sha: $base_sha,
-                head_sha: $head_sha,
-                pr_body: $pr_body,
-                reviews: $reviews,
-                unresolved_threads: $unresolved_threads,
-                comments: $comments,
-                check_summary: $check_summary,
-                labels: $labels,
-                requested_by: $requested_by,
-                workflow_sha: $workflow_sha,
-                publish: $publish
-              }' > artifacts/request.json
-          fi
-
-          echo "Request prepared:"
-          jq . artifacts/request.json
+          echo "Request:"
+          cat artifacts/request.json
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -204,11 +109,7 @@ jobs:
           set -euo pipefail
           actual="$(git rev-parse HEAD)"
           expected="${{ needs.prepare.outputs.target_sha }}"
-          if [[ "$actual" != "$expected" ]]; then
-            echo "::error::SHA mismatch: expected ${expected}, got ${actual}"
-            exit 1
-          fi
-          echo "Checkout verified: ${actual}"
+          [[ "$actual" == "$expected" ]] || { echo "::error::SHA mismatch: expected ${expected}, got ${actual}"; exit 1; }
 
       - name: Authenticate to Google Cloud
         id: auth
@@ -218,8 +119,7 @@ jobs:
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Install Claude Code
-        run: |
-          npm install -g @anthropic-ai/claude-code@latest
+        run: npm install -g @anthropic-ai/claude-code@latest
 
       - name: Generate GitHub App token
         id: app-token
@@ -238,11 +138,8 @@ jobs:
           set -euo pipefail
 
           operation="${{ needs.prepare.outputs.operation }}"
-
-          case "$operation" in
-            spike) skill="spike-issue" ;;
-            revise) skill="revise-pr" ;;
-          esac
+          skill="spike-issue"
+          [[ "$operation" == "spike" ]] || skill="revise-pr"
 
           mkdir -p artifacts
 
@@ -250,25 +147,11 @@ jobs:
             --print \
             --dangerously-skip-permissions \
             --max-turns 80 \
-            -p "Read AGENTS.md for context. Then follow the instructions in the ${skill} skill exactly. The request is at artifacts/request.json. Write results to the artifacts/ directory." \
+            -p "Read AGENTS.md for context. Then follow the ${skill} skill exactly. The request is at artifacts/request.json. Write results to artifacts/." \
             || true
 
           if [[ ! -f artifacts/result.json ]]; then
-            jq -n \
-              --arg status "terminal_failure" \
-              --arg operation "${{ needs.prepare.outputs.operation }}-$( [[ "$operation" == "spike" ]] && echo "issue" || echo "pr" )" \
-              --arg repository "${{ github.repository }}" \
-              --argjson number "${{ needs.prepare.outputs.number }}" \
-              --arg summary "Agent did not produce result.json" \
-              '{
-                schema_version: "1",
-                status: $status,
-                operation: $operation,
-                repository: $repository,
-                number: $number,
-                summary: $summary
-              }' > artifacts/result.json
-
+            echo '{"status":"terminal_failure","summary":"Agent did not produce result.json"}' > artifacts/result.json
             echo "No results" > artifacts/summary.md
           fi
 
@@ -295,12 +178,6 @@ jobs:
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: request
-          path: artifacts
-        continue-on-error: true
-
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
           name: result
           path: artifacts
         continue-on-error: true
@@ -311,7 +188,7 @@ jobs:
 
           operation="${{ needs.prepare.outputs.operation }}"
           number="${{ needs.prepare.outputs.number }}"
-          target_sha="${{ needs.prepare.outputs.target_sha }}"
+          sha="${{ needs.prepare.outputs.target_sha }}"
 
           {
             echo "## Collector Agent Result"
@@ -320,15 +197,13 @@ jobs:
             echo "|---|---|"
             echo "| Operation | \`${operation}\` |"
             echo "| Number | #${number} |"
-            echo "| Target SHA | \`${target_sha}\` |"
+            echo "| SHA | \`${sha}\` |"
 
             if [[ -f artifacts/result.json ]]; then
               status="$(jq -r .status artifacts/result.json 2>/dev/null || echo unknown)"
               summary="$(jq -r .summary artifacts/result.json 2>/dev/null || echo "")"
               echo "| Status | \`${status}\` |"
-              if [[ -n "$summary" && "$summary" != "null" ]]; then
-                echo "| Summary | ${summary} |"
-              fi
+              [[ -z "$summary" || "$summary" == "null" ]] || echo "| Summary | ${summary} |"
             else
               echo "| Status | \`no result\` |"
             fi
@@ -339,15 +214,5 @@ jobs:
               echo "### Agent Summary"
               echo ""
               cat artifacts/summary.md
-            fi
-
-            if [[ -f artifacts/change.patch ]]; then
-              patch_lines="$(wc -l < artifacts/change.patch | tr -d ' ')"
-              if [[ "$patch_lines" -gt 0 ]]; then
-                echo ""
-                echo "### Patch"
-                echo ""
-                echo "Patch produced: ${patch_lines} lines. Download from artifacts."
-              fi
             fi
           } >> "$GITHUB_STEP_SUMMARY"

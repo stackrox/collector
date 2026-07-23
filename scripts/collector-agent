@@ -39,10 +39,6 @@ require_command() {
     command -v "$1" >/dev/null 2>&1 || die "$1 is required but not found" "$EXIT_TERMINAL"
 }
 
-validate_number() {
-    [[ "$1" =~ ^[0-9]+$ ]] || die "number must be numeric, got: $1"
-}
-
 # Parse arguments
 [[ $# -ge 2 ]] || { usage >&2; exit "$EXIT_INVALID"; }
 
@@ -64,224 +60,103 @@ case "$OPERATION" in
     *) die "unknown operation: $OPERATION (expected spike or revise)" ;;
 esac
 
-validate_number "$NUMBER"
+[[ "$NUMBER" =~ ^[0-9]+$ ]] || die "number must be numeric, got: $NUMBER"
 "$DRY_RUN" || die "--dry-run is required (publish mode not yet supported)"
 
 require_command gh
 require_command git
 require_command claude
-require_command jq
 
 cd "$REPO_DIR"
 git rev-parse --git-dir >/dev/null 2>&1 || die "not a git repository: $REPO_DIR"
 
-REPO="$(gh repo view --json nameWithOwner --jq .nameWithOwner 2>/dev/null)" \
-    || die "could not determine repository (gh auth or network issue)"
+# Validate the target exists and is actionable
+validate_target() {
+    local op="$1" number="$2"
 
-WORKFLOW_SHA="$(git rev-parse HEAD)"
+    if [[ "$op" == "spike" ]]; then
+        local state
+        state="$(gh issue view "$number" --json state --jq .state 2>/dev/null)" \
+            || die "could not fetch issue #${number}"
+        [[ "$state" != "CLOSED" ]] || die "issue #${number} is closed"
+    else
+        local state
+        state="$(gh pr view "$number" --json state --jq .state 2>/dev/null)" \
+            || die "could not fetch PR #${number}"
+        [[ "$state" == "OPEN" ]] || die "PR #${number} is not open (state: ${state})"
+    fi
+}
+
+resolve_sha() {
+    local op="$1" number="$2"
+
+    if [[ "$op" == "spike" ]]; then
+        git rev-parse HEAD
+    else
+        gh pr view "$number" --json headRefOid --jq .headRefOid
+    fi
+}
+
+validate_target "$OPERATION" "$NUMBER"
+
+SHA="$(resolve_sha "$OPERATION" "$NUMBER")"
 
 mkdir -p "$ARTIFACTS_DIR"
 
-prepare_spike_request() {
-    local number="$1"
-
-    echo "Preparing spike request for issue #${number}..."
-
-    local issue_json
-    issue_json="$(gh issue view "$number" --json title,body,state,updatedAt 2>/dev/null)" \
-        || die "could not fetch issue #${number}"
-
-    local state
-    state="$(echo "$issue_json" | jq -r .state)"
-    [[ "$state" != "CLOSED" ]] || die "issue #${number} is closed"
-
-    local base_sha
-    base_sha="$(git rev-parse HEAD)"
-
-    jq -n \
-        --arg schema_version "1" \
-        --arg operation "spike-issue" \
-        --arg repository "$REPO" \
-        --argjson number "$number" \
-        --arg issue_title "$(echo "$issue_json" | jq -r .title)" \
-        --arg issue_body "$(echo "$issue_json" | jq -r .body)" \
-        --arg base_sha "$base_sha" \
-        --arg requested_by "$(gh api user --jq .login 2>/dev/null || echo unknown)" \
-        --arg workflow_sha "$WORKFLOW_SHA" \
-        --argjson publish false \
-        '{
-            schema_version: $schema_version,
-            operation: $operation,
-            repository: $repository,
-            number: $number,
-            issue_title: $issue_title,
-            issue_body: $issue_body,
-            base_sha: $base_sha,
-            requested_by: $requested_by,
-            workflow_sha: $workflow_sha,
-            publish: $publish
-        }' > "${ARTIFACTS_DIR}/request.json"
+# Minimal request — the agent reads everything else via gh
+cat > "${ARTIFACTS_DIR}/request.json" <<ENDJSON
+{
+  "operation": "${OPERATION}-$( [[ "$OPERATION" == "spike" ]] && echo "issue" || echo "pr" )",
+  "number": ${NUMBER},
+  "sha": "${SHA}",
+  "publish": false
 }
+ENDJSON
 
-prepare_revise_request() {
-    local number="$1"
-
-    echo "Preparing revise request for PR #${number}..."
-
-    local pr_json
-    pr_json="$(gh pr view "$number" --json title,body,state,headRefOid,baseRefOid,isDraft,author,labels,reviewDecision 2>/dev/null)" \
-        || die "could not fetch PR #${number}"
-
-    local state
-    state="$(echo "$pr_json" | jq -r .state)"
-    [[ "$state" == "OPEN" ]] || die "PR #${number} is not open (state: ${state})"
-
-    local head_sha
-    head_sha="$(echo "$pr_json" | jq -r .headRefOid)"
-    local base_sha
-    base_sha="$(echo "$pr_json" | jq -r .baseRefOid)"
-
-    local reviews_json
-    reviews_json="$(gh api "repos/${REPO}/pulls/${number}/reviews" --jq '[.[] | {author: .user.login, state: .state, body: .body, submitted_at: .submitted_at}]' 2>/dev/null || echo '[]')"
-
-    local comments_json
-    comments_json="$(gh api "repos/${REPO}/issues/${number}/comments" --jq '[.[] | {author: .user.login, body: .body, created_at: .created_at, id: .id}]' 2>/dev/null || echo '[]')"
-
-    local review_comments_json
-    review_comments_json="$(gh api "repos/${REPO}/pulls/${number}/comments" --jq '[.[] | {author: .user.login, body: .body, path: .path, line: .line, created_at: .created_at, id: .id, in_reply_to_id: .in_reply_to_id}]' 2>/dev/null || echo '[]')"
-
-    local checks_json
-    checks_json="$(gh pr checks "$number" --json name,state,conclusion 2>/dev/null || echo '[]')"
-
-    local labels_json
-    labels_json="$(echo "$pr_json" | jq '[.labels[].name]')"
-
-    jq -n \
-        --arg schema_version "1" \
-        --arg operation "revise-pr" \
-        --arg repository "$REPO" \
-        --argjson number "$number" \
-        --arg base_sha "$base_sha" \
-        --arg head_sha "$head_sha" \
-        --arg pr_body "$(echo "$pr_json" | jq -r .body)" \
-        --argjson reviews "$reviews_json" \
-        --argjson unresolved_threads "$review_comments_json" \
-        --argjson comments "$comments_json" \
-        --argjson check_summary "$checks_json" \
-        --argjson labels "$labels_json" \
-        --arg requested_by "$(gh api user --jq .login 2>/dev/null || echo unknown)" \
-        --arg workflow_sha "$WORKFLOW_SHA" \
-        --argjson publish false \
-        '{
-            schema_version: $schema_version,
-            operation: $operation,
-            repository: $repository,
-            number: $number,
-            base_sha: $base_sha,
-            head_sha: $head_sha,
-            pr_body: $pr_body,
-            reviews: $reviews,
-            unresolved_threads: $unresolved_threads,
-            comments: $comments,
-            check_summary: $check_summary,
-            labels: $labels,
-            requested_by: $requested_by,
-            workflow_sha: $workflow_sha,
-            publish: $publish
-        }' > "${ARTIFACTS_DIR}/request.json"
-}
-
-run_agent() {
-    local operation="$1"
-    local skill
-
-    case "$operation" in
-        spike) skill="spike-issue" ;;
-        revise) skill="revise-pr" ;;
-    esac
-
-    echo "Running ${skill} (dry-run)..."
-    echo "Request: ${ARTIFACTS_DIR}/request.json"
-    echo ""
-
-    claude \
-        --print \
-        --dangerously-skip-permissions \
-        --max-turns 80 \
-        -p "Read AGENTS.md for context. Then follow the instructions in the ${skill} skill exactly. The request is at artifacts/request.json. Write results to the artifacts/ directory."
-
-    echo ""
-}
-
-validate_result() {
-    local status
-
-    if [[ ! -f "${ARTIFACTS_DIR}/result.json" ]]; then
-        echo "error: result.json was not produced" >&2
-        return 1
-    fi
-
-    status="$(jq -r .status "${ARTIFACTS_DIR}/result.json" 2>/dev/null)" || {
-        echo "error: result.json is not valid JSON" >&2
-        return 1
-    }
-
-    echo "Result status: ${status}"
-    echo "Result file: ${ARTIFACTS_DIR}/result.json"
-
-    if [[ -f "${ARTIFACTS_DIR}/summary.md" ]]; then
-        echo "Summary file: ${ARTIFACTS_DIR}/summary.md"
-    else
-        echo "warning: summary.md was not produced" >&2
-    fi
-
-    if [[ -f "${ARTIFACTS_DIR}/change.patch" ]]; then
-        local patch_lines
-        patch_lines="$(wc -l < "${ARTIFACTS_DIR}/change.patch" | tr -d ' ')"
-        echo "Patch file: ${ARTIFACTS_DIR}/change.patch (${patch_lines} lines)"
-    else
-        echo "Patch file: none"
-    fi
-
-    case "$status" in
-        complete)        return "$EXIT_COMPLETE" ;;
-        blocked)         return "$EXIT_BLOCKED" ;;
-        transient_failure) return "$EXIT_TRANSIENT" ;;
-        terminal_failure)  return "$EXIT_TERMINAL" ;;
-        *) echo "error: unknown status: ${status}" >&2; return "$EXIT_TERMINAL" ;;
-    esac
-}
-
-cleanup() {
-    echo ""
-    echo "Cleaning up..."
-    git checkout -- . 2>/dev/null || true
-    git clean -fd cmake-build 2>/dev/null || true
-}
-
-trap cleanup EXIT
-
-case "$OPERATION" in
-    spike)  prepare_spike_request "$NUMBER" ;;
-    revise) prepare_revise_request "$NUMBER" ;;
-esac
+SKILL="$( [[ "$OPERATION" == "spike" ]] && echo "spike-issue" || echo "revise-pr" )"
 
 echo ""
 echo "=== Collector Agent ==="
 echo "Operation: ${OPERATION}"
 echo "Number: ${NUMBER}"
-echo "Repository: ${REPO}"
+echo "SHA: ${SHA}"
 echo "Dry-run: ${DRY_RUN}"
-echo "Artifacts: ${ARTIFACTS_DIR}"
 echo "======================="
 echo ""
 
-run_agent "$OPERATION"
+claude \
+    --print \
+    --dangerously-skip-permissions \
+    --max-turns 80 \
+    -p "Read AGENTS.md for context. Then follow the ${SKILL} skill exactly. The request is at artifacts/request.json. Write results to artifacts/."
 
 echo ""
-echo "=== Result ==="
-validate_result
-exit_code=$?
 
+# Validate result
+if [[ ! -f "${ARTIFACTS_DIR}/result.json" ]]; then
+    echo "error: result.json was not produced" >&2
+    exit "$EXIT_TERMINAL"
+fi
+
+STATUS="$(python3 -c "import json; print(json.load(open('${ARTIFACTS_DIR}/result.json'))['status'])" 2>/dev/null)" || {
+    echo "error: result.json is not valid" >&2
+    exit "$EXIT_TERMINAL"
+}
+
+echo "=== Result ==="
+echo "Status: ${STATUS}"
+[[ -f "${ARTIFACTS_DIR}/summary.md" ]] && echo "Summary: ${ARTIFACTS_DIR}/summary.md"
+[[ -f "${ARTIFACTS_DIR}/change.patch" ]] && echo "Patch: ${ARTIFACTS_DIR}/change.patch"
 echo "==============="
-exit "$exit_code"
+
+# Cleanup working tree changes (keep artifacts)
+git checkout -- . 2>/dev/null || true
+git clean -fd cmake-build 2>/dev/null || true
+
+case "$STATUS" in
+    complete)          exit "$EXIT_COMPLETE" ;;
+    blocked)           exit "$EXIT_BLOCKED" ;;
+    transient_failure) exit "$EXIT_TRANSIENT" ;;
+    terminal_failure)  exit "$EXIT_TERMINAL" ;;
+    *)                 exit "$EXIT_TERMINAL" ;;
+esac

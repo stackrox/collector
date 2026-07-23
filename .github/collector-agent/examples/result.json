@@ -1,25 +1,15 @@
 {
-  "schema_version": "1",
-  "status": "complete",
-  "operation": "revise-pr",
-  "repository": "stackrox/collector",
+  "status": "blocked",
   "number": 3381,
-  "observed_head_sha": "4b9e0a0c88bd3920da1f8186ee41acaff6b26878",
-  "summary": "Simplified workflow by removing Slack integration and scheduler.",
+  "sha": "4b9e0a0c88bd3920da1f8186ee41acaff6b26878",
+  "summary": "All actionable feedback touches workflow infrastructure (excluded).",
   "feedback_classification": {
     "actionable": ["reviewer asked to simplify the workflow"],
-    "informational": [],
+    "informational": ["overall sentiment: PR is over-engineered"],
     "bot": ["codecov reported 72% coverage"],
     "addressed": [],
     "ambiguous": []
   },
-  "addressed_feedback": ["removed Slack notification job and scheduler trigger"],
-  "changed_files": [".github/workflows/analyze-and-notify.yml"],
-  "validation": [
-    {"step": "build", "result": "pass"},
-    {"step": "test", "result": "pass", "detail": "17 tests passed"}
-  ],
-  "risks": ["Workflow change only — no production code affected"],
-  "actionable_feedback": [],
-  "informational_feedback": []
+  "changed_files": [],
+  "validation": []
 }

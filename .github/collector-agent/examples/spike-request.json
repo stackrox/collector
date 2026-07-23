@@ -1,12 +1,6 @@
 {
-  "schema_version": "1",
   "operation": "spike-issue",
-  "repository": "stackrox/collector",
   "number": 3424,
-  "issue_title": "Example: add unit test for configuration edge case",
-  "issue_body": "The ExternalIPsConfig parser does not handle empty input. Add a unit test that verifies the behavior.",
-  "base_sha": "7a77fa6bb0000000000000000000000000000000",
-  "requested_by": "example-user",
-  "workflow_sha": "7a77fa6bb0000000000000000000000000000000",
+  "sha": "7a77fa6bb0000000000000000000000000000000",
   "publish": false
 }
