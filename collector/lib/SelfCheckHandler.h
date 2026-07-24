@@ -16,6 +16,13 @@ class EventExtractor;
 
 namespace collector {
 
+/// Base for startup self-check handlers. Collector forks a known binary
+/// and these handlers wait for matching BPF events to reach collector,
+/// verifying the probe loaded correctly. Returns FINISHED on match or
+/// timeout (which logs a warning) to remove itself from the pipeline.
+///
+/// Matches on process name + exe path rather than PID because the driver
+/// reports host-namespace PIDs while the fork gives container-namespace PIDs.
 class SelfCheckHandler : public SignalHandler {
  public:
   SelfCheckHandler() {}
@@ -47,6 +54,8 @@ class SelfCheckHandler : public SignalHandler {
   bool hasTimedOut();
 };
 
+/// Verifies BPF process-event delivery by watching for execve events
+/// from the self-check binary.
 class SelfCheckProcessHandler : public SelfCheckHandler {
  public:
   SelfCheckProcessHandler(sinsp* inspector) : SelfCheckHandler(inspector) {
@@ -63,6 +72,8 @@ class SelfCheckProcessHandler : public SelfCheckHandler {
   virtual Result HandleSignal(sinsp_evt* evt) override;
 };
 
+/// Verifies BPF network-event delivery by watching for connection
+/// lifecycle events from the self-check binary on the expected port.
 class SelfCheckNetworkHandler : public SelfCheckHandler {
  public:
   SelfCheckNetworkHandler(sinsp* inspector) : SelfCheckHandler(inspector) {

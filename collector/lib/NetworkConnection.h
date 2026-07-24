@@ -344,6 +344,10 @@ std::ostream& operator<<(std::ostream& os, L4Proto l4proto);
 using L4ProtoPortPair = ::std::pair<L4Proto, uint16_t>;
 size_t Hash(const L4ProtoPortPair& pp);
 
+/// A listening endpoint within a container. The originator tracks which
+/// process opened the listening socket (PLOP = Processes Listening On Ports).
+/// Originator equality uses pointer comparison (not value comparison) because
+/// ProcessStore guarantees a single IProcess instance per process.
 class ContainerEndpoint {
  public:
   ContainerEndpoint(std::string container, const Endpoint& endpoint, L4Proto l4proto, std::shared_ptr<IProcess> originator)
@@ -377,6 +381,9 @@ class ContainerEndpoint {
 
 std::ostream& operator<<(std::ostream& os, const ContainerEndpoint& container_endpoint);
 
+/// Represents a network connection observed by the BPF probe or /proc scraper.
+/// The l4proto and is_server flag are packed into a single byte (flags_) to
+/// reduce memory footprint, since ConnMap can hold millions of these objects.
 class Connection {
  public:
   Connection() : flags_(0) {}

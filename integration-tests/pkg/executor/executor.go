@@ -46,6 +46,9 @@ type ExecOptions struct {
 	Detach        bool
 }
 
+// Executor abstracts container runtime operations so the same test suite
+// can run against Docker (via Docker API), Podman, or CRI (containerd/crio).
+// The runtime is selected based on config.RuntimeInfo().Command at test startup.
 type Executor interface {
 	PullImage(image string) error
 	IsContainerRunning(container string) (bool, error)
@@ -69,6 +72,9 @@ type CommandBuilder interface {
 	ExecCommand(args ...string) *exec.Cmd
 }
 
+// New creates the appropriate executor based on the configured container
+// runtime. Docker and Podman use the Docker-compatible API client, while
+// CRI (containerd, crio) uses the CRI gRPC API directly.
 func New() (Executor, error) {
 	command := config.RuntimeInfo().Command
 	if command == "docker" || command == "podman" {

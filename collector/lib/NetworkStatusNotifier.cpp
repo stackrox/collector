@@ -132,6 +132,8 @@ void NetworkStatusNotifier::Run() {
     } else {
       CLOG(ERROR) << "Error streaming network connection info: " << status.error_message();
     }
+    // Back off before reconnecting to avoid tight reconnect loops when
+    // Sensor is temporarily unavailable.
     next_attempt = std::chrono::system_clock::now() + std::chrono::seconds(10);
   }
 
@@ -403,10 +405,10 @@ sensor::NetworkAddress* NetworkStatusNotifier::EndpointToProto(const collector::
     return nullptr;
   }
 
-  // Note: We are sending the address data and network data as separate fields for
-  // backward compatibility, although, network field can handle both.
-  // Sensor tries to match address to known cluster entities. If that fails, it tries
-  // to match the network to known external networks,
+  // Address data and network prefix are sent as separate proto fields for backward
+  // compatibility with older Sensor versions. The ip_network field could encode both,
+  // but Sensor uses a two-phase lookup: first matching address_data against known
+  // cluster entities, then falling back to ip_network for external network matching.
 
   auto* addr_proto = Allocate<sensor::NetworkAddress>();
   auto addr_length = endpoint.address().length();

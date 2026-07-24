@@ -14,6 +14,14 @@
 
 namespace collector {
 
+/// Top-level service that owns and orchestrates all collector subsystems:
+/// system inspector (BPF event capture), network status notifier (periodic
+/// /proc scraping + delta reporting), configuration hot-reload, HTTP
+/// introspection endpoints (civetweb), and Prometheus metrics export.
+///
+/// Lifecycle: construct → InitKernel() → RunForever() → destructor.
+/// RunForever() blocks in the sinsp event loop until the atomic control
+/// variable signals STOP_COLLECTOR.
 class CollectorService {
  public:
   CollectorService(const CollectorService&) = delete;

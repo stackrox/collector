@@ -9,6 +9,16 @@
 #include <sys/select.h>
 #include <sys/wait.h>
 
+// Self-check binary: forks a child (listener) and parent (connector) to
+// generate a known TCP connection event. SelfCheckHandlers in collector
+// watch for the corresponding BPF events to verify the driver loaded
+// correctly. If the events don't arrive within the timeout, a warning
+// is logged (collector continues running).
+//
+// This is a separate binary (not in-process) so that it appears as a
+// distinct process in the BPF event stream, allowing SelfCheckHandlers
+// to match it by executable path and filter it from normal signal output.
+
 const int g_connection_retries = 5;
 const int g_timeout_seconds = 10;
 const int g_sleep_seconds = 1;
@@ -45,7 +55,7 @@ bool startListeningPort(uint16_t port) {
   FD_ZERO(&sockets);
   FD_SET(listener, &sockets);
 
-  if (select(1, &sockets, NULL, NULL, &timeout) <= 0) {
+  if (select(listener + 1, &sockets, NULL, NULL, &timeout) <= 0) {
     // timeout or error
     goto err;
   }

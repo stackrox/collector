@@ -10,6 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// ThreadsTestSuite verifies that collector's BPF probes correctly track
+// thread creation (including clone3) and attribute exec calls made from
+// threads back to the parent process. Without correct thread tracking,
+// an exec from a thread would report the exec target binary instead of
+// the original process, breaking process lineage.
 type ThreadsTestSuite struct {
 	IntegrationTestSuiteBase
 }

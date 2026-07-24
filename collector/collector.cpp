@@ -44,11 +44,17 @@ extern "C" {
 #include "Logging.h"
 #include "Utility.h"
 
+// Sensor connection timeout: 30 polls × 1s each = 30s before giving up.
+// This is a startup-only timeout; once connected, the gRPC channel handles
+// reconnection internally.
 static const int MAX_GRPC_CONNECTION_POLLS = 30;
 
 using namespace collector;
 
+// Global control variable shared with CollectorService via pointer.
+// Must be lock-free for safe use inside signal handlers.
 static std::atomic<ControlValue> g_control(ControlValue::RUN);
+// Stores the signal number that triggered shutdown, for logging purposes.
 static std::atomic<int> g_signum(0);
 
 static void
@@ -115,6 +121,9 @@ void gplNotice() {
 }
 
 void initialChecks() {
+  // The control variable is written from signal handlers, so it must be
+  // lock-free to avoid deadlocks. This should always succeed on modern
+  // architectures, but we check defensively.
   if (!g_control.is_lock_free()) {
     CLOG(FATAL) << "Internal error: could not create a lock-free control variable.";
   }
@@ -158,6 +167,10 @@ int main(int argc, char** argv) {
 
   CollectorConfig config;
   config.InitCollectorConfig(args);
+  // Load the runtime config file once at startup. The ConfigLoader inside
+  // CollectorService will watch for changes via inotify after this point.
+  // FILE_NOT_FOUND is not fatal (the config file is optional), but
+  // PARSE_ERROR means the file exists but is malformed.
   if (ConfigLoader(config).LoadConfiguration() == collector::ConfigLoader::PARSE_ERROR) {
     CLOG(FATAL) << "Unable to parse configuration file";
   }
@@ -184,7 +197,10 @@ int main(int argc, char** argv) {
     CLOG(INFO) << "GRPC is disabled. Specify GRPC_SERVER='server addr' env and signalFormat = 'signal_summary' and  signalOutput = 'grpc'";
   }
 
-  // Register signal handlers
+  // Register signal handlers after gRPC is connected but before RunForever(),
+  // so that crash signals produce stack traces (AbortHandler) and graceful
+  // shutdown signals (SIGTERM/SIGINT) set the atomic control variable rather
+  // than terminating immediately.
   signal(SIGABRT, AbortHandler);
   signal(SIGSEGV, AbortHandler);
   signal(SIGTERM, ShutdownHandler);

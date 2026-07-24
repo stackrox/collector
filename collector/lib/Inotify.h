@@ -15,6 +15,12 @@
 
 namespace collector {
 
+/// RAII wrapper around Linux inotify for zero-polling-overhead filesystem
+/// change detection. Used by ConfigLoader to react to runtime config file
+/// updates (e.g. Kubernetes ConfigMap mounts) without busy-waiting.
+/// Errors and timeouts are returned as variant members of InotifyResult
+/// so callers can use a simple switch instead of exception handling.
+
 /// Signal a system error prevented operations with inotify.
 class InotifyError : public std::exception {
  public:

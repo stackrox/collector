@@ -1,3 +1,10 @@
+# Top-level Makefile for the collector repository.
+#
+# CMake handles C++ compilation, but the overall build also involves Docker
+# image assembly, builder container lifecycle, and integration test
+# orchestration — tasks better expressed as Make targets. The builder
+# container provides a reproducible toolchain so developers don't need
+# to install C++ deps locally.
 BASE_PATH = .
 include Makefile-constants.mk
 
@@ -72,6 +79,9 @@ ci-all-tests: ci-benchmarks ci-integration-tests
 
 .PHONY: start-builder
 start-builder: builder teardown-builder
+	# --cap-add sys_ptrace: needed for address sanitizer and debugging.
+	# -v $(CURDIR):$(CURDIR):Z : same absolute path inside the container keeps
+	# CMake build artifacts consistent. :Z relabels for SELinux on RHEL/Fedora.
 	docker run -id \
 		--name $(COLLECTOR_BUILDER_NAME) \
 		--pull never \

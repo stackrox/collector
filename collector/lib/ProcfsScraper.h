@@ -10,6 +10,11 @@
 
 namespace collector {
 
+/// Scrapes /proc/net/tcp etc. for active connections. BPF only sees
+/// connections established while collector is running — the scraper fills
+/// the gap by discovering pre-existing connections and merging them into
+/// ConnectionTracker so Sensor gets a complete picture.
+
 // Abstract interface for a ConnScraper. Useful to inject testing implementation.
 class IConnScraper {
  public:

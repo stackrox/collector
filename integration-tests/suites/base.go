@@ -37,6 +37,15 @@ const (
 	defaultWaitTickSeconds = 1 * time.Second
 )
 
+// IntegrationTestSuiteBase provides shared setup/teardown and helper methods
+// for all integration test suites. It manages the lifecycle of three components:
+//   - executor: abstracts container runtime operations (Docker API, K8s, or CRI)
+//   - collector: the collector container under test
+//   - sensor: a mock gRPC server that receives process signals and network events
+//
+// Components are lazily initialized on first access so individual suites can
+// customize them before startup. Container resource stats are collected in the
+// background during each test for performance analysis.
 type IntegrationTestSuiteBase struct {
 	suite.Suite
 	executor  executor.Executor
@@ -96,12 +105,14 @@ func (s *IntegrationTestSuiteBase) StartCollector(disableGRPC bool, options *col
 		// phase.
 	}
 
-	// wait for the canary process to guarantee collector is started
+	// The self-check binary's events are intercepted by SelfCheckHandlers
+	// and never forwarded to the mock sensor over gRPC, so we can't use
+	// them to verify startup. Instead, we run a canary process ("echo")
+	// inside the collector container and wait for the mock sensor to
+	// receive it — this proves the full pipeline (BPF → sinsp →
+	// ProcessSignalHandler → gRPC → mock sensor) is operational.
 	selfCheckOk := s.Sensor().WaitProcessesN(
 		s.Collector().ContainerID(), 30*time.Second, 1, func() {
-			// Self-check process is not going to be sent via GRPC, instead
-			// create at least one canary process to make sure everything is
-			// fine.
 			log.Info("Spawn a canary process")
 			_, err = s.execContainer("collector", []string{"echo"}, false)
 			s.Require().NoError(err)
