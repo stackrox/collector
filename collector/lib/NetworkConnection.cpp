@@ -11,6 +11,9 @@
 namespace collector {
 
 bool Address::IsPublic() const {
+  if (family_ == Family::UNKNOWN) {
+    return false;
+  }
   for (const auto& net : PrivateNetworks(family_)) {
     if (net.Contains(*this)) {
       return false;
