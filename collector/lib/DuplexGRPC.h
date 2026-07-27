@@ -8,7 +8,16 @@
 
 #include "Utility.h"
 
-// This file defines an alternative client interface for bidirectional GRPC streams. The interface supports:
+// Alternative client interface for bidirectional gRPC streams.
+//
+// gRPC's generated stubs expose only a raw async completion-queue API that
+// requires tag management and separate reader/writer threads. Collector needs
+// to send events while simultaneously receiving config updates on the same
+// stream from a single logical thread. DuplexClient wraps the completion
+// queue behind a poll()-style interface so callers can intermix sync and async
+// operations with deadlines, without manually juggling tags or extra threads.
+//
+// The interface supports:
 // - simultaneous reading and writing without multithreading or low-level completion queue/tag work.
 // - both sync and async operations can be used at the same time.
 // - all sync operations accept a deadline.

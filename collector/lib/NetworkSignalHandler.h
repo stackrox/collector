@@ -16,6 +16,12 @@ namespace system_inspector {
 class EventExtractor;
 }
 
+/// Translates sinsp socket-lifecycle events (connect, accept, close, etc.)
+/// into ConnectionTracker ADD/REMOVE updates. The tracker then aggregates,
+/// deduplicates, and periodically flushes flows to Sensor.
+///
+/// send/recv tracking is optional (track_send_recv_) — enabled to capture
+/// connectionless UDP flows that have no connect/accept lifecycle.
 class NetworkSignalHandler final : public SignalHandler {
  public:
   explicit NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker, system_inspector::Stats* stats);

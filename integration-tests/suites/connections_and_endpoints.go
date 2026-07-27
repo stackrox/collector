@@ -24,6 +24,11 @@ type Container struct {
 	ExpectedEndpoints []types.EndpointInfo
 }
 
+// ConnectionsAndEndpointsTestSuite exercises TCP/UDP connection and endpoint
+// tracking with a socat-based server and client. Afterglow is disabled to
+// get deterministic connection state transitions. Tests verify both the
+// connection events and the PLOP (Processes Listening On Ports) endpoint
+// events are correctly reported to Sensor.
 type ConnectionsAndEndpointsTestSuite struct {
 	IntegrationTestSuiteBase
 	Server Container

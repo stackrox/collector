@@ -15,6 +15,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// ProcessListeningOnPortTestSuite tests the dynamic lifecycle of listening
+// ports: open → detected → closed → reported inactive. Unlike
+// ProcessesAndEndpointsTestSuite (which checks static attribution), this
+// suite drives a REST API on the qa-plop container to open and close ports
+// at runtime, verifying that collector emits paired open/close endpoint
+// events with correct timestamps. Afterglow is intentionally not applied
+// to endpoint events, so every state transition must be visible.
 type ProcessListeningOnPortTestSuite struct {
 	IntegrationTestSuiteBase
 	serverContainer string

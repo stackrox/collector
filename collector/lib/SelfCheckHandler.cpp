@@ -32,6 +32,8 @@ bool SelfCheckHandler::hasTimedOut() {
   return now > (start_ + timeout_);
 }
 
+// Returns FINISHED in all terminal paths (match or timeout) so the
+// pipeline removes this handler after startup verification completes.
 SignalHandler::Result SelfCheckProcessHandler::HandleSignal(sinsp_evt* evt) {
   if (hasTimedOut()) {
     CLOG(WARNING) << "Failed to detect any self-check process events within the timeout.";
@@ -46,6 +48,9 @@ SignalHandler::Result SelfCheckProcessHandler::HandleSignal(sinsp_evt* evt) {
   return IGNORED;
 }
 
+// Matches on both the self-check process identity AND the expected
+// server port to avoid false positives from unrelated network
+// activity. FINISHED on match or timeout removes this handler.
 SignalHandler::Result SelfCheckNetworkHandler::HandleSignal(sinsp_evt* evt) {
   if (hasTimedOut()) {
     CLOG(WARNING) << "Failed to detect any self-check networking events within the timeout.";

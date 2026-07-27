@@ -11,8 +11,13 @@
 
 namespace collector {
 
-// ConnStatus encapsulates the status of a connection, comprised of the timestamp when the connection was last seen
-// alive (in microseconds since epoch), and a flag indicating whether the connection is currently active.
+// ConnStatus packs a microsecond timestamp and an active/inactive flag into
+// a single uint64_t. The highest bit stores the active flag; the remaining
+// 63 bits store the timestamp. This compact representation avoids padding
+// overhead in the ConnMap (which can hold millions of entries) and allows
+// MergeFrom to work with a single std::max comparison — since an active
+// connection always has a higher data_ value than an inactive one at the
+// same timestamp, max naturally preserves activity.
 class ConnStatus {
  private:
   static constexpr uint64_t kActiveFlag = 1UL << 63;
