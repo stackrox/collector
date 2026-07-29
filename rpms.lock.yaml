@@ -1621,20 +1621,20 @@ arches:
     name: nettle
     evr: 3.10.1-1.el9
     sourcerpm: nettle-3.10.1-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/o/openssh-9.9p1-7.el9_8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/o/openssh-9.9p1-9.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 431979
-    checksum: sha256:be18971dc20baa2fc820ec357d145bc5f9dbd88fd87e04b4016d8f77183525ae
+    size: 431997
+    checksum: sha256:57fdab98de5639f0f1a4714700eeeae737876a9609ee2c8449bffb489c3c6d96
     name: openssh
-    evr: 9.9p1-7.el9_8
-    sourcerpm: openssh-9.9p1-7.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/o/openssh-clients-9.9p1-7.el9_8.aarch64.rpm
+    evr: 9.9p1-9.el9_8
+    sourcerpm: openssh-9.9p1-9.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/o/openssh-clients-9.9p1-9.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 768861
-    checksum: sha256:37ac77703fc47951b231cab696f52f00485f0811ed893d7c68a038eef81c9d8f
+    size: 769478
+    checksum: sha256:2f1657ebe0b8b96d9ecdfeb709426733d57aa7ec565eb805532d0b1bc9adcb20
     name: openssh-clients
-    evr: 9.9p1-7.el9_8
-    sourcerpm: openssh-9.9p1-7.el9_8.src.rpm
+    evr: 9.9p1-9.el9_8
+    sourcerpm: openssh-9.9p1-9.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/o/openssl-3.5.5-6.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 1541002
@@ -1936,13 +1936,13 @@ arches:
     name: util-linux-core
     evr: 2.37.4-25.el9
     sourcerpm: util-linux-2.37.4-25.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/v/vim-filesystem-8.2.2637-26.el9_8.10.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/v/vim-filesystem-8.2.2637-26.el9_8.13.noarch.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 22399
-    checksum: sha256:9fc9ef3ba0b22a599b2a7b34bd0b025afd5f2623e9132b4ead19e98f9c62e97d
+    size: 22931
+    checksum: sha256:7758bbb54a85bb53aecdbb9c740c4981b2b42cac6df9580414838c6bdbab8dbd
     name: vim-filesystem
-    evr: 2:8.2.2637-26.el9_8.10
-    sourcerpm: vim-8.2.2637-26.el9_8.10.src.rpm
+    evr: 2:8.2.2637-26.el9_8.13
+    sourcerpm: vim-8.2.2637-26.el9_8.13.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/x/xz-libs-5.2.5-8.el9_0.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 94569
@@ -2756,12 +2756,12 @@ arches:
     checksum: sha256:8b25596d58db32cf06c747c764ffc8ae328a9b7efb579d2ba2a302e887b3cf50
     name: nghttp2
     evr: 1.43.0-6.el9_8.1
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/o/openssh-9.9p1-7.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/o/openssh-9.9p1-9.el9_8.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
-    size: 2552961
-    checksum: sha256:3a5a65ba73ffe4f8b08dacb2247f95336dadb2e930eceaeb8746ddc998efe2a6
+    size: 2555730
+    checksum: sha256:38b311178cf42e1611eb250747dee0780e19c41afbdc3b1cd189ddf5d5897acd
     name: openssh
-    evr: 9.9p1-7.el9_8
+    evr: 9.9p1-9.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/o/openssl-3.5.5-6.el9_8.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
     size: 53369050
@@ -2942,12 +2942,12 @@ arches:
     checksum: sha256:6c788387cde9c0fde5481382f3f8416e3ecbcf09c908b409b6c63358b90a399f
     name: util-linux
     evr: 2.37.4-25.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/v/vim-8.2.2637-26.el9_8.10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/v/vim-8.2.2637-26.el9_8.13.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
-    size: 12848850
-    checksum: sha256:7a02f9551582771701da423b81e70efb372f4540448f5712ba8c45a604c05160
+    size: 12856678
+    checksum: sha256:c35d0483fd594ed202397aafa4b97e8321ba99d8d2386e1b5bff53e23b046d95
     name: vim
-    evr: 2:8.2.2637-26.el9_8.10
+    evr: 2:8.2.2637-26.el9_8.13
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/x/xz-5.2.5-8.el9_0.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
     size: 1168293
@@ -4593,20 +4593,20 @@ arches:
     name: nettle
     evr: 3.10.1-1.el9
     sourcerpm: nettle-3.10.1-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/o/openssh-9.9p1-7.el9_8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/o/openssh-9.9p1-9.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 459344
-    checksum: sha256:b9cc1feca459e05b0b195fa751f9f8d2001961d228490b0a111225a53f4c46b0
+    size: 459345
+    checksum: sha256:250b4ca1d479233026b7996acfe3a078e1eb2624bf4f4d69c2dcbec1859e731a
     name: openssh
-    evr: 9.9p1-7.el9_8
-    sourcerpm: openssh-9.9p1-7.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/o/openssh-clients-9.9p1-7.el9_8.ppc64le.rpm
+    evr: 9.9p1-9.el9_8
+    sourcerpm: openssh-9.9p1-9.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/o/openssh-clients-9.9p1-9.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 836414
-    checksum: sha256:7dac2419a7e69b88195151a65523740d7d144486646c0fbe6d82461734a8130e
+    size: 835489
+    checksum: sha256:12bbf8f9506455ab50df66383e08c32b83dd5b4a8afe071f34209c57d95116a5
     name: openssh-clients
-    evr: 9.9p1-7.el9_8
-    sourcerpm: openssh-9.9p1-7.el9_8.src.rpm
+    evr: 9.9p1-9.el9_8
+    sourcerpm: openssh-9.9p1-9.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/o/openssl-3.5.5-6.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 1566179
@@ -4908,13 +4908,13 @@ arches:
     name: util-linux-core
     evr: 2.37.4-25.el9
     sourcerpm: util-linux-2.37.4-25.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/v/vim-filesystem-8.2.2637-26.el9_8.10.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/v/vim-filesystem-8.2.2637-26.el9_8.13.noarch.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 22399
-    checksum: sha256:9fc9ef3ba0b22a599b2a7b34bd0b025afd5f2623e9132b4ead19e98f9c62e97d
+    size: 22931
+    checksum: sha256:7758bbb54a85bb53aecdbb9c740c4981b2b42cac6df9580414838c6bdbab8dbd
     name: vim-filesystem
-    evr: 2:8.2.2637-26.el9_8.10
-    sourcerpm: vim-8.2.2637-26.el9_8.10.src.rpm
+    evr: 2:8.2.2637-26.el9_8.13
+    sourcerpm: vim-8.2.2637-26.el9_8.13.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/x/xz-libs-5.2.5-8.el9_0.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 120233
@@ -5734,12 +5734,12 @@ arches:
     checksum: sha256:8b25596d58db32cf06c747c764ffc8ae328a9b7efb579d2ba2a302e887b3cf50
     name: nghttp2
     evr: 1.43.0-6.el9_8.1
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/o/openssh-9.9p1-7.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/o/openssh-9.9p1-9.el9_8.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
-    size: 2552961
-    checksum: sha256:3a5a65ba73ffe4f8b08dacb2247f95336dadb2e930eceaeb8746ddc998efe2a6
+    size: 2555730
+    checksum: sha256:38b311178cf42e1611eb250747dee0780e19c41afbdc3b1cd189ddf5d5897acd
     name: openssh
-    evr: 9.9p1-7.el9_8
+    evr: 9.9p1-9.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/o/openssl-3.5.5-6.el9_8.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
     size: 53369050
@@ -5920,12 +5920,12 @@ arches:
     checksum: sha256:6c788387cde9c0fde5481382f3f8416e3ecbcf09c908b409b6c63358b90a399f
     name: util-linux
     evr: 2.37.4-25.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/v/vim-8.2.2637-26.el9_8.10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/v/vim-8.2.2637-26.el9_8.13.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
-    size: 12848850
-    checksum: sha256:7a02f9551582771701da423b81e70efb372f4540448f5712ba8c45a604c05160
+    size: 12856678
+    checksum: sha256:c35d0483fd594ed202397aafa4b97e8321ba99d8d2386e1b5bff53e23b046d95
     name: vim
-    evr: 2:8.2.2637-26.el9_8.10
+    evr: 2:8.2.2637-26.el9_8.13
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/x/xz-5.2.5-8.el9_0.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
     size: 1168293
@@ -7571,20 +7571,20 @@ arches:
     name: nettle
     evr: 3.10.1-1.el9
     sourcerpm: nettle-3.10.1-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/o/openssh-9.9p1-7.el9_8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/o/openssh-9.9p1-9.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 428101
-    checksum: sha256:239384b797255208ef9a549521751ac747c495f8af1d9f6cb9e9815741bdefee
+    size: 428188
+    checksum: sha256:3e6abaf2413e00e23055f360f17f315a842ffc25908341531e8cfb094c641ab3
     name: openssh
-    evr: 9.9p1-7.el9_8
-    sourcerpm: openssh-9.9p1-7.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/o/openssh-clients-9.9p1-7.el9_8.s390x.rpm
+    evr: 9.9p1-9.el9_8
+    sourcerpm: openssh-9.9p1-9.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/o/openssh-clients-9.9p1-9.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 747932
-    checksum: sha256:377660d3463a7ec7f5cb09c7312fcb71e89cc61767e451f0eab928546a0be690
+    size: 748105
+    checksum: sha256:6e9a84fe1b5e71ed702ba398df7a2a256f7ee8d2335f6a4369aa21901c7f7492
     name: openssh-clients
-    evr: 9.9p1-7.el9_8
-    sourcerpm: openssh-9.9p1-7.el9_8.src.rpm
+    evr: 9.9p1-9.el9_8
+    sourcerpm: openssh-9.9p1-9.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/o/openssl-3.5.5-6.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 1549454
@@ -7886,13 +7886,13 @@ arches:
     name: util-linux-core
     evr: 2.37.4-25.el9
     sourcerpm: util-linux-2.37.4-25.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/v/vim-filesystem-8.2.2637-26.el9_8.10.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/v/vim-filesystem-8.2.2637-26.el9_8.13.noarch.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 22399
-    checksum: sha256:9fc9ef3ba0b22a599b2a7b34bd0b025afd5f2623e9132b4ead19e98f9c62e97d
+    size: 22931
+    checksum: sha256:7758bbb54a85bb53aecdbb9c740c4981b2b42cac6df9580414838c6bdbab8dbd
     name: vim-filesystem
-    evr: 2:8.2.2637-26.el9_8.10
-    sourcerpm: vim-8.2.2637-26.el9_8.10.src.rpm
+    evr: 2:8.2.2637-26.el9_8.13
+    sourcerpm: vim-8.2.2637-26.el9_8.13.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/x/xz-libs-5.2.5-8.el9_0.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 96039
@@ -8706,12 +8706,12 @@ arches:
     checksum: sha256:8b25596d58db32cf06c747c764ffc8ae328a9b7efb579d2ba2a302e887b3cf50
     name: nghttp2
     evr: 1.43.0-6.el9_8.1
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/o/openssh-9.9p1-7.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/o/openssh-9.9p1-9.el9_8.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
-    size: 2552961
-    checksum: sha256:3a5a65ba73ffe4f8b08dacb2247f95336dadb2e930eceaeb8746ddc998efe2a6
+    size: 2555730
+    checksum: sha256:38b311178cf42e1611eb250747dee0780e19c41afbdc3b1cd189ddf5d5897acd
     name: openssh
-    evr: 9.9p1-7.el9_8
+    evr: 9.9p1-9.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/o/openssl-3.5.5-6.el9_8.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
     size: 53369050
@@ -8892,12 +8892,12 @@ arches:
     checksum: sha256:6c788387cde9c0fde5481382f3f8416e3ecbcf09c908b409b6c63358b90a399f
     name: util-linux
     evr: 2.37.4-25.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/v/vim-8.2.2637-26.el9_8.10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/v/vim-8.2.2637-26.el9_8.13.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
-    size: 12848850
-    checksum: sha256:7a02f9551582771701da423b81e70efb372f4540448f5712ba8c45a604c05160
+    size: 12856678
+    checksum: sha256:c35d0483fd594ed202397aafa4b97e8321ba99d8d2386e1b5bff53e23b046d95
     name: vim
-    evr: 2:8.2.2637-26.el9_8.10
+    evr: 2:8.2.2637-26.el9_8.13
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/x/xz-5.2.5-8.el9_0.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
     size: 1168293
@@ -10536,20 +10536,20 @@ arches:
     name: nettle
     evr: 3.10.1-1.el9
     sourcerpm: nettle-3.10.1-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/o/openssh-9.9p1-7.el9_8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/o/openssh-9.9p1-9.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 442163
-    checksum: sha256:e699c3fd161d4741658320f10064bb82ab7530d07d3d34850142ccc102ce7c82
+    size: 442241
+    checksum: sha256:cd14a09ebe95a8d09a779838bf71f8e05f809cbd1d7ef4553294284d35249a60
     name: openssh
-    evr: 9.9p1-7.el9_8
-    sourcerpm: openssh-9.9p1-7.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/o/openssh-clients-9.9p1-7.el9_8.x86_64.rpm
+    evr: 9.9p1-9.el9_8
+    sourcerpm: openssh-9.9p1-9.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/o/openssh-clients-9.9p1-9.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 798466
-    checksum: sha256:5663973f870ce57e55bb94e94b84ff020d6b24cbaabdca9fed99665f6513c847
+    size: 799148
+    checksum: sha256:2e10d31aa0d2c2aaf521b4b1b46cd76b734a781a9ffaf496f8d39c53f4897705
     name: openssh-clients
-    evr: 9.9p1-7.el9_8
-    sourcerpm: openssh-9.9p1-7.el9_8.src.rpm
+    evr: 9.9p1-9.el9_8
+    sourcerpm: openssh-9.9p1-9.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/o/openssl-3.5.5-6.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 1564334
@@ -10851,13 +10851,13 @@ arches:
     name: util-linux-core
     evr: 2.37.4-25.el9
     sourcerpm: util-linux-2.37.4-25.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/v/vim-filesystem-8.2.2637-26.el9_8.10.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/v/vim-filesystem-8.2.2637-26.el9_8.13.noarch.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 22399
-    checksum: sha256:9fc9ef3ba0b22a599b2a7b34bd0b025afd5f2623e9132b4ead19e98f9c62e97d
+    size: 22931
+    checksum: sha256:7758bbb54a85bb53aecdbb9c740c4981b2b42cac6df9580414838c6bdbab8dbd
     name: vim-filesystem
-    evr: 2:8.2.2637-26.el9_8.10
-    sourcerpm: vim-8.2.2637-26.el9_8.10.src.rpm
+    evr: 2:8.2.2637-26.el9_8.13
+    sourcerpm: vim-8.2.2637-26.el9_8.13.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/x/xz-libs-5.2.5-8.el9_0.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 96649
@@ -11671,12 +11671,12 @@ arches:
     checksum: sha256:8b25596d58db32cf06c747c764ffc8ae328a9b7efb579d2ba2a302e887b3cf50
     name: nghttp2
     evr: 1.43.0-6.el9_8.1
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/o/openssh-9.9p1-7.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/o/openssh-9.9p1-9.el9_8.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
-    size: 2552961
-    checksum: sha256:3a5a65ba73ffe4f8b08dacb2247f95336dadb2e930eceaeb8746ddc998efe2a6
+    size: 2555730
+    checksum: sha256:38b311178cf42e1611eb250747dee0780e19c41afbdc3b1cd189ddf5d5897acd
     name: openssh
-    evr: 9.9p1-7.el9_8
+    evr: 9.9p1-9.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/o/openssl-3.5.5-6.el9_8.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
     size: 53369050
@@ -11857,12 +11857,12 @@ arches:
     checksum: sha256:6c788387cde9c0fde5481382f3f8416e3ecbcf09c908b409b6c63358b90a399f
     name: util-linux
     evr: 2.37.4-25.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/v/vim-8.2.2637-26.el9_8.10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/v/vim-8.2.2637-26.el9_8.13.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
-    size: 12848850
-    checksum: sha256:7a02f9551582771701da423b81e70efb372f4540448f5712ba8c45a604c05160
+    size: 12856678
+    checksum: sha256:c35d0483fd594ed202397aafa4b97e8321ba99d8d2386e1b5bff53e23b046d95
     name: vim
-    evr: 2:8.2.2637-26.el9_8.10
+    evr: 2:8.2.2637-26.el9_8.13
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/x/xz-5.2.5-8.el9_0.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
     size: 1168293
