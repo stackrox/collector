@@ -8,7 +8,6 @@
 #include <gtest/gtest_prod.h>
 
 #include "ConnTracker.h"
-#include "ContainerMetadata.h"
 #include "Control.h"
 #include "SignalHandler.h"
 #include "SignalServiceClient.h"
@@ -43,8 +42,6 @@ class Service : public SystemInspector {
 
   void GetProcessInformation(uint64_t pid, ProcessInfoCallbackRef callback);
 
-  std::shared_ptr<ContainerMetadata> GetContainerMetadataInspector() { return container_metadata_inspector_; };
-
   sinsp* GetInspector() { return inspector_.get(); }
   Stats* GetUserspaceStats() { return &userspace_stats_; }
 
@@ -71,7 +68,6 @@ class Service : public SystemInspector {
 
   mutable std::mutex libsinsp_mutex_;
   std::unique_ptr<sinsp> inspector_;
-  std::shared_ptr<ContainerMetadata> container_metadata_inspector_;
   std::unique_ptr<sinsp_evt_formatter> default_formatter_;
   std::unique_ptr<ISignalServiceClient> signal_client_;
   std::vector<SignalHandlerEntry> signal_handlers_;

@@ -23,7 +23,7 @@ bool ContainerInfoInspector::handleGet(CivetServer* server, struct mg_connection
   Json::Value root;
 
   root["container_id"] = container_id;
-  root["namespace"] = std::string(container_metadata_inspector_->GetNamespace(container_id));
+  root["namespace"] = "";
 
   mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n");
   mg_printf(conn, "%s\r\n", writer_.write(root).c_str());

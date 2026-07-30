@@ -33,6 +33,10 @@ func TestProcessNetwork(t *testing.T) {
 	suite.Run(t, new(suites.ProcessNetworkTestSuite))
 }
 
+func TestHostPidProcess(t *testing.T) {
+	suite.Run(t, new(suites.HostPidProcessTestSuite))
+}
+
 func TestImageLabelJSON(t *testing.T) {
 	suite.Run(t, new(suites.ImageLabelJSONTestSuite))
 }
