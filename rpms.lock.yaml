@@ -368,13 +368,13 @@ arches:
     name: tbb-devel
     evr: 2018.2-10.el8_10.1
     sourcerpm: tbb-2018.2-10.el8_10.1.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/v/vim-filesystem-8.0.1763-27.el8_10.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/v/vim-filesystem-8.0.1763-31.el8_10.noarch.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 52300
-    checksum: sha256:02be0fea016091c02171c48dd974759d0f1ea8a9b625f1093c2246e9f583715f
+    size: 52928
+    checksum: sha256:982fde604dcd79da6889fb0da13343464a8211ee297dc1906d6d06bd40c2b3e5
     name: vim-filesystem
-    evr: 2:8.0.1763-27.el8_10
-    sourcerpm: vim-8.0.1763-27.el8_10.src.rpm
+    evr: 2:8.0.1763-31.el8_10
+    sourcerpm: vim-8.0.1763-31.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/w/wget-1.19.5-12.el8_10.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 734624
@@ -3397,12 +3397,12 @@ arches:
     checksum: sha256:c3ef99808b2afcaf8a5cf2dfef379980779bc1bee42688006fa22b5806b3471d
     name: util-linux
     evr: 2.32.1-48.el8_10
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/v/vim-8.0.1763-27.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/v/vim-8.0.1763-31.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
-    size: 11271730
-    checksum: sha256:54223bfba99818dce4de7ee882b7cd7bbabc6ee0970e6e8dc62ae3658cf0d597
+    size: 11277370
+    checksum: sha256:77ed6347db27ad3131016cbb288ddc666eab3a17c7c539d7ddc980ad41305857
     name: vim
-    evr: 2:8.0.1763-27.el8_10
+    evr: 2:8.0.1763-31.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/w/which-2.21-21.el8_10.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
     size: 171834
@@ -3428,10 +3428,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/eeaf5d2f5b203ff39a37890b1cfdea4739f3df9136832ae50e42903594c7a0ff-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/d1ac6cff62dac4ca7cdb13b0fdea5a2c26c5f0a414c0585322f93e733611a778-modules.yaml.gz
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 817292
-    checksum: sha256:eeaf5d2f5b203ff39a37890b1cfdea4739f3df9136832ae50e42903594c7a0ff
+    size: 823678
+    checksum: sha256:d1ac6cff62dac4ca7cdb13b0fdea5a2c26c5f0a414c0585322f93e733611a778
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -3798,13 +3798,13 @@ arches:
     name: tbb-devel
     evr: 2018.2-10.el8_10.1
     sourcerpm: tbb-2018.2-10.el8_10.1.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/v/vim-filesystem-8.0.1763-27.el8_10.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/v/vim-filesystem-8.0.1763-31.el8_10.noarch.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 52300
-    checksum: sha256:02be0fea016091c02171c48dd974759d0f1ea8a9b625f1093c2246e9f583715f
+    size: 52928
+    checksum: sha256:982fde604dcd79da6889fb0da13343464a8211ee297dc1906d6d06bd40c2b3e5
     name: vim-filesystem
-    evr: 2:8.0.1763-27.el8_10
-    sourcerpm: vim-8.0.1763-27.el8_10.src.rpm
+    evr: 2:8.0.1763-31.el8_10
+    sourcerpm: vim-8.0.1763-31.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/w/wget-1.19.5-12.el8_10.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 766644
@@ -6840,12 +6840,12 @@ arches:
     checksum: sha256:c3ef99808b2afcaf8a5cf2dfef379980779bc1bee42688006fa22b5806b3471d
     name: util-linux
     evr: 2.32.1-48.el8_10
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/v/vim-8.0.1763-27.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/v/vim-8.0.1763-31.el8_10.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
-    size: 11271730
-    checksum: sha256:54223bfba99818dce4de7ee882b7cd7bbabc6ee0970e6e8dc62ae3658cf0d597
+    size: 11277370
+    checksum: sha256:77ed6347db27ad3131016cbb288ddc666eab3a17c7c539d7ddc980ad41305857
     name: vim
-    evr: 2:8.0.1763-27.el8_10
+    evr: 2:8.0.1763-31.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/w/which-2.21-21.el8_10.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
     size: 171834
@@ -6871,10 +6871,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/732e8aec2039eda69d788eb4227ef848a21657c86dee32ede4291537211dd4dd-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/5e1e1fa5d35d71f29f81040ef01755c6d0d60097d0e4632c99145d43baac2978-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 811831
-    checksum: sha256:732e8aec2039eda69d788eb4227ef848a21657c86dee32ede4291537211dd4dd
+    size: 818973
+    checksum: sha256:5e1e1fa5d35d71f29f81040ef01755c6d0d60097d0e4632c99145d43baac2978
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -7241,13 +7241,13 @@ arches:
     name: tbb-devel
     evr: 2018.2-10.el8_10.1
     sourcerpm: tbb-2018.2-10.el8_10.1.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/v/vim-filesystem-8.0.1763-27.el8_10.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/v/vim-filesystem-8.0.1763-31.el8_10.noarch.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 52300
-    checksum: sha256:02be0fea016091c02171c48dd974759d0f1ea8a9b625f1093c2246e9f583715f
+    size: 52928
+    checksum: sha256:982fde604dcd79da6889fb0da13343464a8211ee297dc1906d6d06bd40c2b3e5
     name: vim-filesystem
-    evr: 2:8.0.1763-27.el8_10
-    sourcerpm: vim-8.0.1763-27.el8_10.src.rpm
+    evr: 2:8.0.1763-31.el8_10
+    sourcerpm: vim-8.0.1763-31.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/w/wget-1.19.5-12.el8_10.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 747496
@@ -10130,12 +10130,12 @@ arches:
     checksum: sha256:c3ef99808b2afcaf8a5cf2dfef379980779bc1bee42688006fa22b5806b3471d
     name: util-linux
     evr: 2.32.1-48.el8_10
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/v/vim-8.0.1763-27.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/v/vim-8.0.1763-31.el8_10.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
-    size: 11271730
-    checksum: sha256:54223bfba99818dce4de7ee882b7cd7bbabc6ee0970e6e8dc62ae3658cf0d597
+    size: 11277370
+    checksum: sha256:77ed6347db27ad3131016cbb288ddc666eab3a17c7c539d7ddc980ad41305857
     name: vim
-    evr: 2:8.0.1763-27.el8_10
+    evr: 2:8.0.1763-31.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/x/xz-5.2.4-4.el8_6.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
     size: 1077113
@@ -10155,10 +10155,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/4855428f63c0d5f8dc568ee1eb288cd51742746b9a50d0d59c2a0d4546f3cba8-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/b4d174ca6248116e1378cf616e3a7bcc4c76e8cd7ac3d61eaed86d810229caab-modules.yaml.gz
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 810883
-    checksum: sha256:4855428f63c0d5f8dc568ee1eb288cd51742746b9a50d0d59c2a0d4546f3cba8
+    size: 817419
+    checksum: sha256:b4d174ca6248116e1378cf616e3a7bcc4c76e8cd7ac3d61eaed86d810229caab
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/a/autoconf-2.69-29.el8_10.1.noarch.rpm
@@ -10525,13 +10525,13 @@ arches:
     name: tbb-devel
     evr: 2018.2-10.el8_10.1
     sourcerpm: tbb-2018.2-10.el8_10.1.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/v/vim-filesystem-8.0.1763-27.el8_10.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/v/vim-filesystem-8.0.1763-31.el8_10.noarch.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 52300
-    checksum: sha256:02be0fea016091c02171c48dd974759d0f1ea8a9b625f1093c2246e9f583715f
+    size: 52928
+    checksum: sha256:982fde604dcd79da6889fb0da13343464a8211ee297dc1906d6d06bd40c2b3e5
     name: vim-filesystem
-    evr: 2:8.0.1763-27.el8_10
-    sourcerpm: vim-8.0.1763-27.el8_10.src.rpm
+    evr: 2:8.0.1763-31.el8_10
+    sourcerpm: vim-8.0.1763-31.el8_10.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/w/wget-1.19.5-12.el8_10.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 751872
@@ -13540,12 +13540,12 @@ arches:
     checksum: sha256:c3ef99808b2afcaf8a5cf2dfef379980779bc1bee42688006fa22b5806b3471d
     name: util-linux
     evr: 2.32.1-48.el8_10
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/v/vim-8.0.1763-27.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/v/vim-8.0.1763-31.el8_10.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
-    size: 11271730
-    checksum: sha256:54223bfba99818dce4de7ee882b7cd7bbabc6ee0970e6e8dc62ae3658cf0d597
+    size: 11277370
+    checksum: sha256:77ed6347db27ad3131016cbb288ddc666eab3a17c7c539d7ddc980ad41305857
     name: vim
-    evr: 2:8.0.1763-27.el8_10
+    evr: 2:8.0.1763-31.el8_10
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/w/which-2.21-21.el8_10.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
     size: 171834
@@ -13571,7 +13571,7 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/fce869e904d8895b9d7ffd1f995a3cc8424877d3698cbb2802a76c5467073b12-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/be5b9fafcdde437511ad6570c875b54a8e12bc1567d390f6e58f7f36a92e192c-modules.yaml.gz
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 837862
-    checksum: sha256:fce869e904d8895b9d7ffd1f995a3cc8424877d3698cbb2802a76c5467073b12
+    size: 845357
+    checksum: sha256:be5b9fafcdde437511ad6570c875b54a8e12bc1567d390f6e58f7f36a92e192c
