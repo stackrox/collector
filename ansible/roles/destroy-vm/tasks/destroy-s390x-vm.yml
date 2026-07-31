@@ -19,6 +19,7 @@
     zone: "{{ vsi.resource.zone }}"
     primary_network_interface:
       - subnet: "{{ vsi.resource.primary_network_interface[0].subnet }}"
+  ignore_errors: true
   when: vsi.resource.id is defined
 
 - name: Check for existing floating IP
@@ -36,6 +37,7 @@
     state: absent
     id: "{{ fip.resource.id }}"
     zone: "{{ fip.resource.zone }}"
+  ignore_errors: true
   when: fip.resource.id is defined
 
 - name: Check for existing Security Group
@@ -51,7 +53,15 @@
   delegate_to: localhost
   ibm.cloudcollection.ibm_is_security_group:
     state: absent
-    id: "{{ sg.resource.id }}"
+    name: "{{ inventory_hostname }}-sg"
+    vpc: "{{ s390x.vpc_id }}"
+  register: sg_delete
+  failed_when:
+    - sg_delete.rc | default(0) != 0
+    - '"Target not found" not in (sg_delete.stderr | default(""))'
+    - '"Target not found" not in (sg_delete.msg | default(""))'
+    - '"not_found" not in (sg_delete.stderr | default(""))'
+    - '"not_found" not in (sg_delete.msg | default(""))'
   when: sg.resource.id is defined
 
 - name: Remove IBM inventory file (delete file)

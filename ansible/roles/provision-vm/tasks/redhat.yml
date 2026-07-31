@@ -64,3 +64,13 @@
     update_cache: true
   when: runtime_command == 'podman'
 
+# Collector binds host ports 8080 (HTTP API) and 9090 (Prometheus metrics) when
+# running integration tests. RHEL Web Console (cockpit) also defaults to 9090
+# and is installed on many RHEL images (including RHEL 10 on s390x).
+- name: Disable cockpit socket (conflicts with collector Prometheus port 9090)
+  ansible.builtin.systemd:
+    name: cockpit.socket
+    state: stopped
+    enabled: false
+  failed_when: false
+
