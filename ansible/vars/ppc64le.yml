@@ -1,6 +1,6 @@
 ---
 
-#rhel-8.8-05102023
+# ppc64le VM configuration
 pi_name: "{{ vm_name }}"
 sys_type: s1022
 proc_type: shared
