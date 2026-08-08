@@ -157,16 +157,11 @@ func (d *dockerAPIExecutor) StartContainer(startConfig config.ContainerStartConf
 		return "", errors.Wrapf(err, "create %s", startConfig.Name)
 	}
 
-	waitResp, waitErr := d.client.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
-	select {
-	case <-waitResp:
-		break
-	case err := <-waitErr:
-		return "", errors.Wrapf(err, "wait %s", startConfig.Name)
-	}
-
-	if err := d.client.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
-		return "", errors.Wrapf(err, "start %s", startConfig.Name)
+	_, err = RetryWithTimeout(func() (output string, err error) {
+		return NoOutput, d.client.ContainerStart(ctx, resp.ID, container.StartOptions{})
+	}, fmt.Errorf("Container %s could not be started", startConfig.Name))
+	if err != nil {
+		return "", err
 	}
 
 	_, err = RetryWithTimeout(func() (output string, err error) {
