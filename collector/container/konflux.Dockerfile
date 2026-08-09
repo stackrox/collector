@@ -79,7 +79,7 @@ RUN ctest --no-tests=error -V --test-dir "${CMAKE_BUILD_DIR}"
 RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:b915e698d01cf0750b82c6ab54adc794870381271670fd7211b082f19f8564f7
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:cb964eb2bf491814a681bc9887c83d32d6d4eac7b491c5c8c7fe641a5c586a09
 
 RUN microdnf -y install --nobest \
       tbb \
