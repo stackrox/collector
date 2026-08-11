@@ -2,7 +2,7 @@ ARG BUILD_DIR=/build
 ARG CMAKE_BUILD_DIR=${BUILD_DIR}/cmake-build
 
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:e79f79172a6779775e1733cb4f49cd5ef03a0703c68ec46c717f93b9ac4a5e71 AS builder
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:d3e61197e0f96aee94872141b429f63eadb939de95a25fe6b504843f427b7a3f AS builder
 
 RUN dnf -y install --nobest --allowerasing \
         make \
@@ -79,9 +79,9 @@ RUN ctest --no-tests=error -V --test-dir "${CMAKE_BUILD_DIR}"
 RUN strip -v --strip-unneeded "${CMAKE_BUILD_DIR}/collector/collector"
 
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:b1e86b97028b8fcfb6d85f997c39e6b6b67496163ef8d80d243220a4918e8bef AS ubi-micro-base
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:7e7f79ab747bf2b452e3043dd89f388e92be4c7fdcc8b815b58adf6c99c39c95 AS ubi-micro-base
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:e79f79172a6779775e1733cb4f49cd5ef03a0703c68ec46c717f93b9ac4a5e71 AS package_installer
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:d3e61197e0f96aee94872141b429f63eadb939de95a25fe6b504843f427b7a3f AS package_installer
 
 COPY --from=ubi-micro-base / /out/
 
