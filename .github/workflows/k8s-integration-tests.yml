@@ -96,6 +96,22 @@ jobs:
             -e @/tmp/vars.yml \
             ansible/k8s-integration-tests.yml
 
+      - name: Report test failures to Jira
+        # Run even when tests failed (that is the point), but not when the job
+        # was cancelled.
+        if: (!cancelled())
+        id: junit2jira
+        # TEMPORARY: pinned to the giles/junit2jira branch for testing. Switch to
+        # a ratcheted @main SHA once stackrox/actions PR is merged.
+        uses: stackrox/actions/test/junit2jira@giles/junit2jira
+        with:
+          # Only create real Jira issues on push; dry-run on pull requests.
+          create-jiras: ${{ github.event_name == 'push' }}
+          jira-user: ${{ secrets.JIRA_USER }}
+          jira-token: ${{ secrets.JIRA_TOKEN }}
+          directory: integration-tests/container-logs
+          gcp-metrics: false
+
       - name: Store artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -103,21 +119,3 @@ jobs:
           name: k8s-logs
           path: |
             ${{ github.workspace }}/integration-tests/container-logs/**/*
-
-  notify:
-    runs-on: ubuntu-24.04
-    if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name != 'pull_request'
-    needs:
-      - k8s-integration-tests
-    steps:
-      - name: Slack notification
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_ONCALL_WEBHOOK }}
-          SLACK_CHANNEL: team-acs-collector-oncall
-          SLACK_COLOR: failure
-          SLACK_LINK_NAMES: true
-          SLACK_TITLE: "K8S Integration tests failed."
-          MSG_MINIMAL: actions url,commit
-          SLACK_MESSAGE: |
-            @acs-collector-oncall
