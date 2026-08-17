@@ -5,6 +5,8 @@
   vars:
     kind_name: "{{ cluster_name | default('collector-tests') }}"
     c_engine: "{{ container_engine | default('docker') }}"
+    integration_tests_root: "{{ collector_root }}/integration-tests"
+    logs_root: "{{ collector_root }}/integration-tests/container-logs"
 
   tasks:
     - name: Check KinD is installed
@@ -147,7 +149,7 @@
                     value: "{{ lookup('env', 'COLLECTOR_QA_TAG', default=lookup('file', collector_root + '/integration-tests/container/QA_TAG')) }}"
                   - name: COLLECTOR_IMAGE
                     value: "{{ collector_image }}"
-                args: ["-test.run", "^TestK8s.*"]
+                args: ["-test.run", "^TestK8s.*", "-test.v"]
                 ports:
                   - containerPort: 9999
                 volumeMounts:
@@ -187,6 +189,34 @@
     - name: Output tester logs
       ansible.builtin.debug:
         msg: "{{ log.log_lines }}"
+      tags:
+        - test-only
+
+    - name: Ensure container-logs directory exists
+      ansible.builtin.file:
+        path: "{{ logs_root }}"
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      tags:
+        - test-only
+
+    - name: Write integration test log
+      ansible.builtin.copy:
+        content: "{{ log.log }}"
+        dest: "{{ logs_root }}/integration-test-k8s.log"
+      delegate_to: localhost
+      tags:
+        - test-only
+
+    - name: Report
+      community.general.make:
+        chdir: "{{ integration_tests_root }}"
+        target: report
+      environment:
+        LOG_FILE: "{{ logs_root }}/integration-test-k8s.log"
+        JUNIT_FILE: "integration-test-report-k8s.xml"
+      delegate_to: localhost
       tags:
         - test-only
 
