@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <string>
 #include <vector>
 
@@ -41,6 +42,7 @@ class EventExtractor {
 #define FIELD_RAW(id, fieldname, type)                                                                     \
  public:                                                                                                   \
   const type* get_##id(sinsp_evt* event) {                                                                 \
+    assert(filter_check_##id##_.filter_check && "filter check not initialized for " fieldname);            \
     uint32_t len;                                                                                          \
     auto buf = filter_check_##id##_->extract_single(event, &len);                                          \
     if (!buf) return nullptr;                                                                              \
@@ -63,6 +65,7 @@ class EventExtractor {
   const std::optional<type> get_##id(sinsp_evt* event) {                                                   \
     static_assert(std::is_trivially_copyable_v<type>,                                                      \
                   "Attempted to create FIELD_RAW_SAFE on non trivial type");                               \
+    assert(filter_check_##id##_.filter_check && "filter check not initialized for " fieldname);            \
     uint32_t len;                                                                                          \
     auto buf = filter_check_##id##_->extract_single(event, &len);                                          \
     if (!buf) return {};                                                                                   \
@@ -80,39 +83,40 @@ class EventExtractor {
  private:                                                                                                  \
   DECLARE_FILTER_CHECK(id, fieldname)
 
-#define FIELD_CSTR(id, fieldname)                                 \
- public:                                                          \
-  const char* get_##id(sinsp_evt* event) {                        \
-    uint32_t len;                                                 \
-    auto buf = filter_check_##id##_->extract_single(event, &len); \
-    if (!buf) return nullptr;                                     \
-    return reinterpret_cast<const char*>(buf);                    \
-  }                                                               \
-                                                                  \
- private:                                                         \
+#define FIELD_CSTR(id, fieldname)                                                               \
+ public:                                                                                        \
+  const char* get_##id(sinsp_evt* event) {                                                      \
+    assert(filter_check_##id##_.filter_check && "filter check not initialized for " fieldname); \
+    uint32_t len;                                                                               \
+    auto buf = filter_check_##id##_->extract_single(event, &len);                               \
+    if (!buf) return nullptr;                                                                   \
+    return reinterpret_cast<const char*>(buf);                                                  \
+  }                                                                                             \
+                                                                                                \
+ private:                                                                                       \
   DECLARE_FILTER_CHECK(id, fieldname)
 
 #define EVT_ARG(name) FIELD_CSTR(evt_arg_##name, "evt.arg." #name)
 #define EVT_ARG_RAW(name, type) FIELD_RAW(evt_arg_##name, "evt.rawarg." #name, type)
 
-#define TINFO_FIELD_RAW(id, fieldname, type)                \
- public:                                                    \
-  const type* get_##id(sinsp_evt* event) {                  \
-    if (!event) return nullptr;                             \
-    sinsp_threadinfo* tinfo = event->get_thread_info(true); \
-    if (!tinfo) return nullptr;                             \
-    return &tinfo->fieldname;                               \
+#define TINFO_FIELD_RAW(id, fieldname, type)            \
+ public:                                                \
+  const type* get_##id(sinsp_evt* event) {              \
+    if (!event) return nullptr;                         \
+    sinsp_threadinfo* tinfo = event->get_thread_info(); \
+    if (!tinfo) return nullptr;                         \
+    return &tinfo->fieldname;                           \
   }
 
-#define TINFO_FIELD_RAW_GETTER(id, getter, type)            \
- public:                                                    \
-  type internal_##id;                                       \
-  const type* get_##id(sinsp_evt* event) {                  \
-    if (!event) return nullptr;                             \
-    sinsp_threadinfo* tinfo = event->get_thread_info(true); \
-    if (!tinfo) return nullptr;                             \
-    internal_##id = tinfo->getter();                        \
-    return &internal_##id;                                  \
+#define TINFO_FIELD_RAW_GETTER(id, getter, type)        \
+ public:                                                \
+  type internal_##id;                                   \
+  const type* get_##id(sinsp_evt* event) {              \
+    if (!event) return nullptr;                         \
+    sinsp_threadinfo* tinfo = event->get_thread_info(); \
+    if (!tinfo) return nullptr;                         \
+    internal_##id = tinfo->getter();                    \
+    return &internal_##id;                              \
   }
 
 #define TINFO_FIELD(id) TINFO_FIELD_RAW(id, m_##id, decltype(std::declval<sinsp_threadinfo>().m_##id))
@@ -129,16 +133,13 @@ class EventExtractor {
   //
   // ADD ANY NEW FIELDS BELOW THIS LINE
 
-  // Container related fields
-  TINFO_FIELD(container_id);
-
   // Process related fields
   TINFO_FIELD(comm);
   TINFO_FIELD(exe);
   TINFO_FIELD(exepath);
   TINFO_FIELD(pid);
-  TINFO_FIELD_RAW_GETTER(uid, m_user.uid, uint32_t);
-  TINFO_FIELD_RAW_GETTER(gid, m_group.gid, uint32_t);
+  TINFO_FIELD_RAW(uid, m_uid, uint32_t);
+  TINFO_FIELD_RAW(gid, m_gid, uint32_t);
   FIELD_CSTR(proc_args, "proc.args");
 
   // General event information
@@ -147,9 +148,6 @@ class EventExtractor {
   // File/network related
   FIELD_RAW_SAFE(client_port, "fd.cport", uint16_t);
   FIELD_RAW_SAFE(server_port, "fd.sport", uint16_t);
-
-  // k8s metadata
-  FIELD_CSTR(k8s_namespace, "k8s.ns.name");
 
 #undef TINFO_FIELD
 #undef FIELD_RAW

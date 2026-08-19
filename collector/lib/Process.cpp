@@ -5,6 +5,7 @@
 #include <libsinsp/sinsp.h>
 
 #include "CollectorStats.h"
+#include "Utility.h"
 #include "system-inspector/Service.h"
 
 namespace collector {
@@ -32,7 +33,10 @@ std::string Process::container_id() const {
   WaitForProcessInfo();
 
   if (system_inspector_threadinfo_) {
-    return system_inspector_threadinfo_->m_container_id;
+    auto id = GetContainerID(*system_inspector_threadinfo_);
+    if (!id.empty()) {
+      return id;
+    }
   }
 
   return NOT_AVAILABLE;

@@ -164,7 +164,7 @@ func (s *UdpNetworkFlow) TestMultipleDestinations() {
 	client := s.runClient(config.ContainerStartConfig{
 		Name:       UDP_CLIENT,
 		Image:      image,
-		Command:    newClientCmd("sendmmsg", "300", "8", servers...),
+		Command:    newClientCmd("sendmmsg", "300", "4", servers...),
 		Entrypoint: []string{"udp-client"},
 	})
 	log.Info("Client: %s\n", client.String())

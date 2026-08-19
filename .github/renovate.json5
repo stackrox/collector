@@ -31,17 +31,18 @@
     // This is a "general" schedule for managers that don't declare their own.
     // The time was selected (with the help of https://time.fyi/timezones) so that Renovate isn't active during business
     // hours from Central Europe to US West Coast. This way, after we merge a PR, a new one does not pop up immediately
-    // after that.
-    // Between 3a.m. and 7a.m. every day.
-    "* 3-7 * * *",
+    // after that. Another reason for this schedule is to include at least one 4 hour interval from the moment of scheduled
+    // MintMaker execution
+    // Between 0a.m. and 7:59a.m. every day.
+    "* 0-7 * * *",
   ],
   // Tell Renovate not to update PRs when outside schedule.
   "updateNotScheduled": false,
   "tekton": {
     "schedule": [
-      // Between 3a.m. and 7a.m. every day.
       // We duplicate our desired schedule here because Konflux global config tends to have a special override for it.
-      "* 3-7 * * *",
+      // Between 0a.m. and 7:59a.m. every day.
+      "* 0-7 * * *",
     ],
     "packageRules": [
       // Note: the packageRules from the Konflux config (find URL in comments above) get merged with these.
@@ -50,6 +51,8 @@
         "matchPackageNames": [
           "/^quay.io/rhacs-eng/konflux-tasks/",
         ],
+        "recreateWhen": "always",
+        "rebaseWhen": "behind-base-branch",
       },
     ],
   },

@@ -72,5 +72,6 @@
     name: cockpit.socket
     state: stopped
     enabled: false
-  failed_when: false
+  when: vm_arch == "ppc64le" or vm_arch == "s390x"
+  ignore_errors: true
 
