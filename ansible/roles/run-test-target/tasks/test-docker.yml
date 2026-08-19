@@ -54,10 +54,16 @@
   become: "{{ runtime_as_root }}"
   shell:
     cmd: |
-      if [[ -f "/run/containers/0/auth.json" ]]; then
         mkdir -p ~/.docker/
-        cp "/run/containers/0/auth.json" ~/.docker/config.json
-      fi
+        if [[ -f "${XDG_RUNTIME_DIR:-}/containers/auth.json" ]]; then
+            AUTH_FILE="${XDG_RUNTIME_DIR:-}/containers/auth.json"
+        elif [[ -f "/run/containers/0/auth.json" ]]; then
+            AUTH_FILE="/run/containers/0/auth.json"
+        else
+            echo >&2 "No valid auth.json file found"
+            exit 1
+        fi
+        cp "${AUTH_FILE}" ~/.docker/config.json
     creates: ~/.docker/config.json
   when: runtime_command == "podman"
 

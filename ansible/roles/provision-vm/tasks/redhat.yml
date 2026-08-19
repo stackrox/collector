@@ -64,3 +64,11 @@
     update_cache: true
   when: runtime_command == 'podman'
 
+- name: Disable cockpit to free port 9090 for collector metrics
+  ansible.builtin.systemd:
+    name: cockpit.socket
+    state: stopped
+    enabled: false
+  when: vm_arch == "ppc64le"
+  ignore_errors: true
+

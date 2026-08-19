@@ -12,7 +12,8 @@
   delegate_to: localhost
 
 - name: Pull QA images
-  command: "{{ 'sudo' if runtime_as_root else '' }} {{ runtime_command }} pull {{ item.value }}-{{ qa_tag }}"
+  become: "{{ runtime_as_root }}"
+  command: "{{ runtime_command }} pull {{ item.value }}-{{ qa_tag }}"
   loop: "{{ images.qa | dict2items }}"
   # parallel for speeeeed
   async: 300
@@ -21,7 +22,8 @@
   ignore_errors: true
 
 - name: Pull non-QA images
-  command: "{{ 'sudo' if runtime_as_root else '' }} {{ runtime_command }} pull {{ item.value }}"
+  become: "{{ runtime_as_root }}"
+  command: "{{ runtime_command }} pull {{ item.value }}"
   loop: "{{ images.non_qa | dict2items }}"
   # parallel for speeeeed
   async: 300
