@@ -70,6 +70,7 @@
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
     state: absent
     pi_key_name: "{{ hostname }}-ssh-key"
+    pi_ssh_key: "{{ pi_ssh_key_existing_info.resource.ssh_key }}"
     id: "{{ pi_ssh_key_existing_info.resource.id }}"
   retries: 10
   delay: 30
