@@ -53,16 +53,21 @@ virtual_machines:
     families:
       - rhel-8-6-s390x
 
-  # We have taken families name as "p" since there is a character limit for instance name
-  # in ibm cloud (56 chars max)
-  rhel-ppc64le:
+  rhel-ppc64le-9:
     project: rhel-ppc64le-cloud
     arch: ppc64le
     ssh_key_file: "~/.ssh/acs-ppc64le-rsa.prv"
+    container_engine: podman
     images:
       - rhel-96-04282025
-      - rhel-10-04252025
+
+  rhel-ppc64le-10:
+    project: rhel-ppc64le-cloud
+    arch: ppc64le
+    ssh_key_file: "~/.ssh/acs-ppc64le-rsa.prv"
     container_engine: podman
+    images:
+      - rhel-10-04252025
 
   rhel-sap:
     project: rhel-sap-cloud

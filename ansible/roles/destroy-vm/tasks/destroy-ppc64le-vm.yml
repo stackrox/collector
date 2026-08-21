@@ -1,6 +1,5 @@
 ---
 
-# Set fact that are required to destroy vsi instance
 - set_fact:
     hostname: "{{ inventory_hostname }}"
 
@@ -19,14 +18,7 @@
 - name: Save existing Power VSI fact
   delegate_to: localhost
   set_fact:
-    cacheable: True
     pi_instance: "{{ pi_instance_existing_output.resource }}"
-  when: pi_instance_existing_output.rc == 0
-
-- name: Save network details
-  delegate_to: localhost
-  set_fact:
-    public_subnet: "{{ pi_instance.networks|rejectattr('external_ip', 'equalto', '') | list | first }}"
   when: pi_instance_existing_output.rc == 0
 
 - name: Delete instance by id
@@ -39,7 +31,6 @@
   delay: 5
   register: delete_operation
   until: delete_operation is success
-  ignore_errors: true
   when: pi_instance_existing_output.rc == 0
 
 - name: Check for existing network
@@ -78,15 +69,14 @@
   ibm.cloudcollection.ibm_pi_key:
     pi_cloud_instance_id: "{{ pi_cloud_instance_id }}"
     state: absent
-    pi_ssh_key: "{{ pi_ssh_key_existing_info.resource }}"
     pi_key_name: "{{ hostname }}-ssh-key"
     id: "{{ pi_ssh_key_existing_info.resource.id }}"
   retries: 10
   delay: 30
   register: pi_ssh_key_delete
-  when: 
+  when:
     - pi_ssh_key_existing_info is success
-    - pi_ssh_key_existing_info.resource is defined
+    - pi_ssh_key_existing_info.resource.id is defined
 
 - name: Remove IBM inventory file (delete file)
   delegate_to: localhost

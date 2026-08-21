@@ -122,8 +122,16 @@ jobs:
 
   ppc64le-integration-tests:
     uses: ./.github/workflows/integration-tests-vm-type.yml
+    strategy:
+      # ensure that if one part of the matrix fails, the
+      # rest will continue
+      fail-fast: false
+      matrix:
+        vm_type:
+          - rhel-ppc64le-9
+          - rhel-ppc64le-10
     with:
-      vm_type: rhel-ppc64le
+      vm_type: ${{ matrix.vm_type }}
       collector-tag: ${{ inputs.collector-tag }}
       collector-qa-tag: ${{ inputs.collector-qa-tag }}
       collector-tests-tag: ${{ inputs.collector-tests-tag }}
