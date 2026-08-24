@@ -12,11 +12,11 @@
 
 - set_fact:
     vm_full_name: "{{ gcp_instance_prefix }}-{{ vm_image_short }}-{{ vm_hashed_name }}"
-  when: item.0.key != 'rhel-ppc64le'
+  when: arch != 'ppc64le'
 
 - set_fact:
-    vm_full_name: "{{ gcp_instance_prefix }}-rhel-ppc64le-{{ vm_hashed_name }}"
-  when: item.0.key == 'rhel-ppc64le'
+    vm_full_name: "{{ gcp_instance_prefix }}-{{ item.0.key }}-{{ vm_hashed_name }}"
+  when: arch == 'ppc64le'
 
 - set_fact:
     ibm_env: "{{ s390x.env }}"
