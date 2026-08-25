@@ -101,12 +101,10 @@ jobs:
         # was cancelled.
         if: (!cancelled())
         id: junit2jira
-        # TEMPORARY: pinned to the giles/junit2jira branch for testing. Switch to
-        # a ratcheted @main SHA once stackrox/actions PR is merged.
-        uses: stackrox/actions/test/junit2jira@giles/junit2jira
+        uses: stackrox/actions/test/junit2jira@main
         with:
           # Only create real Jira issues on push; dry-run on pull requests.
-          create-jiras: ${{ github.event_name == 'push' }}
+          dry-run: ${{ github.event_name != 'push' }}
           jira-user: ${{ secrets.JIRA_USER }}
           jira-token: ${{ secrets.JIRA_TOKEN }}
           directory: integration-tests/container-logs
