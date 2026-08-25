@@ -109,7 +109,7 @@ summarized below:
 | Type          | Families       |
 | ------------- | -------------- |
 | rhel          | rhel-7 <br> rhel-8 |
-| rhel-s390x    | rhel-8-6-s390x |
+| rhel-s390x    | rhel-8-6-s390x <br> rhel-9-6-s390x <br> rhel-10-s390x |
 | rhel-ppc64le-9 | rhel-96-04282025 |
 | rhel-ppc64le-10 | rhel-10-04252025 |
 | rhel-sap      | rhel-8-4-sap-ha <br> rhel-8-6-sap-ha |
