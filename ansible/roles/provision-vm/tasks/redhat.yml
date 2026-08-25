@@ -73,5 +73,8 @@
     state: stopped
     enabled: false
   when: vm_arch == "ppc64le" or vm_arch == "s390x"
-  ignore_errors: true
+  register: cockpit_disable
+  failed_when:
+    - cockpit_disable is failed
+    - "'Could not find the requested service' not in (cockpit_disable.msg | default(''))"
 
