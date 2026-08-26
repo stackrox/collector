@@ -1859,13 +1859,13 @@ arches:
     name: shadow-utils
     evr: 2:4.9-16.el9
     sourcerpm: shadow-utils-4.9-16.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/s/sqlite-libs-3.34.1-10.el9_8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/s/sqlite-libs-3.34.1-11.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 660260
-    checksum: sha256:dda4c59309d47d73d64291c53078cce330b8d5a9d95c903e133d9f37ec0e0a68
+    size: 660770
+    checksum: sha256:0fbb8043f9c02870c831da433f69b856a6674d02b60306d9cc01149ec89ed239
     name: sqlite-libs
-    evr: 3.34.1-10.el9_8
-    sourcerpm: sqlite-3.34.1-10.el9_8.src.rpm
+    evr: 3.34.1-11.el9_8
+    sourcerpm: sqlite-3.34.1-11.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/s/systemd-252-67.el9_8.4.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 4156431
@@ -2894,12 +2894,12 @@ arches:
     checksum: sha256:771a5ed07cdb690c75cd428a8113e2ee471270044e6cb8025d92c54e32c180ff
     name: shadow-utils
     evr: 2:4.9-16.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/s/sqlite-3.34.1-10.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/s/sqlite-3.34.1-11.el9_8.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
-    size: 25116090
-    checksum: sha256:4387ae8d5a5a0b972b7a8612dca277499a43e7991163c7519e8a0ced2e57c90a
+    size: 25117596
+    checksum: sha256:4efcc956008f0468362b41bdba79111c41027b682bcdea3ecca3744cf50ebfd7
     name: sqlite
-    evr: 3.34.1-10.el9_8
+    evr: 3.34.1-11.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/s/systemd-252-67.el9_8.4.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
     size: 45009674
@@ -4831,13 +4831,13 @@ arches:
     name: shadow-utils
     evr: 2:4.9-16.el9
     sourcerpm: shadow-utils-4.9-16.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/s/sqlite-libs-3.34.1-10.el9_8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/s/sqlite-libs-3.34.1-11.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 758081
-    checksum: sha256:6eac353037fe537e4639455a4ce8595b6b8c345913f84868b2a3288c6b54000a
+    size: 758085
+    checksum: sha256:f51af80eda44e36b51b315a90e44a0bfd2c6c7d4ce4aadd40bac23af3fc43cb8
     name: sqlite-libs
-    evr: 3.34.1-10.el9_8
-    sourcerpm: sqlite-3.34.1-10.el9_8.src.rpm
+    evr: 3.34.1-11.el9_8
+    sourcerpm: sqlite-3.34.1-11.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/s/systemd-252-67.el9_8.4.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 4435450
@@ -5872,12 +5872,12 @@ arches:
     checksum: sha256:771a5ed07cdb690c75cd428a8113e2ee471270044e6cb8025d92c54e32c180ff
     name: shadow-utils
     evr: 2:4.9-16.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/s/sqlite-3.34.1-10.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/s/sqlite-3.34.1-11.el9_8.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
-    size: 25116090
-    checksum: sha256:4387ae8d5a5a0b972b7a8612dca277499a43e7991163c7519e8a0ced2e57c90a
+    size: 25117596
+    checksum: sha256:4efcc956008f0468362b41bdba79111c41027b682bcdea3ecca3744cf50ebfd7
     name: sqlite
-    evr: 3.34.1-10.el9_8
+    evr: 3.34.1-11.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/s/systemd-252-67.el9_8.4.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
     size: 45009674
@@ -7809,13 +7809,13 @@ arches:
     name: shadow-utils
     evr: 2:4.9-16.el9
     sourcerpm: shadow-utils-4.9-16.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/s/sqlite-libs-3.34.1-10.el9_8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/s/sqlite-libs-3.34.1-11.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 652115
-    checksum: sha256:d773b3c1eac55a53efd669c87906804b31cf065a8f9885e6370b739c8f213f9d
+    size: 653093
+    checksum: sha256:5897571d31b7cc9d3e8ef0e7dc9dbf8230bea207c9e926d4fef9fb635ab16f64
     name: sqlite-libs
-    evr: 3.34.1-10.el9_8
-    sourcerpm: sqlite-3.34.1-10.el9_8.src.rpm
+    evr: 3.34.1-11.el9_8
+    sourcerpm: sqlite-3.34.1-11.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/s/systemd-252-67.el9_8.4.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 4167506
@@ -8844,12 +8844,12 @@ arches:
     checksum: sha256:771a5ed07cdb690c75cd428a8113e2ee471270044e6cb8025d92c54e32c180ff
     name: shadow-utils
     evr: 2:4.9-16.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/s/sqlite-3.34.1-10.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/s/sqlite-3.34.1-11.el9_8.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
-    size: 25116090
-    checksum: sha256:4387ae8d5a5a0b972b7a8612dca277499a43e7991163c7519e8a0ced2e57c90a
+    size: 25117596
+    checksum: sha256:4efcc956008f0468362b41bdba79111c41027b682bcdea3ecca3744cf50ebfd7
     name: sqlite
-    evr: 3.34.1-10.el9_8
+    evr: 3.34.1-11.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/s/systemd-252-67.el9_8.4.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
     size: 45009674
@@ -10774,13 +10774,13 @@ arches:
     name: shadow-utils
     evr: 2:4.9-16.el9
     sourcerpm: shadow-utils-4.9-16.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/s/sqlite-libs-3.34.1-10.el9_8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/s/sqlite-libs-3.34.1-11.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 664960
-    checksum: sha256:7dc2202e08184890c851dcb2218a9abce14da150f12dfb8663ca306416e1d8d4
+    size: 665095
+    checksum: sha256:e5c20e933ec01f746a6c59a94cb99f46c6138dab3f387f0d02dab47f356e2e98
     name: sqlite-libs
-    evr: 3.34.1-10.el9_8
-    sourcerpm: sqlite-3.34.1-10.el9_8.src.rpm
+    evr: 3.34.1-11.el9_8
+    sourcerpm: sqlite-3.34.1-11.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/s/systemd-252-67.el9_8.4.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 4401138
@@ -11809,12 +11809,12 @@ arches:
     checksum: sha256:771a5ed07cdb690c75cd428a8113e2ee471270044e6cb8025d92c54e32c180ff
     name: shadow-utils
     evr: 2:4.9-16.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/s/sqlite-3.34.1-10.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/s/sqlite-3.34.1-11.el9_8.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
-    size: 25116090
-    checksum: sha256:4387ae8d5a5a0b972b7a8612dca277499a43e7991163c7519e8a0ced2e57c90a
+    size: 25117596
+    checksum: sha256:4efcc956008f0468362b41bdba79111c41027b682bcdea3ecca3744cf50ebfd7
     name: sqlite
-    evr: 3.34.1-10.el9_8
+    evr: 3.34.1-11.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/s/systemd-252-67.el9_8.4.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
     size: 45009674
