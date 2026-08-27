@@ -2,6 +2,10 @@
 
 #include <fstream>
 
+extern "C" {
+#include <cap-ng.h>
+}
+
 #include "GRPCUtil.h"
 #include "Logging.h"
 #include "ProtoUtil.h"
@@ -43,6 +47,11 @@ bool SignalServiceClient::EstablishGRPCStreamSingle() {
 }
 
 void SignalServiceClient::EstablishGRPCStream() {
+  capng_clear(CAPNG_SELECT_ALL);
+  if (capng_apply(CAPNG_SELECT_ALL) != 0) {
+    CLOG(WARNING) << "Failed to drop capabilities: " << StrError();
+  }
+
   while (EstablishGRPCStreamSingle());
   CLOG(INFO) << "Signal service client terminating.";
 }
