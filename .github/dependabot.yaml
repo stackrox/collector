@@ -14,6 +14,13 @@ updates:
     exclude-paths: [ '**/konflux*.Dockerfile' ]
     schedule:
       interval: "weekly"
+    ignore:
+    - dependency-name: ubi8/ubi
+      versions:
+      - 8.x-x
+    - dependency-name: ubi8/ubi-minimal
+      versions:
+      - 8.x-x
   - package-ecosystem: 'docker'
     directory: integration-tests/container/benchmark/
     schedule:
