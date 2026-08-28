@@ -488,4 +488,12 @@ static inline const std::vector<IPNet>& PrivateNetworks() {
   return *ret;
 }
 
+// GetLocalInterfaceAddresses returns a list of IPNet objects representing
+// the local system's network interface addresses with their netmasks.
+std::vector<IPNet> GetLocalInterfaceAddresses();
+
+// netmask_to_prefix_length converts a sockaddr netmask to a prefix length (e.g., /24).
+// Returns 0 if the netmask is null or has an unsupported address family.
+size_t netmask_to_prefix_length(const struct sockaddr* netmask);
+
 }  // namespace collector
