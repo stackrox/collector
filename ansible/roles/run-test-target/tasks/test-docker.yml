@@ -152,6 +152,16 @@
       loop_control:
         loop_var: core_file
 
+    - name: Update permissions
+      file:
+        path: "{{ logs_root }}/"
+        # files to 0644, drectories to 0755
+        mode: u=rwX,g=rX,o=rX
+        recurse: true
+        owner: "{{ ansible_user }}"
+      become: yes
+      delegate_to: localhost
+
     - name: Report
       community.general.make:
         chdir: "{{ integration_tests_root }}"
