@@ -101,7 +101,7 @@ jobs:
         # was cancelled.
         if: (!cancelled())
         id: junit2jira
-        uses: stackrox/actions/test/junit2jira@main
+        uses: stackrox/actions/test/junit2jira@giles/multi-arch-junit2jira
         with:
           # Only create real Jira issues on push; dry-run on pull requests.
           dry-run: ${{ github.event_name != 'push' }}

@@ -125,7 +125,7 @@ jobs:
 
       - name: Report build failure to Jira
         if: (!cancelled())
-        uses: stackrox/actions/test/junit2jira@main
+        uses: stackrox/actions/test/junit2jira@giles/multi-arch-junit2jira
         with:
           dry-run: ${{ github.event_name != 'push' }}
           jira-user: ${{ secrets.JIRA_USER }}
@@ -191,7 +191,7 @@ jobs:
 
       - name: Report build failure to Jira
         if: (!cancelled())
-        uses: stackrox/actions/test/junit2jira@main
+        uses: stackrox/actions/test/junit2jira@giles/multi-arch-junit2jira
         with:
           dry-run: ${{ github.event_name != 'push' }}
           jira-user: ${{ secrets.JIRA_USER }}
