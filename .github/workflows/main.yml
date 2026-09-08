@@ -73,6 +73,8 @@ jobs:
 
   plugin-validator:
     uses: ./.github/workflows/plugin-validator.yml
+    permissions:
+      contents: read
     needs:
       - build-builder-image
     with:
