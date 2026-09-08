@@ -18,7 +18,7 @@ class Service;
 
 namespace collector::system_inspector {
 class Service;
-}
+}  // namespace collector::system_inspector
 
 namespace collector {
 /* A Process object store used to deduplicate process information.
