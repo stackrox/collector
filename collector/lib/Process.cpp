@@ -32,8 +32,8 @@ const std::shared_ptr<IProcess> ProcessStore::Fetch(uint64_t pid) {
 std::string Process::container_id() const {
   WaitForProcessInfo();
 
-  if (system_inspector_threadinfo_) {
-    auto id = GetContainerID(*system_inspector_threadinfo_);
+  if (system_inspector_ && system_inspector_threadinfo_) {
+    auto id = GetContainerID(*system_inspector_->GetInspector(), *system_inspector_threadinfo_);
     if (!id.empty()) {
       return id;
     }
@@ -98,6 +98,7 @@ Process::Process(
     ProcessStore::MapRef cache,
     system_inspector::Service* instance)
     : pid_(pid),
+      system_inspector_(instance),
       cache_(cache),
       process_info_pending_resolution_(false),
       system_inspector_callback_(
