@@ -1,0 +1,89 @@
+name: Plugin correctness validator
+
+on:
+  pull_request:
+    branches: [collector-container-plugin]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - collector/**
+      - falcosecurity-libs
+      - .github/workflows/plugin-validator.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plugin-validator-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  replay:
+    name: Plugin corpus (ASan/UBSan, ${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    container:
+      # Multiarch digest of the builder used for local corpus validation.
+      image: quay.io/stackrox-io/collector-builder@sha256:4ae0b728c58b38b67cdb426704a1e29d118ee1f979ce71606687874b4f5fa272
+    defaults:
+      run:
+        shell: bash
+    env:
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+      REPLAY_REPEAT: '100'
+      REPLAY_SEED: '3939'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Initialize required submodules and record revisions
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git submodule update --init --depth 1 falcosecurity-libs collector/proto/third_party/stackrox
+          mkdir -p artifacts
+          {
+            git rev-parse HEAD
+            git submodule status falcosecurity-libs collector/proto/third_party/stackrox
+            uname -sm
+            c++ --version
+          } | tee artifacts/revisions.txt
+
+      - name: Configure sanitizer replay target
+        run: |
+          cmake -S . -B cmake-build \
+            -DBUILD_PLUGIN_REPLAY_TESTS=ON \
+            -DADDRESS_SANITIZER=ON \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DDISABLE_PROFILING=ON \
+            '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
+            2>&1 | tee artifacts/configure.log
+
+      - name: Build validator and production plugin
+        run: |
+          cmake --build cmake-build --target ContainerPluginReplayTest --parallel 2 \
+            2>&1 | tee artifacts/build.log
+
+      - name: Replay corpus with shuffled repetitions
+        run: |
+          bash collector/test/plugin-replay/run-corpus.sh \
+            "$GITHUB_WORKSPACE/cmake-build" "$GITHUB_WORKSPACE/artifacts/replay"
+
+      - name: Upload validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-validator-${{ matrix.arch }}-${{ github.run_attempt }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 14
