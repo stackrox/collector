@@ -131,3 +131,21 @@ helper signatures and event semantics as well as whether the target still builds
 - Replays are deterministic correctness tests, not random fuzzing or CPU benchmarks.
   If adding structured mutation, retain reproducible seeds and promote minimized
   failures to named cases. Measure performance separately with controlled workloads.
+
+## Next steps
+
+Planned extensions, not currently supported:
+
+- Expand the corpus with cgroup changes after startup, plugin restart/reinitialization,
+  and callback read/write failures. Keep failure injection separate from valid
+  event-sequence tests.
+- Add bounded structured fuzzing of valid event sequences. Save reproducible seeds
+  and promote minimized failures into named regression cases.
+- Extend replay first to the post-upgrade Collector without the plugin, then to
+  the pre-upgrade Collector. Reuse scenario expectations, but build each revision
+  with its own pinned Falco dependency and event/attribution adapter; older output
+  is a comparison, not the correctness oracle.
+- Add packaged-image integration tests for live discovery, event loss and signal
+  delivery. Keep controlled CPU benchmarks separate from correctness replay.
+
+Link these items to tracking issues as the work is scoped.
