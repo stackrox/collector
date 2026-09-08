@@ -111,8 +111,16 @@ vfork sequences must respect the child's exit before the parent's return.
 
 Main CI calls `.github/workflows/plugin-validator.yml` alongside unit tests using
 the same builder-tag output. It builds the standard checkout and pinned submodules
-on AMD64 and ARM64, runs the corpus once, and uploads logs, XML and build/revision
+on AMD64 and ARM64 with ASan/UBSan, runs the corpus once, and uploads logs, XML and build/revision
 information even on failure. Assertions are not skipped or converted to success.
+
+To match CI locally, add `-DADDRESS_SANITIZER=ON` and
+`'-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer'` to the
+Debug configure command in a separate build directory. The repository's
+`ADDRESS_SANITIZER` option enables both sanitizers for C++; the C flags also
+instrument libscap. Run with `ASAN_OPTIONS=detect_leaks=1:halt_on_error=1` and
+`UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1`. Prebuilt external libraries
+are not rebuilt with instrumentation. Valgrind is not used by this workflow.
 
 `BUILD_PLUGIN_REPLAY_TESTS` is opt-in. Its CMake target compiles the pinned Falco
 test helpers and enables TEST_INPUT without enabling the entire upstream suite.
