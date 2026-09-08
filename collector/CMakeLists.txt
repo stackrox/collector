@@ -104,4 +104,12 @@ set(MODERN_BPF_DEBUG_MODE ${BPF_DEBUG_MODE} CACHE BOOL "Enable BPF debug prints"
 
 set(MODERN_BPF_EXCLUDE_PROGS "^(openat2|ppoll|setsockopt|io_uring_setup|nanosleep|pread64|preadv|pwritev|read|readv|writev|recv|process_vm_readv|process_vm_writev)$" CACHE STRING "Set of syscalls to exclude from modern bpf engine " FORCE)
 
+option(BUILD_PLUGIN_REPLAY_TESTS "Build isolated plugin replay tests" OFF)
+if(BUILD_PLUGIN_REPLAY_TESTS)
+    set(HAS_ENGINE_TEST_INPUT ON)
+endif()
 add_subdirectory(${FALCO_DIR} falco)
+
+if(BUILD_PLUGIN_REPLAY_TESTS)
+    add_subdirectory(test/plugin-replay)
+endif()
