@@ -1,21 +1,15 @@
 name: Plugin correctness validator
 
 on:
-  pull_request:
-    branches: [collector-container-plugin]
-    types: [opened, synchronize, reopened, ready_for_review]
-    paths:
-      - collector/**
-      - falcosecurity-libs
-      - .github/workflows/plugin-validator.yml
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      collector-builder-tag:
+        type: string
+        required: true
+        description: The builder tag to use in the build
 
 permissions:
   contents: read
-
-concurrency:
-  group: plugin-validator-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
 
 jobs:
   replay:
@@ -23,16 +17,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - arch: amd64
-            runner: ubuntu-24.04
-          - arch: arm64
-            runner: ubuntu-24.04-arm
-    runs-on: ${{ matrix.runner }}
+        arch: [amd64, arm64]
+    runs-on: ${{ (matrix.arch == 'arm64' && 'ubuntu-24.04-arm') || 'ubuntu-24.04' }}
     timeout-minutes: 45
     container:
-      # Multiarch digest of the builder used for local corpus validation.
-      image: quay.io/stackrox-io/collector-builder@sha256:4ae0b728c58b38b67cdb426704a1e29d118ee1f979ce71606687874b4f5fa272
+      image: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}
     defaults:
       run:
         shell: bash
@@ -44,8 +33,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Initialize required submodules and record revisions
         run: |
@@ -55,6 +42,7 @@ jobs:
           {
             git rev-parse HEAD
             git submodule status falcosecurity-libs collector/proto/third_party/stackrox
+            echo "Builder: quay.io/stackrox-io/collector-builder:${{ inputs.collector-builder-tag }}"
             uname -sm
             c++ --version
           } | tee artifacts/revisions.txt

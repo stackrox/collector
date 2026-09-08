@@ -54,34 +54,21 @@ with `-DMODERN_BPF_SKEL_DIR=/build/skel_dir`. No BPF program is loaded by replay
 
 ## CI
 
-`.github/workflows/plugin-validator.yml` runs on pull requests targeting
-`collector-container-plugin` when relevant sources change, including draft PRs.
-It builds the exact PR head against its pinned submodules in a pinned multiarch
-Collector builder image. AMD64 and ARM64 each run 100 shuffled ASan/UBSan
+Main CI calls `.github/workflows/plugin-validator.yml` alongside unit tests,
+using the same `build-builder-image` output tag and standard checkout (the merge
+commit for pull requests). It builds against that revision's pinned submodules.
+AMD64 and ARM64 each run 100 shuffled ASan/UBSan
 iterations. Logs, XML, and revision information are uploaded even if replay fails.
-The workflow is independent of the main image/integration-test pipeline and uses
-only read access to repository contents.
+The validator needs only the builder job, not the Collector image or integration
+tests, and uses only read access to repository contents.
 
 The expected original-PR result is red: 54/67 cases pass and 13 fail. Known
 regressions are not skipped or converted to success. Fixes belong in the parent
 plugin branch; updating this stacked branch and rerunning provides validation.
 
-## Diagnostic candidate and limitations
+## Limitations
 
-`cgroup-order-candidate.patch` preserves the first nonempty ID. It is retained
-only as a diagnostic artifact and is never applied by the build or CI. It fixes
-three failures (57/67 pass), leaving the cache lifecycle failures unresolved.
-From the repository root, an isolated local check can use:
-
-```sh
-git apply --check collector/test/plugin-replay/cgroup-order-candidate.patch
-git apply collector/test/plugin-replay/cgroup-order-candidate.patch
-cmake --build /build --target ContainerPluginReplayTest -j4
-bash collector/test/plugin-replay/run-corpus.sh /build /tmp/plugin-candidate
-# Once the test completes (its failures are expected), restore the source:
-git apply -R collector/test/plugin-replay/cgroup-order-candidate.patch
-cmake --build /build --target ContainerPluginReplayTest -j4
-```
+This contribution contains tests and CI only; plugin fixes belong in the parent PR.
 
 The tests use real Falco callbacks and production ID lookup; two also exercise
 the network handler and connection tracker. The short filter-construction code

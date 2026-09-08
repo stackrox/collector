@@ -71,6 +71,13 @@ jobs:
       collector-builder-tag: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
     secrets: inherit
 
+  plugin-validator:
+    uses: ./.github/workflows/plugin-validator.yml
+    needs:
+      - build-builder-image
+    with:
+      collector-builder-tag: ${{ needs.build-builder-image.outputs.collector-builder-tag }}
+
   integration-tests:
     uses: ./.github/workflows/integration-tests.yml
     with:

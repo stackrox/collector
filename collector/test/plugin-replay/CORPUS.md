@@ -81,9 +81,6 @@ independent defects:
    and downstream connection tracking. Two additional late-import cases show
    the same empty-cache behavior through explicitly modeled state insertion.
 
-The cgroup-only diagnostic patch fixes exactly three failures (57 pass, 10 fail),
-confirming that cache initialization is independent of cgroup iteration order.
-
 The original plugin was run for 100 shuffled sanitizer iterations (6,700 test
 executions); every iteration had the same 54/13 split, with no ASan/UBSan/leak
 diagnostics. These are reproducible behavioral failures, not sanitizer crashes.
