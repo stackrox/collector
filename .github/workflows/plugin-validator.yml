@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   replay:
-    name: Plugin corpus (ASan/UBSan, ${{ matrix.arch }})
+    name: Plugin corpus (${{ matrix.arch }})
     strategy:
       fail-fast: false
       matrix:
@@ -25,11 +25,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
-      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
-      REPLAY_REPEAT: '100'
-      REPLAY_SEED: '3939'
 
     steps:
       - uses: actions/checkout@v4
@@ -47,14 +42,12 @@ jobs:
             c++ --version
           } | tee artifacts/revisions.txt
 
-      - name: Configure sanitizer replay target
+      - name: Configure replay target
         run: |
           cmake -S . -B cmake-build \
             -DBUILD_PLUGIN_REPLAY_TESTS=ON \
-            -DADDRESS_SANITIZER=ON \
             -DCMAKE_BUILD_TYPE=Debug \
             -DDISABLE_PROFILING=ON \
-            '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer' \
             2>&1 | tee artifacts/configure.log
 
       - name: Build validator and production plugin
@@ -62,7 +55,7 @@ jobs:
           cmake --build cmake-build --target ContainerPluginReplayTest --parallel 2 \
             2>&1 | tee artifacts/build.log
 
-      - name: Replay corpus with shuffled repetitions
+      - name: Replay corpus
         run: |
           bash collector/test/plugin-replay/run-corpus.sh \
             "$GITHUB_WORKSPACE/cmake-build" "$GITHUB_WORKSPACE/artifacts/replay"

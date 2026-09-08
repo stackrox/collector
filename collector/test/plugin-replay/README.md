@@ -1,175 +1,133 @@
-# Plugin correctness validator
+# Container plugin replay tests
 
-The container plugin caches which container a process belongs to. Collector uses
-that answer to exclude host activity and attribute container connections. A wrong
-or missing answer can silently drop a legitimate connection or let host activity
-through the filter. This validator checks those decisions before we assess speed.
+Use this suite to check container attribution, host filtering and selected network
+handling without starting Collector against a live kernel or Kubernetes cluster.
+It supplies synthetic process events to the real Falco parser, loads the compiled
+container plugin, and checks the answers through Collector's production code.
 
-It is a 67-case deterministic regression suite, not a random fuzzer. This PR adds
-tests and CI only; plugin fixes belong in the parent PR.
+## Build and run
 
-## How it works
-
-Each test gives a fresh Falco inspector a small process inventory and a sequence
-of synthetic events, such as a process starting a child and that child connecting
-to a socket. Falco's real TEST_INPUT engine parses those events and invokes the
-actual compiled plugin. We check the resulting container ID, filtering decision,
-and, in two tests, Collector's network handler and connection tracker.
-
-The path under test is:
-
-`scenario -> real Falco parser -> real plugin -> Collector attribution/filter -> selected network checks`
-
-We synthesize the input, not the plugin's answer. Tests never write the plugin's
-cached container-ID field. Expected IDs are explicit scenario data, not values
-computed with the plugin's own extraction logic. There is no live kernel capture,
-container runtime socket, Kubernetes cluster, or Sensor service.
-
-Why simulate process IDs? A fork can be observed from both the parent and child.
-Falco can create a child's process-table entry while parsing the parent's event,
-before seeing anything from the child. The plugin must handle that lifecycle.
-The numeric thread IDs (TIDs) merely let the test describe these relationships;
-the important question is whether a real parser-created child gets the right
-container identity, including when one of the events is missing.
-
-## What's in the corpus
-
-| Cases | Scenarios | Decision being checked |
-| --- | --- | --- |
-| 16 startup | Docker, CRI-O, containerd, Podman paths; host/conmon; malformed IDs; cgroup ordering | Correct identity regardless of unrelated cgroup entries; exclude host activity |
-| 33 process creation | fork/clone/clone3; host, hostPID and PID-namespace containers; parent-first, child-first, missing parent or child | Identity follows a valid child through supported event orders |
-| 18 focused | Exec/execveat, failed exec, ID reuse, thread clone, vfork, late discovery, installed filters, recovery and network handling | Refresh stale state and preserve downstream attribution |
-
-The process-creation matrix deliberately excludes parent-only PID-namespace
-cases: the parent reports a namespace-local child ID, insufficient for Falco to
-create the global entry. For parent-only host/hostPID cases we first assert that
-Falco created a valid child with the expected cgroup, then check plugin identity.
-The vfork case uses child creation, child exit, then parent return, not an
-arbitrary ordering that would report an impossible lifecycle as a defect.
-
-`Corpus.h` holds typed startup data; `ContainerPluginReplayTest.cpp` defines the
-event sequences and parameterized cases. GTest gives cases readable names so a
-failure can be selected and reproduced individually.
-
-## What we found locally
-
-On parent commit `249fe750e`, **54 cases pass and 13 fail**. These failures reduce
-to two root causes, not thirteen independent bugs:
-
-- Three cases show a later nonmatching cgroup erasing an already resolved ID.
-  The resulting host attribution rejects legitimate container events.
-- Eight cases show missing identity for a child created from the parent's event:
-  six process-creation cases, one installed-filter check and one network check.
-  Two more cases model late-discovered processes with the same empty-cache gap.
-
-The network reproduction matters beyond a field assertion: with both fork events,
-the production handler records one correctly attributed connection. Omit the
-child event and the handler returns `IGNORED`, leaving the tracker empty.
-Supplying the child event restores attribution. Separately, a host child with an
-empty cached ID passes the installed filter; this does not prove delivery to Sensor.
-
-Across 100 shuffled local ASan/UBSan iterations (6,700 executions), every iteration
-had the same 54/13 split and no sanitizer/leak diagnostics. These are behavioral
-failures, not demonstrated memory-safety crashes. Supported layout controls,
-complete fork orders, exec refresh, ID reuse and valid vfork ordering passed.
-
-## Build and run locally
-
-In a Linux Collector builder environment with source at `/src`:
+Run inside a Linux Collector builder environment, with the repository at `/src`.
+Initialize the required submodules first. The source tree must be writable because
+Falco generates some headers there during the build.
 
 ```sh
+cd /src
+git submodule update --init falcosecurity-libs collector/proto/third_party/stackrox
 cmake -S /src -B /build \
   -DBUILD_PLUGIN_REPLAY_TESTS=ON \
   -DCMAKE_BUILD_TYPE=Debug -DDISABLE_PROFILING=ON
-cmake --build /build --target ContainerPluginReplayTest -j4
+cmake --build /build --target ContainerPluginReplayTest -j2
 bash /src/collector/test/plugin-replay/run-corpus.sh /build /tmp/plugin-results
 ```
 
-Initialize the pinned `falcosecurity-libs` and
-`collector/proto/third_party/stackrox` submodules first. Falco sources must be
-writable because its build generates some source-tree headers.
+The runner writes `run.log` and `results.xml` and returns nonzero if any assertion
+fails. It sets the plugin path automatically. To select or list cases, pass GTest
+arguments after the two directory arguments:
 
-The runner retains logs and XML and returns nonzero on test failure. CTest also
-registers `ContainerPluginReplayTest` and supplies the plugin path automatically:
+```sh
+bash /src/collector/test/plugin-replay/run-corpus.sh /build /tmp/plugin-results \
+  --gtest_filter='*MatchingCgroup*'
+bash /src/collector/test/plugin-replay/run-corpus.sh /build /tmp/plugin-results \
+  --gtest_list_tests
+```
+
+CTest also registers the target and supplies its plugin path:
 
 ```sh
 ctest --test-dir /build -R '^ContainerPluginReplayTest$' --output-on-failure
 ```
 
-The build reuses upstream fixture sources without enabling the entire upstream
-test suite. It enables Falco's TEST_INPUT engine only with this build option.
-Normal Collector test builds remain unchanged when the option is off.
+For order-dependent failures, set `REPLAY_REPEAT=100 REPLAY_SEED=3939` before the
+runner command. This repeats and shuffles the same cases, not their event contents.
+The log retains every iteration; the XML describes only the last iteration.
+`ROX_COLLECTOR_CONTAINER_PLUGIN_PATH` can select a compatible plugin module, but
+does not change the linked Falco or Collector version.
 
-To reproduce just the lost-connection case:
+## How a test works
 
-```sh
-bash /src/collector/test/plugin-replay/run-corpus.sh /build /tmp/repro \
-  --gtest_filter=ContainerPluginReplayTest.HostPIDConnectionTrackedWithoutChildForkEvent
+Each case starts with a fresh inspector and plugin. `SeedThread` supplies the
+initial process inventory and cgroups. `Open` starts the inspector, letting Falco
+invoke the plugin's capture callback. Event helpers then feed synthetic events
+through Falco's TEST_INPUT engine; Falco performs parsing, process-table updates
+and plugin callbacks. Tests do not call those callbacks directly or populate the
+plugin's cached container-ID field.
+
+`ExpectAttribution` checks Collector's container ID and the plugin-backed filter.
+Network-focused cases additionally exercise `NetworkSignalHandler` and
+`ConnectionTracker`. Expected IDs are explicit test data, never calculated with
+the plugin's extraction function.
+
+Process IDs simply connect events to their parent or child. For example, Falco
+may learn about a child from the parent's fork event before observing the child's
+event. Keeping those inputs separate lets a test check attribution when events
+arrive in a different order or one is missing.
+
+## Extend the corpus
+
+The corpus has three groups:
+
+- Startup layouts in `Corpus.h`: Docker, CRI-O, containerd and Podman cgroups,
+  host/conmon exclusion, malformed IDs and cgroup ordering.
+- Process-creation combinations in `Corpus.h`: fork/clone/clone3, host or container
+  origins, and parent/child event ordering. The parameterized test supplies events.
+- Focused `TEST_F` cases in `ContainerPluginReplayTest.cpp`: exec refresh, process-ID
+  reuse, thread clone, vfork, late discovery, filtering and connection tracking.
+
+### Add a cgroup layout
+
+Add a named `StartupCase` to `StartupCases()` with controller-prefixed cgroup
+strings and an explicit expected short ID (or `""` for host/excluded activity).
+For example, a new ordering case could be:
+
+```cpp
+{"HostThenDocker", {"cpuset=/", "memory=/docker/" + kA}, "aaaaaaaaaaaa"},
 ```
 
-`ROX_COLLECTOR_CONTAINER_PLUGIN_PATH` selects another compatible plugin module;
-it does not change the linked Falco or Collector version.
+The existing parameterized test seeds the process and checks attribution and
+filtering. Use a unique descriptive name so the case is easy to select in GTest.
 
-## Sanitizers
+### Add a lifecycle scenario
 
-Instrument C as well as C++ so libscap participates:
+Add a `TEST_F(ContainerPluginReplayTest, DescriptiveName)` in the replay test file:
 
-```sh
-cmake -S /src -B /build-asan \
-  -DBUILD_PLUGIN_REPLAY_TESTS=ON -DADDRESS_SANITIZER=ON \
-  -DCMAKE_BUILD_TYPE=Debug -DDISABLE_PROFILING=ON \
-  '-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer'
-cmake --build /build-asan --target ContainerPluginReplayTest -j2
-REPLAY_REPEAT=100 REPLAY_SEED=3939 \
-ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 \
-UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
-  bash /src/collector/test/plugin-replay/run-corpus.sh /build-asan /tmp/plugin-asan
-```
+1. Seed only the processes known before capture, then call `Open()`.
+2. Generate the smallest valid event sequence needed for the scenario, using the
+   existing Falco helpers. Keep timestamps increasing and parent/child IDs coherent.
+3. Assert prerequisites such as the child's existence and cgroups before checking
+   attribution. A missing parser-created process is different from a plugin bug.
+4. Check the expected ID and filtering decision; use the network-handler helper
+   when the requirement is that a connection actually reaches the tracker.
+5. Include a nearby positive control when omitting or reordering an event, and
+   run the focused case followed by the full corpus.
 
-External prebuilt builder libraries are not rebuilt with instrumentation. If a
-Debug build already generated the BPF skeleton, the sanitizer build can reuse it
-with `-DMODERN_BPF_SKEL_DIR=/build/skel_dir`. No BPF program is loaded by replay.
+Extend `ForkCases()` only when an event has the same encoding and expectations as
+the existing parameterized test. Use a focused case for a different lifecycle.
+Do not remove its parent-only PID-namespace exclusion: that event supplies a
+namespace-local child ID, insufficient to create the global child entry. Similarly,
+vfork sequences must respect the child's exit before the parent's return.
 
-## CI
+## CI and maintenance
 
-Main CI calls `.github/workflows/plugin-validator.yml` alongside unit tests,
-using the same `build-builder-image` output tag and standard checkout (the merge
-commit for pull requests). It builds against that revision's pinned submodules.
-AMD64 and ARM64 each run 100 shuffled ASan/UBSan
-iterations. Logs, XML, and revision information are uploaded even if replay fails.
-The log contains all iterations; GTest's XML describes only the final iteration.
-The validator needs only the builder job, not the Collector image or integration
-tests, and uses only read access to repository contents.
+Main CI calls `.github/workflows/plugin-validator.yml` alongside unit tests using
+the same builder-tag output. It builds the standard checkout and pinned submodules
+on AMD64 and ARM64, runs the corpus once, and uploads logs, XML and build/revision
+information even on failure. Assertions are not skipped or converted to success.
 
-The expected original-PR result is red: 54/67 cases pass and 13 fail. Known
-regressions are not skipped or converted to success. Fixes belong in the parent
-plugin branch; updating this stacked branch and rerunning provides validation.
+`BUILD_PLUGIN_REPLAY_TESTS` is opt-in. Its CMake target compiles the pinned Falco
+test helpers and enables TEST_INPUT without enabling the entire upstream suite.
+Normal builds are unchanged when the option is off. When updating Falco, check
+helper signatures and event semantics as well as whether the target still builds.
 
-## Gaps and tradeoffs
+## Boundaries to preserve
 
-- **Repeatable parser tests, not live capture.** Synthetic input makes ordering
-  failures small and reproducible, but does not validate kernel event encoding,
-  real event loss, runtime discovery, deployment or Sensor delivery. Those need
-  separate live integration tests.
-- **Real implementation, coupled fixtures.** Linking production Collector and
-  pinned Falco catches integration errors that a fake plugin API would miss.
-  It also requires a Linux builder and may need fixture changes on Falco upgrades.
-  Swapping a plugin file is not a comparison with an older Collector release.
-- **Late discovery is modeled.** Two tests insert a valid process into Falco's
-  real thread manager after capture starts. TEST_INPUT has no live `/proc` lookup
-  callback. These support the cache-lifecycle finding, not a live-discovery claim.
-- **Filter setup can drift.** The short filter construction is copied from
-  `Service.cpp`, rather than shared with service startup. Changes to production
-  filter configuration must be reflected here until a shared helper is extracted.
-- **Repetition is not exploration.** Shuffling repeats the same 67 scenarios;
-  it does not mutate event contents, inject callback failures, explore concurrency,
-  or cover every process lifecycle. Bounded structured mutation is a next step,
-  with minimized failures promoted into named regression cases.
-- **Sanitizers are not a performance test.** They cover instrumented code, not
-  prebuilt external libraries, and a clean run is not proof of memory safety.
-  Recovery of the reported CPU regression requires optimized, controlled workload
-  comparisons that also verify signal correctness.
-
-First use this corpus to validate the parent's fixes without weakening assertions.
-Then extend it with structured mutation and live integration checks; keep CPU
-benchmarks separate so correctness and performance results remain interpretable.
+- Synthetic input does not test live kernel capture, actual event loss, runtime
+  discovery, deployment or Sensor delivery. Add live integration tests for those.
+- `ImportLateThread` models the result of a successful `/proc` lookup by inserting
+  a valid process into Falco's thread manager. TEST_INPUT has no live lookup callback;
+  keep those tests clearly distinguished from event-only reproductions.
+- Filter construction is currently copied from `Service.cpp`. Keep it aligned
+  with production configuration until a shared helper replaces the duplication.
+- Replays are deterministic correctness tests, not random fuzzing or CPU benchmarks.
+  If adding structured mutation, retain reproducible seeds and promote minimized
+  failures to named cases. Measure performance separately with controlled workloads.
