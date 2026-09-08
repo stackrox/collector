@@ -21,6 +21,7 @@ class sinsp_threadinfo;
 
 namespace collector::system_inspector {
 
+class ContainerIDCache;
 class Service : public SystemInspector {
  public:
   Service(const Service&) = delete;
@@ -43,6 +44,7 @@ class Service : public SystemInspector {
   void GetProcessInformation(uint64_t pid, ProcessInfoCallbackRef callback);
 
   sinsp* GetInspector() { return inspector_.get(); }
+  ContainerIDCache* GetContainerIDCache() { return container_id_cache_.get(); }
   Stats* GetUserspaceStats() { return &userspace_stats_; }
 
   void AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler);
@@ -61,13 +63,14 @@ class Service : public SystemInspector {
   };
 
   sinsp_evt* GetNext();
-  static bool FilterEvent(sinsp_evt* event);
-  static bool FilterEvent(const sinsp_threadinfo* tinfo);
+  bool FilterEvent(sinsp_evt* event);
+  static bool FilterEvent(sinsp& inspector, const sinsp_threadinfo* tinfo);
 
   bool SendExistingProcesses(SignalHandler* handler);
 
   mutable std::mutex libsinsp_mutex_;
   std::unique_ptr<sinsp> inspector_;
+  std::unique_ptr<ContainerIDCache> container_id_cache_;
   std::unique_ptr<sinsp_evt_formatter> default_formatter_;
   std::unique_ptr<ISignalServiceClient> signal_client_;
   std::vector<SignalHandlerEntry> signal_handlers_;
