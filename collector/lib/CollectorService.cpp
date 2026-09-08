@@ -53,7 +53,7 @@ CollectorService::CollectorService(CollectorConfig& config, std::atomic<ControlV
         &system_inspector_,
         exporter_.GetRegistry().get());
 
-    auto network_signal_handler = std::make_unique<NetworkSignalHandler>(system_inspector_.GetInspector(), conn_tracker_, system_inspector_.GetUserspaceStats());
+    auto network_signal_handler = std::make_unique<NetworkSignalHandler>(system_inspector_.GetInspector(), conn_tracker_, system_inspector_.GetUserspaceStats(), system_inspector_.GetContainerIDCache());
     network_signal_handler->SetCollectConnectionStatus(config_.CollectConnectionStatus());
     network_signal_handler->SetTrackSendRecv(config_.TrackingSendRecv());
     system_inspector_.AddSignalHandler(std::move(network_signal_handler));

@@ -32,10 +32,14 @@ const std::shared_ptr<IProcess> ProcessStore::Fetch(uint64_t pid) {
 std::string Process::container_id() const {
   WaitForProcessInfo();
 
+  // system_inspector_threadinfo_ is assigned by ProcessInfoResolved() on the
+  // inspector thread; hold the lock across the read and the extraction.
+  std::lock_guard<std::mutex> lock(process_info_mutex_);
   if (system_inspector_threadinfo_) {
-    auto id = GetContainerID(*system_inspector_threadinfo_);
-    if (!id.empty()) {
-      return id;
+    for (const auto& cgroup : system_inspector_threadinfo_->cgroups()) {
+      if (const auto id = ExtractContainerIDFromCgroup(cgroup.second)) {
+        return std::string(*id);
+      }
     }
   }
 
