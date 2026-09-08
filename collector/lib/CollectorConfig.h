@@ -161,6 +161,7 @@ class CollectorConfig {
   unsigned int GetSinspTotalBufferSize() const { return sinsp_total_buffer_size_; }
   unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
   bool DisableProcessArguments() const { return disable_process_arguments_; }
+  const std::string& ContainerPluginPath() const { return container_plugin_path_; }
 
   static std::pair<option::ArgStatus, std::string> CheckConfiguration(const char* config, Json::Value* root);
 
@@ -225,6 +226,7 @@ class CollectorConfig {
   std::optional<std::string> grpc_server_;
 
   bool disable_process_arguments_ = false;
+  std::string container_plugin_path_ = "/usr/local/lib/collector/collector-container-plugin.so";
 
   // One ring buffer will be initialized for this many CPUs
   unsigned int sinsp_cpu_per_buffer_ = 0;

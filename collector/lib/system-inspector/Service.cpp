@@ -6,7 +6,9 @@
 
 #include <linux/ioctl.h>
 
+#include "libsinsp/filter.h"
 #include "libsinsp/parsers.h"
+#include "libsinsp/plugin.h"
 #include "libsinsp/sinsp.h"
 
 #include <google/protobuf/util/time_util.h>
@@ -29,6 +31,9 @@
 
 namespace collector::system_inspector {
 
+namespace {
+}  // namespace
+
 Service::~Service() = default;
 
 Service::Service(const CollectorConfig& config)
@@ -46,6 +51,12 @@ Service::Service(const CollectorConfig& config)
   inspector_->disable_log_timestamps();
   inspector_->set_log_callback(logging::InspectorLogCallback);
 
+  container_plugin_ = inspector_->register_plugin(config.ContainerPluginPath());
+  std::string plugin_error;
+  if (!container_plugin_->init("{}", plugin_error)) {
+    CLOG(FATAL) << "Failed to initialise container plugin: " << plugin_error;
+  }
+
   inspector_->set_import_users(config.ImportUsers());
   inspector_->set_thread_timeout_s(30);
   inspector_->set_auto_threads_purging_interval_s(60);
@@ -57,36 +68,6 @@ Service::Service(const CollectorConfig& config)
   if (config.CollectConnectionStatus()) {
     inspector_->get_parser()->set_track_connection_status(true);
   }
-
-  // Filter out host processes to avoid flooding Sensor with events it
-  // cannot associate with a container. The filter has two clauses:
-  //
-  //   1. pid != vpid — In a PID namespace (the common container case),
-  //      the kernel PID differs from the virtual PID visible inside the
-  //      container. The val() transformer makes the parser treat
-  //      proc.vpid as a field reference instead of a literal string.
-  //
-  //   2. cgroup regex — Catches containers that share the host PID
-  //      namespace (hostPID: true), where pid == vpid despite the
-  //      process running inside a container. Container runtimes always
-  //      place container processes in a cgroup whose path ends with the
-  //      64-hex-character container ID, so matching that pattern
-  //      identifies containerised processes regardless of PID namespace
-  //      configuration. This mirrors the cgroup-based container ID
-  //      extraction in ExtractContainerIDFromCgroup().
-  //
-  //      The memory cgroup is used because on cgroups v2 with systemd,
-  //      the memory controller is reliably delegated to the container's
-  //      leaf cgroup (where the path contains the container ID), while
-  //      cpuset is often only available at a higher level in the
-  //      hierarchy. The trailing (/.*) accounts for additional path
-  //      components some runtimes append (e.g. podman adds /container).
-  //
-  // The 'or' short-circuits: the regex only evaluates for events where
-  // the PID check fails, so the performance cost is negligible.
-  inspector_->set_filter(
-      "proc.pid != val(proc.vpid)"
-      " or thread.cgroup.memory regex \".*[/:-][0-9a-f]{64}(\\\\.scope)?(/.*)?\"");
 
   // The self-check handlers should only operate during start up,
   // so they are added to the handler list first, so they have access
@@ -118,6 +99,13 @@ bool Service::InitKernel(const CollectorConfig& config) {
     CLOG(ERROR) << "Failed to setup " << config.GetCollectionMethod() << " driver.";
     return false;
   }
+
+  sinsp_filter_check_list filter_list;
+  filter_list.add_filter_check(inspector_->new_generic_filtercheck());
+  filter_list.add_filter_check(sinsp_plugin::new_filtercheck(container_plugin_));
+  auto filter_factory = std::make_shared<sinsp_filter_factory>(inspector_.get(), filter_list);
+  sinsp_filter_compiler filter_compiler(filter_factory, "container.id != host");
+  inspector_->set_filter(filter_compiler.compile(), "container.id != host");
 
   return true;
 }
@@ -174,22 +162,11 @@ sinsp_evt* Service::GetNext() {
 bool Service::FilterEvent(sinsp_evt* event) {
   const auto* tinfo = event->get_thread_info();
 
-  return FilterEvent(tinfo);
+  return FilterEvent(*event->get_inspector(), tinfo);
 }
 
-bool Service::FilterEvent(const sinsp_threadinfo* tinfo) {
+bool Service::FilterEvent(sinsp&, const sinsp_threadinfo* tinfo) {
   if (tinfo == nullptr) {
-    return false;
-  }
-
-  // Exclude host processes that leak through the sinsp filter.
-  // The sinsp filter uses a cgroup regex to catch containers in
-  // the host PID namespace, but this can also match container
-  // runtime helpers (crun, runc, conmon, podman) that run on the
-  // host within cgroup paths containing container IDs. Checking
-  // GetContainerID catches all such cases without maintaining a
-  // list of runtime helper names.
-  if (GetContainerID(*tinfo).empty()) {
     return false;
   }
 
@@ -300,7 +277,7 @@ bool Service::SendExistingProcesses(SignalHandler* handler) {
   }
 
   return threads->loop([&](sinsp_threadinfo& tinfo) {
-    if (!GetContainerID(tinfo).empty() && tinfo.is_main_thread()) {
+    if (!GetContainerID(*inspector_, tinfo).empty() && tinfo.is_main_thread()) {
       auto result = handler->HandleExistingProcess(&tinfo);
       if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
         CLOG(WARNING) << "Failed to write existing process signal: " << &tinfo;
