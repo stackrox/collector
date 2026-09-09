@@ -53,11 +53,16 @@
   delegate_to: localhost
   ibm.cloudcollection.ibm_is_security_group:
     state: absent
+    id: "{{ sg.resource.id }}"
     name: "{{ inventory_hostname }}-sg"
     vpc: "{{ s390x.vpc_id }}"
+    resource_group: "{{ s390x.vsi_resource_group_id }}"
   register: sg_delete
+  retries: 6
+  delay: 20
+  until: sg_delete is success
   failed_when:
-    - sg_delete.rc | default(0) != 0
+    - sg_delete.rc != 0
     - '"Target not found" not in (sg_delete.stderr | default(""))'
     - '"Target not found" not in (sg_delete.msg | default(""))'
     - '"not_found" not in (sg_delete.stderr | default(""))'
