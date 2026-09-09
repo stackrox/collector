@@ -6,6 +6,7 @@
 
 #include "CollectorStats.h"
 #include "Utility.h"
+#include "system-inspector/ContainerIDCache.h"
 #include "system-inspector/Service.h"
 
 namespace collector {
@@ -33,7 +34,7 @@ std::string Process::container_id() const {
   WaitForProcessInfo();
 
   if (system_inspector_ && system_inspector_threadinfo_) {
-    auto id = GetContainerID(*system_inspector_->GetInspector(), *system_inspector_threadinfo_);
+    auto id = system_inspector_->GetContainerIDCache()->Get(*system_inspector_threadinfo_);
     if (!id.empty()) {
       return id;
     }
