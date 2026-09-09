@@ -31,6 +31,7 @@ foreach(test_file ${TEST_SRC_FILES})
         endif()
 
         add_test(NAME memcheck_${test_name} COMMAND valgrind -q --leak-check=full --trace-children=yes $<TARGET_FILE:${test_name}>)
+        set_property(TEST memcheck_${test_name} APPEND PROPERTY ENVIRONMENT "ROX_COLLECTOR_CONTAINER_PLUGIN_PATH=${CMAKE_BINARY_DIR}/collector/collector-container-plugin.so")
     endif()
 endforeach()
 
