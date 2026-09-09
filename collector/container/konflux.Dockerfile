@@ -135,7 +135,6 @@ COPY --from=package_installer /out/ /
 
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector /usr/local/bin/
 COPY --from=builder ${CMAKE_BUILD_DIR}/collector/self-checks /usr/local/bin/
-COPY --from=builder ${CMAKE_BUILD_DIR}/collector/collector-container-plugin.so /usr/local/lib/collector/collector-container-plugin.so
 
 COPY LICENSE /licenses/LICENSE
 

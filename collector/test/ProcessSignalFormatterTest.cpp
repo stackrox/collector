@@ -5,6 +5,7 @@
 
 #include "CollectorStats.h"
 #include "ProcessSignalFormatter.h"
+#include "system-inspector/ContainerIDCache.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -27,7 +28,7 @@ TEST(ProcessSignalFormatterTest, NoProcessTest) {
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
   CollectorConfig config;
 
-  ProcessSignalFormatter processSignalFormatter(inspector, config);
+  ProcessSignalFormatter processSignalFormatter(inspector, config, nullptr);
 
   sinsp_threadinfo* tinfo = NULL;
   std::vector<LineageInfo> lineage;
@@ -638,8 +639,9 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
 TEST(ProcessSignalFormatterTest, ProcessArguments) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   MockCollectorConfig config;
+  system_inspector::ContainerIDCache container_id_cache;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, &container_id_cache);
 
   auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 3;
@@ -666,9 +668,10 @@ TEST(ProcessSignalFormatterTest, ProcessArguments) {
 TEST(ProcessSignalFormatterTest, NoProcessArguments) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   MockCollectorConfig config;
+  system_inspector::ContainerIDCache container_id_cache;
 
   config.SetDisableProcessArguments(true);
-  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, &container_id_cache);
 
   auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 3;

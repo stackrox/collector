@@ -49,8 +49,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/lib/CollectorVersion.h.in ${CMAKE_CUR
 
 set(FALCO_DIR ${PROJECT_SOURCE_DIR}/../falcosecurity-libs)
 
-add_subdirectory(container-plugin)
-
 add_subdirectory(${PROJECT_SOURCE_DIR}/proto)
 
 include_directories(${PROJECT_SOURCE_DIR}/lib)
