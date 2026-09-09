@@ -1,0 +1,32 @@
+name: AI review
+
+on:
+  pull_request_target:
+    types: [opened, labeled, unlabeled, synchronize, reopened, ready_for_review, converted_to_draft, closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ensure-label:
+    if: github.event.action == 'opened'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add opt-in review label
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr edit "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/pull/${{ github.event.pull_request.number }}" --add-label ai-review
+
+  review:
+    needs: ensure-label
+    if: >-
+      always() &&
+      (github.event.action != 'opened' || needs.ensure-label.result == 'success') &&
+      (((github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name == 'ai-review') ||
+      (github.event.action != 'labeled' && github.event.action != 'unlabeled' && contains(github.event.pull_request.labels.*.name, 'ai-review')))
+    uses: stackrox/harness-openshell/.github/workflows/pr-review-reusable.yml@c7c94cb1565dd1e68c5439a22b2cd2a565bec1d
+    with:
+      harness-ref: c7c94cb1565dd1e68c5439a22b2cd2a565bec1d
+      skill-path: .github/skills/pr-review/SKILL.md
+    secrets: inherit
