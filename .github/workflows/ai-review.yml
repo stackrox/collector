@@ -4,7 +4,7 @@ on:
   # DEMONSTRATION ONLY: change this trigger back to `pull_request_target` before
   # merging. The production workflow must load trusted workflow code from the
   # default branch.
-  pull_request:
+  pull_request_target:
     types: [opened, labeled, unlabeled, synchronize, reopened, ready_for_review, converted_to_draft, closed]
 
 permissions:
