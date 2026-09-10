@@ -48,17 +48,17 @@ bool NRadixTree::Insert(const IPNet& network) const {
   const uint64_t* net_mask_p = net_mask.data();
   uint64_t bit(0x8000000000000000ULL);
 
-  nRadixNode* node = this->root_;
-  nRadixNode* next = this->root_;
+  nRadixNode* node = this->root_.get();
+  nRadixNode* next = this->root_.get();
 
   size_t i = 0;
   // Traverse the tree for the bits that already exist in the tree.
   while (bit & *net_mask_p) {
     // If the bit is set, go right, otherwise left.
     if (ntohll(*addr_p) & bit) {
-      next = node->right_;
+      next = node->right_.get();
     } else {
-      next = node->left_;
+      next = node->left_.get();
     }
 
     if (!next) {
@@ -90,18 +90,19 @@ bool NRadixTree::Insert(const IPNet& network) const {
       CLOG(ERROR) << "CIDR " << network << " already exists";
       return false;
     }
-    node->value_ = new IPNet(network);
+    node->value_ = std::make_unique<IPNet>(network);
     return true;
   }
 
   // There still are bits to be walked, so go ahead and add them to the tree.
   while (bit & *net_mask_p) {
-    next = new nRadixNode();
+    auto new_node = std::make_unique<nRadixNode>();
+    next = new_node.get();
 
     if (ntohll(*addr_p) & bit) {
-      node->right_ = next;
+      node->right_ = std::move(new_node);
     } else {
-      node->left_ = next;
+      node->left_ = std::move(new_node);
     }
 
     bit >>= 1;
@@ -121,7 +122,7 @@ bool NRadixTree::Insert(const IPNet& network) const {
     }
   }
 
-  node->value_ = new IPNet(network);
+  node->value_ = std::make_unique<IPNet>(network);
   return true;
 }
 
@@ -141,7 +142,7 @@ IPNet NRadixTree::Find(const IPNet& network) const {
   uint64_t bit(0x8000000000000000ULL);
 
   IPNet ret;
-  nRadixNode* node = this->root_;
+  nRadixNode* node = this->root_.get();
   size_t i = 0;
   while (node) {
     if (node->value_) {
@@ -149,9 +150,9 @@ IPNet NRadixTree::Find(const IPNet& network) const {
     }
 
     if (ntohll(*addr_p) & bit) {
-      node = node->right_;
+      node = node->right_.get();
     } else {
-      node = node->left_;
+      node = node->left_.get();
     }
 
     // All network bits are traversed. If a supernet was found along the way, `ret` holds it,
@@ -195,13 +196,13 @@ void getAll(nRadixNode* node, std::vector<IPNet>& ret) {
     ret.push_back(*node->value_);
   }
 
-  getAll(node->left_, ret);
-  getAll(node->right_, ret);
+  getAll(node->left_.get(), ret);
+  getAll(node->right_.get(), ret);
 }
 
 std::vector<IPNet> NRadixTree::GetAll() const {
   std::vector<IPNet> ret;
-  getAll(this->root_, ret);
+  getAll(this->root_.get(), ret);
   return ret;
 }
 
@@ -227,11 +228,11 @@ bool isAnyIPNetSubsetUtil(Address::Family family, const nRadixNode* n1, const nR
   }
 
   if (n1 && n1->value_) {
-    containing_net = n1->value_;
+    containing_net = n1->value_.get();
   }
 
   if (n2->value_) {
-    contained_net = n2->value_;
+    contained_net = n2->value_.get();
   }
 
   // If we find a network in first tree, that means it contains
@@ -240,11 +241,11 @@ bool isAnyIPNetSubsetUtil(Address::Family family, const nRadixNode* n1, const nR
   // finding the smaller network down the path.
 
   if (n1) {
-    return isAnyIPNetSubsetUtil(family, n1->left_, n2->left_, containing_net, contained_net) ||
-           isAnyIPNetSubsetUtil(family, n1->right_, n2->right_, containing_net, contained_net);
+    return isAnyIPNetSubsetUtil(family, n1->left_.get(), n2->left_.get(), containing_net, contained_net) ||
+           isAnyIPNetSubsetUtil(family, n1->right_.get(), n2->right_.get(), containing_net, contained_net);
   }
-  return isAnyIPNetSubsetUtil(family, nullptr, n2->left_, containing_net, contained_net) ||
-         isAnyIPNetSubsetUtil(family, nullptr, n2->right_, containing_net, contained_net);
+  return isAnyIPNetSubsetUtil(family, nullptr, n2->left_.get(), containing_net, contained_net) ||
+         isAnyIPNetSubsetUtil(family, nullptr, n2->right_.get(), containing_net, contained_net);
 }
 
 bool NRadixTree::IsEmpty() const {
@@ -256,7 +257,7 @@ bool NRadixTree::IsAnyIPNetSubset(const NRadixTree& other) const {
 }
 
 bool NRadixTree::IsAnyIPNetSubset(Address::Family family, const NRadixTree& other) const {
-  return isAnyIPNetSubsetUtil(family, root_, other.root_, nullptr, nullptr);
+  return isAnyIPNetSubsetUtil(family, root_.get(), other.root_.get(), nullptr, nullptr);
 }
 
 }  // namespace collector
