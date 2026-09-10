@@ -159,11 +159,15 @@ jobs:
             --upload "$REVIEW_DIR/pr.diff:/sandbox/review/pr.diff" \
             --upload "$REVIEW_DIR/opencode-review.json:/sandbox/opencode-review.json" \
             --upload ".github/skills/pr-review/SKILL.md:/sandbox/review/skills/pr-review/SKILL.md" \
-            -- sleep 600 >"$REVIEW_DIR/sandbox-create.log" 2>&1 &
+            -- true >"$REVIEW_DIR/sandbox-create.log" 2>&1 &
           sandbox_create_pid=$!
+          if ! wait "$sandbox_create_pid"; then
+            cat "$REVIEW_DIR/sandbox-create.log"
+            exit 1
+          fi
 
           attempt=0
-          while (( attempt < 180 )); do
+          while (( attempt < 30 )); do
             attempt=$((attempt + 1))
             if openshell --workspace "$OPENSHELL_WORKSPACE" sandbox list \
               | sed $'s/\\033\\[[0-9;]*m//g' \
