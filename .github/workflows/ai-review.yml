@@ -31,5 +31,4 @@ jobs:
     uses: stackrox/harness-openshell/.github/workflows/pr-review-reusable.yml@73bd26d9a865191d8f00a280a0177e0d85a70082
     with:
       harness-ref: 73bd26d9a865191d8f00a280a0177e0d85a70082
-      skill-path: .github/skills/pr-review/SKILL.md
     secrets: inherit
