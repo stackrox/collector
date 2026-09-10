@@ -14,7 +14,7 @@ jobs:
       (((github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name == 'ai-review') ||
       (github.event.action != 'labeled' && github.event.action != 'unlabeled' && contains(github.event.pull_request.labels.*.name, 'ai-review')))
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       REVIEW_REPOSITORY: ${{ github.repository }}
       REVIEW_PR: ${{ github.event.pull_request.number }}
@@ -121,6 +121,15 @@ jobs:
           cleanup() {
             set +e
             openshell --workspace "$OPENSHELL_WORKSPACE" sandbox delete "$sandbox"
+            cleanup_attempt=0
+            while (( cleanup_attempt < 30 )); do
+              cleanup_attempt=$((cleanup_attempt + 1))
+              if ! openshell --workspace "$OPENSHELL_WORKSPACE" sandbox list --names \
+                | grep -Fxq "$sandbox"; then
+                break
+              fi
+              sleep 2
+            done
             if [[ -n "$sandbox_create_pid" ]]; then
               kill "$sandbox_create_pid" 2>/dev/null || true
             fi
@@ -154,7 +163,7 @@ jobs:
           sandbox_create_pid=$!
 
           attempt=0
-          while (( attempt < 60 )); do
+          while (( attempt < 180 )); do
             attempt=$((attempt + 1))
             if openshell --workspace "$OPENSHELL_WORKSPACE" sandbox list \
               | sed $'s/\\033\\[[0-9;]*m//g' \
