@@ -27,6 +27,7 @@ type RepeatedNetworkFlowTestSuite struct {
 	EnableAfterglow        bool
 	AfterglowPeriod        int
 	ScrapeInterval         int
+	TurnOffScrape          bool
 	NumMetaIter            int
 	NumIter                int
 	SleepBetweenCurlTime   int
@@ -51,6 +52,7 @@ func (s *RepeatedNetworkFlowTestSuite) SetupSuite() {
 			// turnOffScrape will be true, but the scrapeInterval
 			// also controls the reporting interval for network events
 			"scrapeInterval": s.ScrapeInterval,
+			"turnOffScrape":  s.TurnOffScrape,
 		},
 		Env: map[string]string{
 			"ROX_AFTERGLOW_PERIOD": strconv.Itoa(s.AfterglowPeriod),
