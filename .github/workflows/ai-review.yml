@@ -28,8 +28,8 @@ jobs:
       (github.event.action != 'opened' || needs.ensure-label.result == 'success') &&
       (((github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name == 'ai-review') ||
       (github.event.action != 'labeled' && github.event.action != 'unlabeled' && contains(github.event.pull_request.labels.*.name, 'ai-review')))
-    uses: stackrox/harness-openshell/.github/workflows/pr-review-reusable.yml@20b19625b08c4ba87936af1f6b41745e3e41457
+    uses: stackrox/harness-openshell/.github/workflows/pr-review-reusable.yml@20b196b25b08c4ba87936af1f6b41745e3e41457
     with:
-      harness-ref: 20b19625b08c4ba87936af1f6b41745e3e41457
+      harness-ref: 20b196b25b08c4ba87936af1f6b41745e3e41457
       allow-draft-reviews: true
     secrets: inherit
