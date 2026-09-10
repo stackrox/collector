@@ -111,11 +111,12 @@ jobs:
       - name: Run review in an OpenShell sandbox
         env:
           GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
           VERTEX_AI_PROJECT_ID: ${{ vars.VERTEX_AI_PROJECT_ID }}
           VERTEX_AI_REGION: ${{ vars.VERTEX_AI_REGION }}
         run: |
           set -euo pipefail
-          sandbox="review-$REVIEW_PR-$GITHUB_RUN_ID"
+          sandbox="r-$REVIEW_PR-$GITHUB_RUN_ID"
           cleanup() {
             set +e
             openshell --workspace "$OPENSHELL_WORKSPACE" sandbox delete "$sandbox"
@@ -124,6 +125,10 @@ jobs:
             openshell workspace delete "$OPENSHELL_WORKSPACE"
           }
           trap cleanup EXIT
+
+          token="$(gcloud auth print-access-token)"
+          echo "::add-mask::$token"
+          export GOOGLE_VERTEX_AI_TOKEN="$token"
 
           openshell workspace create --name "$OPENSHELL_WORKSPACE"
           openshell --workspace "$OPENSHELL_WORKSPACE" provider create \
@@ -134,10 +139,6 @@ jobs:
             --name github-review --type github --credential GITHUB_TOKEN
           openshell --workspace "$OPENSHELL_WORKSPACE" inference set \
             --provider vertex-review --model gemini-2.5-pro --no-verify
-
-          token="$(gcloud auth print-access-token)"
-          echo "::add-mask::$token"
-          export GOOGLE_VERTEX_AI_TOKEN="$token"
 
           openshell --workspace "$OPENSHELL_WORKSPACE" sandbox create \
             --name "$sandbox" --from "$OPENSHELL_IMAGE" --provider github-review \
