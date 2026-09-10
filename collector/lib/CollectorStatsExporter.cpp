@@ -58,6 +58,21 @@ void CollectorStatsExporter::run() {
   auto& preemptions = collectorEventCounters.Add({{"type", "preemptions"}});
   auto& grpcSendFailures = collectorEventCounters.Add({{"type", "grpcSendFailures"}});
   auto& threadTableSize = collectorEventCounters.Add({{"type", "threadCacheSize"}});
+  auto& procLookups = collectorEventCounters.Add({{"type", "procLookups"}});
+  auto& mainThreadLookups = collectorEventCounters.Add({{"type", "mainThreadLookups"}});
+  auto& procLookupsDurationNs = collectorEventCounters.Add({{"type", "procLookupsDurationNs"}});
+
+  auto& fdCacheHits = collectorEventCounters.Add({{"type", "fdCacheHits"}});
+  auto& fdCacheMisses = collectorEventCounters.Add({{"type", "fdCacheMisses"}});
+  auto& fdLookupFailures = collectorEventCounters.Add({{"type", "fdLookupFailures"}});
+  auto& fdsAdded = collectorEventCounters.Add({{"type", "fdsAdded"}});
+  auto& fdsRemoved = collectorEventCounters.Add({{"type", "fdsRemoved"}});
+
+  auto& threadCacheHits = collectorEventCounters.Add({{"type", "threadCacheHits"}});
+  auto& threadCacheMisses = collectorEventCounters.Add({{"type", "threadCacheMisses"}});
+  auto& threadLookupFailures = collectorEventCounters.Add({{"type", "threadLookupFailures"}});
+  auto& threadsAdded = collectorEventCounters.Add({{"type", "threadsAdded"}});
+  auto& threadsRemoved = collectorEventCounters.Add({{"type", "threadsRemoved"}});
 
   auto& processSent = collectorEventCounters.Add({{"type", "processSent"}});
   auto& processSendFailures = collectorEventCounters.Add({{"type", "processSendFailures"}});
@@ -170,6 +185,21 @@ void CollectorStatsExporter::run() {
     ringbufferDrops.Set(stats.nDropsBuffer);
     preemptions.Set(stats.nPreemptions);
     threadTableSize.Set(stats.nThreadCacheSize);
+    procLookups.Set(stats.nProcLookups);
+    mainThreadLookups.Set(stats.nMainThreadLookups);
+    procLookupsDurationNs.Set(stats.nProcLookupsDurationNs);
+
+    fdCacheHits.Set(stats.nFdCacheHits);
+    fdCacheMisses.Set(stats.nFdCacheMisses);
+    fdLookupFailures.Set(stats.nFdLookupFailures);
+    fdsAdded.Set(stats.nFdsAdded);
+    fdsRemoved.Set(stats.nFdsRemoved);
+
+    threadCacheHits.Set(stats.nThreadCacheHits);
+    threadCacheMisses.Set(stats.nThreadCacheMisses);
+    threadLookupFailures.Set(stats.nThreadLookupFailures);
+    threadsAdded.Set(stats.nThreadsAdded);
+    threadsRemoved.Set(stats.nThreadsRemoved);
 
     if (config_->EnableDetailedMetrics()) {
       uint64_t nUserspace = 0;
