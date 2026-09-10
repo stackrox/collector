@@ -147,7 +147,8 @@ jobs:
             --upload "$REVIEW_DIR/opencode-review.json:/sandbox/opencode-review.json" \
             --upload ".github/skills/pr-review/SKILL.md:/sandbox/review/skills/pr-review/SKILL.md"
 
-          openshell --workspace "$OPENSHELL_WORKSPACE" sandbox exec --name "$sandbox" \
+          timeout -s TERM -k 30s 8m \
+            openshell --workspace "$OPENSHELL_WORKSPACE" sandbox exec --name "$sandbox" \
             --env OPENCODE_CONFIG=/sandbox/opencode-review.json \
             --env OPENCODE_VERTEX_API_KEY=sk-openshell-proxy-managed \
             --env "REVIEW_REPOSITORY=$REVIEW_REPOSITORY" \
