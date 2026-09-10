@@ -19,7 +19,7 @@ jobs:
       REVIEW_REPOSITORY: ${{ github.repository }}
       REVIEW_PR: ${{ github.event.pull_request.number }}
       REVIEW_HEAD: ${{ github.event.pull_request.head.sha }}
-      OPENSHELL_WORKSPACE: ai-review-${{ github.run_id }}
+      OPENSHELL_WORKSPACE: ai-r-${{ github.run_id }}
       OPENSHELL_VERSION: v0.0.110
       OPENSHELL_IMAGE: quay.io/rcochran/openshell@sha256:eda3ebb4a6a44de3715016cf912840f98f378083690f0c0c56f459b44b0dbdc8
 
@@ -118,10 +118,10 @@ jobs:
           sandbox="review-$REVIEW_PR-$GITHUB_RUN_ID"
           cleanup() {
             set +e
-            openshell --workspace "$OPENSHELL_WORKSPACE" sandbox delete "$sandbox" --yes
-            openshell --workspace "$OPENSHELL_WORKSPACE" provider delete github-review --yes
-            openshell --workspace "$OPENSHELL_WORKSPACE" provider delete vertex-review --yes
-            openshell workspace delete "$OPENSHELL_WORKSPACE" --yes
+            openshell --workspace "$OPENSHELL_WORKSPACE" sandbox delete "$sandbox"
+            openshell --workspace "$OPENSHELL_WORKSPACE" provider delete github-review
+            openshell --workspace "$OPENSHELL_WORKSPACE" provider delete vertex-review
+            openshell workspace delete "$OPENSHELL_WORKSPACE"
           }
           trap cleanup EXIT
 
