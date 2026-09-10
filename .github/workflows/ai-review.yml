@@ -4,7 +4,7 @@ on:
   # DEMONSTRATION ONLY: change this trigger back to `pull_request_target` before
   # merging. The production workflow must load trusted workflow code from the
   # default branch.
-  pull_request_target:
+  pull_request:
     types: [opened, labeled, unlabeled, synchronize, reopened, ready_for_review, converted_to_draft, closed]
 
 permissions:
@@ -31,5 +31,4 @@ jobs:
     uses: stackrox/harness-openshell/.github/workflows/pr-review-reusable.yml@73bd26d9a865191d8f00a280a0177e0d85a70082
     with:
       harness-ref: 73bd26d9a865191d8f00a280a0177e0d85a70082
-      skill-path: .github/skills/pr-review/SKILL.md
     secrets: inherit
