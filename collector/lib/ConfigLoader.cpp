@@ -6,6 +6,7 @@
 
 #include "internalapi/sensor/collector.pb.h"
 
+#include "DropCapabilities.h"
 #include "EnvVar.h"
 #include "Logging.h"
 
@@ -527,6 +528,7 @@ sensor::CollectorConfig ConfigLoader::NewRuntimeConfig() {
 }
 
 void ConfigLoader::WatchFile() {
+  DropCapabilities({});
   const auto& file = parser_.GetFile();
 
   if (!inotify_.IsValid()) {
