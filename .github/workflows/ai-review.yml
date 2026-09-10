@@ -117,9 +117,13 @@ jobs:
         run: |
           set -euo pipefail
           sandbox="r-$REVIEW_PR-$GITHUB_RUN_ID"
+          sandbox_create_pid=""
           cleanup() {
             set +e
             openshell --workspace "$OPENSHELL_WORKSPACE" sandbox delete "$sandbox"
+            if [[ -n "$sandbox_create_pid" ]]; then
+              kill "$sandbox_create_pid" 2>/dev/null || true
+            fi
             openshell --workspace "$OPENSHELL_WORKSPACE" provider delete github-review
             openshell --workspace "$OPENSHELL_WORKSPACE" provider delete vertex-review
             openshell workspace delete "$OPENSHELL_WORKSPACE"
@@ -142,10 +146,30 @@ jobs:
 
           openshell --workspace "$OPENSHELL_WORKSPACE" sandbox create \
             --name "$sandbox" --from "$OPENSHELL_IMAGE" --provider github-review \
-            --policy "$REVIEW_DIR/review-policy.yaml" --keep --no-tty \
+            --policy "$REVIEW_DIR/review-policy.yaml" --no-tty \
             --upload "$REVIEW_DIR/pr.diff:/sandbox/review/pr.diff" \
             --upload "$REVIEW_DIR/opencode-review.json:/sandbox/opencode-review.json" \
-            --upload ".github/skills/pr-review/SKILL.md:/sandbox/review/skills/pr-review/SKILL.md"
+            --upload ".github/skills/pr-review/SKILL.md:/sandbox/review/skills/pr-review/SKILL.md" \
+            -- sleep 600 >"$REVIEW_DIR/sandbox-create.log" 2>&1 &
+          sandbox_create_pid=$!
+
+          attempt=0
+          while (( attempt < 60 )); do
+            attempt=$((attempt + 1))
+            if openshell --workspace "$OPENSHELL_WORKSPACE" sandbox list --names | grep -Fxq "$sandbox"; then
+              break
+            fi
+            if ! kill -0 "$sandbox_create_pid" 2>/dev/null; then
+              cat "$REVIEW_DIR/sandbox-create.log"
+              exit 1
+            fi
+            sleep 2
+          done
+          if ! openshell --workspace "$OPENSHELL_WORKSPACE" sandbox list --names | grep -Fxq "$sandbox"; then
+            cat "$REVIEW_DIR/sandbox-create.log"
+            echo "sandbox did not become ready in time" >&2
+            exit 1
+          fi
 
           timeout -s TERM -k 30s 8m \
             openshell --workspace "$OPENSHELL_WORKSPACE" sandbox exec --name "$sandbox" \
