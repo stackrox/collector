@@ -142,7 +142,7 @@ jobs:
 
           openshell --workspace "$OPENSHELL_WORKSPACE" sandbox create \
             --name "$sandbox" --from "$OPENSHELL_IMAGE" --provider github-review \
-            --policy "$REVIEW_DIR/review-policy.yaml" --detach --no-tty \
+            --policy "$REVIEW_DIR/review-policy.yaml" --keep --no-tty \
             --upload "$REVIEW_DIR/pr.diff:/sandbox/review/pr.diff" \
             --upload "$REVIEW_DIR/opencode-review.json:/sandbox/opencode-review.json" \
             --upload ".github/skills/pr-review/SKILL.md:/sandbox/review/skills/pr-review/SKILL.md"
