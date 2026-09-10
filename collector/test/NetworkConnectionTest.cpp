@@ -1,5 +1,9 @@
 #include <utility>
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+
 #include "NetworkConnection.h"
 #include "Utility.h"
 #include "gmock/gmock.h"
@@ -174,6 +178,75 @@ TEST(TestIPNet, TestIsCanonicalExternalIp) {
   for (const auto& [address, expected] : tests) {
     EXPECT_EQ(Address::IsCanonicalExternalIp(address), expected) << "Address under test: " << address;
   }
+}
+
+TEST(TestNetmaskToPrefixLength, IPv4Netmasks) {
+  // Test /0 - 0.0.0.0
+  struct sockaddr_in netmask_0 = {.sin_family = AF_INET, .sin_addr = {.s_addr = 0x00000000}};
+  EXPECT_EQ(netmask_to_prefix_length(reinterpret_cast<struct sockaddr*>(&netmask_0)), 0);
+
+  // Test /8 - 255.0.0.0
+  struct sockaddr_in netmask_8 = {.sin_family = AF_INET, .sin_addr = {.s_addr = htonl(0xff000000)}};
+  EXPECT_EQ(netmask_to_prefix_length(reinterpret_cast<struct sockaddr*>(&netmask_8)), 8);
+
+  // Test /12 - 255.240.0.0
+  struct sockaddr_in netmask_12 = {.sin_family = AF_INET, .sin_addr = {.s_addr = htonl(0xfff00000)}};
+  EXPECT_EQ(netmask_to_prefix_length(reinterpret_cast<struct sockaddr*>(&netmask_12)), 12);
+
+  // Test /16 - 255.255.0.0
+  struct sockaddr_in netmask_16 = {.sin_family = AF_INET, .sin_addr = {.s_addr = htonl(0xffff0000)}};
+  EXPECT_EQ(netmask_to_prefix_length(reinterpret_cast<struct sockaddr*>(&netmask_16)), 16);
+
+  // Test /24 - 255.255.255.0
+  struct sockaddr_in netmask_24 = {.sin_family = AF_INET, .sin_addr = {.s_addr = htonl(0xffffff00)}};
+  EXPECT_EQ(netmask_to_prefix_length(reinterpret_cast<struct sockaddr*>(&netmask_24)), 24);
+
+  // Test /28 - 255.255.255.240
+  struct sockaddr_in netmask_28 = {.sin_family = AF_INET, .sin_addr = {.s_addr = htonl(0xfffffff0)}};
+  EXPECT_EQ(netmask_to_prefix_length(reinterpret_cast<struct sockaddr*>(&netmask_28)), 28);
+
+  // Test /32 - 255.255.255.255
+  struct sockaddr_in netmask_32 = {.sin_family = AF_INET, .sin_addr = {.s_addr = htonl(0xffffffff)}};
+  EXPECT_EQ(netmask_to_prefix_length(reinterpret_cast<struct sockaddr*>(&netmask_32)), 32);
+}
+
+TEST(TestNetmaskToPrefixLength, IPv6Netmasks) {
+  // Test /0 - all zeros
+  struct sockaddr_in6 netmask_0 = {.sin6_family = AF_INET6, .sin6_addr = {{0}}};
+  EXPECT_EQ(netmask_to_prefix_length(reinterpret_cast<struct sockaddr*>(&netmask_0)), 0);
+
+  // Test /8 - ff00::
+  struct sockaddr_in6 netmask_8 = {.sin6_family = AF_INET6, .sin6_addr = {{0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}};
+  EXPECT_EQ(netmask_to_prefix_length(reinterpret_cast<struct sockaddr*>(&netmask_8)), 8);
+
+  // Test /48 - ffff:ffff:ffff::
+  struct sockaddr_in6 netmask_48 = {.sin6_family = AF_INET6, .sin6_addr = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}};
+  EXPECT_EQ(netmask_to_prefix_length(reinterpret_cast<struct sockaddr*>(&netmask_48)), 48);
+
+  // Test /52 - ffff:ffff:ffff:f000::
+  struct sockaddr_in6 netmask_52 = {.sin6_family = AF_INET6, .sin6_addr = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xf0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}};
+  EXPECT_EQ(netmask_to_prefix_length(reinterpret_cast<struct sockaddr*>(&netmask_52)), 52);
+
+  // Test /64 - ffff:ffff:ffff:ffff::
+  struct sockaddr_in6 netmask_64 = {.sin6_family = AF_INET6, .sin6_addr = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0}}};
+  EXPECT_EQ(netmask_to_prefix_length(reinterpret_cast<struct sockaddr*>(&netmask_64)), 64);
+
+  // Test /96 - ffff:ffff:ffff:ffff:ffff:ffff::
+  struct sockaddr_in6 netmask_96 = {.sin6_family = AF_INET6, .sin6_addr = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0}}};
+  EXPECT_EQ(netmask_to_prefix_length(reinterpret_cast<struct sockaddr*>(&netmask_96)), 96);
+
+  // Test /128 - ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+  struct sockaddr_in6 netmask_128 = {.sin6_family = AF_INET6, .sin6_addr = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}}};
+  EXPECT_EQ(netmask_to_prefix_length(reinterpret_cast<struct sockaddr*>(&netmask_128)), 128);
+}
+
+TEST(TestNetmaskToPrefixLength, EdgeCases) {
+  // Null pointer
+  EXPECT_EQ(netmask_to_prefix_length(nullptr), 0);
+
+  // Unsupported address family
+  struct sockaddr unsupported = {.sa_family = AF_UNIX};
+  EXPECT_EQ(netmask_to_prefix_length(&unsupported), 0);
 }
 
 }  // namespace
