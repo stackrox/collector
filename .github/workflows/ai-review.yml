@@ -156,7 +156,9 @@ jobs:
           attempt=0
           while (( attempt < 60 )); do
             attempt=$((attempt + 1))
-            if openshell --workspace "$OPENSHELL_WORKSPACE" sandbox list --names | grep -Fxq "$sandbox"; then
+            if openshell --workspace "$OPENSHELL_WORKSPACE" sandbox list \
+              | sed $'s/\\033\\[[0-9;]*m//g' \
+              | awk -v name="$sandbox" '$1 == name && $NF == "Ready"'; then
               break
             fi
             if ! kill -0 "$sandbox_create_pid" 2>/dev/null; then
@@ -165,7 +167,9 @@ jobs:
             fi
             sleep 2
           done
-          if ! openshell --workspace "$OPENSHELL_WORKSPACE" sandbox list --names | grep -Fxq "$sandbox"; then
+          if ! openshell --workspace "$OPENSHELL_WORKSPACE" sandbox list \
+            | sed $'s/\\033\\[[0-9;]*m//g' \
+            | awk -v name="$sandbox" '$1 == name && $NF == "Ready"'; then
             cat "$REVIEW_DIR/sandbox-create.log"
             echo "sandbox did not become ready in time" >&2
             exit 1
