@@ -1,7 +1,8 @@
 name: AI review
 
 on:
-  # Demonstration only: use pull_request while iterating on the integration.
+  # DEMONSTRATION ONLY: change this trigger back to `pull_request_target` before
+  # merging. Production must load trusted workflow code from the default branch.
   pull_request:
 
 permissions:
@@ -10,8 +11,9 @@ permissions:
 
 jobs:
   review:
-    uses: stackrox/harness-openshell/.github/workflows/pr-review-reusable.yml@172ea0546ffeb6c332a629de3c37df51db9ca6c4
+    uses: stackrox/harness-openshell/.github/workflows/pr-review-reusable.yml@9c971b9c85c2125af56e9cd59bc97f991698f4fc
     with:
-      harness-ref: 172ea0546ffeb6c332a629de3c37df51db9ca6c4
+      harness-ref: 9c971b9c85c2125af56e9cd59bc97f991698f4fc
       allow-draft-reviews: true
+      openshell-github-app-client-id: ${{ vars.OPENSHELL_GITHUB_APP_CLIENT_ID }}
     secrets: inherit
