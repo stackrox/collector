@@ -25,7 +25,9 @@ extern "C" {
 #include "Logging.h"
 #include "Utility.h"
 
-#include "../container-plugin/ContainerID.h"
+#include <algorithm>
+#include <cctype>
+
 
 namespace collector {
 
@@ -57,34 +59,6 @@ const char* SignalName(int signum) {
     default:
       return "<unknown>";
   }
-}
-
-std::string GetContainerID(sinsp& inspector, const sinsp_threadinfo& tinfo) {
-  const auto& fields = inspector.m_thread_manager->dynamic_fields()->fields();
-  const auto field = fields.find("container_id");
-  if (field == fields.end()) {
-    return {};
-  }
-  auto accessor = field->second.new_accessor<std::string>();
-  std::string container_id;
-  // libsinsp's dynamic-field read API is not const-qualified.
-  const_cast<sinsp_threadinfo&>(tinfo).get_dynamic_field(accessor, container_id);
-  return container_id == "host" ? std::string{} : container_id;
-}
-
-std::string GetContainerID(sinsp_evt* event) {
-  if (!event) {
-    return {};
-  }
-  sinsp_threadinfo* tinfo = event->get_thread_info();
-  if (!tinfo) {
-    return {};
-  }
-  sinsp* inspector = event->get_inspector();
-  if (!inspector) {
-    return {};
-  }
-  return GetContainerID(*inspector, *tinfo);
 }
 
 std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo* t) {
@@ -206,7 +180,30 @@ void TryUnlink(const char* path) {
 }
 
 std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cgroup) {
-  return container_plugin::ExtractContainerIDFromCgroup(cgroup);
+  constexpr size_t kContainerIDLength = 64;
+  constexpr size_t kShortContainerIDLength = 12;
+  const auto scope = cgroup.rfind(".scope");
+  if (scope != std::string_view::npos) {
+    cgroup.remove_suffix(cgroup.size() - scope);
+  }
+  if (cgroup.size() < kContainerIDLength + 1) {
+    return {};
+  }
+  const auto id_start = cgroup.size() - kContainerIDLength;
+  const char separator = cgroup[id_start - 1];
+  if (separator != '/' && separator != '-' && separator != ':') {
+    return {};
+  }
+  const std::string_view parent = cgroup.substr(0, id_start - 1);
+  constexpr std::string_view kConmonSuffix = "-conmon";
+  if (parent.size() >= kConmonSuffix.size() && parent.substr(parent.size() - kConmonSuffix.size()) == kConmonSuffix) {
+    return {};
+  }
+  const std::string_view id = cgroup.substr(id_start);
+  if (!std::all_of(id.begin(), id.end(), [](char c) { return std::isxdigit(static_cast<unsigned char>(c)); })) {
+    return {};
+  }
+  return id.substr(0, kShortContainerIDLength);
 }
 
 std::optional<std::string> SanitizedUTF8(std::string_view str) {
