@@ -91,6 +91,10 @@ type Benchmarks struct {
 	BccCommand      string
 	BpftraceCommand string
 	PerfCommand     string
+	CPUProfile      bool
+	CPUProfileFreq  string
+	Workloads       []string
+	EnableScrape    bool
 	SkipInit        bool
 }
 
@@ -161,6 +165,10 @@ func BenchmarksInfo() *Benchmarks {
 			BccCommand:      ReadEnvVar(envBccCommand),
 			BpftraceCommand: ReadEnvVar(envBpftraceCommand),
 			PerfCommand:     ReadEnvVar(envPerfCommand),
+			CPUProfile:      ReadBoolEnvVar(envCPUProfile),
+			CPUProfileFreq:  ReadEnvVarWithDefault(envCPUProfileFreq, "199"),
+			Workloads:       strings.Split(ReadEnvVarWithDefault(envBenchmarkWorkloads, "processes,endpoints"), ","),
+			EnableScrape:    ReadBoolEnvVar(envBenchmarkEnableScrape),
 			SkipInit:        ReadBoolEnvVar(envSkipHeadersInit),
 		}
 	}
