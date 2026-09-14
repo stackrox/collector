@@ -1,11 +1,14 @@
 package executor
 
 import (
+	"archive/tar"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -90,6 +93,50 @@ func (d *dockerAPIExecutor) GetContainerHealthCheck(containerID string) (string,
 
 	log.Trace("%s has healthcheck: %s\n", containerID, strings.Join(inspectResp.Config.Healthcheck.Test, " "))
 	return strings.Join(inspectResp.Config.Healthcheck.Test, " "), nil
+}
+
+func (d *dockerAPIExecutor) GetContainerPID(containerID string) (int, error) {
+	inspectResp, err := d.inspectContainer(containerID)
+	if err != nil {
+		return 0, fmt.Errorf("error inspecting container: %w", err)
+	}
+	return inspectResp.State.Pid, nil
+}
+
+func (d *dockerAPIExecutor) CopyFileFromContainer(containerID string, sourcePath string, destinationPath string) error {
+	archive, _, err := d.client.CopyFromContainer(context.Background(), containerID, sourcePath)
+	if err != nil {
+		return fmt.Errorf("copying %s from container: %w", sourcePath, err)
+	}
+	defer archive.Close()
+
+	tarReader := tar.NewReader(archive)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			return fmt.Errorf("copied archive does not contain %s", sourcePath)
+		}
+		if err != nil {
+			return fmt.Errorf("reading copied archive: %w", err)
+		}
+		if header.Typeflag != tar.TypeReg {
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(destinationPath), 0755); err != nil {
+			return fmt.Errorf("creating destination directory: %w", err)
+		}
+		file, err := os.OpenFile(destinationPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, header.FileInfo().Mode())
+		if err != nil {
+			return fmt.Errorf("creating destination file: %w", err)
+		}
+		_, copyErr := io.Copy(file, tarReader)
+		closeErr := file.Close()
+		if copyErr != nil {
+			return fmt.Errorf("writing destination file: %w", copyErr)
+		}
+		return closeErr
+	}
 }
 
 func (d *dockerAPIExecutor) GetContainerStats(ctx context.Context, containerID string) (

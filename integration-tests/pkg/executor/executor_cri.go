@@ -313,6 +313,14 @@ func (c *criExecutor) GetContainerStats(ctx context.Context, containerID string)
 	}, nil
 }
 
+func (c *criExecutor) GetContainerPID(string) (int, error) {
+	return 0, fmt.Errorf("CPU profiling is supported only with the Docker runtime")
+}
+
+func (c *criExecutor) CopyFileFromContainer(string, string, string) error {
+	return fmt.Errorf("CPU profiling is supported only with the Docker runtime")
+}
+
 func (c *criExecutor) GetContainerIP(name string) (string, error) {
 	container, err := c.getContainer(name)
 	if err != nil {

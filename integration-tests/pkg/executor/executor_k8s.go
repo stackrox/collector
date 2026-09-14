@@ -25,6 +25,14 @@ type K8sExecutor struct {
 	clientset *kubernetes.Clientset
 }
 
+func (e *K8sExecutor) GetContainerPID(string) (int, error) {
+	return 0, fmt.Errorf("CPU profiling is supported only with the Docker runtime")
+}
+
+func (e *K8sExecutor) CopyFileFromContainer(string, string, string) error {
+	return fmt.Errorf("CPU profiling is supported only with the Docker runtime")
+}
+
 func NewK8sExecutor() (*K8sExecutor, error) {
 	log.Info("Creating k8s configuration")
 	config, err := rest.InClusterConfig()

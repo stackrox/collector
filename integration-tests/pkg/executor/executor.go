@@ -57,6 +57,8 @@ type Executor interface {
 	StopContainer(name string) (string, error)
 	StartContainer(config config.ContainerStartConfig) (string, error)
 	GetContainerHealthCheck(containerID string) (string, error)
+	GetContainerPID(containerID string) (int, error)
+	CopyFileFromContainer(containerID string, sourcePath string, destinationPath string) error
 	GetContainerStats(ctx context.Context, containerID string) (*ContainerStat, error)
 	GetContainerIP(containerID string) (string, error)
 	GetContainerLogs(containerID string) (ContainerLogs, error)
