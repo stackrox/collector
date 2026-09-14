@@ -3,6 +3,9 @@ package suites
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/shlex"
@@ -10,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 )
@@ -25,8 +29,9 @@ type BenchmarkCollectorTestSuite struct {
 
 type BenchmarkTestSuiteBase struct {
 	IntegrationTestSuiteBase
-	perfContainers []string
-	loadContainers []string
+	perfContainers     []string
+	loadContainers     []string
+	profileContainerID string
 }
 
 func (b *BenchmarkTestSuiteBase) StartPerfTools() {
@@ -63,6 +68,52 @@ func (b *BenchmarkTestSuiteBase) StartPerfTools() {
 		bcc_image := image_store.QaImageByKey("performance-bcc")
 		b.StartPerfContainer("bcc", bcc_image, bcc)
 	}
+}
+
+func (b *BenchmarkTestSuiteBase) StartCPUProfile() {
+	benchmarkOptions := config.BenchmarksInfo()
+	if !benchmarkOptions.CPUProfile {
+		return
+	}
+
+	resultDir, err := filepath.Abs(filepath.Join(config.LogPath(), strings.SplitN(b.T().Name(), "/", 2)[0]))
+	b.Require().NoError(err)
+	b.Require().NoError(os.MkdirAll(resultDir, os.ModePerm))
+	b.Require().NoError(b.Executor().CopyFileFromContainer(
+		b.Collector().ContainerID(),
+		"/usr/local/bin/collector",
+		filepath.Join(resultDir, "rootfs/usr/local/bin/collector")))
+	collectorPID, err := b.Executor().GetContainerPID(b.Collector().ContainerID())
+	b.Require().NoError(err)
+	containerID, err := b.Executor().StartContainer(config.ContainerStartConfig{
+		Name:       "cpu-profile",
+		Image:      config.Images().QaImageByKey("performance-perf"),
+		Privileged: true,
+		PidMode:    "host",
+		Mounts:     map[string]string{"/results": resultDir},
+		Env: map[string]string{
+			"PERF_FREQUENCY": benchmarkOptions.CPUProfileFreq,
+			"PERF_OUTPUT_FILE": "/results/perf.data",
+		},
+		Command: []string{"record", "--buildid-all", "-e", "cpu-clock", "-F", benchmarkOptions.CPUProfileFreq, "-g", "--call-graph", "dwarf", "-p", strconv.Itoa(collectorPID), "-o", "/results/perf.data", "--", "sleep", "70"},
+	})
+	b.Require().NoError(err)
+	b.profileContainerID = containerID
+	b.perfContainers = append(b.perfContainers, containerID)
+
+}
+
+func (b *BenchmarkTestSuiteBase) StartCPUProfileCapture() {
+	b.StartCPUProfile()
+}
+
+func (b *BenchmarkTestSuiteBase) StopCPUProfileCapture() {
+	if b.profileContainerID == "" {
+		return
+	}
+	finished, err := b.waitForContainerToExit("cpu-profile", b.profileContainerID, 100*time.Millisecond, 5*time.Minute)
+	b.Require().NoError(err)
+	b.Require().True(finished, "CPU profiler did not finish")
 }
 
 func (b *BenchmarkTestSuiteBase) StartPerfContainer(name string, image string, args string) {
@@ -132,6 +183,10 @@ func (b *BenchmarkTestSuiteBase) StopPerfTools() {
 		require.NoError(b.T(), err)
 
 		fmt.Println(log)
+		if container == b.profileContainerID {
+			_, err = b.Executor().CaptureLogs(strings.SplitN(b.T().Name(), "/", 2)[0], "cpu-profile")
+			require.NoError(b.T(), err)
+		}
 	}
 
 	b.removeContainers(b.perfContainers...)
@@ -139,12 +194,24 @@ func (b *BenchmarkTestSuiteBase) StopPerfTools() {
 }
 
 func (s *BenchmarkCollectorTestSuite) SetupSuite() {
-	s.RegisterCleanup("perf", "bcc", "bpftrace", "init",
-		"benchmark-processes", "benchmark-endpoints")
+	s.RegisterCleanup("perf", "cpu-profile", "bcc", "bpftrace", "init",
+		"benchmark-processes", "benchmark-endpoints", "benchmark-connections")
 
 	s.StartPerfTools()
 
-	s.StartCollector(false, nil)
+	var collectorOptions *collector.StartupOptions
+	if config.BenchmarksInfo().EnableScrape {
+		collectorOptions = &collector.StartupOptions{
+			Config: map[string]any{
+				"turnOffScrape":  false,
+				"scrapeInterval": 1,
+			},
+			Env: map[string]string{
+				"ROX_PROCESSES_LISTENING_ON_PORT": "true",
+			},
+		}
+	}
+	s.StartCollector(false, collectorOptions)
 }
 
 func (s *BenchmarkTestSuiteBase) SpinBerserker(workload string) (string, error) {
@@ -168,14 +235,47 @@ func (s *BenchmarkTestSuiteBase) SpinBerserker(workload string) (string, error) 
 	return containerID, nil
 }
 
+func (s *BenchmarkTestSuiteBase) SpinNetworkBerserker() (string, error) {
+	benchmarkImage := config.Images().QaImageByKey("performance-berserker")
+	if err := s.Executor().PullImage(benchmarkImage); err != nil {
+		return "", err
+	}
+
+	containerID, err := s.Executor().StartContainer(config.ContainerStartConfig{
+		Name:       "benchmark-connections",
+		Image:      benchmarkImage,
+		Privileged: true,
+		Entrypoint: []string{"/scripts/init.sh"},
+		Env: map[string]string{
+			"BERSERKER__DURATION": "60",
+			"IP_BASE":             "223.42.0.1/16",
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+	s.loadContainers = append(s.loadContainers, containerID)
+	return containerID, nil
+}
+
 func (s *BenchmarkTestSuiteBase) RunCollectorBenchmark() {
-	procContainerID, err := s.SpinBerserker("processes")
-	s.Require().NoError(err)
-
-	endpointsContainerID, err := s.SpinBerserker("endpoints")
-	s.Require().NoError(err)
-
 	s.start = time.Now().UTC()
+	s.StartCPUProfileCapture()
+
+	benchmarkContainers := make([]string, 0, len(config.BenchmarksInfo().Workloads))
+	var networkContainerID string
+	for _, workload := range config.BenchmarksInfo().Workloads {
+		if workload == "connections" {
+			containerID, err := s.SpinNetworkBerserker()
+			s.Require().NoError(err)
+			benchmarkContainers = append(benchmarkContainers, containerID)
+			networkContainerID = common.ContainerShortID(containerID)
+			continue
+		}
+		containerID, err := s.SpinBerserker(workload)
+		s.Require().NoError(err)
+		benchmarkContainers = append(benchmarkContainers, containerID)
+	}
 
 	// The assumption is that the benchmark is short, and to get better
 	// resolution into when relevant metrics start and stop, tick more
@@ -183,14 +283,16 @@ func (s *BenchmarkTestSuiteBase) RunCollectorBenchmark() {
 	waitTick := 1 * time.Second
 
 	// Container name here is used only for reporting
-	_, err = s.waitForContainerToExit("berserker", procContainerID, waitTick, 0)
-	s.Require().NoError(err)
-
-	_, err = s.waitForContainerToExit("berserker", endpointsContainerID, waitTick, 0)
-
-	s.Require().NoError(err)
+	for _, containerID := range benchmarkContainers {
+		_, err := s.waitForContainerToExit("berserker", containerID, waitTick, 0)
+		s.Require().NoError(err)
+	}
+	if networkContainerID != "" {
+		s.Require().NotEmpty(s.Sensor().Connections(networkContainerID), "network workload produced no Collector connection signals")
+	}
 
 	s.stop = time.Now().UTC()
+	s.StopCPUProfileCapture()
 }
 
 func (s *BenchmarkCollectorTestSuite) TestBenchmarkCollector() {

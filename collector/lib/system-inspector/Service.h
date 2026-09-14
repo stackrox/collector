@@ -17,11 +17,11 @@
 class sinsp;
 class sinsp_evt;
 class sinsp_evt_formatter;
-class sinsp_plugin;
 class sinsp_threadinfo;
 
 namespace collector::system_inspector {
 
+class ContainerIDCache;
 class Service : public SystemInspector {
  public:
   Service(const Service&) = delete;
@@ -44,6 +44,7 @@ class Service : public SystemInspector {
   void GetProcessInformation(uint64_t pid, ProcessInfoCallbackRef callback);
 
   sinsp* GetInspector() { return inspector_.get(); }
+  ContainerIDCache* GetContainerIDCache() { return container_id_cache_.get(); }
   Stats* GetUserspaceStats() { return &userspace_stats_; }
 
   void AddSignalHandler(std::unique_ptr<SignalHandler> signal_handler);
@@ -69,7 +70,7 @@ class Service : public SystemInspector {
 
   mutable std::mutex libsinsp_mutex_;
   std::unique_ptr<sinsp> inspector_;
-  std::shared_ptr<sinsp_plugin> container_plugin_;
+  std::unique_ptr<ContainerIDCache> container_id_cache_;
   std::unique_ptr<sinsp_evt_formatter> default_formatter_;
   std::unique_ptr<ISignalServiceClient> signal_client_;
   std::vector<SignalHandlerEntry> signal_handlers_;

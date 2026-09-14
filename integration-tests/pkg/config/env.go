@@ -22,10 +22,14 @@ const (
 
 	envQATag = "COLLECTOR_QA_TAG"
 
-	envPerfCommand     = "COLLECTOR_PERF_COMMAND"
-	envBpftraceCommand = "COLLECTOR_BPFTRACE_COMMAND"
-	envBccCommand      = "COLLECTOR_BCC_COMMAND"
-	envSkipHeadersInit = "COLLECTOR_SKIP_HEADERS_INIT"
+	envPerfCommand           = "COLLECTOR_PERF_COMMAND"
+	envCPUProfile            = "COLLECTOR_CPU_PROFILE"
+	envCPUProfileFreq        = "COLLECTOR_CPU_PROFILE_FREQUENCY"
+	envBenchmarkWorkloads    = "COLLECTOR_BENCHMARK_WORKLOADS"
+	envBenchmarkEnableScrape = "COLLECTOR_BENCHMARK_ENABLE_SCRAPE"
+	envBpftraceCommand       = "COLLECTOR_BPFTRACE_COMMAND"
+	envBccCommand            = "COLLECTOR_BCC_COMMAND"
+	envSkipHeadersInit       = "COLLECTOR_SKIP_HEADERS_INIT"
 
 	envStopTimeout = "STOP_TIMEOUT"
 )

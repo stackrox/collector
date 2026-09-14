@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -19,6 +18,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
+	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
 	"github.com/stackrox/collector/integration-tests/pkg/log"
@@ -298,11 +298,8 @@ func (s *IntegrationTestSuiteBase) WritePerfResults() {
 		LoadStopTs:       s.stop.Format("2006-01-02 15:04:05"),
 	}
 
+	f, err := common.PrepareLog(s.T().Name(), "perf.json")
 	perfJson, _ := json.Marshal(perf)
-	perfFilename := filepath.Join(config.LogPath(), "perf.json")
-
-	log.Info("Writing %s\n", perfFilename)
-	f, err := os.OpenFile(perfFilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	s.Require().NoError(err)
 	defer f.Close()
 

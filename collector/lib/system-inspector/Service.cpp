@@ -14,8 +14,10 @@
 #include <google/protobuf/util/time_util.h>
 
 #include "CollectionMethod.h"
+#include "ContainerIDCache.h"
 #include "CollectorException.h"
 #include "CollectorStats.h"
+#include "ContainerIDFilterCheck.h"
 #include "EventExtractor.h"
 #include "EventNames.h"
 #include "HostInfo.h"
@@ -34,10 +36,13 @@ namespace collector::system_inspector {
 namespace {
 }  // namespace
 
-Service::~Service() = default;
+Service::~Service() {
+  inspector_->set_observer(nullptr);
+}
 
 Service::Service(const CollectorConfig& config)
     : inspector_(std::make_unique<sinsp>(true)),
+      container_id_cache_(std::make_unique<ContainerIDCache>()),
       default_formatter_(std::make_unique<sinsp_evt_formatter>(
           inspector_.get(),
           DEFAULT_OUTPUT_STR,
@@ -51,11 +56,7 @@ Service::Service(const CollectorConfig& config)
   inspector_->disable_log_timestamps();
   inspector_->set_log_callback(logging::InspectorLogCallback);
 
-  container_plugin_ = inspector_->register_plugin(config.ContainerPluginPath());
-  std::string plugin_error;
-  if (!container_plugin_->init("{}", plugin_error)) {
-    CLOG(FATAL) << "Failed to initialise container plugin: " << plugin_error;
-  }
+  inspector_->set_observer(container_id_cache_.get());
 
   inspector_->set_import_users(config.ImportUsers());
   inspector_->set_thread_timeout_s(30);
@@ -82,9 +83,10 @@ Service::Service(const CollectorConfig& config)
     signal_client_ = std::make_unique<StdoutSignalServiceClient>();
   }
   AddSignalHandler(std::make_unique<ProcessSignalHandler>(inspector_.get(),
-                                                          signal_client_.get(),
-                                                          &userspace_stats_,
-                                                          config));
+                                                           signal_client_.get(),
+                                                           &userspace_stats_,
+                                                           config,
+                                                           container_id_cache_.get()));
 
   if (signal_handlers_.size() == 2) {
     // self-check handlers do not count towards this check, because they
@@ -99,12 +101,13 @@ bool Service::InitKernel(const CollectorConfig& config) {
     CLOG(ERROR) << "Failed to setup " << config.GetCollectionMethod() << " driver.";
     return false;
   }
+  container_id_cache_->Initialise(*inspector_);
 
   sinsp_filter_check_list filter_list;
   filter_list.add_filter_check(inspector_->new_generic_filtercheck());
-  filter_list.add_filter_check(sinsp_plugin::new_filtercheck(container_plugin_));
+  filter_list.add_filter_check(std::make_unique<ContainerIDFilterCheck>(container_id_cache_.get()));
   auto filter_factory = std::make_shared<sinsp_filter_factory>(inspector_.get(), filter_list);
-  sinsp_filter_compiler filter_compiler(filter_factory, "container.id != host");
+  sinsp_filter_compiler filter_compiler(filter_factory, "proc.pid != val(proc.vpid) or container.id != host");
   inspector_->set_filter(filter_compiler.compile(), "container.id != host");
 
   return true;
@@ -119,6 +122,7 @@ sinsp_evt* Service::GetNext() {
   if (res != SCAP_SUCCESS || event == nullptr) {
     return nullptr;
   }
+  container_id_cache_->Prune(*inspector_, NowMicros());
 
 #ifdef TRACE_SINSP_EVENTS
   // Do not allow to change sinsp events tracing at runtime, as the output
@@ -277,7 +281,7 @@ bool Service::SendExistingProcesses(SignalHandler* handler) {
   }
 
   return threads->loop([&](sinsp_threadinfo& tinfo) {
-    if (!GetContainerID(*inspector_, tinfo).empty() && tinfo.is_main_thread()) {
+    if (!container_id_cache_->Get(tinfo).empty() && tinfo.is_main_thread()) {
       auto result = handler->HandleExistingProcess(&tinfo);
       if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
         CLOG(WARNING) << "Failed to write existing process signal: " << &tinfo;
