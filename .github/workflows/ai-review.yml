@@ -11,9 +11,9 @@ permissions:
 
 jobs:
   review:
-    uses: stackrox/harness-openshell/.github/workflows/pr-review-reusable.yml@3db628a9513db01cdb38f6631db0ac577d4ba111
+    uses: stackrox/harness-openshell/.github/workflows/pr-review-reusable.yml@3c9bcf6ea70e2eca9cb18e4d10000fb4d97d3fa4
     with:
-      harness-ref: 3db628a9513db01cdb38f6631db0ac577d4ba111
+      harness-ref: 3c9bcf6ea70e2eca9cb18e4d10000fb4d97d3fa4
       allow-draft-reviews: true
       openshell-github-app-client-id: ${{ vars.OPENSHELL_GITHUB_APP_CLIENT_ID }}
     secrets: inherit
