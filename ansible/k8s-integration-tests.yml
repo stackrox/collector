@@ -9,6 +9,15 @@
     logs_root: "{{ collector_root }}/integration-tests/container-logs"
 
   tasks:
+    - name: Ensure container-logs directory exists
+      ansible.builtin.file:
+        path: "{{ logs_root }}"
+        state: directory
+        mode: "0777"
+      delegate_to: localhost
+      tags:
+        - test-only
+
     - name: Check KinD is installed
       ansible.builtin.command: which kind
       register: is_kind_available
@@ -189,15 +198,6 @@
     - name: Output tester logs
       ansible.builtin.debug:
         msg: "{{ log.log_lines }}"
-      tags:
-        - test-only
-
-    - name: Ensure container-logs directory exists
-      ansible.builtin.file:
-        path: "{{ logs_root }}"
-        state: directory
-        mode: "0755"
-      delegate_to: localhost
       tags:
         - test-only
 
