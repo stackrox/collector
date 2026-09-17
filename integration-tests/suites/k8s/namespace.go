@@ -3,6 +3,7 @@ package k8s
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
@@ -62,6 +63,21 @@ func (k *K8sNamespaceTestSuite) SetupSuite() {
 func (k *K8sNamespaceTestSuite) TestK8sNamespace() {
 	for _, tt := range k.tests {
 		endpoint := fmt.Sprintf("/state/containers/%s", tt.containerID)
+		k.Require().Eventually(func() bool {
+			raw, err := collector.IntrospectionQuery(k.Collector().IP(), endpoint)
+			if err != nil {
+				return false
+			}
+
+			var body map[string]interface{}
+			if err := json.Unmarshal(raw, &body); err != nil {
+				return false
+			}
+
+			namespace, ok := body["namespace"].(string)
+			return ok && namespace == tt.expectecNamespace
+		}, 3*time.Minute, time.Second)
+
 		log.Info("Querying: %s", endpoint)
 		raw, err := collector.IntrospectionQuery(k.Collector().IP(), endpoint)
 		k.Require().NoError(err)
