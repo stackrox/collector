@@ -193,13 +193,13 @@ arches:
     name: glibc-devel
     evr: 2.34-275.el9_8
     sourcerpm: glibc-2.34-275.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/k/kernel-headers-5.14.0-687.48.1.el9_8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/k/kernel-headers-5.14.0-687.49.1.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 2892349
-    checksum: sha256:14a904e725c56eac18b9848e4947518f28ce5a5d7edb0dd472b25a92f0c026a9
+    size: 2899913
+    checksum: sha256:929179b11dddaa905f5261d8df9977ce70f311fb482d01ef13ff2da6d8c1e825
     name: kernel-headers
-    evr: 5.14.0-687.48.1.el9_8
-    sourcerpm: kernel-5.14.0-687.48.1.el9_8.src.rpm
+    evr: 5.14.0-687.49.1.el9_8
+    sourcerpm: kernel-5.14.0-687.49.1.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/l/libasan-11.5.0-14.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 409047
@@ -2522,12 +2522,12 @@ arches:
     checksum: sha256:c4c76ebfd66ba6d00edf672797d7f077b29d279b7866a04e05258a257a5bc306
     name: json-c
     evr: 0.14-11.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.48.1.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.49.1.el9_8.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
-    size: 152450505
-    checksum: sha256:1c9e1e1b3e1298e647a1965e97d9f2260c0ec2562e3559235be60a2f094b0adb
+    size: 152473969
+    checksum: sha256:ce455287de0f71efd1128f4cd574f7d418b57ae9784903bbe8b8d3e68062a80b
     name: kernel
-    evr: 5.14.0-687.48.1.el9_8
+    evr: 5.14.0-687.49.1.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/k/keyutils-1.6.3-1.el9.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
     size: 150790
@@ -3158,13 +3158,13 @@ arches:
     name: glibc-devel
     evr: 2.34-275.el9_8
     sourcerpm: glibc-2.34-275.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/k/kernel-headers-5.14.0-687.48.1.el9_8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/k/kernel-headers-5.14.0-687.49.1.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 2916173
-    checksum: sha256:e96f1b5e2fd394ebd9947a9b2f401ff1534d01ebbea4d46f6206c1538869a769
+    size: 2923685
+    checksum: sha256:378e87949698681758321c003bcab9b909d3d48f5c0fa32b7c8cccdb8e079d7b
     name: kernel-headers
-    evr: 5.14.0-687.48.1.el9_8
-    sourcerpm: kernel-5.14.0-687.48.1.el9_8.src.rpm
+    evr: 5.14.0-687.49.1.el9_8
+    sourcerpm: kernel-5.14.0-687.49.1.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/l/libasan-11.5.0-14.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 440756
@@ -5494,12 +5494,12 @@ arches:
     checksum: sha256:c4c76ebfd66ba6d00edf672797d7f077b29d279b7866a04e05258a257a5bc306
     name: json-c
     evr: 0.14-11.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.48.1.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.49.1.el9_8.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
-    size: 152450505
-    checksum: sha256:1c9e1e1b3e1298e647a1965e97d9f2260c0ec2562e3559235be60a2f094b0adb
+    size: 152473969
+    checksum: sha256:ce455287de0f71efd1128f4cd574f7d418b57ae9784903bbe8b8d3e68062a80b
     name: kernel
-    evr: 5.14.0-687.48.1.el9_8
+    evr: 5.14.0-687.49.1.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/k/keyutils-1.6.3-1.el9.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
     size: 150790
@@ -6143,13 +6143,13 @@ arches:
     name: glibc-headers
     evr: 2.34-275.el9_8
     sourcerpm: glibc-2.34-275.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/k/kernel-headers-5.14.0-687.48.1.el9_8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/k/kernel-headers-5.14.0-687.49.1.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 2922329
-    checksum: sha256:c505958800bb885112c66b732dbc84303dde32469fc8bd720152ae12de4dbeab
+    size: 2929913
+    checksum: sha256:d3d0b654585b3db69cb1423296869e3c272aef1c658cfd9d103d5e8c81884986
     name: kernel-headers
-    evr: 5.14.0-687.48.1.el9_8
-    sourcerpm: kernel-5.14.0-687.48.1.el9_8.src.rpm
+    evr: 5.14.0-687.49.1.el9_8
+    sourcerpm: kernel-5.14.0-687.49.1.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/l/libasan-11.5.0-14.el9.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 412888
@@ -8472,12 +8472,12 @@ arches:
     checksum: sha256:c4c76ebfd66ba6d00edf672797d7f077b29d279b7866a04e05258a257a5bc306
     name: json-c
     evr: 0.14-11.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.48.1.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.49.1.el9_8.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
-    size: 152450505
-    checksum: sha256:1c9e1e1b3e1298e647a1965e97d9f2260c0ec2562e3559235be60a2f094b0adb
+    size: 152473969
+    checksum: sha256:ce455287de0f71efd1128f4cd574f7d418b57ae9784903bbe8b8d3e68062a80b
     name: kernel
-    evr: 5.14.0-687.48.1.el9_8
+    evr: 5.14.0-687.49.1.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/k/keyutils-1.6.3-1.el9.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
     size: 150790
@@ -9115,13 +9115,13 @@ arches:
     name: glibc-headers
     evr: 2.34-275.el9_8
     sourcerpm: glibc-2.34-275.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/k/kernel-headers-5.14.0-687.48.1.el9_8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/k/kernel-headers-5.14.0-687.49.1.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 2931625
-    checksum: sha256:edc71a44471f2400def85d3418c9c82d463cb6bb0ca19853b246b668fb946600
+    size: 2939221
+    checksum: sha256:ac9fe2b15be1ea2445c28abcaa21b62a118e56ef5984aea1c9d204885786f99d
     name: kernel-headers
-    evr: 5.14.0-687.48.1.el9_8
-    sourcerpm: kernel-5.14.0-687.48.1.el9_8.src.rpm
+    evr: 5.14.0-687.49.1.el9_8
+    sourcerpm: kernel-5.14.0-687.49.1.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/l/libcap-ng-devel-0.8.2-7.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 33746
@@ -11437,12 +11437,12 @@ arches:
     checksum: sha256:c4c76ebfd66ba6d00edf672797d7f077b29d279b7866a04e05258a257a5bc306
     name: json-c
     evr: 0.14-11.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.48.1.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.49.1.el9_8.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
-    size: 152450505
-    checksum: sha256:1c9e1e1b3e1298e647a1965e97d9f2260c0ec2562e3559235be60a2f094b0adb
+    size: 152473969
+    checksum: sha256:ce455287de0f71efd1128f4cd574f7d418b57ae9784903bbe8b8d3e68062a80b
     name: kernel
-    evr: 5.14.0-687.48.1.el9_8
+    evr: 5.14.0-687.49.1.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/k/keyutils-1.6.3-1.el9.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
     size: 150790
