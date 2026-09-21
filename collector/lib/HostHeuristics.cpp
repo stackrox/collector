@@ -1,6 +1,7 @@
 #include "HostHeuristics.h"
 
 #include "Logging.h"
+#include "NetworkConnection.h"  // for enumerating local addresses
 
 namespace collector {
 
@@ -93,11 +94,44 @@ class CPUHeuristic : public Heuristic {
   }
 };
 
+class NetworkInterfaceHeuristic : public Heuristic {
+ public:
+  // Log local network interface addresses and warn if any are public.
+  void Process(HostInfo& host, const CollectorConfig& config, HostConfig* hconfig) const {
+    auto interfaces = GetLocalInterfaceAddresses();
+    bool found_a_public_address = false;
+
+    for (const auto& iface : interfaces) {
+      const auto& addr = iface.address();
+
+      // Skip loopback addresses
+      if (addr.IsLocal()) {
+        continue;
+      }
+
+      if (addr.IsPublic()) {
+        CLOG(WARNING) << "Local interface : " << iface << " uses an address in a public IP range";
+        found_a_public_address = true;
+      } else {
+        CLOG(INFO) << "Local interface : " << iface;
+      }
+    }
+
+    if (found_a_public_address) {
+      CLOG(WARNING)
+          << "Some network interface have public addresses. "
+          << "Network flows going through those interfaces will not be displayed properly unless "
+          << "you set 'ROX_NON_AGGREGATED_NETWORKS'";
+    }
+  }
+};
+
 const std::unique_ptr<Heuristic> g_host_heuristics[] = {
     std::unique_ptr<Heuristic>(new CollectionHeuristic),
     std::unique_ptr<Heuristic>(new DockerDesktopHeuristic),
     std::unique_ptr<Heuristic>(new PowerHeuristic),
     std::unique_ptr<Heuristic>(new CPUHeuristic),
+    std::unique_ptr<Heuristic>(new NetworkInterfaceHeuristic),
 };
 
 }  // namespace
