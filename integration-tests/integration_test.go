@@ -623,3 +623,7 @@ func TestGetStatus(t *testing.T) {
 func TestLogLevelEndpoint(t *testing.T) {
 	suite.Run(t, new(suites.LogLevelTestSuite))
 }
+
+func TestGRPCStreamDelay(t *testing.T) {
+	suite.Run(t, new(suites.GRPCStreamDelayTestSuite))
+}
