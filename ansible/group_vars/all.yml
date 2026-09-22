@@ -87,6 +87,12 @@ virtual_machines:
   rhcos:
     project: rhcos-cloud
     images:
+      # OCP 5.2 (RHEL 10.2 + 9.8)
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 5.2 x86_64.images.gcp.name rhel-10') }}"
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 5.2 x86_64.images.gcp.name rhel-9') }}"
+      # OCP 5.0 (RHEL 10.2 + 9.8)
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 5.0 x86_64.images.gcp.name rhel-10') }}"
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 5.0 x86_64.images.gcp.name rhel-9') }}"
       # OCP 4.22 (RHEL 10.2 + 9.8), EUS until June 2029
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.22 x86_64.images.gcp.name rhel-10') }}"
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.22 x86_64.images.gcp.name rhel-9') }}"
@@ -116,6 +122,12 @@ virtual_machines:
     arch: arm64
     machine_type: t2a-standard-2
     images:
+      # OCP 5.2 (RHEL 10.2 + 9.8)
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 5.2 aarch64.images.gcp.name rhel-10') }}"
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 5.2 aarch64.images.gcp.name rhel-9') }}"
+      # OCP 5.0 (RHEL 10.2 + 9.8)
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 5.0 aarch64.images.gcp.name rhel-10') }}"
+      - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 5.0 aarch64.images.gcp.name rhel-9') }}"
       # OCP 4.22 (RHEL 10.2 + 9.8), EUS until June 2029
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.22 aarch64.images.gcp.name rhel-10') }}"
       - "{{ lookup('ansible.builtin.pipe', 'scripts/fetch_ocp_rhcos_bootimage.sh 4.22 aarch64.images.gcp.name rhel-9') }}"
