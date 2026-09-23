@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIR
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+readonly REPO_DIR
+readonly ARTIFACTS_DIR="${REPO_DIR}/artifacts"
+
+readonly EXIT_COMPLETE=0
+readonly EXIT_BLOCKED=2
+readonly EXIT_INVALID=3
+readonly EXIT_TRANSIENT=4
+readonly EXIT_TERMINAL=5
+
+usage() {
+    cat <<'EOF'
+Usage: collector-agent <operation> <number> [--dry-run]
+
+Operations:
+  spike   <issue-number>   Implement a bounded first solution for an issue
+  revise  <pr-number>      Make at most one revision based on PR feedback
+
+Options:
+  --dry-run   Required. No publication (only mode supported currently).
+
+Examples:
+  collector-agent spike 3424 --dry-run
+  collector-agent revise 3381 --dry-run
+EOF
+}
+
+die() {
+    echo "error: $1" >&2
+    exit "${2:-$EXIT_INVALID}"
+}
+
+require_command() {
+    command -v "$1" >/dev/null 2>&1 || die "$1 is required but not found" "$EXIT_TERMINAL"
+}
+
+# Parse arguments
+[[ $# -ge 2 ]] || { usage >&2; exit "$EXIT_INVALID"; }
+
+OPERATION="$1"
+NUMBER="$2"
+shift 2
+
+DRY_RUN=false
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --dry-run) DRY_RUN=true; shift ;;
+        --publish) die "publish mode is not supported yet" ;;
+        *) die "unknown flag: $1" ;;
+    esac
+done
+
+case "$OPERATION" in
+    spike|revise) ;;
+    *) die "unknown operation: $OPERATION (expected spike or revise)" ;;
+esac
+
+[[ "$NUMBER" =~ ^[0-9]+$ ]] || die "number must be numeric, got: $NUMBER"
+"$DRY_RUN" || die "--dry-run is required (publish mode not yet supported)"
+
+require_command gh
+require_command git
+require_command claude
+
+cd "$REPO_DIR"
+git rev-parse --git-dir >/dev/null 2>&1 || die "not a git repository: $REPO_DIR"
+
+# Validate the target exists and is actionable
+validate_target() {
+    local op="$1" number="$2"
+
+    if [[ "$op" == "spike" ]]; then
+        local state
+        state="$(gh issue view "$number" --json state --jq .state 2>/dev/null)" \
+            || die "could not fetch issue #${number}"
+        [[ "$state" != "CLOSED" ]] || die "issue #${number} is closed"
+    else
+        local state
+        state="$(gh pr view "$number" --json state --jq .state 2>/dev/null)" \
+            || die "could not fetch PR #${number}"
+        [[ "$state" == "OPEN" ]] || die "PR #${number} is not open (state: ${state})"
+    fi
+}
+
+resolve_sha() {
+    local op="$1" number="$2"
+
+    if [[ "$op" == "spike" ]]; then
+        git rev-parse HEAD
+    else
+        gh pr view "$number" --json headRefOid --jq .headRefOid
+    fi
+}
+
+validate_target "$OPERATION" "$NUMBER"
+
+SHA="$(resolve_sha "$OPERATION" "$NUMBER")"
+
+mkdir -p "$ARTIFACTS_DIR"
+
+# Minimal request — the agent reads everything else via gh
+cat > "${ARTIFACTS_DIR}/request.json" <<ENDJSON
+{
+  "operation": "${OPERATION}-$( [[ "$OPERATION" == "spike" ]] && echo "issue" || echo "pr" )",
+  "number": ${NUMBER},
+  "sha": "${SHA}",
+  "publish": false
+}
+ENDJSON
+
+SKILL="$( [[ "$OPERATION" == "spike" ]] && echo "spike-issue" || echo "revise-pr" )"
+
+echo ""
+echo "=== Collector Agent ==="
+echo "Operation: ${OPERATION}"
+echo "Number: ${NUMBER}"
+echo "SHA: ${SHA}"
+echo "Dry-run: ${DRY_RUN}"
+echo "======================="
+echo ""
+
+claude \
+    --print \
+    --dangerously-skip-permissions \
+    --max-turns 80 \
+    -p "Read AGENTS.md for context. Then follow the ${SKILL} skill exactly. The request is at artifacts/request.json. Write results to artifacts/."
+
+echo ""
+
+# Validate result
+if [[ ! -f "${ARTIFACTS_DIR}/result.json" ]]; then
+    echo "error: result.json was not produced" >&2
+    exit "$EXIT_TERMINAL"
+fi
+
+STATUS="$(python3 -c "import json; print(json.load(open('${ARTIFACTS_DIR}/result.json'))['status'])" 2>/dev/null)" || {
+    echo "error: result.json is not valid" >&2
+    exit "$EXIT_TERMINAL"
+}
+
+echo "=== Result ==="
+echo "Status: ${STATUS}"
+[[ -f "${ARTIFACTS_DIR}/summary.md" ]] && echo "Summary: ${ARTIFACTS_DIR}/summary.md"
+[[ -f "${ARTIFACTS_DIR}/change.patch" ]] && echo "Patch: ${ARTIFACTS_DIR}/change.patch"
+echo "==============="
+
+# Cleanup working tree changes (keep artifacts)
+git checkout -- . 2>/dev/null || true
+git clean -fd cmake-build 2>/dev/null || true
+
+case "$STATUS" in
+    complete)          exit "$EXIT_COMPLETE" ;;
+    blocked)           exit "$EXIT_BLOCKED" ;;
+    transient_failure) exit "$EXIT_TRANSIENT" ;;
+    terminal_failure)  exit "$EXIT_TERMINAL" ;;
+    *)                 exit "$EXIT_TERMINAL" ;;
+esac
