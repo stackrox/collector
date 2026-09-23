@@ -1,0 +1,106 @@
+
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+inheritance: true
+
+reviews:
+  profile: assertive
+  high_level_summary: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - master
+      - main
+      - "release-.*"
+
+  path_instructions:
+    - path: "**/*.{cpp,cc,cxx}"
+      instructions: >
+        C++ systems code. Review for memory safety, RAII compliance, proper
+        error handling, and thread safety. This code runs in a privileged
+        container and interacts with eBPF probes, so pay attention to
+        security, resource cleanup, and signal handling. Prefer modern C++
+        idioms (smart pointers, std::string_view, structured bindings).
+        Flag any raw new/delete.
+    - path: "**/*.c"
+      instructions: >
+        eBPF C code. Review for verifier constraints (bounded loops,
+        stack/memory safety, helper-call correctness), and stable ABI
+        contracts with userspace (map key/value layout compatibility).
+    - path: "**/*.{h,hpp}"
+      instructions: >
+        C++ headers. Check include guards, minimal includes, and clean
+        public interfaces. Ensure no implementation details leak into
+        headers unnecessarily.
+    - path: "**/*.proto"
+      instructions: >
+        Protobuf definitions. Verify backward compatibility of field
+        changes (no renumbering, no removing fields in use). Check that
+        field types and names follow protobuf style conventions.
+    - path: "**/*.go"
+      instructions: >
+        Go integration tests that exercise the agent against real container
+        runtimes and kernel configurations. Review for test reliability
+        (no flaky assertions, proper timeouts, cleanup of test resources),
+        clear failure messages, and correct use of the testing package.
+        Tests run in CI VMs, so be mindful of environment assumptions.
+    - path: "**/*.{yml,yaml}"
+      instructions: >
+        YAML files may be Ansible playbooks, CI workflows, or configuration.
+        For Ansible: review for idempotency, proper use of handlers and
+        variables, secure credential handling (no hardcoded secrets), and
+        correct task naming with appropriate error handling (block/rescue).
+        For GitHub Actions: pin action versions to SHA, minimize token
+        permissions, avoid script injection via untrusted inputs, and
+        verify caching efficiency.
+    - path: "**/*.sh"
+      instructions: >
+        Shell scripts used in build and CI. Review for POSIX compliance
+        where appropriate, proper quoting of variables, set -euo pipefail
+        usage, and safe handling of paths with spaces. Check for proper
+        exit code propagation.
+    - path: "**/CMakeLists.txt"
+      instructions: >
+        CMake build configuration. Check for correct target dependencies,
+        proper use of PUBLIC/PRIVATE/INTERFACE keywords, and that compile
+        options are appropriate for the target platform.
+    - path: "**/{Dockerfile,Dockerfile.*,*.Dockerfile}"
+      instructions: >
+        Container image definitions. Review for minimal base images,
+        proper layer ordering for cache efficiency, no secrets in build
+        args, and that the final image has minimal attack surface.
+    - path: "**/Makefile*"
+      instructions: >
+        Build system Makefiles. Check for correct dependency declarations,
+        proper use of variables, and that phony targets are declared.
+
+  tools:
+    cppcheck:
+      enabled: true
+    shellcheck:
+      enabled: true
+    yamllint:
+      enabled: true
+    golangci-lint:
+      enabled: true
+    hadolint:
+      enabled: true
+    semgrep:
+      enabled: true
+    gitleaks:
+      enabled: true
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+  pull_requests:
+    scope: auto
+  web_search:
+    enabled: true
