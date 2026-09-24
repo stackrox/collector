@@ -17,6 +17,7 @@
 class sinsp;
 class sinsp_evt;
 class sinsp_evt_formatter;
+class sinsp_plugin;
 class sinsp_threadinfo;
 
 namespace collector::system_inspector {
@@ -62,12 +63,13 @@ class Service : public SystemInspector {
 
   sinsp_evt* GetNext();
   static bool FilterEvent(sinsp_evt* event);
-  static bool FilterEvent(const sinsp_threadinfo* tinfo);
+  static bool FilterEvent(sinsp& inspector, const sinsp_threadinfo* tinfo);
 
   bool SendExistingProcesses(SignalHandler* handler);
 
   mutable std::mutex libsinsp_mutex_;
   std::unique_ptr<sinsp> inspector_;
+  std::shared_ptr<sinsp_plugin> container_plugin_;
   std::unique_ptr<sinsp_evt_formatter> default_formatter_;
   std::unique_ptr<ISignalServiceClient> signal_client_;
   std::vector<SignalHandlerEntry> signal_handlers_;
