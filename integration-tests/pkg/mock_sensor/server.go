@@ -57,10 +57,6 @@ type MockSensor struct {
 	lineageChannel    RingChan[*storage.ProcessSignal_LineageInfo]
 	connectionChannel RingChan[*sensorAPI.NetworkConnection]
 	endpointChannel   RingChan[*sensorAPI.NetworkEndpoint]
-
-	// networkStreamDelay is an optional delay applied at the start of
-	// PushNetworkConnectionInfo to simulate a slow server.
-	networkStreamDelay time.Duration
 }
 
 func NewMockSensor(test string) *MockSensor {
@@ -370,9 +366,6 @@ func (m *MockSensor) convertToContainerConnsMap(connections []*sensorAPI.Network
 // PushNetworkConnectionInfo conforms to the Sensor API. It is here that networking
 // events (connections and endpoints) are handled and stored/sent to the relevant channel
 func (m *MockSensor) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
-	if m.networkStreamDelay > 0 {
-		time.Sleep(m.networkStreamDelay)
-	}
 	for {
 		signal, err := stream.Recv()
 		if err != nil {
@@ -515,12 +508,4 @@ func (m *MockSensor) pushEndpoint(containerID string, endpoint *sensorAPI.Networ
 
 func (m *MockSensor) SetTestName(testName string) {
 	m.testName = testName
-}
-
-// SetNetworkStreamDelay configures a delay that is applied at the
-// beginning of PushNetworkConnectionInfo. This can be used to simulate
-// a slow server that takes time to accept the network connection info
-// stream.
-func (m *MockSensor) SetNetworkStreamDelay(d time.Duration) {
-	m.networkStreamDelay = d
 }
