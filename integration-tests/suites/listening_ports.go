@@ -3,6 +3,7 @@ package suites
 import (
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"sort"
 	"time"
@@ -57,10 +58,12 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 	ports, err := s.getPorts(serverName)
 	s.Require().NoError(err)
 
-	s.serverURL = fmt.Sprintf("http://%s:%d", ip, ports[0])
+	serverAddr := net.JoinHostPort(ip, fmt.Sprint(ports[0]))
+	s.serverURL = "http://" + serverAddr
 
-	// Wait 5 seconds for the plop service to start
-	common.Sleep(5 * time.Second)
+	// Flask usually binds within a few seconds, but a cold start on some
+	// VMs (e.g. ubuntu-2404) has been seen to take longer than that.
+	s.waitForServer(serverAddr, 30*time.Second)
 
 	log.Info("Opening ports...")
 	s.openPort(8081)
@@ -144,6 +147,20 @@ func (s *ProcessListeningOnPortTestSuite) TestProcessListeningOnPort() {
 
 func getProcessListeningOnPortsImage() string {
 	return config.Images().QaImageByKey("qa-plop")
+}
+
+// waitForServer polls until the plop server accepts TCP connections on addr,
+// failing the suite if it doesn't within timeout.
+func (s *ProcessListeningOnPortTestSuite) waitForServer(addr string, timeout time.Duration) {
+	log.Info("Waiting for plop server on %s...", addr)
+	s.Require().Eventually(func() bool {
+		conn, err := net.DialTimeout("tcp", addr, time.Second)
+		if err != nil {
+			return false
+		}
+		conn.Close()
+		return true
+	}, timeout, 500*time.Millisecond, "plop server did not start listening on %s within %s", addr, timeout)
 }
 
 func (s *ProcessListeningOnPortTestSuite) openPort(port uint16) {
