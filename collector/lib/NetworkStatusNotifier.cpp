@@ -148,13 +148,14 @@ void NetworkStatusNotifier::Stop() {
   thread_.Stop();
 }
 
-void NetworkStatusNotifier::WaitUntilWriterStarted(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time_seconds) {
+bool NetworkStatusNotifier::WaitUntilWriterStarted(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time_seconds) {
   if (!writer->WaitUntilStarted(std::chrono::seconds(wait_time_seconds))) {
     CLOG(ERROR) << "Failed to establish network connection info stream.";
-    return;
+    return false;
   }
 
   CLOG(INFO) << "Established network connection info stream.";
+  return true;
 }
 
 void NetworkStatusNotifier::ReportConnectionStats() {
@@ -218,7 +219,9 @@ bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
 }
 
 void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
-  WaitUntilWriterStarted(writer, 10);
+  if (!WaitUntilWriterStarted(writer, 10)) {
+    return;
+  }
 
   ConnMap old_conn_state;
   AdvertisedEndpointMap old_cep_state;
