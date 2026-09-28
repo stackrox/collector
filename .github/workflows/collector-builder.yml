@@ -123,6 +123,16 @@ jobs:
             -e @'${{ github.workspace }}/ansible/secrets.yml' \
             ansible/ci-build-builder.yml
 
+      - name: Report build failure to Jira
+        if: (!cancelled())
+        uses: stackrox/actions/test/junit2jira@main
+        with:
+          dry-run: ${{ github.event_name != 'push' }}
+          jira-user: ${{ secrets.JIRA_USER }}
+          jira-token: ${{ secrets.JIRA_TOKEN }}
+          directory: junit-reports
+          gcp-metrics: false
+
   create-multiarch-manifest:
     needs:
     - builder-needs-rebuilding
@@ -165,21 +175,12 @@ jobs:
           base-image: quay.io/rhacs-eng/collector-builder:${{ env.COLLECTOR_BUILDER_TAG }}
           archs: ${{ env.ARCHS }}
 
-  notify:
-    runs-on: ubuntu-24.04
-    if: always() && contains(join(needs.*.result, ','), 'failure') && github.event_name != 'pull_request'
-    needs:
-      - build-builder-image
-      - create-multiarch-manifest
-    steps:
-      - name: Slack notification
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_COLLECTOR_ONCALL_WEBHOOK }}
-          SLACK_CHANNEL: team-acs-collector-oncall
-          SLACK_COLOR: failure
-          SLACK_LINK_NAMES: true
-          SLACK_TITLE: "Builder image build has failed"
-          MSG_MINIMAL: actions url,commit
-          SLACK_MESSAGE: |
-            @acs-collector-oncall
+      - name: Report build failure to Jira
+        if: (!cancelled())
+        uses: stackrox/actions/test/junit2jira@main
+        with:
+          dry-run: ${{ github.event_name != 'push' }}
+          jira-user: ${{ secrets.JIRA_USER }}
+          jira-token: ${{ secrets.JIRA_TOKEN }}
+          directory: junit-reports
+          gcp-metrics: false
