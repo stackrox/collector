@@ -63,7 +63,7 @@ func (s *ProcessListeningOnPortTestSuite) SetupSuite() {
 
 	// Flask usually binds within a few seconds, but a cold start on some
 	// VMs (e.g. ubuntu-2404) has been seen to take longer than that.
-	s.waitForServer(serverAddr, 30*time.Second)
+	s.waitForServer(serverAddr, 15*time.Second)
 
 	log.Info("Opening ports...")
 	s.openPort(8081)
