@@ -92,7 +92,7 @@ func (b *BenchmarkTestSuiteBase) StartCPUProfile() {
 		PidMode:    "host",
 		Mounts:     map[string]string{"/results": resultDir},
 		Env: map[string]string{
-			"PERF_FREQUENCY": benchmarkOptions.CPUProfileFreq,
+			"PERF_FREQUENCY":   benchmarkOptions.CPUProfileFreq,
 			"PERF_OUTPUT_FILE": "/results/perf.data",
 		},
 		Command: []string{"record", "--buildid-all", "-e", "cpu-clock", "-F", benchmarkOptions.CPUProfileFreq, "-g", "--call-graph", "dwarf", "-p", strconv.Itoa(collectorPID), "-o", "/results/perf.data", "--", "sleep", "70"},
@@ -260,6 +260,12 @@ func (s *BenchmarkTestSuiteBase) SpinNetworkBerserker() (string, error) {
 
 func (s *BenchmarkTestSuiteBase) RunCollectorBenchmark() {
 	s.start = time.Now().UTC()
+
+	if len(config.BenchmarksInfo().Workloads) == 1 && config.BenchmarksInfo().Workloads[0] == "density" {
+		s.RunDensityBenchmark()
+		s.stop = time.Now().UTC()
+		return
+	}
 	s.StartCPUProfileCapture()
 
 	benchmarkContainers := make([]string, 0, len(config.BenchmarksInfo().Workloads))

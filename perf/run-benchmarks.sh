@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Run process and connection benchmarks against explicit Collector images, then
-# preserve profiles, workload results, and run context for later comparison.
+# Run benchmark workloads against explicit Collector images, then preserve
+# profiles, workload results, and run context for later comparison.
 set -euo pipefail
 
 PERF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -10,20 +10,27 @@ INTEGRATION_TEST_LOG="${CURRENT_WORKTREE}/integration-tests/integration-test.log
 SAMPLER_PID=
 COLLECTOR_LOG_LEVEL="${COLLECTOR_LOG_LEVEL:-info}"
 
-if [[ $# -ne 1 || ! $1 =~ ^[[:alnum:]_.-]+$ || $1 == "." || $1 == ".." ]]; then
-    printf 'Usage: %s RUN_NAME\n' "$0" >&2
+if [[ $# -lt 1 || $# -gt 2 || ! $1 =~ ^[[:alnum:]_.-]+$ || $1 == "." || $1 == ".." ]]; then
+    printf 'Usage: %s RUN_NAME [WORKLOADS]\n' "$0" >&2
+    printf '  WORKLOADS is a comma-separated list of processes,connections,density\n' >&2
     exit 1
 fi
 
 OUTPUT_DIR="${PERF_DIR}/$1"
 mkdir -p "$OUTPUT_DIR"
 
-declare -a WORKLOADS=(processes connections)
+IFS=, read -r -a WORKLOADS <<< "${2:-${COLLECTOR_BENCHMARK_WORKLOADS:-processes,connections}}"
+for workload in "${WORKLOADS[@]}"; do
+    case "$workload" in
+        processes|connections|density) ;;
+        *) printf 'Unsupported workload: %s\n' "$workload" >&2; exit 1 ;;
+    esac
+done
 
 # Set these to the immutable Quay image references you want to compare.
 declare -A IMAGES=(
-    [3.25.0]="${COLLECTOR_IMAGE_3_25_0:-quay.io/stackrox-io/collector:3.25.7-3-g284a332178}"
-    [master]="${COLLECTOR_IMAGE_MASTER:?Set COLLECTOR_IMAGE_MASTER to the Quay master image}"
+    [3.25.0]="${COLLECTOR_IMAGE_3_25_0:-quay.io/stackrox-io/collector:3.25.9-2-g1241b48894}"
+    [master]="${COLLECTOR_IMAGE_MASTER:-quay.io/stackrox-io/collector:3.25.0-147-ge2ae44216b}"
     [current]="${COLLECTOR_IMAGE_CURRENT:?Set COLLECTOR_IMAGE_CURRENT to the Quay current-branch image}"
 )
 
@@ -63,6 +70,10 @@ capture_metadata() {
         printf 'capture_started_utc=%s\n' "$(date --utc --iso-8601=seconds)"
         printf 'working_tree=%s\n' "$CURRENT_WORKTREE"
         printf 'perf_frequency=%s\n' "${COLLECTOR_CPU_PROFILE_FREQUENCY:-199}"
+        printf 'density_groups=%s\n' "${COLLECTOR_BENCHMARK_DENSITY_GROUPS:-10}"
+        printf 'density_steady_seconds=%s\n' "${COLLECTOR_BENCHMARK_DENSITY_STEADY_SECONDS:-60}"
+        printf 'density_churn_interval_seconds=%s\n' "${COLLECTOR_BENCHMARK_DENSITY_CHURN_INTERVAL_SECONDS:-30}"
+        printf 'density_churn_cycles=%s\n' "${COLLECTOR_BENCHMARK_DENSITY_CHURN_CYCLES:-6}"
     } > "$metadata"
 
     capture_command "$metadata" uname -a
@@ -95,11 +106,21 @@ sample_run() {
             > "${destination}/prometheus/${sequence}-${timestamp}.prom" 2>/dev/null || \
             rm -f "${destination}/prometheus/${sequence}-${timestamp}.prom"
 
-        while IFS= read -r stats; do
-            printf '%s\t%s\n' "$timestamp" "$stats"
-        done < <(docker stats --no-stream --format '{{json .}}' \
-            collector cpu-profile benchmark-processes benchmark-connections 2>/dev/null || true) \
-            >> "${destination}/docker-stats.jsonl"
+        local -a containers=()
+        while IFS= read -r container; do
+            case "$container" in
+                collector|cpu-profile|benchmark-processes|benchmark-connections|density-*)
+                    containers+=("$container")
+                    ;;
+            esac
+        done < <(docker ps --format '{{.Names}}' 2>/dev/null || true)
+
+        if [[ ${#containers[@]} -gt 0 ]]; then
+            while IFS= read -r stats; do
+                printf '%s\t%s\n' "$timestamp" "$stats"
+            done < <(docker stats --no-stream --format '{{json .}}' "${containers[@]}" 2>/dev/null || true) \
+                >> "${destination}/docker-stats.jsonl"
+        fi
 
         sequence=$((sequence + 1))
         sleep 1
@@ -146,6 +167,10 @@ run_version() {
         COLLECTOR_LOG_LEVEL="$COLLECTOR_LOG_LEVEL" \
         COLLECTOR_IMAGE="$image" \
         COLLECTOR_BENCHMARK_WORKLOADS="$workload" \
+        COLLECTOR_BENCHMARK_DENSITY_GROUPS="${COLLECTOR_BENCHMARK_DENSITY_GROUPS:-10}" \
+        COLLECTOR_BENCHMARK_DENSITY_STEADY_SECONDS="${COLLECTOR_BENCHMARK_DENSITY_STEADY_SECONDS:-60}" \
+        COLLECTOR_BENCHMARK_DENSITY_CHURN_INTERVAL_SECONDS="${COLLECTOR_BENCHMARK_DENSITY_CHURN_INTERVAL_SECONDS:-30}" \
+        COLLECTOR_BENCHMARK_DENSITY_CHURN_CYCLES="${COLLECTOR_BENCHMARK_DENSITY_CHURN_CYCLES:-6}" \
         COLLECTOR_CPU_PROFILE=true \
         COLLECTOR_CPU_PROFILE_FREQUENCY="${COLLECTOR_CPU_PROFILE_FREQUENCY:-199}" \
         make -C "${CURRENT_WORKTREE}/integration-tests" TestBenchmarkCollector
