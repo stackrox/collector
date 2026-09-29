@@ -619,6 +619,13 @@ class DuplexClientReaderWriter : public DuplexClientWriter<W> {
     if (this->CheckFlags(Pending(op))) {
       return {op, OpError::ALREADY_PENDING};
     }
+    // START, WRITE, and WRITES_DONE all share the same underlying write_ops_ CallOpSet.
+    // Submitting any of these while another is pending would cause GRPC_CALL_ERROR_TOO_MANY_OPERATIONS.
+    if (op == Op::START || op == Op::WRITE || op == Op::WRITES_DONE) {
+      if (this->CheckFlags(Pending(Op::START) | Pending(Op::WRITE) | Pending(Op::WRITES_DONE))) {
+        return {op, OpError::ILLEGAL_STATE};
+      }
+    }
     if (this->CheckFlags(Done(Op::SHUTDOWN) | Pending(Op::SHUTDOWN))) {
       return {op, OpError::SHUTDOWN};
     }
