@@ -47,6 +47,7 @@ type IntegrationTestSuiteBase struct {
 	stats       []executor.ContainerStat
 	statsCtx    context.Context
 	statsCancel context.CancelFunc
+	phases      []BenchmarkPhase
 
 	start time.Time
 	stop  time.Time
@@ -59,8 +60,15 @@ type PerformanceResult struct {
 	CollectionMethod string
 	Metrics          map[string]float64
 	ContainerStats   []executor.ContainerStat
+	Phases           []BenchmarkPhase
 	LoadStartTs      string
 	LoadStopTs       string
+}
+
+type BenchmarkPhase struct {
+	Name  string
+	Start time.Time
+	Stop  time.Time
 }
 
 // StartCollector will start the collector container and optionally
@@ -172,6 +180,10 @@ func (s *IntegrationTestSuiteBase) AddMetric(key string, value float64) {
 	}
 
 	s.metrics[key] = value
+}
+
+func (s *IntegrationTestSuiteBase) AddBenchmarkPhase(name string, start, stop time.Time) {
+	s.phases = append(s.phases, BenchmarkPhase{Name: name, Start: start, Stop: stop})
 }
 
 // RegisterCleanup registers a cleanup function with the testing structures,
@@ -294,6 +306,7 @@ func (s *IntegrationTestSuiteBase) WritePerfResults() {
 		CollectionMethod: config.CollectionMethod(),
 		Metrics:          s.metrics,
 		ContainerStats:   s.stats,
+		Phases:           s.phases,
 		LoadStartTs:      s.start.Format("2006-01-02 15:04:05"),
 		LoadStopTs:       s.stop.Format("2006-01-02 15:04:05"),
 	}
