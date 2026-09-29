@@ -82,7 +82,6 @@ PathEnvVar tls_client_cert_path("ROX_COLLECTOR_TLS_CLIENT_CERT");
 PathEnvVar tls_client_key_path("ROX_COLLECTOR_TLS_CLIENT_KEY");
 
 BoolEnvVar disable_process_arguments("ROX_COLLECTOR_NO_PROCESS_ARGUMENTS", false);
-StringEnvVar container_plugin_path("ROX_COLLECTOR_CONTAINER_PLUGIN_PATH", "/usr/local/lib/collector/collector-container-plugin.so");
 }  // namespace
 
 constexpr bool CollectorConfig::kTurnOffScrape;
@@ -98,7 +97,6 @@ CollectorConfig::CollectorConfig() {
   scrape_interval_ = kScrapeInterval;
   turn_off_scrape_ = kTurnOffScrape;
   collection_method_ = kCollectionMethod;
-  container_plugin_path_ = container_plugin_path.value();
 }
 
 void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {

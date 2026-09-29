@@ -10,6 +10,7 @@
 #include "EventMap.h"
 #include "Logging.h"
 #include "Utility.h"
+#include "system-inspector/ContainerIDCache.h"
 #include "system-inspector/EventExtractor.h"
 
 namespace collector {
@@ -23,6 +24,8 @@ using Timestamp = google::protobuf::Timestamp;
 using TimeUtil = google::protobuf::util::TimeUtil;
 
 namespace {
+
+system_inspector::ContainerIDCache empty_container_id_cache;
 
 enum ProcessSignalType {
   EXECVE,
@@ -58,10 +61,12 @@ std::string extract_proc_args(sinsp_threadinfo* tinfo) {
 
 ProcessSignalFormatter::ProcessSignalFormatter(
     sinsp* inspector,
-    const CollectorConfig& config) : event_names_(EventNames::GetInstance()),
-                                     inspector_(inspector),
-                                     event_extractor_(std::make_unique<system_inspector::EventExtractor>()),
-                                     config_(config) {
+    const CollectorConfig& config,
+    system_inspector::ContainerIDCache* container_id_cache) : event_names_(EventNames::GetInstance()),
+                                      inspector_(inspector),
+                                      event_extractor_(std::make_unique<system_inspector::EventExtractor>()),
+                                      container_id_cache_(container_id_cache == nullptr ? &empty_container_id_cache : container_id_cache),
+                                      config_(config) {
   event_extractor_->Init(inspector);
 }
 
@@ -176,7 +181,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   signal->set_allocated_time(timestamp);
 
   // set container_id
-  auto container_id = GetContainerID(event);
+  auto container_id = container_id_cache_->Get(*event->get_thread_info());
   if (!container_id.empty()) {
     signal->set_container_id(container_id);
   }
@@ -242,7 +247,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   signal->set_allocated_time(timestamp);
 
   // set container_id
-  signal->set_container_id(GetContainerID(*inspector_, *tinfo));
+  signal->set_container_id(container_id_cache_->Get(*tinfo));
 
   // set process lineage
   std::vector<LineageInfo> lineage;
@@ -266,7 +271,7 @@ std::string ProcessSignalFormatter::ProcessDetails(sinsp_evt* event) {
   std::stringstream ss;
   const std::string* path = event_extractor_->get_exepath(event);
   const std::string* name = event_extractor_->get_comm(event);
-  auto container_id = GetContainerID(event);
+  auto container_id = container_id_cache_->Get(*event->get_thread_info());
   const char* args = event_extractor_->get_proc_args(event);
   const int64_t* pid = event_extractor_->get_pid(event);
 
@@ -348,7 +353,7 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     // all platforms.
     //
     if (pt->m_vpid == 0) {
-      if (GetContainerID(*inspector_, *pt).empty()) {
+      if (container_id_cache_->Get(*pt).empty()) {
         return false;
       }
     } else if (pt->m_pid == pt->m_vpid) {

@@ -105,7 +105,7 @@ ci-benchmarks: benchmark
 
 .PHONY: docker-clean
 docker-clean:
-	docker rm -fv container-stats benchmark collector grpc-server 2>/dev/null || true
+	docker rm -fv container-stats benchmark collector grpc-server cpu-profile benchmark-connections 2>/dev/null || true
 
 .PHONY: clean
 clean: docker-clean

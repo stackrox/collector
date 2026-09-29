@@ -67,14 +67,6 @@ std::string Str(Args&&... args) {
 
 std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo* t);
 
-// Return the cached container ID from a threadinfo.
-// Returns an empty string for host processes.
-std::string GetContainerID(sinsp& inspector, const sinsp_threadinfo& tinfo);
-
-// Extract container ID from an event's thread info cgroups.
-// Returns an empty string if no container ID found.
-std::string GetContainerID(sinsp_evt* event);
-
 // UUIDStr returns UUID in string format.
 const char* UUIDStr();
 

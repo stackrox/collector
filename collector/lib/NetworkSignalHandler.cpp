@@ -6,6 +6,7 @@
 
 #include "EventMap.h"
 #include "Utility.h"
+#include "system-inspector/ContainerIDCache.h"
 #include "system-inspector/EventExtractor.h"
 
 namespace collector {
@@ -43,8 +44,8 @@ EventMap<Modifier> modifiers = {
 
 }  // namespace
 
-NetworkSignalHandler::NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker, system_inspector::Stats* stats)
-    : event_extractor_(std::make_unique<system_inspector::EventExtractor>()), conn_tracker_(std::move(conn_tracker)), stats_(stats), collect_connection_status_(true), track_send_recv_(false) {
+NetworkSignalHandler::NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker, system_inspector::Stats* stats, system_inspector::ContainerIDCache* container_id_cache)
+    : event_extractor_(std::make_unique<system_inspector::EventExtractor>()), conn_tracker_(std::move(conn_tracker)), stats_(stats), container_id_cache_(container_id_cache), collect_connection_status_(true), track_send_recv_(false) {
   event_extractor_->Init(inspector);
 }
 
@@ -152,7 +153,7 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   const Endpoint* local = is_server ? &server : &client;
   const Endpoint* remote = is_server ? &client : &server;
 
-  auto container_id = GetContainerID(evt);
+  auto container_id = container_id_cache_->Get(*evt->get_thread_info());
   if (container_id.empty()) {
     return std::nullopt;
   }

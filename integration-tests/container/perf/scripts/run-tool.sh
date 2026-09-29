@@ -4,11 +4,18 @@ set -eo pipefail
 
 TOOL_PID=0
 
+function postrun() {
+    if [[ -n "${PERF_OUTPUT_FILE:-}" && -e "${PERF_OUTPUT_FILE}" ]]; then
+        chmod go+r "${PERF_OUTPUT_FILE}"
+    fi
+}
+
 function exit_trap() {
     if [[ $TOOL_PID -ne 0 ]]; then
-        kill -INT $TOOL_PID
-        wait $TOOL_PID
+        kill -INT $TOOL_PID || true
+        wait $TOOL_PID || true
     fi
+    postrun
     exit 0
 }
 
@@ -22,6 +29,7 @@ function preinit() {
 function run_tool() {
     TOOL="$1"
     shift
+    umask 022
     # make sure to background the task so we can set up the pid
     # and handle signals from docker
     eval "$TOOL $* 2>&1 &"
@@ -33,6 +41,8 @@ function run_tool() {
     # When docker tries to stop this container, this is interrupted
     # and the exit_trap is run, which handles cleaning up the tool process.
     wait $!
+    TOOL_PID=0
+    postrun
 }
 
 trap exit_trap EXIT

@@ -1,0 +1,16 @@
+restart_interval = 10
+workers = 1
+per_core = false
+
+[workload]
+type = "network"
+server = false
+address = "223.42.0.1"
+target_port = 1337
+nconnections = 100
+arrival_rate = 0.1
+departure_rate = 0.1
+connections_static = 100
+connections_dyn_max = 1000
+preempt = true
+conns_per_addr = 1
