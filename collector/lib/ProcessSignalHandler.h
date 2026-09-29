@@ -6,7 +6,7 @@
 
 #include "CollectorConfig.h"
 #include "ProcessSignalFormatter.h"
-#include "RateLimit.h"
+#include "ProcessSignalPublisher.h"
 #include "SignalHandler.h"
 #include "system-inspector/Service.h"
 
@@ -27,6 +27,7 @@ class ProcessSignalHandler : public SignalHandler {
       : client_(client),
         formatter_(inspector, config),
         stats_(stats),
+        publisher_(client, stats),
         config_(config) {}
 
   ProcessSignalHandler(const ProcessSignalHandler&) = delete;
@@ -46,7 +47,7 @@ class ProcessSignalHandler : public SignalHandler {
   ISignalServiceClient* client_;
   ProcessSignalFormatter formatter_;
   system_inspector::Stats* stats_;
-  RateLimitCache rate_limiter_;
+  ProcessSignalPublisher publisher_;
 
   const CollectorConfig& config_;
 };
