@@ -123,7 +123,7 @@ JUNIT_FILE ?= integration-test-report.xml
 report:
 	go install github.com/jstemmer/go-junit-report/v2@latest
 	@echo "+ $@"
-	@cat $(LOG_FILE) | go-junit-report > `dirname $(LOG_FILE)`/$(JUNIT_FILE)
+	@cat $(LOG_FILE) | $$(go env GOPATH)/bin/go-junit-report > `dirname $(LOG_FILE)`/$(JUNIT_FILE)
 	@echo
 	@echo "Test coverage summary:"
 	@grep "^coverage: " -A1 $(LOG_FILE) | grep -v -e '--' | paste -d " "  - -
