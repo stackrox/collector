@@ -9,9 +9,9 @@ COLLECTOR_BIN_DIR = $(CMAKE_DIR)/collector
 LIBSINSP_BIN_DIR = $(CMAKE_DIR)/collector/EXCLUDE_FROM_DEFAULT_BUILD/libsinsp
 SRC_MOUNT_DIR = /tmp/collector
 
-HDRS := $(wildcard lib/*.h) $(shell find $(BASE_PATH)/falcosecurity-libs/userspace -name '*.h')
+HDRS := $(wildcard lib/*.h) $(wildcard container-plugin/*.h) $(shell find $(BASE_PATH)/falcosecurity-libs/userspace -name '*.h')
 
-SRCS := $(wildcard lib/*.cpp) collector.cpp
+SRCS := $(wildcard lib/*.cpp) $(wildcard container-plugin/*.cpp) collector.cpp
 
 COLLECTOR_BUILD_DEPS := $(HDRS) $(SRCS) $(shell find $(BASE_PATH)/falcosecurity-libs -name '*.h' -o -name '*.cpp' -o -name '*.c')
 
@@ -37,8 +37,10 @@ cmake-build/collector: cmake-configure/collector $(COLLECTOR_BUILD_DEPS)
 
 container/bin/collector: cmake-build/collector
 	mkdir -p container/bin
+	mkdir -p container/libs
 	cp "$(COLLECTOR_BIN_DIR)/collector" container/bin/collector
 	cp "$(COLLECTOR_BIN_DIR)/self-checks" container/bin/self-checks
+	cp "$(COLLECTOR_BIN_DIR)/collector-container-plugin.so" container/libs/collector-container-plugin.so
 
 .PHONY: collector
 collector: container/bin/collector txt-files
