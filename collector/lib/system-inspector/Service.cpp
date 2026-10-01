@@ -58,6 +58,10 @@ Service::Service(const CollectorConfig& config)
     inspector_->get_parser()->set_track_connection_status(true);
   }
 
+  if (config.EnableTrustedExePath()) {
+    inspector_->get_parser()->set_use_trusted_exepath(true);
+  }
+
   // Filter out host processes to avoid flooding Sensor with events it
   // cannot associate with a container. The filter has two clauses:
   //
