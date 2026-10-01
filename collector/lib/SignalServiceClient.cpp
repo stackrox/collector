@@ -12,8 +12,8 @@ namespace collector {
 bool SignalServiceClient::EstablishGRPCStreamSingle() {
   std::mutex mtx;
   std::unique_lock<std::mutex> lock(mtx);
-  stream_interrupted_.wait(lock, [this]() { return !stream_active_.load(std::memory_order_acquire) || thread_.should_stop(); });
-  if (thread_.should_stop()) {
+  stream_interrupted_.wait(lock, [this]() { return !stream_active_.load(std::memory_order_acquire) || stopping_.load(std::memory_order_acquire); });
+  if (stopping_.load(std::memory_order_acquire)) {
     return false;
   }
 
@@ -28,14 +28,16 @@ bool SignalServiceClient::EstablishGRPCStreamSingle() {
 
   // stream writer
   context_ = std::make_unique<grpc::ClientContext>();
-  writer_ = DuplexClient::CreateWithReadsIgnored(&SignalService::Stub::AsyncPushSignals, channel_, context_.get());
-  if (!writer_->WaitUntilStarted(std::chrono::seconds(30))) {
-    CLOG(ERROR) << "Signal stream not ready after 30 seconds. Retrying ...";
-    CLOG(ERROR) << "Error message: " << writer_->FinishNow().error_message();
-    writer_.reset();
-    return true;
+  if (!stub_) {
+    stub_ = SignalService::NewStub(channel_);
   }
-  CLOG(INFO) << "Successfully established GRPC stream for signals.";
+  writer_ = std::make_unique<GrpcBidiStream<SignalStreamMessage, v1::Empty>>(
+      context_.get(),
+      [this](grpc::ClientContext* context, grpc::ClientBidiReactor<SignalStreamMessage, v1::Empty>* reactor) {
+        stub_->async()->PushSignals(context, reactor);
+      },
+      nullptr);
+  CLOG(INFO) << "Started GRPC call for signals.";
 
   first_write_ = true;
   stream_active_.store(true, std::memory_order_release);
@@ -43,18 +45,24 @@ bool SignalServiceClient::EstablishGRPCStreamSingle() {
 }
 
 void SignalServiceClient::EstablishGRPCStream() {
-  while (EstablishGRPCStreamSingle());
+  while (EstablishGRPCStreamSingle()) {
+  }
   CLOG(INFO) << "Signal service client terminating.";
 }
 
 void SignalServiceClient::Start() {
+  stopping_.store(false, std::memory_order_release);
   thread_.Start([this] { EstablishGRPCStream(); });
 }
 
 void SignalServiceClient::Stop() {
+  stopping_.store(true, std::memory_order_release);
   stream_interrupted_.notify_one();
   thread_.Stop();
-  context_->TryCancel();
+  if (context_) {
+    context_->TryCancel();
+  }
+  writer_.reset();
   context_.reset();
 }
 
@@ -71,7 +79,7 @@ SignalHandler::Result SignalServiceClient::PushSignals(const SignalStreamMessage
   }
 
   if (!writer_->Write(msg)) {
-    auto status = writer_->FinishNow();
+    auto status = writer_->Finish(std::chrono::system_clock::now() + std::chrono::seconds(1));
     if (!status.ok()) {
       CLOG(ERROR) << "GRPC writes failed: " << status.error_message();
     }
