@@ -29,7 +29,6 @@ class EchoService final : public sensor::NetworkConnectionInfoService::Service {
       return grpc::Status(grpc::StatusCode::INVALID_ARGUMENT, "missing request");
     }
     Response response;
-    response.mutable_public_ip_addresses()->add_ipv4_addresses(0x01020304);
     stream->Write(response);
     return grpc::Status::OK;
   }
@@ -85,7 +84,7 @@ TEST(GrpcStreamTest, CanWriteImmediatelyAfterConstruction) {
           stub->async()->PushNetworkConnectionInfo(ctx, reactor);
         },
         [&responses, &callback_on_caller, caller_thread](const Response* response) {
-          if (response && response->public_ip_addresses().ipv4_addresses_size() == 1) {
+          if (response) {
             ++responses;
             callback_on_caller = std::this_thread::get_id() == caller_thread;
           }
