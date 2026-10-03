@@ -3,6 +3,7 @@
 #include <google/protobuf/util/time_util.h>
 
 #include "CollectorStats.h"
+#include "DropCapabilities.h"
 #include "DuplexGRPC.h"
 #include "GRPCUtil.h"
 #include "Logging.h"
@@ -110,6 +111,7 @@ void NetworkStatusNotifier::ReceiveIPNetworks(const sensor::IPNetworkList& netwo
 }
 
 void NetworkStatusNotifier::Run() {
+  DropCapabilities({CAP_SYS_PTRACE});
   Profiler::RegisterCPUThread();
   auto next_attempt = std::chrono::system_clock::now();
 
