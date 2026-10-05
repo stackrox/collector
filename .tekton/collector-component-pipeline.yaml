@@ -19,15 +19,14 @@ spec:
       operator: in
       values: [ "Failed" ]
     taskRef:
+      resolver: git
       params:
-      - name: name
-        value: slack-webhook-notification
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:02842e9c752056c47a409f69ed462cfd38cbd6b15facb796564a610b549222ea
-      - name: kind
-        value: task
-      resolver: bundles
-
+      - name: url
+        value: https://github.com/konflux-ci/tekton-integration-catalog.git
+      - name: revision
+        value: 5d9486140df10bc8a0b8e78b6ee6a6138de5bf53
+      - name: pathInRepo
+        value: tasks/slack-webhook-notification/0.1/slack-webhook-notification.yaml
   - name: post-metric-end
     params:
     - name: AGGREGATE_TASKS_STATUS
@@ -549,7 +548,7 @@ spec:
       - name: name
         value: clamav-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-clamav-scan:0.3.4@sha256:3203cd3bde82d9e4d1beb5f1366942346800cff89e392c920733eb0ea78d731b
+        value: quay.io/konflux-ci/tekton-catalog/task-clamav-scan:0.3.4@sha256:22fb08a2d08000aadf22a9cbaaa8265ba70e25fe4e24d81a3f3e64440d9e6b5e
       - name: kind
         value: task
       resolver: bundles
@@ -569,7 +568,7 @@ spec:
       - name: name
         value: rpms-signature-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-rpms-signature-scan:0.2.2@sha256:4b1856e41d087e53af26562fb16a490579777d9ff05af33011ce212d477c7cd5
+        value: quay.io/konflux-ci/tekton-catalog/task-rpms-signature-scan:0.2.2@sha256:e2875a6c1368c3ed78dca9d01a6869ea6fdef03449e98970c8ba313095b58eff
       - name: kind
         value: task
       resolver: bundles
