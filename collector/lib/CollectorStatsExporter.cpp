@@ -5,6 +5,7 @@
 #include <math.h>
 
 #include "Containers.h"
+#include "DropCapabilities.h"
 #include "EventNames.h"
 #include "Logging.h"
 #include "Utility.h"
@@ -46,6 +47,8 @@ class CollectorTimerGauge {
 };
 
 void CollectorStatsExporter::run() {
+  collector::DropCapabilities({CAP_BPF});
+
   auto& collectorEventCounters = prometheus::BuildGauge()
                                      .Name("rox_collector_events")
                                      .Help("Collector events")
