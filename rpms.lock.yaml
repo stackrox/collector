@@ -193,13 +193,13 @@ arches:
     name: glibc-devel
     evr: 2.34-275.el9_8
     sourcerpm: glibc-2.34-275.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/k/kernel-headers-5.14.0-687.54.1.el9_8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/k/kernel-headers-5.14.0-687.55.1.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 2927565
-    checksum: sha256:c950319c04fc9048501cd59da158858b9e4b2d173b98b3d8f56a97b56be89ca9
+    size: 2933341
+    checksum: sha256:e776854fb231e0e71682fcded0fd61600331dff7003ea72a06b90be45ff4d8b1
     name: kernel-headers
-    evr: 5.14.0-687.54.1.el9_8
-    sourcerpm: kernel-5.14.0-687.54.1.el9_8.src.rpm
+    evr: 5.14.0-687.55.1.el9_8
+    sourcerpm: kernel-5.14.0-687.55.1.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/l/libasan-11.5.0-14.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 409047
@@ -1180,13 +1180,13 @@ arches:
     name: gmp
     evr: 1:6.2.0-13.el9
     sourcerpm: gmp-6.2.0-13.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/g/gnutls-3.8.10-8.el9_8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/g/gnutls-3.8.10-9.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 1339758
-    checksum: sha256:3138fd9e96947b38707bc5ef99b781c7d90dc9836ce746cf6ff8a0364b4c765a
+    size: 1340249
+    checksum: sha256:3fb583b2cdf5e1d359fda605e9e192e59f64a4c59f1a194c1334f4f1737f7ad2
     name: gnutls
-    evr: 3.8.10-8.el9_8
-    sourcerpm: gnutls-3.8.10-8.el9_8.src.rpm
+    evr: 3.8.10-9.el9_8
+    sourcerpm: gnutls-3.8.10-9.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/g/grep-3.6-5.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 276244
@@ -1936,13 +1936,13 @@ arches:
     name: util-linux-core
     evr: 2.37.4-25.el9
     sourcerpm: util-linux-2.37.4-25.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/v/vim-filesystem-8.2.2637-26.el9_8.21.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/v/vim-filesystem-8.2.2637-26.el9_8.23.noarch.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 24156
-    checksum: sha256:4362190912229b1a670e20a7e46d1f20fb2d1d30e80ec22342bba1318784f742
+    size: 24487
+    checksum: sha256:4018dd580ce61bf3628d682e6966dd214e95ef704971ad02020651648cc9cb9f
     name: vim-filesystem
-    evr: 2:8.2.2637-26.el9_8.21
-    sourcerpm: vim-8.2.2637-26.el9_8.21.src.rpm
+    evr: 2:8.2.2637-26.el9_8.23
+    sourcerpm: vim-8.2.2637-26.el9_8.23.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/x/xz-libs-5.2.5-8.el9_0.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 94569
@@ -2486,12 +2486,12 @@ arches:
     checksum: sha256:d0d8a795eea9ae555da63fbcfc3575425e86bb7e96d117b9ae2785b4f5e82f7c
     name: gmp
     evr: 1:6.2.0-13.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/g/gnutls-3.8.10-8.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/g/gnutls-3.8.10-9.el9_8.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
-    size: 55045081
-    checksum: sha256:367cff1de3c4b09f4406e6a44fc354a5fe413910d662cb0f43bc0e3af13ce1a8
+    size: 55047557
+    checksum: sha256:ca481ee32a45d6590bda8067e41a7650566f87e25c86ab07cef626af25e2fcfa
     name: gnutls
-    evr: 3.8.10-8.el9_8
+    evr: 3.8.10-9.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/g/grep-3.6-5.el9.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
     size: 1620891
@@ -2522,12 +2522,6 @@ arches:
     checksum: sha256:c4c76ebfd66ba6d00edf672797d7f077b29d279b7866a04e05258a257a5bc306
     name: json-c
     evr: 0.14-11.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.54.1.el9_8.src.rpm
-    repoid: rhel-9-for-aarch64-baseos-source-rpms
-    size: 152530566
-    checksum: sha256:7ac2368f99e5e93164155197fa925061e352e80c3874c614b38e43317ae93881
-    name: kernel
-    evr: 5.14.0-687.54.1.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/k/keyutils-1.6.3-1.el9.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
     size: 150790
@@ -2942,12 +2936,12 @@ arches:
     checksum: sha256:6c788387cde9c0fde5481382f3f8416e3ecbcf09c908b409b6c63358b90a399f
     name: util-linux
     evr: 2.37.4-25.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/v/vim-8.2.2637-26.el9_8.21.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/v/vim-8.2.2637-26.el9_8.23.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
-    size: 12871596
-    checksum: sha256:a45265b0b68234bce69498fec26c9db8672e9ada0b32ce0cb3498f5f7f1ad885
+    size: 12874798
+    checksum: sha256:e0823f610d5ec4e89d4e858e651ccbe77f5d840e843266e8f7c30b9cd83b4ff3
     name: vim
-    evr: 2:8.2.2637-26.el9_8.21
+    evr: 2:8.2.2637-26.el9_8.23
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/x/xz-5.2.5-8.el9_0.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
     size: 1168293
@@ -3158,13 +3152,13 @@ arches:
     name: glibc-devel
     evr: 2.34-275.el9_8
     sourcerpm: glibc-2.34-275.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/k/kernel-headers-5.14.0-687.54.1.el9_8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/k/kernel-headers-5.14.0-687.55.1.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 2951357
-    checksum: sha256:69203b9637bca61d1aafb9f54d9b8240b7a8f0df14a6d9c2df022ca25707b46f
+    size: 2957141
+    checksum: sha256:bae44246fc61aa51b9ce41567fe79b4fa08f1d1e4159090b53a4da8be3f3d8a2
     name: kernel-headers
-    evr: 5.14.0-687.54.1.el9_8
-    sourcerpm: kernel-5.14.0-687.54.1.el9_8.src.rpm
+    evr: 5.14.0-687.55.1.el9_8
+    sourcerpm: kernel-5.14.0-687.55.1.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/l/libasan-11.5.0-14.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 440756
@@ -4145,13 +4139,13 @@ arches:
     name: gmp
     evr: 1:6.2.0-13.el9
     sourcerpm: gmp-6.2.0-13.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/g/gnutls-3.8.10-8.el9_8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/g/gnutls-3.8.10-9.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 1387663
-    checksum: sha256:ff8aac961aa42bbd5707c6a00902f74d60a9df0dbba90d10e92f1a149d6b6229
+    size: 1387107
+    checksum: sha256:463eb83e9ecab029724f145ba7a7a5a4a8abceee64c80b88b1895783e6599eb3
     name: gnutls
-    evr: 3.8.10-8.el9_8
-    sourcerpm: gnutls-3.8.10-8.el9_8.src.rpm
+    evr: 3.8.10-9.el9_8
+    sourcerpm: gnutls-3.8.10-9.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/g/grep-3.6-5.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 288035
@@ -4908,13 +4902,13 @@ arches:
     name: util-linux-core
     evr: 2.37.4-25.el9
     sourcerpm: util-linux-2.37.4-25.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/v/vim-filesystem-8.2.2637-26.el9_8.21.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/v/vim-filesystem-8.2.2637-26.el9_8.23.noarch.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 24156
-    checksum: sha256:4362190912229b1a670e20a7e46d1f20fb2d1d30e80ec22342bba1318784f742
+    size: 24487
+    checksum: sha256:4018dd580ce61bf3628d682e6966dd214e95ef704971ad02020651648cc9cb9f
     name: vim-filesystem
-    evr: 2:8.2.2637-26.el9_8.21
-    sourcerpm: vim-8.2.2637-26.el9_8.21.src.rpm
+    evr: 2:8.2.2637-26.el9_8.23
+    sourcerpm: vim-8.2.2637-26.el9_8.23.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/x/xz-libs-5.2.5-8.el9_0.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 120233
@@ -5458,12 +5452,12 @@ arches:
     checksum: sha256:d0d8a795eea9ae555da63fbcfc3575425e86bb7e96d117b9ae2785b4f5e82f7c
     name: gmp
     evr: 1:6.2.0-13.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/g/gnutls-3.8.10-8.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/g/gnutls-3.8.10-9.el9_8.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
-    size: 55045081
-    checksum: sha256:367cff1de3c4b09f4406e6a44fc354a5fe413910d662cb0f43bc0e3af13ce1a8
+    size: 55047557
+    checksum: sha256:ca481ee32a45d6590bda8067e41a7650566f87e25c86ab07cef626af25e2fcfa
     name: gnutls
-    evr: 3.8.10-8.el9_8
+    evr: 3.8.10-9.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/g/grep-3.6-5.el9.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
     size: 1620891
@@ -5494,12 +5488,6 @@ arches:
     checksum: sha256:c4c76ebfd66ba6d00edf672797d7f077b29d279b7866a04e05258a257a5bc306
     name: json-c
     evr: 0.14-11.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.54.1.el9_8.src.rpm
-    repoid: rhel-9-for-ppc64le-baseos-source-rpms
-    size: 152530566
-    checksum: sha256:7ac2368f99e5e93164155197fa925061e352e80c3874c614b38e43317ae93881
-    name: kernel
-    evr: 5.14.0-687.54.1.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/k/keyutils-1.6.3-1.el9.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
     size: 150790
@@ -5920,12 +5908,12 @@ arches:
     checksum: sha256:6c788387cde9c0fde5481382f3f8416e3ecbcf09c908b409b6c63358b90a399f
     name: util-linux
     evr: 2.37.4-25.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/v/vim-8.2.2637-26.el9_8.21.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/v/vim-8.2.2637-26.el9_8.23.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
-    size: 12871596
-    checksum: sha256:a45265b0b68234bce69498fec26c9db8672e9ada0b32ce0cb3498f5f7f1ad885
+    size: 12874798
+    checksum: sha256:e0823f610d5ec4e89d4e858e651ccbe77f5d840e843266e8f7c30b9cd83b4ff3
     name: vim
-    evr: 2:8.2.2637-26.el9_8.21
+    evr: 2:8.2.2637-26.el9_8.23
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/x/xz-5.2.5-8.el9_0.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
     size: 1168293
@@ -7130,13 +7118,13 @@ arches:
     name: gmp
     evr: 1:6.2.0-13.el9
     sourcerpm: gmp-6.2.0-13.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/g/gnutls-3.8.10-8.el9_8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/g/gnutls-3.8.10-9.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 1255886
-    checksum: sha256:152884dbc31ed56618107930a14504ffd083a1acd3f6328a6ad09805561f34b7
+    size: 1256149
+    checksum: sha256:7c2e3450f0c4c6b9f43388d6abd4b019c476cd017df3b8534a9f08e765df4ba1
     name: gnutls
-    evr: 3.8.10-8.el9_8
-    sourcerpm: gnutls-3.8.10-8.el9_8.src.rpm
+    evr: 3.8.10-9.el9_8
+    sourcerpm: gnutls-3.8.10-9.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/g/grep-3.6-5.el9.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 280207
@@ -7886,13 +7874,13 @@ arches:
     name: util-linux-core
     evr: 2.37.4-25.el9
     sourcerpm: util-linux-2.37.4-25.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/v/vim-filesystem-8.2.2637-26.el9_8.21.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/v/vim-filesystem-8.2.2637-26.el9_8.23.noarch.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 24156
-    checksum: sha256:4362190912229b1a670e20a7e46d1f20fb2d1d30e80ec22342bba1318784f742
+    size: 24487
+    checksum: sha256:4018dd580ce61bf3628d682e6966dd214e95ef704971ad02020651648cc9cb9f
     name: vim-filesystem
-    evr: 2:8.2.2637-26.el9_8.21
-    sourcerpm: vim-8.2.2637-26.el9_8.21.src.rpm
+    evr: 2:8.2.2637-26.el9_8.23
+    sourcerpm: vim-8.2.2637-26.el9_8.23.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/x/xz-libs-5.2.5-8.el9_0.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 96039
@@ -8436,12 +8424,12 @@ arches:
     checksum: sha256:d0d8a795eea9ae555da63fbcfc3575425e86bb7e96d117b9ae2785b4f5e82f7c
     name: gmp
     evr: 1:6.2.0-13.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/g/gnutls-3.8.10-8.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/g/gnutls-3.8.10-9.el9_8.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
-    size: 55045081
-    checksum: sha256:367cff1de3c4b09f4406e6a44fc354a5fe413910d662cb0f43bc0e3af13ce1a8
+    size: 55047557
+    checksum: sha256:ca481ee32a45d6590bda8067e41a7650566f87e25c86ab07cef626af25e2fcfa
     name: gnutls
-    evr: 3.8.10-8.el9_8
+    evr: 3.8.10-9.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/g/grep-3.6-5.el9.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
     size: 1620891
@@ -8892,12 +8880,12 @@ arches:
     checksum: sha256:6c788387cde9c0fde5481382f3f8416e3ecbcf09c908b409b6c63358b90a399f
     name: util-linux
     evr: 2.37.4-25.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/v/vim-8.2.2637-26.el9_8.21.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/v/vim-8.2.2637-26.el9_8.23.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
-    size: 12871596
-    checksum: sha256:a45265b0b68234bce69498fec26c9db8672e9ada0b32ce0cb3498f5f7f1ad885
+    size: 12874798
+    checksum: sha256:e0823f610d5ec4e89d4e858e651ccbe77f5d840e843266e8f7c30b9cd83b4ff3
     name: vim
-    evr: 2:8.2.2637-26.el9_8.21
+    evr: 2:8.2.2637-26.el9_8.23
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/x/xz-5.2.5-8.el9_0.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
     size: 1168293
@@ -10095,13 +10083,13 @@ arches:
     name: gmp
     evr: 1:6.2.0-13.el9
     sourcerpm: gmp-6.2.0-13.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/g/gnutls-3.8.10-8.el9_8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/g/gnutls-3.8.10-9.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 1453380
-    checksum: sha256:427e11f3b3b0af618b9a1bd09ec7614a634328e9d93fe8499b5e5257d25b7e44
+    size: 1453587
+    checksum: sha256:c3cf86f785c672da854c018b68dd83719a486a78a11512143861aa3ba3856293
     name: gnutls
-    evr: 3.8.10-8.el9_8
-    sourcerpm: gnutls-3.8.10-8.el9_8.src.rpm
+    evr: 3.8.10-9.el9_8
+    sourcerpm: gnutls-3.8.10-9.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/g/grep-3.6-5.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 279174
@@ -10851,13 +10839,13 @@ arches:
     name: util-linux-core
     evr: 2.37.4-25.el9
     sourcerpm: util-linux-2.37.4-25.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/v/vim-filesystem-8.2.2637-26.el9_8.21.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/v/vim-filesystem-8.2.2637-26.el9_8.23.noarch.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 24156
-    checksum: sha256:4362190912229b1a670e20a7e46d1f20fb2d1d30e80ec22342bba1318784f742
+    size: 24487
+    checksum: sha256:4018dd580ce61bf3628d682e6966dd214e95ef704971ad02020651648cc9cb9f
     name: vim-filesystem
-    evr: 2:8.2.2637-26.el9_8.21
-    sourcerpm: vim-8.2.2637-26.el9_8.21.src.rpm
+    evr: 2:8.2.2637-26.el9_8.23
+    sourcerpm: vim-8.2.2637-26.el9_8.23.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/x/xz-libs-5.2.5-8.el9_0.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 96649
@@ -11401,12 +11389,12 @@ arches:
     checksum: sha256:d0d8a795eea9ae555da63fbcfc3575425e86bb7e96d117b9ae2785b4f5e82f7c
     name: gmp
     evr: 1:6.2.0-13.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/g/gnutls-3.8.10-8.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/g/gnutls-3.8.10-9.el9_8.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
-    size: 55045081
-    checksum: sha256:367cff1de3c4b09f4406e6a44fc354a5fe413910d662cb0f43bc0e3af13ce1a8
+    size: 55047557
+    checksum: sha256:ca481ee32a45d6590bda8067e41a7650566f87e25c86ab07cef626af25e2fcfa
     name: gnutls
-    evr: 3.8.10-8.el9_8
+    evr: 3.8.10-9.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/g/grep-3.6-5.el9.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
     size: 1620891
@@ -11857,12 +11845,12 @@ arches:
     checksum: sha256:6c788387cde9c0fde5481382f3f8416e3ecbcf09c908b409b6c63358b90a399f
     name: util-linux
     evr: 2.37.4-25.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/v/vim-8.2.2637-26.el9_8.21.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/v/vim-8.2.2637-26.el9_8.23.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
-    size: 12871596
-    checksum: sha256:a45265b0b68234bce69498fec26c9db8672e9ada0b32ce0cb3498f5f7f1ad885
+    size: 12874798
+    checksum: sha256:e0823f610d5ec4e89d4e858e651ccbe77f5d840e843266e8f7c30b9cd83b4ff3
     name: vim
-    evr: 2:8.2.2637-26.el9_8.21
+    evr: 2:8.2.2637-26.el9_8.23
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/x/xz-5.2.5-8.el9_0.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
     size: 1168293
