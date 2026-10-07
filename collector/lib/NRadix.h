@@ -28,6 +28,7 @@
 
 #pragma once
 
+#include <memory>
 #include <mutex>
 
 #include "Logging.h"
@@ -38,17 +39,17 @@ namespace collector {
 
 struct nRadixNode {
   nRadixNode() : value_(nullptr), left_(nullptr), right_(nullptr) {}
-  explicit nRadixNode(const IPNet& value) : value_(new IPNet(value)), left_(nullptr), right_(nullptr) {}
+  explicit nRadixNode(const IPNet& value) : value_(std::make_unique<IPNet>(value)), left_(nullptr), right_(nullptr) {}
 
   nRadixNode(const nRadixNode& other) : value_(nullptr), left_(nullptr), right_(nullptr) {
     if (other.value_) {
-      value_ = new IPNet(*other.value_);
+      value_ = std::make_unique<IPNet>(*other.value_);
     }
     if (other.left_) {
-      left_ = new nRadixNode(*other.left_);
+      left_ = std::make_unique<nRadixNode>(*other.left_);
     }
     if (other.right_) {
-      right_ = new nRadixNode(*other.right_);
+      right_ = std::make_unique<nRadixNode>(*other.right_);
     }
   }
 
@@ -56,27 +57,22 @@ struct nRadixNode {
     if (this == &other) {
       return *this;
     }
-    auto* new_node = new nRadixNode(other);
+    auto new_node = std::make_unique<nRadixNode>(other);
     std::swap(*new_node, *this);
-    delete new_node;
     return *this;
   }
 
-  ~nRadixNode() {
-    delete left_;
-    delete right_;
-    delete value_;
-  }
+  ~nRadixNode() = default;
 
-  const IPNet* value_;
-  nRadixNode* left_;
-  nRadixNode* right_;
+  std::unique_ptr<const IPNet> value_;
+  std::unique_ptr<nRadixNode> left_;
+  std::unique_ptr<nRadixNode> right_;
 };
 
 class NRadixTree {
  public:
-  NRadixTree() : root_(new nRadixNode()) {}
-  explicit NRadixTree(const std::vector<IPNet>& networks) : root_(new nRadixNode()) {
+  NRadixTree() : root_(std::make_unique<nRadixNode>()) {}
+  explicit NRadixTree(const std::vector<IPNet>& networks) : root_(std::make_unique<nRadixNode>()) {
     for (const auto& network : networks) {
       auto inserted = this->Insert(network);
       if (!inserted) {
@@ -85,20 +81,16 @@ class NRadixTree {
     }
   }
 
-  NRadixTree(const NRadixTree& other) : root_(new nRadixNode(*other.root_)) {}
+  NRadixTree(const NRadixTree& other) : root_(std::make_unique<nRadixNode>(*other.root_)) {}
 
-  ~NRadixTree() {
-    // This calls the node destructor which in turn cleans up all the nodes.
-    delete root_;
-  }
+  ~NRadixTree() = default;
 
   NRadixTree& operator=(const NRadixTree& other) {
     if (this == &other) {
       return *this;
     }
-    delete root_;
     // This calls the node copy constructor which in turn copies all the nodes.
-    root_ = new nRadixNode(*other.root_);
+    root_ = std::make_unique<nRadixNode>(*other.root_);
     return *this;
   }
 
@@ -120,7 +112,7 @@ class NRadixTree {
   // Determines whether any network in `other` is fully contained by any network in this tree, for a given family.
   bool IsAnyIPNetSubset(Address::Family family, const NRadixTree& other) const;
 
-  nRadixNode* root_;
+  std::unique_ptr<nRadixNode> root_;
 };
 
 }  // namespace collector
