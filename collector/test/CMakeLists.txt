@@ -20,6 +20,8 @@ foreach(test_file ${TEST_SRC_FILES})
     endif()
 
     add_test(${test_name} ${test_name})
+    add_dependencies(${test_name} collector-container-plugin)
+    set_property(TEST ${test_name} APPEND PROPERTY ENVIRONMENT "ROX_COLLECTOR_CONTAINER_PLUGIN_PATH=${CMAKE_BINARY_DIR}/collector/collector-container-plugin.so")
 
     if(USE_VALGRIND)
         # TODO: This test has a deadlock when running on valgrind. Further investigation needed.
