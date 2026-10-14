@@ -181,9 +181,11 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_evt* event) {
   signal->set_allocated_time(timestamp);
 
   // set container_id
-  auto container_id = container_id_cache_->Get(*event->get_thread_info());
-  if (!container_id.empty()) {
-    signal->set_container_id(container_id);
+  if (const auto* tinfo = event->get_thread_info()) {
+    auto container_id = container_id_cache_->Get(*tinfo);
+    if (!container_id.empty()) {
+      signal->set_container_id(container_id);
+    }
   }
 
   // set process lineage
@@ -271,7 +273,10 @@ std::string ProcessSignalFormatter::ProcessDetails(sinsp_evt* event) {
   std::stringstream ss;
   const std::string* path = event_extractor_->get_exepath(event);
   const std::string* name = event_extractor_->get_comm(event);
-  auto container_id = container_id_cache_->Get(*event->get_thread_info());
+  std::string container_id;
+  if (const auto* tinfo = event->get_thread_info()) {
+    container_id = container_id_cache_->Get(*tinfo);
+  }
   const char* args = event_extractor_->get_proc_args(event);
   const int64_t* pid = event_extractor_->get_pid(event);
 

@@ -665,6 +665,19 @@ TEST(ProcessSignalFormatterTest, ProcessArguments) {
   EXPECT_FALSE(signal->args().empty());
 }
 
+TEST(ProcessSignalFormatterTest, EventWithoutThreadInfo) {
+  std::unique_ptr<sinsp> inspector(new sinsp());
+  CollectorConfig config;
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+
+  std::unique_ptr<sinsp_evt> evt(new sinsp_evt());
+  std::unique_ptr<scap_evt> s_evt(new scap_evt());
+  s_evt->type = PPME_SYSCALL_EXECVE_19_X;
+  evt->set_scap_evt(s_evt.get());
+
+  EXPECT_EQ(processSignalFormatter.ToProtoMessage(evt.get()), nullptr);
+}
+
 TEST(ProcessSignalFormatterTest, NoProcessArguments) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   MockCollectorConfig config;

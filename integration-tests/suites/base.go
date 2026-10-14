@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -18,7 +19,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/stackrox/collector/integration-tests/pkg/collector"
-	"github.com/stackrox/collector/integration-tests/pkg/common"
 	"github.com/stackrox/collector/integration-tests/pkg/config"
 	"github.com/stackrox/collector/integration-tests/pkg/executor"
 	"github.com/stackrox/collector/integration-tests/pkg/log"
@@ -47,7 +47,6 @@ type IntegrationTestSuiteBase struct {
 	stats       []executor.ContainerStat
 	statsCtx    context.Context
 	statsCancel context.CancelFunc
-	phases      []BenchmarkPhase
 
 	start time.Time
 	stop  time.Time
@@ -60,15 +59,8 @@ type PerformanceResult struct {
 	CollectionMethod string
 	Metrics          map[string]float64
 	ContainerStats   []executor.ContainerStat
-	Phases           []BenchmarkPhase
 	LoadStartTs      string
 	LoadStopTs       string
-}
-
-type BenchmarkPhase struct {
-	Name  string
-	Start time.Time
-	Stop  time.Time
 }
 
 // StartCollector will start the collector container and optionally
@@ -180,10 +172,6 @@ func (s *IntegrationTestSuiteBase) AddMetric(key string, value float64) {
 	}
 
 	s.metrics[key] = value
-}
-
-func (s *IntegrationTestSuiteBase) AddBenchmarkPhase(name string, start, stop time.Time) {
-	s.phases = append(s.phases, BenchmarkPhase{Name: name, Start: start, Stop: stop})
 }
 
 // RegisterCleanup registers a cleanup function with the testing structures,
@@ -306,13 +294,15 @@ func (s *IntegrationTestSuiteBase) WritePerfResults() {
 		CollectionMethod: config.CollectionMethod(),
 		Metrics:          s.metrics,
 		ContainerStats:   s.stats,
-		Phases:           s.phases,
 		LoadStartTs:      s.start.Format("2006-01-02 15:04:05"),
 		LoadStopTs:       s.stop.Format("2006-01-02 15:04:05"),
 	}
 
-	f, err := common.PrepareLog(s.T().Name(), "perf.json")
 	perfJson, _ := json.Marshal(perf)
+	perfFilename := filepath.Join(config.LogPath(), "perf.json")
+
+	log.Info("Writing %s\n", perfFilename)
+	f, err := os.OpenFile(perfFilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	s.Require().NoError(err)
 	defer f.Close()
 

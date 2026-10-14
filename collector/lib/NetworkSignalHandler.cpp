@@ -153,7 +153,11 @@ std::optional<Connection> NetworkSignalHandler::GetConnection(sinsp_evt* evt) {
   const Endpoint* local = is_server ? &server : &client;
   const Endpoint* remote = is_server ? &client : &server;
 
-  auto container_id = container_id_cache_->Get(*evt->get_thread_info());
+  const auto* tinfo = evt->get_thread_info();
+  if (tinfo == nullptr) {
+    return std::nullopt;
+  }
+  auto container_id = container_id_cache_->Get(*tinfo);
   if (container_id.empty()) {
     return std::nullopt;
   }

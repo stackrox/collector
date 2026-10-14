@@ -9,6 +9,14 @@
 
 namespace collector::system_inspector {
 
+TEST(SystemInspectorServiceTest, CleanUpBeforeDestruction) {
+  CollectorConfig config;
+  {
+    Service service(config);
+    service.CleanUp();
+  }
+}
+
 TEST(SystemInspectorServiceTest, FilterEvent) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   ContainerIDCache container_id_cache;

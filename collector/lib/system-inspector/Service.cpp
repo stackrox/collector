@@ -37,7 +37,9 @@ namespace {
 }  // namespace
 
 Service::~Service() {
-  inspector_->set_observer(nullptr);
+  if (inspector_) {
+    inspector_->set_observer(nullptr);
+  }
 }
 
 Service::Service(const CollectorConfig& config)
