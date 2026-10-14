@@ -5,9 +5,9 @@
 
 #include "CollectorStats.h"
 #include "ProcessSignalFormatter.h"
-#include "system-inspector/ContainerIDCache.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "system-inspector/ContainerIDCache.h"
 
 namespace collector {
 
@@ -670,12 +670,13 @@ TEST(ProcessSignalFormatterTest, EventWithoutThreadInfo) {
   CollectorConfig config;
   ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
 
-  std::unique_ptr<sinsp_evt> evt(new sinsp_evt());
-  std::unique_ptr<scap_evt> s_evt(new scap_evt());
-  s_evt->type = PPME_SYSCALL_EXECVE_19_X;
-  evt->set_scap_evt(s_evt.get());
+  sinsp_evt evt(inspector.get());
+  scap_evt s_evt{};
+  s_evt.type = PPME_SYSCALL_EXECVE_19_X;
+  s_evt.tid = -1;
+  evt.set_scap_evt(&s_evt);
 
-  EXPECT_EQ(processSignalFormatter.ToProtoMessage(evt.get()), nullptr);
+  EXPECT_EQ(processSignalFormatter.ToProtoMessage(&evt), nullptr);
 }
 
 TEST(ProcessSignalFormatterTest, NoProcessArguments) {

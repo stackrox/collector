@@ -86,6 +86,7 @@ class Process : public IProcess {
 
   // Underlying thread info provided asynchronously by system-inspector via system_inspector_callback_
   mutable std::shared_ptr<sinsp_threadinfo> system_inspector_threadinfo_;
+  std::string container_id_;
   // use a shared pointer here to handle deletion while the callback is pending
   std::shared_ptr<std::function<void(std::shared_ptr<sinsp_threadinfo>)>> system_inspector_callback_;
 

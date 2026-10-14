@@ -63,7 +63,7 @@ class Service : public SystemInspector {
   };
 
   sinsp_evt* GetNext();
-  static bool FilterEvent(sinsp_evt* event);
+  bool FilterEvent(sinsp_evt* event);
   static bool FilterEvent(sinsp& inspector, const sinsp_threadinfo* tinfo);
 
   bool SendExistingProcesses(SignalHandler* handler);

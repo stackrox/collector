@@ -63,16 +63,21 @@ ProcessSignalFormatter::ProcessSignalFormatter(
     sinsp* inspector,
     const CollectorConfig& config,
     system_inspector::ContainerIDCache* container_id_cache) : event_names_(EventNames::GetInstance()),
-                                      inspector_(inspector),
-                                      event_extractor_(std::make_unique<system_inspector::EventExtractor>()),
-                                      container_id_cache_(container_id_cache == nullptr ? &empty_container_id_cache : container_id_cache),
-                                      config_(config) {
+                                                              inspector_(inspector),
+                                                              event_extractor_(std::make_unique<system_inspector::EventExtractor>()),
+                                                              container_id_cache_(container_id_cache == nullptr ? &empty_container_id_cache : container_id_cache),
+                                                              config_(config) {
   event_extractor_->Init(inspector);
 }
 
 ProcessSignalFormatter::~ProcessSignalFormatter() {}
 
 const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* event) {
+  if (event->get_thread_info() == nullptr) {
+    CLOG(INFO) << "Dropping process event without thread information";
+    return nullptr;
+  }
+
   if (process_signals[event->get_type()] == ProcessSignalType::UNKNOWN_PROCESS_TYPE) {
     return nullptr;
   }

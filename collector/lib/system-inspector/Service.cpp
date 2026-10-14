@@ -14,9 +14,9 @@
 #include <google/protobuf/util/time_util.h>
 
 #include "CollectionMethod.h"
-#include "ContainerIDCache.h"
 #include "CollectorException.h"
 #include "CollectorStats.h"
+#include "ContainerIDCache.h"
 #include "ContainerIDFilterCheck.h"
 #include "EventExtractor.h"
 #include "EventNames.h"
@@ -32,9 +32,6 @@
 #include "logger.h"
 
 namespace collector::system_inspector {
-
-namespace {
-}  // namespace
 
 Service::~Service() {
   if (inspector_) {
@@ -85,10 +82,10 @@ Service::Service(const CollectorConfig& config)
     signal_client_ = std::make_unique<StdoutSignalServiceClient>();
   }
   AddSignalHandler(std::make_unique<ProcessSignalHandler>(inspector_.get(),
-                                                           signal_client_.get(),
-                                                           &userspace_stats_,
-                                                           config,
-                                                           container_id_cache_.get()));
+                                                          signal_client_.get(),
+                                                          &userspace_stats_,
+                                                          config,
+                                                          container_id_cache_.get()));
 
   if (signal_handlers_.size() == 2) {
     // self-check handlers do not count towards this check, because they
@@ -168,7 +165,8 @@ sinsp_evt* Service::GetNext() {
 bool Service::FilterEvent(sinsp_evt* event) {
   const auto* tinfo = event->get_thread_info();
 
-  return FilterEvent(*event->get_inspector(), tinfo);
+  return tinfo != nullptr && !container_id_cache_->Get(*tinfo).empty() &&
+         FilterEvent(*event->get_inspector(), tinfo);
 }
 
 bool Service::FilterEvent(sinsp&, const sinsp_threadinfo* tinfo) {
