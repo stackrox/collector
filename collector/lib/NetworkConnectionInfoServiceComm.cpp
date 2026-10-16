@@ -45,17 +45,20 @@ void NetworkConnectionInfoServiceComm::TryCancel() {
   }
 }
 
-std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> NetworkConnectionInfoServiceComm::PushNetworkConnectionInfoOpenStream(std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) {
+std::unique_ptr<IStreamWriter<sensor::NetworkConnectionInfoMessage>> NetworkConnectionInfoServiceComm::PushNetworkConnectionInfoOpenStream(std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) {
   if (!context_) {
     ResetClientContext();
   }
 
   if (channel_) {
-    return DuplexClient::CreateWithReadCallback(
-        &sensor::NetworkConnectionInfoService::Stub::AsyncPushNetworkConnectionInfo,
-        channel_, context_.get(), std::move(receive_func));
+    return std::make_unique<GrpcBidiStream<sensor::NetworkConnectionInfoMessage, sensor::NetworkFlowsControlMessage>>(
+        context_.get(),
+        [this](grpc::ClientContext* context, grpc::ClientBidiReactor<sensor::NetworkConnectionInfoMessage, sensor::NetworkFlowsControlMessage>* reactor) {
+          stub_->async()->PushNetworkConnectionInfo(context, reactor);
+        },
+        std::move(receive_func));
   } else {
-    return std::make_unique<collector::grpc_duplex_impl::StdoutDuplexClientWriter<sensor::NetworkConnectionInfoMessage>>();
+    return std::make_unique<StdoutStreamWriter<sensor::NetworkConnectionInfoMessage>>();
   }
 }
 
