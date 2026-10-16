@@ -37,6 +37,7 @@ cmake-build/collector: cmake-configure/collector $(COLLECTOR_BUILD_DEPS)
 
 container/bin/collector: cmake-build/collector
 	mkdir -p container/bin
+	mkdir -p container/libs
 	cp "$(COLLECTOR_BIN_DIR)/collector" container/bin/collector
 	cp "$(COLLECTOR_BIN_DIR)/self-checks" container/bin/self-checks
 

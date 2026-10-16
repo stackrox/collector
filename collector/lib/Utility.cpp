@@ -25,6 +25,10 @@ extern "C" {
 #include "Logging.h"
 #include "Utility.h"
 
+#include <algorithm>
+#include <cctype>
+
+
 namespace collector {
 
 static constexpr int kMsgBufSize = 4096;
@@ -57,29 +61,9 @@ const char* SignalName(int signum) {
   }
 }
 
-std::string GetContainerID(const sinsp_threadinfo& tinfo) {
-  for (const auto& [subsys, cgroup_path] : tinfo.cgroups()) {
-    if (auto id = ExtractContainerIDFromCgroup(cgroup_path)) {
-      return std::string(*id);
-    }
-  }
-  return {};
-}
-
-std::string GetContainerID(sinsp_evt* event) {
-  if (!event) {
-    return {};
-  }
-  sinsp_threadinfo* tinfo = event->get_thread_info();
-  if (!tinfo) {
-    return {};
-  }
-  return GetContainerID(*tinfo);
-}
-
 std::ostream& operator<<(std::ostream& os, const sinsp_threadinfo* t) {
   if (t) {
-    os << "Container: \"" << GetContainerID(*t) << "\", Name: " << t->m_comm << ", PID: " << t->m_pid << ", Args: " << t->m_exe;
+    os << "Name: " << t->m_comm << ", PID: " << t->m_pid << ", Args: " << t->m_exe;
   } else {
     os << "NULL\n";
   }
@@ -195,50 +179,31 @@ void TryUnlink(const char* path) {
   }
 }
 
-const static unsigned int CONTAINER_ID_LENGTH = 64;
-const static unsigned int SHORT_CONTAINER_ID_LENGTH = 12;
-
-// IsContainerID returns whether the given string view represents a container ID.
-bool IsContainerID(std::string_view str) {
-  if (str.size() != CONTAINER_ID_LENGTH) {
-    return false;
-  }
-
-  return std::all_of(str.begin(), str.end(), [](char c) -> bool {
-    return std::isxdigit(c) != 0;
-  });
-}
-
 std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cgroup) {
-  if (cgroup.size() < CONTAINER_ID_LENGTH + 1) {
-    return {};
-  }
-
-  auto scope = cgroup.rfind(".scope");
+  constexpr size_t kContainerIDLength = 64;
+  constexpr size_t kShortContainerIDLength = 12;
+  const auto scope = cgroup.rfind(".scope");
   if (scope != std::string_view::npos) {
-    cgroup.remove_suffix(cgroup.length() - scope);
-    if (cgroup.size() < CONTAINER_ID_LENGTH + 1) {
-      return {};
-    }
+    cgroup.remove_suffix(cgroup.size() - scope);
   }
-
-  auto container_id_part = cgroup.substr(cgroup.size() - (CONTAINER_ID_LENGTH + 1));
-  if (container_id_part[0] != '/' && container_id_part[0] != '-' && container_id_part[0] != ':') {
+  if (cgroup.size() < kContainerIDLength + 1) {
     return {};
   }
-
-  cgroup.remove_suffix(CONTAINER_ID_LENGTH + 1);
-  // conmon runs as its own container, we ignore it.
-  if (cgroup.find("-conmon", cgroup.size() - StrLen("-conmon")) != std::string_view::npos) {
+  const auto id_start = cgroup.size() - kContainerIDLength;
+  const char separator = cgroup[id_start - 1];
+  if (separator != '/' && separator != '-' && separator != ':') {
     return {};
   }
-
-  container_id_part.remove_prefix(1);
-
-  if (!IsContainerID(container_id_part)) {
+  const std::string_view parent = cgroup.substr(0, id_start - 1);
+  constexpr std::string_view kConmonSuffix = "-conmon";
+  if (parent.size() >= kConmonSuffix.size() && parent.substr(parent.size() - kConmonSuffix.size()) == kConmonSuffix) {
     return {};
   }
-  return std::make_optional(container_id_part.substr(0, SHORT_CONTAINER_ID_LENGTH));
+  const std::string_view id = cgroup.substr(id_start);
+  if (!std::all_of(id.begin(), id.end(), [](char c) { return std::isxdigit(static_cast<unsigned char>(c)); })) {
+    return {};
+  }
+  return id.substr(0, kShortContainerIDLength);
 }
 
 std::optional<std::string> SanitizedUTF8(std::string_view str) {

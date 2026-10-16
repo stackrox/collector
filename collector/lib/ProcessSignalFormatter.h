@@ -19,6 +19,7 @@ class sinsp_threadinfo;
 namespace collector {
 namespace system_inspector {
 class EventExtractor;
+class ContainerIDCache;
 }
 }  // namespace collector
 
@@ -26,7 +27,7 @@ namespace collector {
 
 class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamMessage> {
  public:
-  ProcessSignalFormatter(sinsp* inspector, const CollectorConfig& config);
+  ProcessSignalFormatter(sinsp* inspector, const CollectorConfig& config, system_inspector::ContainerIDCache* container_id_cache = nullptr);
   ~ProcessSignalFormatter();
 
   using Signal = v1::Signal;
@@ -56,6 +57,7 @@ class ProcessSignalFormatter : public ProtoSignalFormatter<sensor::SignalStreamM
   const EventNames& event_names_;
   sinsp* inspector_;
   std::unique_ptr<system_inspector::EventExtractor> event_extractor_;
+  system_inspector::ContainerIDCache* container_id_cache_;
 
   const CollectorConfig& config_;
 };
