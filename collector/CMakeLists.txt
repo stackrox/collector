@@ -70,6 +70,7 @@ add_definitions(-DSCAP_SOCKET_ONLY_FD)
 add_definitions("-DINTERESTING_SUBSYS=\"perf_event\", \"cpu\", \"cpuset\", \"memory\"")
 
 add_subdirectory(lib)
+add_subdirectory(verified)
 
 add_executable(collector collector.cpp)
 target_link_libraries(collector collector_lib)
@@ -80,6 +81,7 @@ target_link_libraries(connscrape collector_lib)
 add_executable(self-checks self-checks.cpp)
 
 add_subdirectory(test)
+add_subdirectory(verified/tests)
 
 # Falco Wrapper Library
 set(BUILD_DRIVER OFF CACHE BOOL "Build the driver on Linux" FORCE)
