@@ -1,0 +1,37 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sinsp-builder
+  namespace: default
+spec:
+  containers:
+  - name: sinsp-builder
+    image: quay.io/stackrox-io/collector-builder:master
+    stdin: true
+    tty: true
+    securityContext:
+      privileged: true
+    env:
+    - name: HOST_ROOT
+      value: /host
+    volumeMounts:
+    - mountPath: /host/proc
+      name: proc-fs
+      readOnly: true
+    - mountPath: /host/sys
+      name: sys-fs
+      readOnly: true
+    - mountPath: /host/etc
+      name: etc-fs
+      readOnly: true
+  volumes:
+  - name: proc-fs
+    hostPath:
+      path: /proc/
+  - name: sys-fs
+    hostPath:
+      path: /sys/
+  - name: etc-fs
+    hostPath:
+      path: /etc/
