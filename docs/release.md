@@ -1,13 +1,6 @@
 # Release Process
 
 
-## Considerations
-
-- All tags created during a release should *not* be annotated. The ref to an
-  annotated tag (e.g. `refs/tags/tagname`) does not refer to the tagged commit,
-  instead referring to a non-commit object representing the annoation. This can
-  cause complications in CI builds on remote VMs.
-
 ## Automated release
 
 **Note**: If stackrox is doing a major version bump, do not use the
@@ -26,20 +19,23 @@ right to trigger the release process.
 | Release version | A version of the form `<Major>.<Minor>`. |
 | Do not push anything | Whether or not to actually create new branches/tags. |
 
-* **if performing a new minor release**: keep the default settings. The workflow will
-caclulate the next minor version.
+* **if performing a new minor release**: keep the default settings. The
+  workflow will calculate the next minor version.
 * **if performing a patch release**: set the release version to the
-`<Major>.<Minor>` of the release you're patching, e.g. `3.21`. The workflow will calculate
-the next patch version.
-* **if performing a new major release**: set the release version to the next
-major version, e.g `4.0`.
+  `<Major>.<Minor>` of the release you're patching, e.g. `3.21`. The
+  workflow will calculate the next patch version.
+* **if performing a new major release**: set the release version to the
+  next major version, e.g `4.0`.
 
 The recommended workflow is to first run in dry-mode and check the tags
 and branches are correct in the `Summary` section of the triggered run,
 then run it again without dry-mode to create the actual release.
 
-With the tag pushed, the workflow for creating the
-new version of collector should be triggered on its own.
+With the tag pushed, two workflows are triggered automatically:
+`main.yml`, which runs the full CI suite (build, unit, integration and
+k8s integration tests) against the new tag, and `konflux.yml`, which
+waits for the Konflux/Red Hat image to appear in Quay and then runs
+the integration and k8s integration tests against it.
 
 ## Manual release
 
@@ -49,89 +45,84 @@ process fails.
 
 ### Create the collector image release branch
 
-1. Navigate to the local stackrox/collector git repository directory on the master branch and ensure the local checked out version is up to date.
+These steps are only needed when creating a new major or minor version
+of collector, skip to the next section if you are releasing a patch
+version.
 
-```sh
-git checkout master
-git pull
-```
+1. Navigate to the local stackrox/collector git repository directory
+   on the master branch and ensure the local checked out version is up
+   to date.
 
-2. Set the release environment variable, which should be incremented from the previous released version.
+    ```sh
+    git checkout master
+    git pull
+    ```
 
-```sh
-export COLLECTOR_RELEASE=3.22
-```
+1. Set the release environment variable, which should be incremented
+   from the previous released version.
 
-3. Create an internal release tag to mark on the master branch where we forked for the release.
+    ```sh
+    export COLLECTOR_RELEASE=3.22
+    ```
 
-```sh
-git tag "${COLLECTOR_RELEASE}.x"
-git push origin "${COLLECTOR_RELEASE}.x"
-```
+1. Create an internal release tag to mark on the master branch where we
+   forked for the release.
 
-4. Set the ACS version suffix to be used by konflux, this should be the major and minor versions of ACS that will use the collector version being tagged.
+    ```sh
+    git tag "${COLLECTOR_RELEASE}.x"
+    git push origin "${COLLECTOR_RELEASE}.x"
+    ```
 
-```sh
-export STACKROX_SUFFIX=4-8
-```
+1. Create the release branch with an empty commit.
 
-4. Create the release branch with the required konflux suffixes.
+    ```sh
+    git checkout -b "release-${COLLECTOR_RELEASE}"
+    git commit -m "Empty commit to diverge ${COLLECTOR_RELEASE} from master"
+    git push --set-upstream origin "release-${COLLECTOR_RELEASE}"
+    ```
 
-```sh
-git checkout -b "release-${COLLECTOR_RELEASE}"
-sed -i \
-    -e "/appstudio.openshift.io\/application: / s/$/-${STACKROX_SUFFIX}/" \
-    -e "/appstudio.openshift.io\/component: / s/$/-${STACKROX_SUFFIX}/" \
-    -e "/serviceAccountName: / s/$/-${STACKROX_SUFFIX}/" \
-    .tekton/collector-build.yaml
-git commit -m "Empty commit to diverge ${COLLECTOR_RELEASE} from master"
-git push --set-upstream origin "release-${COLLECTOR_RELEASE}"
-```
+### Tag the new version
 
-5. Set the patch number and release environment variables (if not set).
-   See the section "Patch releases" for patch releases
+1. Set the patch number and release environment variables (if not set).
 
-```sh
-export COLLECTOR_PATCH_NUMBER=0
-export COLLECTOR_RELEASE=3.22
-```
-
-6. Tag and push the release.
-
-```sh
-git tag "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
-git push origin "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
-```
-
-7. Create and push a tag to the falcosecurity-libs repository
-
-```sh
-git submodule update --init falcosecurity-libs
-cd falcosecurity-libs
-git tag "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
-git push origin "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
-```
-
-### Patch releases
-
-There is a script at utilities/tag-bumper.py for creating new tags for patch releases.
-That script is out of date and will be updated.
+    ```sh
+    export COLLECTOR_PATCH_NUMBER=0
+    export COLLECTOR_RELEASE=3.22
+    ```
 
 1. Navigate to your local stackrox/collector repo and run:
 
-```sh
-git checkout release-"${COLLECTOR_RELEASE}"
-```
+    ```sh
+    git checkout release-"${COLLECTOR_RELEASE}"
+    ```
 
-2. Make changes by cherry-picking or otherwise and commit changes.
-3. Increment COLLECTOR_PATCH_NUMBER
-4. Tag and push the patch
+1. **if performing a patch release**: pull the latest changes on the
+   release branch before tagging. This is not needed for a new major
+   or minor release, since the branch was just created in the previous
+   section.
 
-```sh
-git tag "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
-git push --follow-tags
-```
+    ```sh
+    git pull --ff-only
+    ```
 
-5. Create a pull request to update the `COLLECTOR_VERSION` file in the
+1. Tag and push the release.
+
+    ```sh
+    git tag -a -m \
+        "Collector v${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER} release" \
+        "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
+    git push origin "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
+    ```
+
+1. Create and push a tag to the falcosecurity-libs repository
+
+    ```sh
+    git submodule update --init falcosecurity-libs
+    cd falcosecurity-libs
+    git tag "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
+    git push origin "${COLLECTOR_RELEASE}.${COLLECTOR_PATCH_NUMBER}"
+    ```
+
+1. Create a pull request to update the `COLLECTOR_VERSION` file in the
    [stackrox/stackrox](https://github.com/stackrox/stackrox/) repo with the
-   newly create release after CI images have been built.
+   newly created release after CI images have been built.
