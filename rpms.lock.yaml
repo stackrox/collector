@@ -95,13 +95,13 @@ arches:
     name: elfutils-libelf-devel
     evr: 0.194-1.el9
     sourcerpm: elfutils-0.194-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/e/emacs-filesystem-27.2-18.el9_8.2.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/e/emacs-filesystem-27.2-18.el9_8.3.noarch.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 14714
-    checksum: sha256:9fa83444f3dcc5a0e59220b864b39aa2eaccf084cf3190e03ba15cf03da3102a
+    size: 14873
+    checksum: sha256:1639502a970d4c49a7f3f8e56009f49a3476644d21719472c83b50d05784178e
     name: emacs-filesystem
-    evr: 1:27.2-18.el9_8.2
-    sourcerpm: emacs-27.2-18.el9_8.2.src.rpm
+    evr: 1:27.2-18.el9_8.3
+    sourcerpm: emacs-27.2-18.el9_8.3.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/g/gawk-all-langpacks-5.1.0-6.el9_8.1.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 218086
@@ -1989,12 +1989,12 @@ arches:
     checksum: sha256:8fdb79c80877a829abcf38f374d20e4ce1416646128535ade2cf988f4bbc8eea
     name: cmake
     evr: 3.31.8-3.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/source/SRPMS/Packages/e/emacs-27.2-18.el9_8.2.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/source/SRPMS/Packages/e/emacs-27.2-18.el9_8.3.src.rpm
     repoid: rhel-9-for-aarch64-appstream-source-rpms
-    size: 44842197
-    checksum: sha256:5fd2c9aab65e2684e6252b148f6fd50cd321ce840b968e75e3e321ef4fbfd635
+    size: 44843497
+    checksum: sha256:984ddd469cbd7b460424bd2d054afc0d5de6d1afb6783652e803388888bd25c7
     name: emacs
-    evr: 1:27.2-18.el9_8.2
+    evr: 1:27.2-18.el9_8.3
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/source/SRPMS/Packages/g/gcc-toolset-15-15.0-9.el9.src.rpm
     repoid: rhel-9-for-aarch64-appstream-source-rpms
     size: 15961
@@ -3073,13 +3073,13 @@ arches:
     name: elfutils-libelf-devel
     evr: 0.194-1.el9
     sourcerpm: elfutils-0.194-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/e/emacs-filesystem-27.2-18.el9_8.2.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/e/emacs-filesystem-27.2-18.el9_8.3.noarch.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 14714
-    checksum: sha256:9fa83444f3dcc5a0e59220b864b39aa2eaccf084cf3190e03ba15cf03da3102a
+    size: 14873
+    checksum: sha256:1639502a970d4c49a7f3f8e56009f49a3476644d21719472c83b50d05784178e
     name: emacs-filesystem
-    evr: 1:27.2-18.el9_8.2
-    sourcerpm: emacs-27.2-18.el9_8.2.src.rpm
+    evr: 1:27.2-18.el9_8.3
+    sourcerpm: emacs-27.2-18.el9_8.3.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/g/gawk-all-langpacks-5.1.0-6.el9_8.1.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 218118
@@ -4974,12 +4974,12 @@ arches:
     checksum: sha256:8fdb79c80877a829abcf38f374d20e4ce1416646128535ade2cf988f4bbc8eea
     name: cmake
     evr: 3.31.8-3.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/source/SRPMS/Packages/e/emacs-27.2-18.el9_8.2.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/source/SRPMS/Packages/e/emacs-27.2-18.el9_8.3.src.rpm
     repoid: rhel-9-for-ppc64le-appstream-source-rpms
-    size: 44842197
-    checksum: sha256:5fd2c9aab65e2684e6252b148f6fd50cd321ce840b968e75e3e321ef4fbfd635
+    size: 44843497
+    checksum: sha256:984ddd469cbd7b460424bd2d054afc0d5de6d1afb6783652e803388888bd25c7
     name: emacs
-    evr: 1:27.2-18.el9_8.2
+    evr: 1:27.2-18.el9_8.3
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/source/SRPMS/Packages/g/gcc-toolset-15-15.0-9.el9.src.rpm
     repoid: rhel-9-for-ppc64le-appstream-source-rpms
     size: 15961
@@ -6064,13 +6064,13 @@ arches:
     name: elfutils-libelf-devel
     evr: 0.194-1.el9
     sourcerpm: elfutils-0.194-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/e/emacs-filesystem-27.2-18.el9_8.2.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/e/emacs-filesystem-27.2-18.el9_8.3.noarch.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 14714
-    checksum: sha256:9fa83444f3dcc5a0e59220b864b39aa2eaccf084cf3190e03ba15cf03da3102a
+    size: 14873
+    checksum: sha256:1639502a970d4c49a7f3f8e56009f49a3476644d21719472c83b50d05784178e
     name: emacs-filesystem
-    evr: 1:27.2-18.el9_8.2
-    sourcerpm: emacs-27.2-18.el9_8.2.src.rpm
+    evr: 1:27.2-18.el9_8.3
+    sourcerpm: emacs-27.2-18.el9_8.3.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/g/gawk-all-langpacks-5.1.0-6.el9_8.1.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 218106
@@ -7965,12 +7965,12 @@ arches:
     checksum: sha256:8fdb79c80877a829abcf38f374d20e4ce1416646128535ade2cf988f4bbc8eea
     name: cmake
     evr: 3.31.8-3.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/source/SRPMS/Packages/e/emacs-27.2-18.el9_8.2.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/source/SRPMS/Packages/e/emacs-27.2-18.el9_8.3.src.rpm
     repoid: rhel-9-for-s390x-appstream-source-rpms
-    size: 44842197
-    checksum: sha256:5fd2c9aab65e2684e6252b148f6fd50cd321ce840b968e75e3e321ef4fbfd635
+    size: 44843497
+    checksum: sha256:984ddd469cbd7b460424bd2d054afc0d5de6d1afb6783652e803388888bd25c7
     name: emacs
-    evr: 1:27.2-18.el9_8.2
+    evr: 1:27.2-18.el9_8.3
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/source/SRPMS/Packages/g/gcc-toolset-15-15.0-9.el9.src.rpm
     repoid: rhel-9-for-s390x-appstream-source-rpms
     size: 15961
@@ -9049,13 +9049,13 @@ arches:
     name: elfutils-libelf-devel
     evr: 0.194-1.el9
     sourcerpm: elfutils-0.194-1.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/e/emacs-filesystem-27.2-18.el9_8.2.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/e/emacs-filesystem-27.2-18.el9_8.3.noarch.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 14714
-    checksum: sha256:9fa83444f3dcc5a0e59220b864b39aa2eaccf084cf3190e03ba15cf03da3102a
+    size: 14873
+    checksum: sha256:1639502a970d4c49a7f3f8e56009f49a3476644d21719472c83b50d05784178e
     name: emacs-filesystem
-    evr: 1:27.2-18.el9_8.2
-    sourcerpm: emacs-27.2-18.el9_8.2.src.rpm
+    evr: 1:27.2-18.el9_8.3
+    sourcerpm: emacs-27.2-18.el9_8.3.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/g/gawk-all-langpacks-5.1.0-6.el9_8.1.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 218134
@@ -10943,12 +10943,12 @@ arches:
     checksum: sha256:8fdb79c80877a829abcf38f374d20e4ce1416646128535ade2cf988f4bbc8eea
     name: cmake
     evr: 3.31.8-3.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/source/SRPMS/Packages/e/emacs-27.2-18.el9_8.2.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/source/SRPMS/Packages/e/emacs-27.2-18.el9_8.3.src.rpm
     repoid: rhel-9-for-x86_64-appstream-source-rpms
-    size: 44842197
-    checksum: sha256:5fd2c9aab65e2684e6252b148f6fd50cd321ce840b968e75e3e321ef4fbfd635
+    size: 44843497
+    checksum: sha256:984ddd469cbd7b460424bd2d054afc0d5de6d1afb6783652e803388888bd25c7
     name: emacs
-    evr: 1:27.2-18.el9_8.2
+    evr: 1:27.2-18.el9_8.3
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/source/SRPMS/Packages/g/gcc-toolset-15-15.0-9.el9.src.rpm
     repoid: rhel-9-for-x86_64-appstream-source-rpms
     size: 15961
