@@ -242,7 +242,7 @@ ProcessSignal* ProcessSignalFormatter::CreateProcessSignal(sinsp_threadinfo* tin
   signal->set_allocated_time(timestamp);
 
   // set container_id
-  signal->set_container_id(GetContainerID(*tinfo));
+  signal->set_container_id(GetContainerID(*inspector_, *tinfo));
 
   // set process lineage
   std::vector<LineageInfo> lineage;
@@ -348,7 +348,7 @@ void ProcessSignalFormatter::GetProcessLineage(sinsp_threadinfo* tinfo,
     // all platforms.
     //
     if (pt->m_vpid == 0) {
-      if (GetContainerID(*pt).empty()) {
+      if (GetContainerID(*inspector_, *pt).empty()) {
         return false;
       }
     } else if (pt->m_pid == pt->m_vpid) {
