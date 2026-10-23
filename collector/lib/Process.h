@@ -76,6 +76,7 @@ class Process : public IProcess {
   static const std::string NOT_AVAILABLE;  // = "N/A"
 
   uint64_t pid_;
+  system_inspector::Service* system_inspector_;
   // A cache we are referenced from. Remove ourselves upon deletion.
   ProcessStore::MapRef cache_;
 
@@ -85,6 +86,7 @@ class Process : public IProcess {
 
   // Underlying thread info provided asynchronously by system-inspector via system_inspector_callback_
   mutable std::shared_ptr<sinsp_threadinfo> system_inspector_threadinfo_;
+  std::string container_id_;
   // use a shared pointer here to handle deletion while the callback is pending
   std::shared_ptr<std::function<void(std::shared_ptr<sinsp_threadinfo>)>> system_inspector_callback_;
 
