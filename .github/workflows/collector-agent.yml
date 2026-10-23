@@ -1,0 +1,218 @@
+name: Collector Agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Agent operation
+        type: choice
+        options:
+          - spike
+          - revise
+        required: true
+      number:
+        description: Issue number (spike) or PR number (revise)
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+  actions: read
+  id-token: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      operation: ${{ steps.resolve.outputs.operation }}
+      number: ${{ steps.resolve.outputs.number }}
+      target_sha: ${{ steps.resolve.outputs.target_sha }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 1
+
+      - name: Validate and resolve target
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          operation="${{ inputs.operation }}"
+          number="${{ inputs.number }}"
+
+          if [[ ! "$number" =~ ^[0-9]+$ ]]; then
+            echo "::error::number must be numeric, got: ${number}"
+            exit 1
+          fi
+
+          if [[ "$operation" == "spike" ]]; then
+            state="$(gh issue view "$number" --json state --jq .state)" \
+              || { echo "::error::Could not fetch issue #${number}"; exit 1; }
+            [[ "$state" != "CLOSED" ]] || { echo "::error::Issue #${number} is closed"; exit 1; }
+            target_sha="$(git rev-parse HEAD)"
+          else
+            pr_json="$(gh pr view "$number" --json state,headRefOid)" \
+              || { echo "::error::Could not fetch PR #${number}"; exit 1; }
+            state="$(echo "$pr_json" | jq -r .state)"
+            [[ "$state" == "OPEN" ]] || { echo "::error::PR #${number} is not open (state: ${state})"; exit 1; }
+            target_sha="$(echo "$pr_json" | jq -r .headRefOid)"
+          fi
+
+          echo "operation=${operation}" >> "$GITHUB_OUTPUT"
+          echo "number=${number}" >> "$GITHUB_OUTPUT"
+          echo "target_sha=${target_sha}" >> "$GITHUB_OUTPUT"
+
+          op_suffix="issue"
+          [[ "$operation" == "spike" ]] || op_suffix="pr"
+
+          mkdir -p artifacts
+          cat > artifacts/request.json <<ENDJSON
+          {
+            "operation": "${operation}-${op_suffix}",
+            "number": ${number},
+            "sha": "${target_sha}",
+            "publish": false
+          }
+          ENDJSON
+
+          echo "Request:"
+          cat artifacts/request.json
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: request
+          path: artifacts/request.json
+
+  execute:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ needs.prepare.outputs.target_sha }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: request
+          path: artifacts
+
+      - name: Verify checkout SHA
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          expected="${{ needs.prepare.outputs.target_sha }}"
+          [[ "$actual" == "$expected" ]] || { echo "::error::SHA mismatch: expected ${expected}, got ${actual}"; exit 1; }
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@ba79af03959ebeac9769e648f473a284504d9193 # v2.1.10
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code@latest
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
+        with:
+          app-id: ${{ secrets.CLAUDE_APP_ID }}
+          private-key: ${{ secrets.CLAUDE_APP_PRIVATE_KEY }}
+
+      - name: Run agent
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          CLAUDE_CODE_USE_VERTEX: "1"
+          ANTHROPIC_VERTEX_PROJECT_ID: ${{ steps.auth.outputs.project_id }}
+          CLOUD_ML_REGION: us-east5
+        run: |
+          set -euo pipefail
+
+          operation="${{ needs.prepare.outputs.operation }}"
+          skill="spike-issue"
+          [[ "$operation" == "spike" ]] || skill="revise-pr"
+
+          mkdir -p artifacts
+
+          claude \
+            --print \
+            --dangerously-skip-permissions \
+            --max-turns 80 \
+            -p "Read AGENTS.md for context. Then follow the ${skill} skill exactly. The request is at artifacts/request.json. Write results to artifacts/." \
+            || true
+
+          if [[ ! -f artifacts/result.json ]]; then
+            echo '{"status":"terminal_failure","summary":"Agent did not produce result.json"}' > artifacts/result.json
+            echo "No results" > artifacts/summary.md
+          fi
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: result
+          path: |
+            artifacts/result.json
+            artifacts/summary.md
+            artifacts/change.patch
+
+      - name: Cleanup
+        if: always()
+        run: |
+          git checkout -- . 2>/dev/null || true
+          git clean -fd cmake-build 2>/dev/null || true
+
+  report:
+    needs: [prepare, execute]
+    runs-on: ubuntu-24.04
+    if: always()
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: result
+          path: artifacts
+        continue-on-error: true
+
+      - name: Generate summary
+        run: |
+          set -euo pipefail
+
+          operation="${{ needs.prepare.outputs.operation }}"
+          number="${{ needs.prepare.outputs.number }}"
+          sha="${{ needs.prepare.outputs.target_sha }}"
+
+          {
+            echo "## Collector Agent Result"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Operation | \`${operation}\` |"
+            echo "| Number | #${number} |"
+            echo "| SHA | \`${sha}\` |"
+
+            if [[ -f artifacts/result.json ]]; then
+              status="$(jq -r .status artifacts/result.json 2>/dev/null || echo unknown)"
+              summary="$(jq -r .summary artifacts/result.json 2>/dev/null || echo "")"
+              echo "| Status | \`${status}\` |"
+              [[ -z "$summary" || "$summary" == "null" ]] || echo "| Summary | ${summary} |"
+            else
+              echo "| Status | \`no result\` |"
+            fi
+
+            echo ""
+
+            if [[ -f artifacts/summary.md ]]; then
+              echo "### Agent Summary"
+              echo ""
+              cat artifacts/summary.md
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
