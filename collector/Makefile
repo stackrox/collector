@@ -59,6 +59,10 @@ unittest: collector
 	docker exec $(COLLECTOR_BUILDER_NAME) \
 		ctest --no-tests=error -V --test-dir $(CMAKE_DIR)
 
+verified-tests: collector
+	docker exec $(COLLECTOR_BUILDER_NAME) \
+		ctest --no-tests=error -V -R test_verified --test-dir $(CMAKE_DIR)
+
 .PHONY: txt-files
 txt-files:
 	mkdir -p container/THIRD_PARTY_NOTICES/
