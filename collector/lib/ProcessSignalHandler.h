@@ -24,7 +24,7 @@ class ProcessSignalHandler : public SignalHandler {
       ISignalServiceClient* client,
       system_inspector::Stats* stats,
       const CollectorConfig& config,
-      system_inspector::ContainerIDCache* container_id_cache)
+      system_inspector::ContainerIDCache& container_id_cache)
       : client_(client),
         formatter_(inspector, config, container_id_cache),
         stats_(stats),

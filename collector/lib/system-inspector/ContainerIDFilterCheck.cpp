@@ -3,11 +3,23 @@
 #include <cstring>
 #include <utility>
 
+#include <libsinsp/filter.h>
+#include <libsinsp/sinsp.h>
 #include <libsinsp/threadinfo.h>
 
 #include "ContainerIDCache.h"
 
 namespace collector::system_inspector {
+
+std::unique_ptr<sinsp_filter> CompileFilter(
+    sinsp& inspector, const ContainerIDCache* container_id_cache, const std::string& expression) {
+  sinsp_filter_check_list filter_list;
+  filter_list.add_filter_check(inspector.new_generic_filtercheck());
+  filter_list.add_filter_check(std::make_unique<ContainerIDFilterCheck>(container_id_cache));
+  auto filter_factory = std::make_shared<sinsp_filter_factory>(&inspector, filter_list);
+  sinsp_filter_compiler filter_compiler(filter_factory, expression);
+  return filter_compiler.compile();
+}
 
 namespace {
 

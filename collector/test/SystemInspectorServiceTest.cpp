@@ -1,6 +1,7 @@
 #include <libsinsp/filter.h>
 #include <libsinsp/sinsp.h>
 
+#include "CollectorStats.h"
 #include "Utility.h"
 #include "gtest/gtest.h"
 #include "system-inspector/ContainerIDCache.h"
@@ -20,13 +21,7 @@ TEST(SystemInspectorServiceTest, CleanUpBeforeDestruction) {
 TEST(SystemInspectorServiceTest, FilterEvent) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   ContainerIDCache container_id_cache;
-  sinsp_filter_check_list filter_list;
-  filter_list.add_filter_check(inspector->new_generic_filtercheck());
-
-  filter_list.add_filter_check(std::make_unique<ContainerIDFilterCheck>(&container_id_cache));
-  auto filter_factory = std::make_shared<sinsp_filter_factory>(inspector.get(), filter_list);
-  sinsp_filter_compiler filter_compiler(filter_factory, "container.id != host");
-  auto filter = filter_compiler.compile();
+  auto filter = CompileFilter(*inspector, &container_id_cache, "container.id != host");
   const auto& factory = inspector->get_threadinfo_factory();
 
   auto regular_process = factory.create();
@@ -52,6 +47,12 @@ TEST(SystemInspectorServiceTest, FilterEvent) {
   uncached_container_process->m_tid = 43;
   uncached_container_process->set_cgroups({"cpu=/docker/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"});
 
+  auto proc_self_process = factory.create();
+  proc_self_process->m_exepath = "container:/proc/self/exe";
+
+  auto memfd_process = factory.create();
+  memfd_process->m_exepath = "/memfd:payload (deleted)";
+
   sinsp_evt event(inspector.get());
 
   struct test_t {
@@ -63,10 +64,12 @@ TEST(SystemInspectorServiceTest, FilterEvent) {
       {regular_process.get(), true, "regular container process"},
       {runc_process.get(), true, "runc process"},
       {host_process.get(), true, "host process"},
+      {proc_self_process.get(), false, "proc self executable"},
+      {memfd_process.get(), true, "memfd executable"},
   };
 
   for (const auto& t : tests) {
-    ASSERT_EQ(system_inspector::Service::FilterEvent(*inspector, t.tinfo), t.expected)
+    ASSERT_EQ(system_inspector::Service::FilterEvent(t.tinfo), t.expected)
         << "Failed for: " << t.name;
   }
 
@@ -77,6 +80,28 @@ TEST(SystemInspectorServiceTest, FilterEvent) {
   event.set_tinfo(pid_namespace_process.get());
   EXPECT_TRUE(filter->run(&event));
   EXPECT_EQ(container_id_cache.Get(*uncached_container_process), "aaaaaaaaaaaa");
+}
+
+TEST(SystemInspectorServiceTest, ContainerIDCacheLookupStats) {
+  std::unique_ptr<sinsp> inspector(new sinsp());
+  ContainerIDCache container_id_cache;
+  COUNTER_ZERO(CollectorStats::container_id_cache_hits);
+  COUNTER_ZERO(CollectorStats::container_id_cache_misses);
+  auto tinfo = inspector->get_threadinfo_factory().create();
+  tinfo->m_tid = 42;
+  tinfo->m_clone_ts = 100;
+  tinfo->set_cgroups({"cpu=/docker/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"});
+
+  EXPECT_EQ(container_id_cache.Get(*tinfo), "aaaaaaaaaaaa");
+  EXPECT_EQ(container_id_cache.Get(*tinfo), "aaaaaaaaaaaa");
+
+  ++tinfo->m_clone_ts;
+  EXPECT_EQ(container_id_cache.Get(*tinfo), "aaaaaaaaaaaa");
+
+  EXPECT_EQ(CollectorStats::GetOrCreate().GetCounter(CollectorStats::container_id_cache_hits), 1);
+  EXPECT_EQ(CollectorStats::GetOrCreate().GetCounter(CollectorStats::container_id_cache_misses), 2);
+  COUNTER_ZERO(CollectorStats::container_id_cache_hits);
+  COUNTER_ZERO(CollectorStats::container_id_cache_misses);
 }
 
 }  // namespace collector::system_inspector

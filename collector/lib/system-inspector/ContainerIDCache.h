@@ -8,15 +8,20 @@
 #include <libsinsp/sinsp_observer.h>
 
 class sinsp;
+class sinsp_evt;
 class sinsp_threadinfo;
 
 namespace collector::system_inspector {
 
 class ContainerIDCache final : public sinsp_observer {
  public:
-  void Initialise(sinsp& inspector);
+  void Initialize(sinsp& inspector);
   void Prune(sinsp& inspector, uint64_t now_us);
   std::string Get(const sinsp_threadinfo& tinfo) const;
+  // Returns whether a thread has a container ID, populating the cache on a miss.
+  bool Exists(const sinsp_threadinfo& tinfo) const;
+  // Returns an empty string if the event carries no thread information.
+  std::string Get(sinsp_evt& evt) const;
 
   void on_read(sinsp_evt*, int64_t, int64_t, sinsp_fdinfo*, const char*, uint32_t, uint32_t) override {}
   void on_write(sinsp_evt*, int64_t, int64_t, sinsp_fdinfo*, const char*, uint32_t, uint32_t) override {}

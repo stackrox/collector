@@ -85,7 +85,7 @@ Service::Service(const CollectorConfig& config)
                                                           signal_client_.get(),
                                                           &userspace_stats_,
                                                           config,
-                                                          container_id_cache_.get()));
+                                                          *container_id_cache_));
 
   if (signal_handlers_.size() == 2) {
     // self-check handlers do not count towards this check, because they
@@ -100,14 +100,11 @@ bool Service::InitKernel(const CollectorConfig& config) {
     CLOG(ERROR) << "Failed to setup " << config.GetCollectionMethod() << " driver.";
     return false;
   }
-  container_id_cache_->Initialise(*inspector_);
+  container_id_cache_->Initialize(*inspector_);
 
-  sinsp_filter_check_list filter_list;
-  filter_list.add_filter_check(inspector_->new_generic_filtercheck());
-  filter_list.add_filter_check(std::make_unique<ContainerIDFilterCheck>(container_id_cache_.get()));
-  auto filter_factory = std::make_shared<sinsp_filter_factory>(inspector_.get(), filter_list);
-  sinsp_filter_compiler filter_compiler(filter_factory, "proc.pid != val(proc.vpid) or container.id != host");
-  inspector_->set_filter(filter_compiler.compile(), "container.id != host");
+  inspector_->set_filter(
+      CompileFilter(*inspector_, container_id_cache_.get(), "proc.pid != val(proc.vpid) or container.id != host"),
+      "container.id != host");
 
   return true;
 }
@@ -165,11 +162,13 @@ sinsp_evt* Service::GetNext() {
 bool Service::FilterEvent(sinsp_evt* event) {
   const auto* tinfo = event->get_thread_info();
 
-  return tinfo != nullptr && !container_id_cache_->Get(*tinfo).empty() &&
-         FilterEvent(*event->get_inspector(), tinfo);
+  // Exclude host processes that pass the sinsp filter. Requiring a cached
+  // container ID also rejects runtime helpers whose cgroups do not resolve to
+  // a container ID, without maintaining a list of helper names.
+  return tinfo != nullptr && !container_id_cache_->Get(*tinfo).empty() && FilterEvent(tinfo);
 }
 
-bool Service::FilterEvent(sinsp&, const sinsp_threadinfo* tinfo) {
+bool Service::FilterEvent(const sinsp_threadinfo* tinfo) {
   if (tinfo == nullptr) {
     return false;
   }

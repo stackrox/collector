@@ -27,8 +27,9 @@ TEST(ProcessSignalFormatterTest, NoProcessTest) {
   sinsp* inspector = NULL;
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
   CollectorConfig config;
+  system_inspector::ContainerIDCache container_id_cache;
 
-  ProcessSignalFormatter processSignalFormatter(inspector, config, nullptr);
+  ProcessSignalFormatter processSignalFormatter(inspector, config, container_id_cache);
 
   sinsp_threadinfo* tinfo = NULL;
   std::vector<LineageInfo> lineage;
@@ -52,8 +53,9 @@ TEST(ProcessSignalFormatterTest, ProcessWithoutParentTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
   CollectorConfig config;
+  system_inspector::ContainerIDCache container_id_cache;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, container_id_cache);
 
   auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 0;
@@ -87,8 +89,9 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
   CollectorConfig config;
+  system_inspector::ContainerIDCache container_id_cache;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, container_id_cache);
 
   auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 3;
@@ -132,8 +135,9 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithPid0Test) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
   CollectorConfig config;
+  system_inspector::ContainerIDCache container_id_cache;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, container_id_cache);
 
   auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 0;
@@ -172,8 +176,9 @@ TEST(ProcessSignalFormatterTest, ProcessWithParentWithSameNameTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
   CollectorConfig config;
+  system_inspector::ContainerIDCache container_id_cache;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, container_id_cache);
 
   auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 3;
@@ -217,8 +222,9 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
   CollectorConfig config;
+  system_inspector::ContainerIDCache container_id_cache;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, container_id_cache);
 
   auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 3;
@@ -276,8 +282,9 @@ TEST(ProcessSignalFormatterTest, ProcessWithTwoParentsWithTheSameNameTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
   CollectorConfig config;
+  system_inspector::ContainerIDCache container_id_cache;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, container_id_cache);
 
   auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 3;
@@ -332,8 +339,9 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameNameTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
   CollectorConfig config;
+  system_inspector::ContainerIDCache container_id_cache;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, container_id_cache);
 
   auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 3;
@@ -397,8 +405,9 @@ TEST(ProcessSignalFormatterTest, ProcessCollapseParentChildWithSameName2Test) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
   CollectorConfig config;
+  system_inspector::ContainerIDCache container_id_cache;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, container_id_cache);
 
   auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 3;
@@ -465,8 +474,9 @@ TEST(ProcessSignalFormatterTest, ProcessWithUnrelatedProcessTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
   CollectorConfig config;
+  system_inspector::ContainerIDCache container_id_cache;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, container_id_cache);
 
   auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 3;
@@ -533,8 +543,9 @@ TEST(ProcessSignalFormatterTest, CountTwoCounterCallsTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
   CollectorConfig config;
+  system_inspector::ContainerIDCache container_id_cache;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, container_id_cache);
 
   auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 1;
@@ -584,8 +595,9 @@ TEST(ProcessSignalFormatterTest, Rox3377ProcessLineageWithNoVPidTest) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorStats& collector_stats = CollectorStats::GetOrCreate();
   CollectorConfig config;
+  system_inspector::ContainerIDCache container_id_cache;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, container_id_cache);
 
   auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 3;
@@ -641,7 +653,7 @@ TEST(ProcessSignalFormatterTest, ProcessArguments) {
   MockCollectorConfig config;
   system_inspector::ContainerIDCache container_id_cache;
 
-  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, &container_id_cache);
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, container_id_cache);
 
   auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 3;
@@ -668,7 +680,8 @@ TEST(ProcessSignalFormatterTest, ProcessArguments) {
 TEST(ProcessSignalFormatterTest, EventWithoutThreadInfo) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   CollectorConfig config;
-  ProcessSignalFormatter processSignalFormatter(inspector.get(), config);
+  system_inspector::ContainerIDCache container_id_cache;
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, container_id_cache);
 
   sinsp_evt evt(inspector.get());
   scap_evt s_evt{};
@@ -685,7 +698,7 @@ TEST(ProcessSignalFormatterTest, NoProcessArguments) {
   system_inspector::ContainerIDCache container_id_cache;
 
   config.SetDisableProcessArguments(true);
-  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, &container_id_cache);
+  ProcessSignalFormatter processSignalFormatter(inspector.get(), config, container_id_cache);
 
   auto tinfo = inspector->get_threadinfo_factory().create();
   tinfo->m_pid = 3;

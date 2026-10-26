@@ -6,6 +6,7 @@
 #include <libsinsp/thread_manager.h>
 #include <libsinsp/threadinfo.h>
 
+#include "CollectorStats.h"
 #include "Utility.h"
 
 namespace collector::system_inspector {
@@ -24,7 +25,7 @@ std::string ContainerIDCache::Cache(const sinsp_threadinfo& tinfo) const {
   return container_id;
 }
 
-void ContainerIDCache::Initialise(sinsp& inspector) {
+void ContainerIDCache::Initialize(sinsp& inspector) {
   inspector.m_thread_manager->get_threads()->loop([this](sinsp_threadinfo& tinfo) {
     Cache(tinfo);
     return true;
@@ -58,11 +59,25 @@ std::string ContainerIDCache::Get(const sinsp_threadinfo& tinfo) const {
     std::lock_guard<std::mutex> lock(mutex_);
     const auto entry = entries_.find(tinfo.m_tid);
     if (entry != entries_.end() && entry->second.clone_ts == tinfo.m_clone_ts) {
+      COUNTER_INC(CollectorStats::container_id_cache_hits);
       return entry->second.container_id;
     }
+    COUNTER_INC(CollectorStats::container_id_cache_misses);
   }
 
   return Cache(tinfo);
+}
+
+bool ContainerIDCache::Exists(const sinsp_threadinfo& tinfo) const {
+  return !Get(tinfo).empty();
+}
+
+std::string ContainerIDCache::Get(sinsp_evt& evt) const {
+  auto* tinfo = evt.get_thread_info();
+  if (tinfo == nullptr) {
+    return {};
+  }
+  return Get(*tinfo);
 }
 
 void ContainerIDCache::on_clone(sinsp_evt*, sinsp_threadinfo* newtinfo, int64_t) {

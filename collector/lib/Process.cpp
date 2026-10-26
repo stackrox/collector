@@ -34,8 +34,11 @@ std::string Process::container_id() const {
   WaitForProcessInfo();
 
   std::lock_guard<std::mutex> lock(process_info_mutex_);
-  if (!container_id_.empty()) {
-    return container_id_;
+  if (system_inspector_threadinfo_ && container_id_cache_) {
+    const auto container_id = container_id_cache_->Get(*system_inspector_threadinfo_);
+    if (!container_id.empty()) {
+      return container_id;
+    }
   }
 
   return NOT_AVAILABLE;
@@ -97,7 +100,7 @@ Process::Process(
     ProcessStore::MapRef cache,
     system_inspector::Service* instance)
     : pid_(pid),
-      system_inspector_(instance),
+      container_id_cache_(instance ? instance->GetContainerIDCache() : nullptr),
       cache_(cache),
       process_info_pending_resolution_(false),
       system_inspector_callback_(
@@ -125,9 +128,6 @@ void Process::ProcessInfoResolved(std::shared_ptr<sinsp_threadinfo> process_info
   }
 
   system_inspector_threadinfo_ = process_info;
-  if (process_info && system_inspector_) {
-    container_id_ = system_inspector_->GetContainerIDCache()->Get(*process_info);
-  }
   process_info_pending_resolution_ = false;
 
   process_info_condition_.notify_all();

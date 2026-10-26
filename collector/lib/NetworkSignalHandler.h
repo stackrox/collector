@@ -7,16 +7,13 @@
 #include "SignalHandler.h"
 #include "system-inspector/SystemInspector.h"
 
-namespace collector::system_inspector {
-class ContainerIDCache;
-}
-
 // forward declarations
 class sinsp;
 class sinsp_evt;
 
 namespace collector {
 namespace system_inspector {
+class ContainerIDCache;
 class EventExtractor;
 }
 
