@@ -214,13 +214,13 @@ arches:
     name: libcap-ng-devel
     evr: 0.8.2-7.el9
     sourcerpm: libcap-ng-0.8.2-7.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/l/libcurl-devel-7.76.1-40.el9_8.8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/l/libcurl-devel-7.76.1-40.el9_8.9.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 1005906
-    checksum: sha256:d5671be263a5e03632ca33ff7854208150e7f9d23a09e4ebac02cc99502ffd78
+    size: 1006000
+    checksum: sha256:46af17a339e799d181c9042dc20433607d94c929ea0e83b30fff56af04289036
     name: libcurl-devel
-    evr: 7.76.1-40.el9_8.8
-    sourcerpm: curl-7.76.1-40.el9_8.8.src.rpm
+    evr: 7.76.1-40.el9_8.9
+    sourcerpm: curl-7.76.1-40.el9_8.9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/l/libmpc-1.2.1-4.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 67120
@@ -1040,13 +1040,13 @@ arches:
     name: crypto-policies-scripts
     evr: 20260224-1.gitea0f072.el9_8
     sourcerpm: crypto-policies-20260224-1.gitea0f072.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/c/curl-7.76.1-40.el9_8.8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/c/curl-7.76.1-40.el9_8.9.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 304067
-    checksum: sha256:55d5d8b84b38e50d43c9b61a0abc88a7d6d05ba63a5e943d5a6e5e31df0a9067
+    size: 304294
+    checksum: sha256:3decae972be254605dbaaf9022c6bf5e4f75e804da779fad6b1639b5e756c5fa
     name: curl
-    evr: 7.76.1-40.el9_8.8
-    sourcerpm: curl-7.76.1-40.el9_8.8.src.rpm
+    evr: 7.76.1-40.el9_8.9
+    sourcerpm: curl-7.76.1-40.el9_8.9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/d/dbus-1.12.20-8.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 8025
@@ -1250,13 +1250,13 @@ arches:
     name: kmod-libs
     evr: 28-11.el9
     sourcerpm: kmod-28-11.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/k/krb5-libs-1.21.1-10.el9_8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/k/krb5-libs-1.21.1-10.el9_8.1.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 793489
-    checksum: sha256:f8bbc9abe0da1ebe5bc028154bd54d465fe0682ddbb64c45882b84ff09f40e1d
+    size: 793631
+    checksum: sha256:35ea4e07d704837be334a199e8deb950db2ac7e655b2edc578d0ac309d08ce59
     name: krb5-libs
-    evr: 1.21.1-10.el9_8
-    sourcerpm: krb5-1.21.1-10.el9_8.src.rpm
+    evr: 1.21.1-10.el9_8.1
+    sourcerpm: krb5-1.21.1-10.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/l/less-590-6.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 165028
@@ -1327,13 +1327,13 @@ arches:
     name: libcom_err
     evr: 1.46.5-8.el9
     sourcerpm: e2fsprogs-1.46.5-8.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/l/libcurl-minimal-7.76.1-40.el9_8.8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/l/libcurl-minimal-7.76.1-40.el9_8.9.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 233388
-    checksum: sha256:68e69c61fcb928930f507c30c6dd339e6211bda11fd6f3f8df81bf396b9906bb
+    size: 233589
+    checksum: sha256:153826b4b7a92f8430045daf304d94f0755713661d16bf21869da8f11689b29b
     name: libcurl-minimal
-    evr: 7.76.1-40.el9_8.8
-    sourcerpm: curl-7.76.1-40.el9_8.8.src.rpm
+    evr: 7.76.1-40.el9_8.9
+    sourcerpm: curl-7.76.1-40.el9_8.9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/l/libdb-5.3.28-57.el9_6.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 727417
@@ -2403,12 +2403,12 @@ arches:
     checksum: sha256:775d926429179caeade6af8dc7dea15a0bea49102c2592d5b712f996a329ec38
     name: crypto-policies
     evr: 20260224-1.gitea0f072.el9_8
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/c/curl-7.76.1-40.el9_8.8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/c/curl-7.76.1-40.el9_8.9.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
-    size: 2581541
-    checksum: sha256:303a97cbdfaaac1d709ef7621b2b349dc403da6a553ecfe5e3114f76d757d554
+    size: 2586626
+    checksum: sha256:5b232294ba008dffd8e36196f1636691c0351a8ad6c9e5d0f8f7f0ee6458ad4b
     name: curl
-    evr: 7.76.1-40.el9_8.8
+    evr: 7.76.1-40.el9_8.9
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/d/dbus-1.12.20-8.el9.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
     size: 2143916
@@ -2553,12 +2553,12 @@ arches:
     checksum: sha256:4f6fefbf0d004b23494fe18ccfff2b9151ea887a276c56a6f25ea597a250991c
     name: kmod
     evr: 28-11.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/k/krb5-1.21.1-10.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/k/krb5-1.21.1-10.el9_8.1.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
-    size: 8964976
-    checksum: sha256:b22a66515c98c14a4969a403d5419b9f9bab50015553863de866d3f45fd6d922
+    size: 8966024
+    checksum: sha256:79d2d304f67abfe9034d75d56a2055ba12274b24eb9cb2ea2f88dbf124b24943
     name: krb5
-    evr: 1.21.1-10.el9_8
+    evr: 1.21.1-10.el9_8.1
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/l/less-590-6.el9.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
     size: 382338
@@ -3192,13 +3192,13 @@ arches:
     name: libcap-ng-devel
     evr: 0.8.2-7.el9
     sourcerpm: libcap-ng-0.8.2-7.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/l/libcurl-devel-7.76.1-40.el9_8.8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/l/libcurl-devel-7.76.1-40.el9_8.9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 1005989
-    checksum: sha256:9a4d368bf2dd4ab52f49de4dc3e24925e318a338ffd1e58f1540e6e1e6f32230
+    size: 1006041
+    checksum: sha256:3ef71a4649e18406532801abbbeb96af1acfa6f1b45d3ba59e8a1bc9f9035ff9
     name: libcurl-devel
-    evr: 7.76.1-40.el9_8.8
-    sourcerpm: curl-7.76.1-40.el9_8.8.src.rpm
+    evr: 7.76.1-40.el9_8.9
+    sourcerpm: curl-7.76.1-40.el9_8.9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/l/libmpc-1.2.1-4.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 71343
@@ -4018,13 +4018,13 @@ arches:
     name: crypto-policies-scripts
     evr: 20260224-1.gitea0f072.el9_8
     sourcerpm: crypto-policies-20260224-1.gitea0f072.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/c/curl-7.76.1-40.el9_8.8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/c/curl-7.76.1-40.el9_8.9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 310906
-    checksum: sha256:4c09870d9fbe4326476a3527cdff68e49e15f176a6b379a7f6ab921fc31a427b
+    size: 311066
+    checksum: sha256:fa780159dbdedc76ebd8f5b57b2923ccec7754c2420434ec8d15059f70fd6538
     name: curl
-    evr: 7.76.1-40.el9_8.8
-    sourcerpm: curl-7.76.1-40.el9_8.8.src.rpm
+    evr: 7.76.1-40.el9_8.9
+    sourcerpm: curl-7.76.1-40.el9_8.9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/d/dbus-1.12.20-8.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 8053
@@ -4228,13 +4228,13 @@ arches:
     name: kmod-libs
     evr: 28-11.el9
     sourcerpm: kmod-28-11.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/k/krb5-libs-1.21.1-10.el9_8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/k/krb5-libs-1.21.1-10.el9_8.1.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 872744
-    checksum: sha256:29c5c7dbdd6ab6b3a72a229dccb60dc2596fb121ac7ddc5f8e37c3bf0b51f528
+    size: 873073
+    checksum: sha256:f831a49841e0b99f296a43e9a747cd74030002b35f84b9c3f6d296f2cc0742d5
     name: krb5-libs
-    evr: 1.21.1-10.el9_8
-    sourcerpm: krb5-1.21.1-10.el9_8.src.rpm
+    evr: 1.21.1-10.el9_8.1
+    sourcerpm: krb5-1.21.1-10.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/l/less-590-6.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 177816
@@ -4305,13 +4305,13 @@ arches:
     name: libcom_err
     evr: 1.46.5-8.el9
     sourcerpm: e2fsprogs-1.46.5-8.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/l/libcurl-minimal-7.76.1-40.el9_8.8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/l/libcurl-minimal-7.76.1-40.el9_8.9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 263339
-    checksum: sha256:ea64f33f7325b577a53c5040b28bfa7ce1147eec2b1263969c6e28a4fdb817e9
+    size: 263625
+    checksum: sha256:fd9470aa4a3c540c747acff9cfb5517585efa9e7848b750d66a82d714f6204d0
     name: libcurl-minimal
-    evr: 7.76.1-40.el9_8.8
-    sourcerpm: curl-7.76.1-40.el9_8.8.src.rpm
+    evr: 7.76.1-40.el9_8.9
+    sourcerpm: curl-7.76.1-40.el9_8.9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/l/libdb-5.3.28-57.el9_6.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 837087
@@ -5388,12 +5388,12 @@ arches:
     checksum: sha256:775d926429179caeade6af8dc7dea15a0bea49102c2592d5b712f996a329ec38
     name: crypto-policies
     evr: 20260224-1.gitea0f072.el9_8
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/c/curl-7.76.1-40.el9_8.8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/c/curl-7.76.1-40.el9_8.9.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
-    size: 2581541
-    checksum: sha256:303a97cbdfaaac1d709ef7621b2b349dc403da6a553ecfe5e3114f76d757d554
+    size: 2586626
+    checksum: sha256:5b232294ba008dffd8e36196f1636691c0351a8ad6c9e5d0f8f7f0ee6458ad4b
     name: curl
-    evr: 7.76.1-40.el9_8.8
+    evr: 7.76.1-40.el9_8.9
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/d/dbus-1.12.20-8.el9.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
     size: 2143916
@@ -5538,12 +5538,12 @@ arches:
     checksum: sha256:4f6fefbf0d004b23494fe18ccfff2b9151ea887a276c56a6f25ea597a250991c
     name: kmod
     evr: 28-11.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/k/krb5-1.21.1-10.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/k/krb5-1.21.1-10.el9_8.1.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
-    size: 8964976
-    checksum: sha256:b22a66515c98c14a4969a403d5419b9f9bab50015553863de866d3f45fd6d922
+    size: 8966024
+    checksum: sha256:79d2d304f67abfe9034d75d56a2055ba12274b24eb9cb2ea2f88dbf124b24943
     name: krb5
-    evr: 1.21.1-10.el9_8
+    evr: 1.21.1-10.el9_8.1
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/l/less-590-6.el9.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
     size: 382338
@@ -6190,13 +6190,13 @@ arches:
     name: libcap-ng-devel
     evr: 0.8.2-7.el9
     sourcerpm: libcap-ng-0.8.2-7.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/l/libcurl-devel-7.76.1-40.el9_8.8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/l/libcurl-devel-7.76.1-40.el9_8.9.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 1005988
-    checksum: sha256:a1842923ad6eebd0397ca6fd9333a7892417a44c3a07560e904c2fd34e41934b
+    size: 1006043
+    checksum: sha256:e496a90e511ba28380c58b45bf232f52973cf45e05de1d794d1bc52759f8147a
     name: libcurl-devel
-    evr: 7.76.1-40.el9_8.8
-    sourcerpm: curl-7.76.1-40.el9_8.8.src.rpm
+    evr: 7.76.1-40.el9_8.9
+    sourcerpm: curl-7.76.1-40.el9_8.9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/l/libmpc-1.2.1-4.el9.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 66959
@@ -7016,13 +7016,13 @@ arches:
     name: crypto-policies-scripts
     evr: 20260224-1.gitea0f072.el9_8
     sourcerpm: crypto-policies-20260224-1.gitea0f072.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/c/curl-7.76.1-40.el9_8.8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/c/curl-7.76.1-40.el9_8.9.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 305871
-    checksum: sha256:f716718f72be1af6eeb629f2c85477a1eb04d4c7ab297955044394b8ce549a1a
+    size: 306012
+    checksum: sha256:c8a5ec9fcbecd9ede86316f43cbae7767a4f7b183dac09537e6520f4f7fd049c
     name: curl
-    evr: 7.76.1-40.el9_8.8
-    sourcerpm: curl-7.76.1-40.el9_8.8.src.rpm
+    evr: 7.76.1-40.el9_8.9
+    sourcerpm: curl-7.76.1-40.el9_8.9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/d/dbus-1.12.20-8.el9.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 8049
@@ -7226,13 +7226,13 @@ arches:
     name: kmod-libs
     evr: 28-11.el9
     sourcerpm: kmod-28-11.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/k/krb5-libs-1.21.1-10.el9_8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/k/krb5-libs-1.21.1-10.el9_8.1.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 772565
-    checksum: sha256:cb487b335eeba5bad4d090a56bed7d0d173392fd6aab85a5471792a01eb3c4ef
+    size: 772469
+    checksum: sha256:71db63cf970cc699e802bb8d9bc7a1d963767b3557520490518dd8176fab42e9
     name: krb5-libs
-    evr: 1.21.1-10.el9_8
-    sourcerpm: krb5-1.21.1-10.el9_8.src.rpm
+    evr: 1.21.1-10.el9_8.1
+    sourcerpm: krb5-1.21.1-10.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/l/less-590-6.el9.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 166698
@@ -7303,13 +7303,13 @@ arches:
     name: libcom_err
     evr: 1.46.5-8.el9
     sourcerpm: e2fsprogs-1.46.5-8.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/l/libcurl-minimal-7.76.1-40.el9_8.8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/l/libcurl-minimal-7.76.1-40.el9_8.9.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 232720
-    checksum: sha256:bb04a586a43a8e67253a3bafeafa4de4e91b4740c735fe0462c95b108533f907
+    size: 233082
+    checksum: sha256:601e374387f7e13d532f938ad9dc52dadbcbfe99455de6631527a1791cf76655
     name: libcurl-minimal
-    evr: 7.76.1-40.el9_8.8
-    sourcerpm: curl-7.76.1-40.el9_8.8.src.rpm
+    evr: 7.76.1-40.el9_8.9
+    sourcerpm: curl-7.76.1-40.el9_8.9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/l/libdb-5.3.28-57.el9_6.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 721041
@@ -8379,12 +8379,12 @@ arches:
     checksum: sha256:775d926429179caeade6af8dc7dea15a0bea49102c2592d5b712f996a329ec38
     name: crypto-policies
     evr: 20260224-1.gitea0f072.el9_8
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/c/curl-7.76.1-40.el9_8.8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/c/curl-7.76.1-40.el9_8.9.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
-    size: 2581541
-    checksum: sha256:303a97cbdfaaac1d709ef7621b2b349dc403da6a553ecfe5e3114f76d757d554
+    size: 2586626
+    checksum: sha256:5b232294ba008dffd8e36196f1636691c0351a8ad6c9e5d0f8f7f0ee6458ad4b
     name: curl
-    evr: 7.76.1-40.el9_8.8
+    evr: 7.76.1-40.el9_8.9
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/d/dbus-1.12.20-8.el9.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
     size: 2143916
@@ -8529,12 +8529,12 @@ arches:
     checksum: sha256:4f6fefbf0d004b23494fe18ccfff2b9151ea887a276c56a6f25ea597a250991c
     name: kmod
     evr: 28-11.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/k/krb5-1.21.1-10.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/k/krb5-1.21.1-10.el9_8.1.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
-    size: 8964976
-    checksum: sha256:b22a66515c98c14a4969a403d5419b9f9bab50015553863de866d3f45fd6d922
+    size: 8966024
+    checksum: sha256:79d2d304f67abfe9034d75d56a2055ba12274b24eb9cb2ea2f88dbf124b24943
     name: krb5
-    evr: 1.21.1-10.el9_8
+    evr: 1.21.1-10.el9_8.1
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/l/less-590-6.el9.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
     size: 382338
@@ -9168,13 +9168,13 @@ arches:
     name: libcap-ng-devel
     evr: 0.8.2-7.el9
     sourcerpm: libcap-ng-0.8.2-7.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/l/libcurl-devel-7.76.1-40.el9_8.8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/l/libcurl-devel-7.76.1-40.el9_8.9.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 1006008
-    checksum: sha256:9d7cc623ce3a82f2ef19aef3c842a36599aa88164f0efb7b1d4bf6313328ab39
+    size: 1006002
+    checksum: sha256:74f83861240bd6f751dacbb75ae5210685c37f16eeabeb123e2358bb76d08964
     name: libcurl-devel
-    evr: 7.76.1-40.el9_8.8
-    sourcerpm: curl-7.76.1-40.el9_8.8.src.rpm
+    evr: 7.76.1-40.el9_8.9
+    sourcerpm: curl-7.76.1-40.el9_8.9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/l/libmpc-1.2.1-4.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 66075
@@ -9994,13 +9994,13 @@ arches:
     name: crypto-policies-scripts
     evr: 20260224-1.gitea0f072.el9_8
     sourcerpm: crypto-policies-20260224-1.gitea0f072.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/c/curl-7.76.1-40.el9_8.8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/c/curl-7.76.1-40.el9_8.9.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 307634
-    checksum: sha256:21ea1af695c0a8cea53ef6403382d4f8be30790dd6a8fe9b46b808e5fd7e0d3c
+    size: 307778
+    checksum: sha256:41f3588e1e68b120c94acc817af08be2f8f021ce534e01f87a1757c497a13515
     name: curl
-    evr: 7.76.1-40.el9_8.8
-    sourcerpm: curl-7.76.1-40.el9_8.8.src.rpm
+    evr: 7.76.1-40.el9_8.9
+    sourcerpm: curl-7.76.1-40.el9_8.9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/d/dbus-1.12.20-8.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 8073
@@ -10204,13 +10204,13 @@ arches:
     name: kmod-libs
     evr: 28-11.el9
     sourcerpm: kmod-28-11.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/k/krb5-libs-1.21.1-10.el9_8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/k/krb5-libs-1.21.1-10.el9_8.1.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 790743
-    checksum: sha256:8906be9f2d414c5f4e1218db0c94955c2b3394b43a04b7dbcc2ef66c4340ebc6
+    size: 790530
+    checksum: sha256:867bf5fb56f787d3515053cb0f5f14e6aced3ba43999f03f255c2d3f6c0c8f36
     name: krb5-libs
-    evr: 1.21.1-10.el9_8
-    sourcerpm: krb5-1.21.1-10.el9_8.src.rpm
+    evr: 1.21.1-10.el9_8.1
+    sourcerpm: krb5-1.21.1-10.el9_8.1.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/l/less-590-6.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 166025
@@ -10281,13 +10281,13 @@ arches:
     name: libcom_err
     evr: 1.46.5-8.el9
     sourcerpm: e2fsprogs-1.46.5-8.el9.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/l/libcurl-minimal-7.76.1-40.el9_8.8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/l/libcurl-minimal-7.76.1-40.el9_8.9.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 237480
-    checksum: sha256:81f6cf3793992df4481a369046a239629f6d7830dd0b56941a84b8eaeb347111
+    size: 237787
+    checksum: sha256:f08df756c7edcebcc9313bcaa3484763a2411ab56000c250646ba58b7958ae4e
     name: libcurl-minimal
-    evr: 7.76.1-40.el9_8.8
-    sourcerpm: curl-7.76.1-40.el9_8.8.src.rpm
+    evr: 7.76.1-40.el9_8.9
+    sourcerpm: curl-7.76.1-40.el9_8.9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/l/libdb-5.3.28-57.el9_6.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 755192
@@ -11357,12 +11357,12 @@ arches:
     checksum: sha256:775d926429179caeade6af8dc7dea15a0bea49102c2592d5b712f996a329ec38
     name: crypto-policies
     evr: 20260224-1.gitea0f072.el9_8
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/c/curl-7.76.1-40.el9_8.8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/c/curl-7.76.1-40.el9_8.9.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
-    size: 2581541
-    checksum: sha256:303a97cbdfaaac1d709ef7621b2b349dc403da6a553ecfe5e3114f76d757d554
+    size: 2586626
+    checksum: sha256:5b232294ba008dffd8e36196f1636691c0351a8ad6c9e5d0f8f7f0ee6458ad4b
     name: curl
-    evr: 7.76.1-40.el9_8.8
+    evr: 7.76.1-40.el9_8.9
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/d/dbus-1.12.20-8.el9.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
     size: 2143916
@@ -11507,12 +11507,12 @@ arches:
     checksum: sha256:4f6fefbf0d004b23494fe18ccfff2b9151ea887a276c56a6f25ea597a250991c
     name: kmod
     evr: 28-11.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/k/krb5-1.21.1-10.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/k/krb5-1.21.1-10.el9_8.1.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
-    size: 8964976
-    checksum: sha256:b22a66515c98c14a4969a403d5419b9f9bab50015553863de866d3f45fd6d922
+    size: 8966024
+    checksum: sha256:79d2d304f67abfe9034d75d56a2055ba12274b24eb9cb2ea2f88dbf124b24943
     name: krb5
-    evr: 1.21.1-10.el9_8
+    evr: 1.21.1-10.el9_8.1
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/l/less-590-6.el9.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
     size: 382338
