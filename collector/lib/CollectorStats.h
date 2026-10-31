@@ -32,6 +32,8 @@
   X(process_lineage_string_total)           \
   X(process_info_hit)                       \
   X(process_info_miss)                      \
+  X(container_id_cache_hits)                \
+  X(container_id_cache_misses)              \
   X(rate_limit_flushing_counts)             \
   X(procfs_could_not_open_fd_dir)           \
   X(procfs_could_not_open_proc_dir)         \

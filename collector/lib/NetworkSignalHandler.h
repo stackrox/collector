@@ -13,12 +13,13 @@ class sinsp_evt;
 
 namespace collector {
 namespace system_inspector {
+class ContainerIDCache;
 class EventExtractor;
 }
 
 class NetworkSignalHandler final : public SignalHandler {
  public:
-  explicit NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker, system_inspector::Stats* stats);
+  explicit NetworkSignalHandler(sinsp* inspector, std::shared_ptr<ConnectionTracker> conn_tracker, system_inspector::Stats* stats, system_inspector::ContainerIDCache* container_id_cache);
   ~NetworkSignalHandler() override;
 
   std::string GetName() override { return "NetworkSignalHandler"; }
@@ -35,6 +36,7 @@ class NetworkSignalHandler final : public SignalHandler {
   std::unique_ptr<system_inspector::EventExtractor> event_extractor_;
   std::shared_ptr<ConnectionTracker> conn_tracker_;
   system_inspector::Stats* stats_;
+  system_inspector::ContainerIDCache* container_id_cache_;
 
   bool collect_connection_status_;
   bool track_send_recv_;

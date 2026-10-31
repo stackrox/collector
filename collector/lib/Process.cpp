@@ -6,6 +6,7 @@
 
 #include "CollectorStats.h"
 #include "Utility.h"
+#include "system-inspector/ContainerIDCache.h"
 #include "system-inspector/Service.h"
 
 namespace collector {
@@ -32,10 +33,11 @@ const std::shared_ptr<IProcess> ProcessStore::Fetch(uint64_t pid) {
 std::string Process::container_id() const {
   WaitForProcessInfo();
 
-  if (system_inspector_threadinfo_) {
-    auto id = GetContainerID(*system_inspector_threadinfo_);
-    if (!id.empty()) {
-      return id;
+  std::lock_guard<std::mutex> lock(process_info_mutex_);
+  if (system_inspector_threadinfo_ && container_id_cache_) {
+    const auto container_id = container_id_cache_->Get(*system_inspector_threadinfo_);
+    if (!container_id.empty()) {
+      return container_id;
     }
   }
 
@@ -98,6 +100,7 @@ Process::Process(
     ProcessStore::MapRef cache,
     system_inspector::Service* instance)
     : pid_(pid),
+      container_id_cache_(instance ? instance->GetContainerIDCache() : nullptr),
       cache_(cache),
       process_info_pending_resolution_(false),
       system_inspector_callback_(
