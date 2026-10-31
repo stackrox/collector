@@ -2,6 +2,7 @@
 
 #include <fstream>
 
+#include "DropCapabilities.h"
 #include "GRPCUtil.h"
 #include "Logging.h"
 #include "ProtoUtil.h"
@@ -43,6 +44,7 @@ bool SignalServiceClient::EstablishGRPCStreamSingle() {
 }
 
 void SignalServiceClient::EstablishGRPCStream() {
+  DropCapabilities({});
   while (EstablishGRPCStreamSingle());
   CLOG(INFO) << "Signal service client terminating.";
 }
