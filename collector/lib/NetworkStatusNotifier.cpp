@@ -3,7 +3,6 @@
 #include <google/protobuf/util/time_util.h>
 
 #include "CollectorStats.h"
-#include "DuplexGRPC.h"
 #include "GRPCUtil.h"
 #include "Logging.h"
 #include "Profiler.h"
@@ -126,7 +125,7 @@ void NetworkStatusNotifier::Run() {
     if (thread_.should_stop()) {
       return;
     }
-    auto status = client_writer->Finish(std::chrono::seconds(5));
+    auto status = client_writer->Finish(std::chrono::system_clock::now() + std::chrono::seconds(5));
     if (status.ok()) {
       CLOG(ERROR) << "Error streaming network connection info: server hung up unexpectedly";
     } else {
@@ -146,16 +145,6 @@ void NetworkStatusNotifier::Start() {
 void NetworkStatusNotifier::Stop() {
   comm_->TryCancel();
   thread_.Stop();
-}
-
-bool NetworkStatusNotifier::WaitUntilWriterStarted(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer, int wait_time_seconds) {
-  if (!writer->WaitUntilStarted(std::chrono::seconds(wait_time_seconds))) {
-    CLOG(ERROR) << "Failed to establish network connection info stream.";
-    return false;
-  }
-
-  CLOG(INFO) << "Established network connection info stream.";
-  return true;
 }
 
 void NetworkStatusNotifier::ReportConnectionStats() {
@@ -218,11 +207,7 @@ bool NetworkStatusNotifier::UpdateAllConnsAndEndpoints() {
   return true;
 }
 
-void NetworkStatusNotifier::RunSingle(IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>* writer) {
-  if (!WaitUntilWriterStarted(writer, 10)) {
-    return;
-  }
-
+void NetworkStatusNotifier::RunSingle(IStreamWriter<sensor::NetworkConnectionInfoMessage>* writer) {
   ConnMap old_conn_state;
   AdvertisedEndpointMap old_cep_state;
   auto next_scrape = std::chrono::system_clock::now();
