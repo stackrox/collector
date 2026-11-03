@@ -40,7 +40,7 @@ StringListEnvVar ignored_networks("ROX_IGNORE_NETWORKS", std::vector<std::string
 // Connection endpoints matching a network prefix listed here will never be aggregated.
 StringListEnvVar non_aggregated_networks("ROX_NON_AGGREGATED_NETWORKS", std::vector<std::string>());
 
-BoolEnvVar enable_afterglow("ROX_ENABLE_AFTERGLOW", true);
+BoolEnvVar enable_afterglow("ROX_ENABLE_AFTERGLOW", false);
 FloatEnvVar afterglow_period("ROX_AFTERGLOW_PERIOD", 300.0);
 
 BoolEnvVar set_enable_core_dump("ENABLE_CORE_DUMP", false);
