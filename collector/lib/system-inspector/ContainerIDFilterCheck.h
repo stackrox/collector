@@ -20,13 +20,17 @@ class ContainerIDFilterCheck final : public sinsp_filter_check {
  public:
   explicit ContainerIDFilterCheck(const ContainerIDCache* container_id_cache);
 
-  std::unique_ptr<sinsp_filter_check> allocate_new() override;
+  std::unique_ptr<sinsp_filter_check> allocate_new() override {
+    return std::make_unique<ContainerIDFilterCheck>(container_id_cache_);
+  }
 
  protected:
   uint8_t* extract_single(sinsp_evt* event, uint32_t* len, bool sanitize_strings) override;
 
  private:
   const ContainerIDCache* container_id_cache_;
+  // Owns the storage returned by extract_single; libsinsp shallow-caches the
+  // pointer for the current event, so this must remain member storage.
   std::string result_;
 };
 

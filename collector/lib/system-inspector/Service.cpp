@@ -37,7 +37,7 @@ Service::~Service() = default;
 
 Service::Service(const CollectorConfig& config)
     : inspector_(std::make_unique<sinsp>(true)),
-      container_id_cache_(std::make_unique<ContainerIDCache>()),
+      container_id_cache_(std::make_unique<ContainerIDCache>(config.GetContainerIDCachePruneInterval())),
       default_formatter_(std::make_unique<sinsp_evt_formatter>(
           inspector_.get(),
           DEFAULT_OUTPUT_STR,
@@ -160,7 +160,7 @@ bool Service::FilterEvent(sinsp_evt* event) {
   // Exclude host processes that pass the sinsp filter. Requiring a cached
   // container ID also rejects runtime helpers whose cgroups do not resolve to
   // a container ID, without maintaining a list of helper names.
-  return tinfo != nullptr && !container_id_cache_->Get(*tinfo).empty() && FilterEvent(tinfo);
+  return tinfo != nullptr && container_id_cache_->Exists(*tinfo) && FilterEvent(tinfo);
 }
 
 bool Service::FilterEvent(const sinsp_threadinfo* tinfo) {
@@ -275,14 +275,19 @@ bool Service::SendExistingProcesses(SignalHandler* handler) {
   }
 
   return threads->loop([&](sinsp_threadinfo& tinfo) {
-    if (tinfo.is_main_thread() && !container_id_cache_->Get(tinfo).empty()) {
-      auto result = handler->HandleExistingProcess(&tinfo);
-      if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
-        CLOG(WARNING) << "Failed to write existing process signal: " << &tinfo;
-        return false;
-      }
-      CLOG(DEBUG) << "Found existing process: " << &tinfo;
+    if (!tinfo.is_main_thread()) {
+      return true;
     }
+    const auto container_id = container_id_cache_->Get(tinfo);
+    if (container_id.empty()) {
+      return true;
+    }
+    auto result = handler->HandleExistingProcess(&tinfo);
+    if (result == SignalHandler::ERROR || result == SignalHandler::NEEDS_REFRESH) {
+      CLOG(WARNING) << "Failed to write existing process signal: Container: " << container_id << ", " << &tinfo;
+      return false;
+    }
+    CLOG(DEBUG) << "Found existing process: Container: " << container_id << ", " << &tinfo;
     return true;
   });
 }

@@ -112,6 +112,12 @@ TEST(SystemInspectorServiceTest, FilterEvent) {
   EXPECT_TRUE(service.FilterEvent(&event));
   event.set_tinfo(runc_cloned_process.get());
   EXPECT_FALSE(service.FilterEvent(&event));
+  // Neither carries a container ID, so the service guard rejects them before
+  // the exepath rule is consulted.
+  event.set_tinfo(proc_self_process.get());
+  EXPECT_FALSE(service.FilterEvent(&event));
+  event.set_tinfo(memfd_process.get());
+  EXPECT_FALSE(service.FilterEvent(&event));
   service.CleanUp();
 
   EXPECT_EQ(container_id_cache.Get(*uncached_container_process), "aaaaaaaaaaaa");
@@ -169,9 +175,31 @@ TEST(SystemInspectorServiceTest, ContainerIDCacheLateCgroups) {
   EXPECT_EQ(container_id_cache.Get(*tinfo), "aaaaaaaaaaaa");
 }
 
+TEST(SystemInspectorServiceTest, ContainerIDCacheRefreshesAfterExec) {
+  std::unique_ptr<sinsp> inspector(new sinsp());
+  ContainerIDCache container_id_cache;
+  auto tinfo = inspector->get_threadinfo_factory().create();
+  tinfo->m_tid = 42;
+  tinfo->m_clone_ts = 100;
+  tinfo->m_lastexec_ts = 200;
+  tinfo->set_cgroups({"cpu=/docker/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"});
+
+  EXPECT_EQ(container_id_cache.Get(*tinfo), "aaaaaaaaaaaa");
+  EXPECT_EQ(container_id_cache.Get(*tinfo), "aaaaaaaaaaaa");
+
+  // Exec parsing can refresh a thread's cgroups without changing its TID or
+  // clone timestamp. The cache must not keep returning the previous ID.
+  tinfo->set_cgroups({"cpu=/docker/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"});
+  ++tinfo->m_lastexec_ts;
+
+  EXPECT_EQ(container_id_cache.Get(*tinfo), "bbbbbbbbbbbb");
+  EXPECT_EQ(container_id_cache.Get(*tinfo), "bbbbbbbbbbbb");
+}
+
 TEST(SystemInspectorServiceTest, ContainerIDCachePrune) {
   std::unique_ptr<sinsp> inspector(new sinsp());
   ContainerIDCache container_id_cache;
+  EXPECT_EQ(container_id_cache.Size(), 0);
   COUNTER_ZERO(CollectorStats::container_id_cache_hits);
   COUNTER_ZERO(CollectorStats::container_id_cache_misses);
   COUNTER_ZERO(CollectorStats::container_id_cache_empty_extractions);
@@ -185,12 +213,16 @@ TEST(SystemInspectorServiceTest, ContainerIDCachePrune) {
   // The thread is not in the thread table: the first lookup extracts and
   // caches the container ID.
   EXPECT_EQ(container_id_cache.Get(*tinfo), "aaaaaaaaaaaa");
+  EXPECT_EQ(container_id_cache.Size(), 1);
   EXPECT_EQ(container_id_cache.Get(*tinfo), "aaaaaaaaaaaa");
 
-  // The first prune (last_prune_us_ starts at 0, so 61s clears the 60s rate
-  // limit) evicts the entry, because the tid is not in the thread table.
+  // The first prune (last_prune_us_ starts at 0, so 61s clears the default
+  // 60s rate limit) evicts the entry, because the tid is not in the thread
+  // table.
   container_id_cache.Prune(*inspector, 61'000'000);
+  EXPECT_EQ(container_id_cache.Size(), 0);
   EXPECT_EQ(container_id_cache.Get(*tinfo), "aaaaaaaaaaaa");
+  EXPECT_EQ(container_id_cache.Size(), 1);
   EXPECT_EQ(container_id_cache.Get(*tinfo), "aaaaaaaaaaaa");
 
   // Only 30s since the last prune: rate-limited no-op, the entry survives.
@@ -211,6 +243,27 @@ TEST(SystemInspectorServiceTest, ContainerIDCachePrune) {
   COUNTER_ZERO(CollectorStats::container_id_cache_hits);
   COUNTER_ZERO(CollectorStats::container_id_cache_misses);
   COUNTER_ZERO(CollectorStats::container_id_cache_empty_extractions);
+}
+
+TEST(SystemInspectorServiceTest, ContainerIDCachePruneInterval) {
+  std::unique_ptr<sinsp> inspector(new sinsp());
+  ContainerIDCache container_id_cache(5);
+  auto tinfo = inspector->get_threadinfo_factory().create();
+  tinfo->m_tid = 42;
+  tinfo->m_clone_ts = 100;
+  tinfo->set_cgroups({"cpu=/docker/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"});
+
+  EXPECT_EQ(container_id_cache.Get(*tinfo), "aaaaaaaaaaaa");
+  EXPECT_EQ(container_id_cache.Size(), 1);
+
+  // Only 4s since the last prune: rate-limited no-op, the entry survives.
+  container_id_cache.Prune(*inspector, 4'000'000);
+  EXPECT_EQ(container_id_cache.Size(), 1);
+
+  // 6s clears the configured 5s rate limit and evicts the entry, because the
+  // tid is not in the thread table.
+  container_id_cache.Prune(*inspector, 6'000'000);
+  EXPECT_EQ(container_id_cache.Size(), 0);
 }
 
 }  // namespace collector::system_inspector

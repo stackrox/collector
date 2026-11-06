@@ -82,6 +82,9 @@ PathEnvVar tls_client_cert_path("ROX_COLLECTOR_TLS_CLIENT_CERT");
 PathEnvVar tls_client_key_path("ROX_COLLECTOR_TLS_CLIENT_KEY");
 
 BoolEnvVar disable_process_arguments("ROX_COLLECTOR_NO_PROCESS_ARGUMENTS", false);
+
+// Interval between container ID cache prunes, in seconds.
+IntEnvVar container_id_cache_prune_interval("ROX_COLLECTOR_CONTAINER_ID_CACHE_PRUNE_INTERVAL", 60);
 }  // namespace
 
 constexpr bool CollectorConfig::kTurnOffScrape;
@@ -112,6 +115,7 @@ void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   enable_introspection_ = enable_introspection.value();
   track_send_recv_ = track_send_recv.value();
   disable_process_arguments_ = disable_process_arguments.value();
+  container_id_cache_prune_interval_ = container_id_cache_prune_interval.value();
 
   for (const auto& syscall : kSyscalls) {
     syscalls_.emplace_back(syscall);

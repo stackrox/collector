@@ -105,7 +105,9 @@ const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_evt* eve
 const SignalStreamMessage* ProcessSignalFormatter::ToProtoMessage(sinsp_threadinfo* tinfo) {
   Reset();
   if (!ValidateProcessDetails(tinfo)) {
-    CLOG(INFO) << "Dropping process event: " << tinfo;
+    const auto container_id = container_id_cache_.Get(*tinfo);
+    CLOG(INFO) << "Dropping process event: Container: "
+               << (container_id.empty() ? "null" : container_id) << ", " << tinfo;
     return nullptr;
   }
 
