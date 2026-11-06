@@ -11,6 +11,9 @@
 
 namespace collector::system_inspector {
 
+ContainerIDCache::ContainerIDCache(uint64_t prune_interval_s)
+    : prune_interval_us_(prune_interval_s * 1'000'000) {}
+
 std::string ContainerIDCache::Cache(const sinsp_threadinfo& tinfo) const {
   std::string container_id;
   for (const auto& cgroup : tinfo.cgroups()) {
@@ -23,13 +26,14 @@ std::string ContainerIDCache::Cache(const sinsp_threadinfo& tinfo) const {
   // Only cache confirmed container IDs. An empty extraction can be transient
   // (cgroups are populated when libsinsp (re)creates or refreshes the thread
   // info, e.g. from an event that permits a /proc query or on clone/execve
-  // exit parsing), so empty lookups must recompute. A thread's container ID
-  // otherwise never changes during its lifetime.
+  // exit parsing), so empty lookups must recompute. The cache key also tracks
+  // the last exec timestamp because libsinsp may refresh cgroups on exec
+  // without changing the thread's clone timestamp.
   if (!container_id.empty()) {
     std::lock_guard<std::mutex> lock(mutex_);
     // A reused tid gets a new clone timestamp, so a stale entry can never
     // validate as a hit; it misses and recomputes.
-    entries_[tinfo.m_tid] = {tinfo.m_clone_ts, container_id};
+    entries_[tinfo.m_tid] = {tinfo.m_clone_ts, tinfo.m_lastexec_ts, container_id};
   } else {
     // Separates threads without a container ID (expected, e.g. host
     // processes) from genuine cache misses, so a hit ratio is computable.
@@ -48,7 +52,7 @@ void ContainerIDCache::Initialize(sinsp& inspector) {
 // Prune has a single caller, the event loop under the service's libsinsp
 // mutex, so last_prune_us_ needs no atomic.
 void ContainerIDCache::Prune(sinsp& inspector, uint64_t now_us) {
-  if (now_us - last_prune_us_ < 60'000'000) {
+  if (now_us - last_prune_us_ < prune_interval_us_) {
     return;
   }
   last_prune_us_ = now_us;
@@ -73,7 +77,8 @@ std::string ContainerIDCache::Get(const sinsp_threadinfo& tinfo) const {
   {
     std::lock_guard<std::mutex> lock(mutex_);
     const auto entry = entries_.find(tinfo.m_tid);
-    if (entry != entries_.end() && entry->second.clone_ts == tinfo.m_clone_ts) {
+    if (entry != entries_.end() && entry->second.clone_ts == tinfo.m_clone_ts &&
+        entry->second.last_exec_ts == tinfo.m_lastexec_ts) {
       COUNTER_INC(CollectorStats::container_id_cache_hits);
       return entry->second.container_id;
     }
@@ -81,6 +86,11 @@ std::string ContainerIDCache::Get(const sinsp_threadinfo& tinfo) const {
   }
 
   return Cache(tinfo);
+}
+
+std::size_t ContainerIDCache::Size() const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return entries_.size();
 }
 
 bool ContainerIDCache::Exists(const sinsp_threadinfo& tinfo) const {

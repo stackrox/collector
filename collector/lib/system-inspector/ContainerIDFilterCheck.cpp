@@ -41,10 +41,6 @@ ContainerIDFilterCheck::ContainerIDFilterCheck(const ContainerIDCache* container
   m_info = &info;
 }
 
-std::unique_ptr<sinsp_filter_check> ContainerIDFilterCheck::allocate_new() {
-  return std::make_unique<ContainerIDFilterCheck>(container_id_cache_);
-}
-
 uint8_t* ContainerIDFilterCheck::extract_single(sinsp_evt* event, uint32_t* len, bool) {
   *len = 0;
   if (event == nullptr || m_field_id != 0) {

@@ -177,9 +177,27 @@ void TryUnlink(const char* path) {
   }
 }
 
+namespace {
+
+constexpr size_t kContainerIDLength = 64;
+constexpr size_t kShortContainerIDLength = 12;
+
+bool IsContainerID(std::string_view id) {
+  if (id.size() != kContainerIDLength) {
+    return false;
+  }
+
+  return std::all_of(id.begin(), id.end(), [](char c) { return std::isxdigit(static_cast<unsigned char>(c)); });
+}
+
+}  // namespace
+
 std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cgroup) {
-  constexpr size_t kContainerIDLength = 64;
-  constexpr size_t kShortContainerIDLength = 12;
+  // Reject too-short paths before searching for an optional systemd suffix.
+  if (cgroup.size() < kContainerIDLength + 1) {
+    return {};
+  }
+
   const auto scope = cgroup.rfind(".scope");
   if (scope != std::string_view::npos) {
     cgroup.remove_suffix(cgroup.size() - scope);
@@ -194,11 +212,12 @@ std::optional<std::string_view> ExtractContainerIDFromCgroup(std::string_view cg
   }
   const std::string_view parent = cgroup.substr(0, id_start - 1);
   constexpr std::string_view kConmonSuffix = "-conmon";
-  if (parent.size() >= kConmonSuffix.size() && parent.substr(parent.size() - kConmonSuffix.size()) == kConmonSuffix) {
+  if (parent.size() >= kConmonSuffix.size() &&
+      parent.find(kConmonSuffix, parent.size() - kConmonSuffix.size()) != std::string_view::npos) {
     return {};
   }
   const std::string_view id = cgroup.substr(id_start);
-  if (!std::all_of(id.begin(), id.end(), [](char c) { return std::isxdigit(static_cast<unsigned char>(c)); })) {
+  if (!IsContainerID(id)) {
     return {};
   }
   return id.substr(0, kShortContainerIDLength);
