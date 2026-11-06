@@ -91,8 +91,9 @@ class Process : public IProcess {
   // entry-point when system inspector resolved the requested process info
   void ProcessInfoResolved(std::shared_ptr<sinsp_threadinfo> process_info);
 
-  // block until process information is available, or timeout
-  void WaitForProcessInfo() const;
+  // Block until process information is available or times out, then return a
+  // synchronized snapshot of the thread-info pointer.
+  std::shared_ptr<sinsp_threadinfo> WaitForProcessInfo() const;
 };
 
 std::ostream& operator<<(std::ostream& os, const IProcess& process);

@@ -160,7 +160,7 @@ bool Service::FilterEvent(sinsp_evt* event) {
   // Exclude host processes that pass the sinsp filter. Requiring a cached
   // container ID also rejects runtime helpers whose cgroups do not resolve to
   // a container ID, without maintaining a list of helper names.
-  return tinfo != nullptr && !container_id_cache_->Get(*tinfo).empty() && FilterEvent(tinfo);
+  return tinfo != nullptr && container_id_cache_->Exists(*tinfo) && FilterEvent(tinfo);
 }
 
 bool Service::FilterEvent(const sinsp_threadinfo* tinfo) {

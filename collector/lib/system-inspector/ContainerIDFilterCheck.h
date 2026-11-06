@@ -27,6 +27,8 @@ class ContainerIDFilterCheck final : public sinsp_filter_check {
 
  private:
   const ContainerIDCache* container_id_cache_;
+  // Owns the storage returned by extract_single; libsinsp shallow-caches the
+  // pointer for the current event, so this must remain member storage.
   std::string result_;
 };
 
