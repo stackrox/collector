@@ -9,6 +9,7 @@
 #include "Logging.h"
 #include "Utility.h"
 #include "prometheus/gauge.h"
+#include "system-inspector/ContainerIDCache.h"
 #include "system-inspector/Service.h"
 
 namespace collector {
@@ -58,6 +59,7 @@ void CollectorStatsExporter::run() {
   auto& preemptions = collectorEventCounters.Add({{"type", "preemptions"}});
   auto& grpcSendFailures = collectorEventCounters.Add({{"type", "grpcSendFailures"}});
   auto& threadTableSize = collectorEventCounters.Add({{"type", "threadCacheSize"}});
+  auto& containerIDCacheSize = collectorEventCounters.Add({{"type", "containerIDCacheSize"}});
 
   auto& processSent = collectorEventCounters.Add({{"type", "processSent"}});
   auto& processSendFailures = collectorEventCounters.Add({{"type", "processSendFailures"}});
@@ -170,6 +172,7 @@ void CollectorStatsExporter::run() {
     ringbufferDrops.Set(stats.nDropsBuffer);
     preemptions.Set(stats.nPreemptions);
     threadTableSize.Set(stats.nThreadCacheSize);
+    containerIDCacheSize.Set(system_inspector_->GetContainerIDCache()->Size());
 
     if (config_->EnableDetailedMetrics()) {
       uint64_t nUserspace = 0;
