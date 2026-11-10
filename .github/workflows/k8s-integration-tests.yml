@@ -66,7 +66,7 @@ jobs:
           EOF
 
       - name: Login to quay.io/rhacs-eng
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
