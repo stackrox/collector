@@ -16,7 +16,7 @@ instead.
 ---
 
 A workflow for automated releases can be found in the 'Actions' tab of
-GitHub. Once in said tab, look for the `Tag a new release` workflow in
+GitHub. Once in said tab, look for the `Prepare a new release` workflow in
 the side bar, select it and use the `Run workflow` button on the far
 right to trigger the release process.
 
@@ -37,6 +37,11 @@ major version, e.g `4.0`.
 The recommended workflow is to first run in dry-mode and check the tags
 and branches are correct in the `Summary` section of the triggered run,
 then run it again without dry-mode to create the actual release.
+
+Preparation starts a separate `Tag a new release` run with the calculated version
+in its title, for example `Tag release 3.26.7`. Check that run for the tagging
+result; successful preparation only means the tagging run was dispatched.
+In dry-mode, the named run is created but its tagging job is skipped.
 
 With the tag pushed, the workflow for creating the
 new version of collector should be triggered on its own.
