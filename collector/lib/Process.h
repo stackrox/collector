@@ -76,6 +76,7 @@ class Process : public IProcess {
   static const std::string NOT_AVAILABLE;  // = "N/A"
 
   uint64_t pid_;
+  system_inspector::Service* system_inspector_;
   // A cache we are referenced from. Remove ourselves upon deletion.
   ProcessStore::MapRef cache_;
 
