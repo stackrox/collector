@@ -361,9 +361,24 @@ bool Service::GetStats(system_inspector::Stats* stats) const {
   stats->nDropsBuffer = kernel_stats.n_drops_buffer;
   stats->nPreemptions = kernel_stats.n_preemptions;
   stats->nThreadCacheSize = inspector_->m_thread_manager->get_thread_count();
+  stats->nProcLookups = inspector_->m_thread_manager->get_m_n_proc_lookups();
+  stats->nMainThreadLookups = inspector_->m_thread_manager->get_m_n_main_thread_lookups();
+  stats->nProcLookupsDurationNs = inspector_->m_thread_manager->get_m_n_proc_lookups_duration_ns();
 
   if (userspace_stats != nullptr) {
     stats->nDropsThreadCache = userspace_stats->m_n_drops_full_threadtable;
+
+    stats->nFdCacheHits = userspace_stats->m_n_cached_fd_lookups;
+    stats->nFdCacheMisses = userspace_stats->m_n_noncached_fd_lookups;
+    stats->nFdLookupFailures = userspace_stats->m_n_failed_fd_lookups;
+    stats->nFdsAdded = userspace_stats->m_n_added_fds;
+    stats->nFdsRemoved = userspace_stats->m_n_removed_fds;
+
+    stats->nThreadCacheHits = userspace_stats->m_n_cached_thread_lookups;
+    stats->nThreadCacheMisses = userspace_stats->m_n_noncached_thread_lookups;
+    stats->nThreadLookupFailures = userspace_stats->m_n_failed_thread_lookups;
+    stats->nThreadsAdded = userspace_stats->m_n_added_threads;
+    stats->nThreadsRemoved = userspace_stats->m_n_removed_threads;
   }
 
   return true;
