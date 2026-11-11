@@ -1,5 +1,5 @@
 name: Tag a new release
-run-name: Tag a new release ${{ inputs.version }}.x
+run-name: Tag release ${{ inputs.version }}.x
 
 on:
   workflow_dispatch:
