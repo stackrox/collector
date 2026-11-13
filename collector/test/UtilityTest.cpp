@@ -119,6 +119,9 @@ TEST(ExtractContainerIDFromCgroupTest, TestExtractContainerIDFromCgroup) {
     auto short_container_id = ExtractContainerIDFromCgroup(c.input);
     EXPECT_EQ(short_container_id, c.expected_output);
   }
+
+  const std::string invalid_id_cgroup = "/docker/" + std::string(63, 'a') + static_cast<char>(0xff);
+  EXPECT_FALSE(ExtractContainerIDFromCgroup(invalid_id_cgroup).has_value());
 }
 
 TEST(SanitizeUTF8Test, TestSanitizeUTF8_Invalid) {
