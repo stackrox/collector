@@ -93,7 +93,7 @@ jobs:
           submodules: true
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Install ansible on P&Z runners
         if: matrix.arch == 'ppc64le' || matrix.arch == 's390x'
