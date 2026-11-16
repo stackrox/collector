@@ -30,12 +30,12 @@ const std::shared_ptr<IProcess> ProcessStore::Fetch(uint64_t pid) {
 }
 
 std::string Process::container_id() const {
-  WaitForProcessInfo();
-
-  if (system_inspector_threadinfo_) {
-    auto id = GetContainerID(*system_inspector_threadinfo_);
-    if (!id.empty()) {
-      return id;
+  const auto process_info = WaitForProcessInfo();
+  if (process_info) {
+    for (const auto& cgroup : process_info->cgroups()) {
+      if (const auto id = ExtractContainerIDFromCgroup(cgroup.second)) {
+        return std::string(*id);
+      }
     }
   }
 
@@ -43,50 +43,50 @@ std::string Process::container_id() const {
 }
 
 std::string Process::comm() const {
-  WaitForProcessInfo();
+  const auto process_info = WaitForProcessInfo();
 
-  if (system_inspector_threadinfo_) {
-    return system_inspector_threadinfo_->get_comm();
+  if (process_info) {
+    return process_info->get_comm();
   }
 
   return NOT_AVAILABLE;
 }
 
 std::string Process::exe() const {
-  WaitForProcessInfo();
+  const auto process_info = WaitForProcessInfo();
 
-  if (system_inspector_threadinfo_) {
-    return system_inspector_threadinfo_->get_exe();
+  if (process_info) {
+    return process_info->get_exe();
   }
 
   return NOT_AVAILABLE;
 }
 
 std::string Process::exe_path() const {
-  WaitForProcessInfo();
+  const auto process_info = WaitForProcessInfo();
 
-  if (system_inspector_threadinfo_) {
-    return system_inspector_threadinfo_->get_exepath();
+  if (process_info) {
+    return process_info->get_exepath();
   }
 
   return NOT_AVAILABLE;
 }
 
 std::string Process::args() const {
-  WaitForProcessInfo();
+  const auto process_info = WaitForProcessInfo();
 
-  if (!system_inspector_threadinfo_) {
+  if (!process_info) {
     return NOT_AVAILABLE;
   }
 
-  if (system_inspector_threadinfo_->m_args.empty()) {
+  if (process_info->m_args.empty()) {
     return "";
   }
 
   std::ostringstream args;
-  for (auto it = system_inspector_threadinfo_->m_args.begin(); it != system_inspector_threadinfo_->m_args.end();) {
+  for (auto it = process_info->m_args.begin(); it != process_info->m_args.end();) {
     args << *it++;
-    if (it != system_inspector_threadinfo_->m_args.end()) {
+    if (it != process_info->m_args.end()) {
       args << " ";
     }
   }
@@ -116,7 +116,7 @@ Process::~Process() {
 }
 
 void Process::ProcessInfoResolved(std::shared_ptr<sinsp_threadinfo> process_info) {
-  std::unique_lock<std::mutex> lock(process_info_mutex_);
+  std::lock_guard<std::mutex> lock(process_info_mutex_);
 
   if (process_info) {
     CLOG(DEBUG) << "Process-info resolved. PID: " << pid() << " Exe: " + process_info->m_exe;
@@ -130,7 +130,7 @@ void Process::ProcessInfoResolved(std::shared_ptr<sinsp_threadinfo> process_info
   process_info_condition_.notify_all();
 }
 
-void Process::WaitForProcessInfo() const {
+std::shared_ptr<sinsp_threadinfo> Process::WaitForProcessInfo() const {
   std::unique_lock<std::mutex> lock(process_info_mutex_);
 
   COUNTER_ADD(
@@ -146,6 +146,10 @@ void Process::WaitForProcessInfo() const {
 
     CLOG_IF(std::cv_status::timeout == status, ERROR) << "Timed-out waiting for process-info. PID: " << pid();
   }
+
+  // Copy the shared pointer while holding the mutex; callers can then safely
+  // use the snapshot after this function releases the lock.
+  return system_inspector_threadinfo_;
 }
 
 std::ostream& operator<<(std::ostream& os, const IProcess& process) {

@@ -160,6 +160,7 @@ class CollectorConfig {
   unsigned int GetSinspBufferSize() const;
   unsigned int GetSinspTotalBufferSize() const { return sinsp_total_buffer_size_; }
   unsigned int GetSinspThreadCacheSize() const { return sinsp_thread_cache_size_; }
+  unsigned int GetContainerIDCachePruneInterval() const { return container_id_cache_prune_interval_; }
   bool DisableProcessArguments() const { return disable_process_arguments_; }
 
   static std::pair<option::ArgStatus, std::string> CheckConfiguration(const char* config, Json::Value* root);
@@ -240,6 +241,11 @@ class CollectorConfig {
   // upper limit on top of this value, m_thread_table_absolute_max_size, which
   // is 2^17 (131072) and twice as large.
   unsigned int sinsp_thread_cache_size_ = 32768;
+
+  // Interval between container ID cache prunes, in seconds. Pruning syncs
+  // the cache with the sinsp thread table, whose own purging interval this
+  // deliberately mirrors.
+  unsigned int container_id_cache_prune_interval_ = 60;
 
   std::optional<TlsConfig> tls_config_;
 

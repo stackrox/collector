@@ -103,6 +103,11 @@ TEST(ExtractContainerIDFromCgroupTest, TestExtractContainerIDFromCgroup) {
           "/kubepods-burstable-podbd12dd3393227d950605a2444b13c27a.slice:cri-containerd:d52db56a9c80d536a91354c0951c061187ca46249e64865a12703003d8f42366",
           "d52db56a9c80",
       },
+      // minimal path: separator plus ID, no parent
+      {
+          "/0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+          "0123456789ab",
+      },
       // conmon
       {
           "/machine.slice/libpod-conmon-b6ce30d02945df4bbf8e8b7193b2c56ebb3cd10227dd7e59d7f7cdc2cfa2a307.scope",
@@ -119,6 +124,9 @@ TEST(ExtractContainerIDFromCgroupTest, TestExtractContainerIDFromCgroup) {
     auto short_container_id = ExtractContainerIDFromCgroup(c.input);
     EXPECT_EQ(short_container_id, c.expected_output);
   }
+
+  const std::string invalid_id_cgroup = "/docker/" + std::string(63, 'a') + static_cast<char>(0xff);
+  EXPECT_FALSE(ExtractContainerIDFromCgroup(invalid_id_cgroup).has_value());
 }
 
 TEST(SanitizeUTF8Test, TestSanitizeUTF8_Invalid) {
