@@ -7,7 +7,7 @@
 #include "internalapi/sensor/network_connection_iservice.grpc.pb.h"
 
 #include "CollectorConfig.h"
-#include "DuplexGRPC.h"
+#include "GrpcStream.h"
 #include "NetworkStatusNotifier.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -17,8 +17,6 @@ namespace collector {
 
 namespace {
 
-using grpc_duplex_impl::Result;
-using grpc_duplex_impl::Status;
 using ::testing::Invoke;
 using ::testing::Return;
 using ::testing::ReturnPointee;
@@ -85,20 +83,11 @@ class MockConnScraper : public IConnScraper {
   MOCK_METHOD(bool, Scrape, (std::vector<Connection> * connections, std::vector<ContainerEndpoint>* listen_endpoints), (override));
 };
 
-class MockDuplexClientWriter : public IDuplexClientWriter<sensor::NetworkConnectionInfoMessage> {
+class MockStreamWriter : public IStreamWriter<sensor::NetworkConnectionInfoMessage> {
  public:
-  MOCK_METHOD(grpc_duplex_impl::Result, Write, (const sensor::NetworkConnectionInfoMessage& obj, const gpr_timespec& deadline), (override));
-  MOCK_METHOD(grpc_duplex_impl::Result, WriteAsync, (const sensor::NetworkConnectionInfoMessage& obj), (override));
-  MOCK_METHOD(grpc_duplex_impl::Result, WaitUntilStarted, (const gpr_timespec& deadline), (override));
-  MOCK_METHOD(bool, Sleep, (const gpr_timespec& deadline), (override));
-  MOCK_METHOD(grpc_duplex_impl::Result, WritesDoneAsync, (), (override));
-  MOCK_METHOD(grpc_duplex_impl::Result, WritesDone, (const gpr_timespec& deadline), (override));
-  MOCK_METHOD(grpc_duplex_impl::Result, FinishAsync, (), (override));
-  MOCK_METHOD(grpc_duplex_impl::Result, WaitUntilFinished, (const gpr_timespec& deadline), (override));
-  MOCK_METHOD(grpc_duplex_impl::Result, Finish, (grpc::Status * status, const gpr_timespec& deadline), (override));
-  MOCK_METHOD(grpc::Status, Finish, (const gpr_timespec& deadline), (override));
-  MOCK_METHOD(void, TryCancel, (), (override));
-  MOCK_METHOD(grpc_duplex_impl::Result, Shutdown, (), (override));
+  MOCK_METHOD(bool, Write, (const sensor::NetworkConnectionInfoMessage& obj, Deadline deadline), (override));
+  MOCK_METHOD(bool, Sleep, (Deadline deadline), (override));
+  MOCK_METHOD(grpc::Status, Finish, (Deadline deadline), (override));
 };
 
 class MockNetworkConnectionInfoServiceComm : public INetworkConnectionInfoServiceComm {
@@ -107,7 +96,7 @@ class MockNetworkConnectionInfoServiceComm : public INetworkConnectionInfoServic
   MOCK_METHOD(bool, WaitForConnectionReady, (const std::function<bool()>& check_interrupted), (override));
   MOCK_METHOD(void, TryCancel, (), (override));
   MOCK_METHOD(sensor::NetworkConnectionInfoService::StubInterface*, GetStub, (), (override));
-  MOCK_METHOD(std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>>, PushNetworkConnectionInfoOpenStream, (std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func), (override));
+  MOCK_METHOD(std::unique_ptr<IStreamWriter<sensor::NetworkConnectionInfoMessage>>, PushNetworkConnectionInfoOpenStream, (std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func), (override));
 };
 
 /* gRPC payload objects are not strictly the ones of our internal model.
@@ -221,20 +210,18 @@ TEST_F(NetworkStatusNotifierTest, SimpleStartStop) {
      We return an object that will get called when connections and endpoints are reported */
   EXPECT_CALL(*comm, PushNetworkConnectionInfoOpenStream)
       .Times(1)
-      .WillOnce([&sem, &running](std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) -> std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> {
-        auto duplex_writer = std::make_unique<MockDuplexClientWriter>();
+      .WillOnce([&sem, &running](std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) -> std::unique_ptr<IStreamWriter<sensor::NetworkConnectionInfoMessage>> {
+        auto duplex_writer = std::make_unique<MockStreamWriter>();
 
         // the service is sending Sensor a message
-        EXPECT_CALL(*duplex_writer, Write).WillRepeatedly([&sem, &running](const sensor::NetworkConnectionInfoMessage& msg, const gpr_timespec& deadline) -> Result {
+        EXPECT_CALL(*duplex_writer, Write).WillRepeatedly([&sem, &running](const sensor::NetworkConnectionInfoMessage& msg, IStreamWriter<sensor::NetworkConnectionInfoMessage>::Deadline deadline) -> bool {
           for (auto cnx : msg.info().updated_connections()) {
             std::cout << cnx.container_id() << std::endl;
           }
           sem.release();  // notify that the test should end
-          return Result(Status::OK);
+          return true;
         });
         EXPECT_CALL(*duplex_writer, Sleep).WillRepeatedly(ReturnPointee(&running));
-        EXPECT_CALL(*duplex_writer, WaitUntilStarted).WillRepeatedly(Return(Result(Status::OK)));
-
         return duplex_writer;
       });
 
@@ -288,18 +275,18 @@ TEST_F(NetworkStatusNotifierTest, UpdateIPnoAfterglow) {
                  &running,
                  &conn2,
                  &conn3,
-                 &network_flows_callback](std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) -> std::unique_ptr<IDuplexClientWriter<sensor::NetworkConnectionInfoMessage>> {
-        auto duplex_writer = std::make_unique<MockDuplexClientWriter>();
+                 &network_flows_callback](std::function<void(const sensor::NetworkFlowsControlMessage*)> receive_func) -> std::unique_ptr<IStreamWriter<sensor::NetworkConnectionInfoMessage>> {
+        auto duplex_writer = std::make_unique<MockStreamWriter>();
         network_flows_callback = receive_func;
 
         // the service is sending Sensor a message
         EXPECT_CALL(*duplex_writer, Write)
-            .WillOnce([&conn2, &sem](const sensor::NetworkConnectionInfoMessage& msg, const gpr_timespec& deadline) -> Result {
+            .WillOnce([&conn2, &sem](const sensor::NetworkConnectionInfoMessage& msg, IStreamWriter<sensor::NetworkConnectionInfoMessage>::Deadline deadline) -> bool {
               // the connection reported by the scrapper is annouced as generic public
               EXPECT_THAT(NetworkConnectionInfoMessageParser(msg).get_updated_connections(), UnorderedElementsAre(std::make_pair(conn2, true)));
-              return Result(Status::OK);
+              return true;
             })
-            .WillOnce([&conn2, &conn3, &sem](const sensor::NetworkConnectionInfoMessage& msg, const gpr_timespec& deadline) -> Result {
+            .WillOnce([&conn2, &conn3, &sem](const sensor::NetworkConnectionInfoMessage& msg, IStreamWriter<sensor::NetworkConnectionInfoMessage>::Deadline deadline) -> bool {
               // after the network is declared, the connection switches to the new state
               // conn3 appears and conn2 is destroyed
               EXPECT_THAT(NetworkConnectionInfoMessageParser(msg).get_updated_connections(), UnorderedElementsAre(std::make_pair(conn3, true), std::make_pair(conn2, false)));
@@ -307,13 +294,13 @@ TEST_F(NetworkStatusNotifierTest, UpdateIPnoAfterglow) {
               // Done
               sem.release();
 
-              return Result(Status::OK);
+              return true;
             })
-            .WillRepeatedly(Return(Result(Status::OK)));
+            .WillRepeatedly(Return(true));
 
         EXPECT_CALL(*duplex_writer, Sleep)
             .WillOnce(ReturnPointee(&running))  // first time, we let the scrapper do its job
-            .WillOnce([&running, &network_flows_callback](const gpr_timespec& deadline) {
+            .WillOnce([&running, &network_flows_callback](IStreamWriter<sensor::NetworkConnectionInfoMessage>::Deadline deadline) {
               // The connection is known now, let's declare a "known network"
               sensor::NetworkFlowsControlMessage msg;
               unsigned char content[] = {139, 45, 0, 0, 16};  // address in network order, plus prefix length
@@ -326,8 +313,6 @@ TEST_F(NetworkStatusNotifierTest, UpdateIPnoAfterglow) {
               return running;
             })
             .WillRepeatedly(ReturnPointee(&running));
-
-        EXPECT_CALL(*duplex_writer, WaitUntilStarted).WillRepeatedly(Return(Result(Status::OK)));
 
         return duplex_writer;
       });
