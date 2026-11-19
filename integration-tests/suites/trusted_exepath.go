@@ -16,13 +16,10 @@ import (
 // path of the binary that actually ran; when disabled, it is the path as
 // it was invoked.
 //
-// The suite starts two containers from a plain alpine image. Both copy
-// the busybox-backed sleep binary to /tmp/direct/sleep. The "symlinked"
-// container execs the copy through the /tmp/via-link/sleep symlink,
-// while the "plain" container execs the copy directly as a control that
-// the flag does not affect non-symlinked executions. The symlink keeps
-// the "sleep" basename because busybox dispatches applets by argv[0];
-// the symlinked and resolved paths differ by directory instead.
+// The suite starts two containers that run the sleep binary. The
+// "symlinked" container execs it through the /tmp/sleep-link symlink,
+// while the "plain" container execs it directly as a control that the
+// flag does not affect non-symlinked executions.
 type TrustedExePathTestSuite struct {
 	IntegrationTestSuiteBase
 	// Resolved indicates whether the collector runs with
@@ -48,17 +45,15 @@ func (s *TrustedExePathTestSuite) SetupSuite() {
 
 	s.StartCollector(false, &collectorOptions)
 
-	processImage := config.Images().QaImageByKey("qa-alpine-curl")
+	processImage := config.Images().QaImageByKey("qa-thread-exec")
 
 	symlinkedID, err := s.Executor().StartContainer(
 		config.ContainerStartConfig{
 			Name:  "trusted-exepath-symlinked",
 			Image: processImage,
 			Entrypoint: []string{"/bin/sh", "-c",
-				`mkdir -p /tmp/direct /tmp/via-link && ` +
-					`cp "$(command -v sleep)" /tmp/direct/sleep && ` +
-					`ln -s /tmp/direct/sleep /tmp/via-link/sleep && ` +
-					`exec /tmp/via-link/sleep 300`},
+				`ln -s /usr/bin/sleep /tmp/sleep-link && ` +
+					`exec /tmp/sleep-link 300`},
 		})
 	s.Require().NoError(err)
 	s.symlinkedSleeper = common.ContainerShortID(symlinkedID)
@@ -68,9 +63,7 @@ func (s *TrustedExePathTestSuite) SetupSuite() {
 			Name:  "trusted-exepath-plain",
 			Image: processImage,
 			Entrypoint: []string{"/bin/sh", "-c",
-				`mkdir -p /tmp/direct && ` +
-					`cp "$(command -v sleep)" /tmp/direct/sleep && ` +
-					`exec /tmp/direct/sleep 300`},
+				`exec /usr/bin/sleep 300`},
 		})
 	s.Require().NoError(err)
 	s.plainSleeper = common.ContainerShortID(plainID)
@@ -86,23 +79,23 @@ func (s *TrustedExePathTestSuite) TearDownSuite() {
 // a symlink: the symlink path when resolution is disabled, the resolved
 // path of the binary when it is enabled.
 func (s *TrustedExePathTestSuite) TestSymlinkedExePath() {
-	expectedExePath := "/tmp/via-link/sleep"
+	expectedExePath := "/tmp/sleep-link"
 	if s.Resolved {
-		expectedExePath = "/tmp/direct/sleep"
+		expectedExePath = "/usr/bin/sleep"
 	}
-	s.expectSleeper(s.symlinkedSleeper, expectedExePath)
+	s.expectSleeper(s.symlinkedSleeper, "sleep-link", expectedExePath)
 }
 
 // TestDirectExePath checks that the exe path of a process started
 // without a symlink is the same regardless of the flag.
 func (s *TrustedExePathTestSuite) TestDirectExePath() {
-	s.expectSleeper(s.plainSleeper, "/tmp/direct/sleep")
+	s.expectSleeper(s.plainSleeper, "sleep", "/usr/bin/sleep")
 }
 
-func (s *TrustedExePathTestSuite) expectSleeper(containerID string, expectedExePath string) {
+func (s *TrustedExePathTestSuite) expectSleeper(containerID string, name string, expectedExePath string) {
 	s.Sensor().ExpectProcesses(s.T(), containerID, 10*time.Second,
 		types.ProcessInfo{
-			Name:    "sleep",
+			Name:    name,
 			ExePath: expectedExePath,
 			Uid:     0,
 			Gid:     0,
