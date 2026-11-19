@@ -187,6 +187,14 @@ func TestSymbolicLinkProcess(t *testing.T) {
 	suite.Run(t, new(suites.SymbolicLinkProcessTestSuite))
 }
 
+func TestTrustedExePathResolved(t *testing.T) {
+	suite.Run(t, &suites.TrustedExePathTestSuite{Resolved: true})
+}
+
+func TestTrustedExePathUnresolved(t *testing.T) {
+	suite.Run(t, &suites.TrustedExePathTestSuite{Resolved: false})
+}
+
 func TestSocat(t *testing.T) {
 	suite.Run(t, new(suites.SocatTestSuite))
 }

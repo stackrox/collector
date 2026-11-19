@@ -93,6 +93,7 @@ class CollectorConfig {
   const std::optional<TlsConfig>& TLSConfiguration() const { return tls_config_; }
   bool IsProcessesListeningOnPortsEnabled() const { return enable_processes_listening_on_ports_; }
   bool ImportUsers() const { return import_users_; }
+  bool UseTrustedExepath() const { return enable_trusted_exepath_; }
   bool CollectConnectionStatus() const { return collect_connection_status_; }
 
   // GetEnableExternalIPs will check for the existence
@@ -207,6 +208,7 @@ class CollectorConfig {
   bool enable_core_dump_ = false;
   bool enable_processes_listening_on_ports_;
   bool import_users_;
+  bool enable_trusted_exepath_ = false;
   bool collect_connection_status_;
   bool enable_external_ips_ = false;
   bool enable_connection_stats_;
