@@ -47,6 +47,7 @@ Service::Service(const CollectorConfig& config)
   inspector_->set_log_callback(logging::InspectorLogCallback);
 
   inspector_->set_import_users(config.ImportUsers());
+  inspector_->get_parser()->set_use_trusted_exepath(config.UseTrustedExepath());
   inspector_->set_thread_timeout_s(30);
   inspector_->set_auto_threads_purging_interval_s(60);
   inspector_->m_thread_manager->set_max_thread_table_size(config.GetSinspThreadCacheSize());

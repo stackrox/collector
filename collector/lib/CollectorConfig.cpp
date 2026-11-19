@@ -50,6 +50,8 @@ BoolEnvVar set_processes_listening_on_ports("ROX_PROCESSES_LISTENING_ON_PORT", C
 
 BoolEnvVar set_import_users("ROX_COLLECTOR_SET_IMPORT_USERS", false);
 
+BoolEnvVar enable_trusted_exepath("ROX_COLLECTOR_ENABLE_TRUSTED_EXEPATH", false);
+
 BoolEnvVar collect_connection_status("ROX_COLLECT_CONNECTION_STATUS", true);
 
 BoolEnvVar enable_external_ips("ROX_COLLECTOR_EXTERNAL_IPS_ENABLE", false);
@@ -102,6 +104,7 @@ CollectorConfig::CollectorConfig() {
 void CollectorConfig::InitCollectorConfig(CollectorArgs* args) {
   enable_processes_listening_on_ports_ = set_processes_listening_on_ports.value();
   import_users_ = set_import_users.value();
+  enable_trusted_exepath_ = enable_trusted_exepath.value();
   collect_connection_status_ = collect_connection_status.value();
   enable_external_ips_ = enable_external_ips.value();
   enable_connection_stats_ = enable_connection_stats.value();
@@ -436,6 +439,7 @@ std::ostream& operator<<(std::ostream& os, const CollectorConfig& c) {
          << ", processesListeningOnPorts:" << c.IsProcessesListeningOnPortsEnabled()
          << ", logLevel:" << c.LogLevel()
          << ", set_import_users:" << c.ImportUsers()
+         << ", enable_trusted_exepath:" << c.UseTrustedExepath()
          << ", collect_connection_status:" << c.CollectConnectionStatus()
          << ", enable_detailed_metrics:" << c.EnableDetailedMetrics()
          << ", external_ips:" << c.GetExternalIPsConf()
