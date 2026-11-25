@@ -49,7 +49,7 @@ func (k *K8sConfigReloadTestSuite) SetupSuite() {
 
 func (k *K8sConfigReloadTestSuite) AfterTest(suiteName, testName string) {
 	k.StopCollector()
-	k.Executor().RemoveConfigMap(k.TestNamespace(), CONFIG_MAP_NAME)
+	k.Executor().RemoveConfigMap(k.GetTestNamespace(), CONFIG_MAP_NAME)
 }
 
 func (k *K8sConfigReloadTestSuite) TestCreateConfigurationAfterStart() {
@@ -66,7 +66,7 @@ func (k *K8sConfigReloadTestSuite) TestCreateConfigurationAfterStart() {
 	configMap := coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      CONFIG_MAP_NAME,
-			Namespace: k.TestNamespace(),
+			Namespace: k.GetTestNamespace(),
 		},
 		Data: map[string]string{
 			"runtime_config.yaml": EXT_IP_ENABLE,
@@ -95,7 +95,7 @@ func (k *K8sConfigReloadTestSuite) TestConfigurationReload() {
 	configMap := coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      CONFIG_MAP_NAME,
-			Namespace: k.TestNamespace(),
+			Namespace: k.GetTestNamespace(),
 		},
 		Data: map[string]string{
 			"runtime_config.yaml": EXT_IP_ENABLE,

@@ -63,7 +63,7 @@ func (s *K8sTestSuiteBase) StartCollector(opts *collector.StartupOptions) {
 	s.Require().NoError(s.Collector().Launch())
 
 	// wait for collector to be running
-	s.watchPod("app=collector", s.TestNamespace(), func() bool {
+	s.watchPod("app=collector", s.GetTestNamespace(), func() bool {
 		return len(s.Collector().ContainerID()) != 0
 	})
 
@@ -79,7 +79,7 @@ func (s *K8sTestSuiteBase) StartCollector(opts *collector.StartupOptions) {
 			// create at least one canary process to make sure everything is
 			// fine.
 			log.Info("spawn a canary process, container ID: %s", containerID)
-			_, err := s.execPod("collector", s.TestNamespace(), []string{"echo"})
+			_, err := s.execPod("collector", s.GetTestNamespace(), []string{"echo"})
 			s.Require().NoError(err)
 		})
 	s.Require().True(selfCheckOk)
@@ -166,17 +166,17 @@ func (k *K8sTestSuiteBase) teardownTargetNamespace() {
 }
 
 func (k *K8sTestSuiteBase) createConfigMap(configMap *coreV1.ConfigMap) {
-	_, err := k.Executor().CreateConfigMap(k.TestNamespace(), configMap)
+	_, err := k.Executor().CreateConfigMap(k.GetTestNamespace(), configMap)
 	k.Require().NoError(err)
 }
 
 func (k *K8sTestSuiteBase) updateConfigMap(configMap *coreV1.ConfigMap) {
-	_, err := k.Executor().UpdateConfigMap(k.TestNamespace(), configMap)
+	_, err := k.Executor().UpdateConfigMap(k.GetTestNamespace(), configMap)
 	k.Require().NoError(err)
 }
 
 func (k *K8sTestSuiteBase) deleteConfigMap(name string) {
-	err := k.Executor().RemoveConfigMap(k.TestNamespace(), name)
+	err := k.Executor().RemoveConfigMap(k.GetTestNamespace(), name)
 	k.Require().NoError(err)
 }
 
@@ -184,6 +184,6 @@ func (k *K8sTestSuiteBase) Namespace() string {
 	return NAMESPACE
 }
 
-func (k *K8sTestSuiteBase) TestNamespace() string {
+func (k *K8sTestSuiteBase) GetTestNamespace() string {
 	return collector.TEST_NAMESPACE
 }
