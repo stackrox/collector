@@ -27,12 +27,13 @@ type criExecutor struct {
 
 func newCriExecutor() (*criExecutor, error) {
 	socket := config.RuntimeInfo().Socket
-	imageService, err := cri_client.NewRemoteImageService(socket, 1*time.Minute, trace_noop.NewTracerProvider(), nil)
+	ctx := context.Background()
+	imageService, err := cri_client.NewRemoteImageService(ctx, socket, 1*time.Minute, trace_noop.NewTracerProvider(), false)
 	if err != nil {
 		return nil, err
 	}
 
-	runtimeService, err := cri_client.NewRemoteRuntimeService(socket, 1*time.Minute, trace_noop.NewTracerProvider(), nil)
+	runtimeService, err := cri_client.NewRemoteRuntimeService(ctx, socket, 1*time.Minute, trace_noop.NewTracerProvider(), false)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +205,7 @@ func (c *criExecutor) StartContainer(config config.ContainerStartConfig) (string
 	for k, v := range config.Env {
 		envs = append(envs, &pb.KeyValue{
 			Key:   k,
-			Value: v,
+			Value: []byte(v),
 		})
 	}
 

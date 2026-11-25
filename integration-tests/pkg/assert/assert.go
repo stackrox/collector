@@ -56,7 +56,7 @@ func AssertRepeated(t *testing.T, tickTime time.Duration, timeout time.Duration,
 			}
 
 		case <-timer:
-			log.Error("Timeout reached: " + msg)
+			log.Error("Timeout reached: %s", msg)
 			t.FailNow()
 		}
 	}
