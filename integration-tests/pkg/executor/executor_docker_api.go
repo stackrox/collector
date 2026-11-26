@@ -361,16 +361,11 @@ func (d *dockerAPIExecutor) GetContainerIP(containerID string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	ip := inspectResp.NetworkSettings.DefaultNetworkSettings.IPAddress
-	// Newer podman builds (5.8.2-9.el10_2, RHSA-2026:70201) no longer populate
-	// the legacy DefaultNetworkSettings.IPAddress in the Docker-compat API;
-	// the address is only in the per-network EndpointSettings (ROX-37945).
-	if ip == "" {
-		for _, endpoint := range inspectResp.NetworkSettings.Networks {
-			if endpoint.IPAddress != "" {
-				ip = endpoint.IPAddress
-				break
-			}
+	var ip string
+	for _, endpoint := range inspectResp.NetworkSettings.Networks {
+		if endpoint.IPAddress != "" {
+			ip = endpoint.IPAddress
+			break
 		}
 	}
 	log.Info("IP for %s is %s\n", containerID, ip)
