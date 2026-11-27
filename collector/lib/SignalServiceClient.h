@@ -3,6 +3,7 @@
 // SIGNAL_SERVICE_CLIENT.h
 // This class defines our GRPC client abstraction
 
+#include <atomic>
 #include <mutex>
 
 #include <grpc/grpc.h>
@@ -12,7 +13,7 @@
 #include "api/v1/signal.pb.h"
 #include "internalapi/sensor/signal_iservice.grpc.pb.h"
 
-#include "DuplexGRPC.h"
+#include "GrpcStream.h"
 #include "SignalHandler.h"
 #include "StoppableThread.h"
 
@@ -47,14 +48,16 @@ class SignalServiceClient : public ISignalServiceClient {
   bool EstablishGRPCStreamSingle();
 
   std::shared_ptr<grpc::Channel> channel_;
+  std::unique_ptr<SignalService::Stub> stub_;
 
   StoppableThread thread_;
+  std::atomic<bool> stopping_{false};
   std::atomic<bool> stream_active_;
   std::condition_variable stream_interrupted_;
 
   // This needs to have the same lifetime as the class.
   std::unique_ptr<grpc::ClientContext> context_;
-  std::unique_ptr<IDuplexClientWriter<SignalStreamMessage>> writer_;
+  std::unique_ptr<IStreamWriter<SignalStreamMessage>> writer_;
 
   bool first_write_;
 };
