@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 )
 
 type PrometheusTestSuite struct {
@@ -27,7 +28,7 @@ func (s *PrometheusTestSuite) TestPrometheus() {
 	// Parse the body to check it is a valid prometheus output
 	body := response.Body
 	defer body.Close()
-	var parser expfmt.TextParser
+	parser := expfmt.NewTextParser(model.LegacyValidation)
 	m, err := parser.TextToMetricFamilies(body)
 	s.Require().NoError(err)
 	s.Assert().NotEmpty(m)
