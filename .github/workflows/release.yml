@@ -208,11 +208,12 @@ jobs:
           if [[ "${RELEASE_TYPE}" == "patch" ]]; then
             git pull --ff-only
           fi
+          git commit --allow-empty --message "Empty commit to trigger CI"
           git tag -a -m "Collector v${RELEASE}.${PATCH} release" "${RELEASE}.${PATCH}"
 
       - name: Push release tag
         run: |
-          git push origin "${RELEASE}.${PATCH}"
+          git push --atomic --follow-tags
 
       - name: Create tag in falcosecurity-libs
         run: |
