@@ -48,6 +48,11 @@ TEST(SystemInspectorServiceTest, FilterEvent) {
   uncached_container_process->m_tid = 43;
   uncached_container_process->set_cgroups({"cpu=/docker/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"});
 
+  // runc sets up containers by re-execing itself through /proc/self/exe
+  // (cloned from a memfd, e.g. "memfd:runc_cloned:/proc/self/exe"). These
+  // helpers run under the target container's cgroups, so only the exepath
+  // rule can reject them; other memfd executables are ordinary processes
+  // and pass it.
   auto proc_self_process = factory.create();
   proc_self_process->m_tid = 4;
   proc_self_process->m_exepath = "container:/proc/self/exe";

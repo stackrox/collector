@@ -147,8 +147,9 @@ std::shared_ptr<sinsp_threadinfo> Process::WaitForProcessInfo() const {
     CLOG_IF(std::cv_status::timeout == status, ERROR) << "Timed-out waiting for process-info. PID: " << pid();
   }
 
-  // Copy the shared pointer while holding the mutex; callers can then safely
-  // use the snapshot after this function releases the lock.
+  // Copy under the lock so the read can't race with the assignment in
+  // ProcessInfoResolved; the underlying thread-info may still be mutated by
+  // the system-inspector thread.
   return system_inspector_threadinfo_;
 }
 
