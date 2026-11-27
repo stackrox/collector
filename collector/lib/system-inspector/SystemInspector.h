@@ -25,6 +25,24 @@ struct Stats {
   volatile uint64_t nThreadCacheSize = 0;                   // number of thread-info entries stored in the cache
   volatile uint64_t nDropsThreadCache = 0;                  // the number of drops due to full thread cache
 
+  // libsinsp fdtable/threadtable state counters (from sinsp_stats_v2)
+  volatile uint64_t nFdCacheHits = 0;       // cached fd lookups
+  volatile uint64_t nFdCacheMisses = 0;     // non-cached fd lookups
+  volatile uint64_t nFdLookupFailures = 0;  // failed fd lookups
+  volatile uint64_t nFdsAdded = 0;          // fds added to fdtables
+  volatile uint64_t nFdsRemoved = 0;        // fds removed from fdtables
+
+  volatile uint64_t nThreadCacheHits = 0;       // cached thread lookups
+  volatile uint64_t nThreadCacheMisses = 0;     // non-cached thread lookups
+  volatile uint64_t nThreadLookupFailures = 0;  // failed thread lookups
+  volatile uint64_t nThreadsAdded = 0;          // threads added to the thread table
+  volatile uint64_t nThreadsRemoved = 0;        // threads removed from the thread table
+
+  // number of times a thread lookup fell back to a direct /proc scan (sinsp_thread_manager)
+  volatile uint64_t nProcLookups = 0;            // total /proc lookups performed
+  volatile uint64_t nMainThreadLookups = 0;      // /proc lookups performed specifically for main threads
+  volatile uint64_t nProcLookupsDurationNs = 0;  // total time spent performing /proc lookups
+
   // process related metrics
   volatile uint64_t nProcessSent = 0;                       // number of process signals sent
   volatile uint64_t nProcessSendFailures = 0;               // number of process signals failed to send
