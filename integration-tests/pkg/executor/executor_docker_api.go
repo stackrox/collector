@@ -361,9 +361,15 @@ func (d *dockerAPIExecutor) GetContainerIP(containerID string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Info("IP for %s is %s\n", containerID,
-		inspectResp.NetworkSettings.DefaultNetworkSettings.IPAddress)
-	return inspectResp.NetworkSettings.DefaultNetworkSettings.IPAddress, nil
+	var ip string
+	for _, endpoint := range inspectResp.NetworkSettings.Networks {
+		if endpoint.IPAddress != "" {
+			ip = endpoint.IPAddress
+			break
+		}
+	}
+	log.Info("IP for %s is %s\n", containerID, ip)
+	return ip, nil
 }
 
 func (d *dockerAPIExecutor) GetContainerPorts(containerID string) ([]string, error) {
