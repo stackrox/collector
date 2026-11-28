@@ -18,7 +18,7 @@ class Service;
 
 namespace collector::system_inspector {
 class Service;
-}
+}  // namespace collector::system_inspector
 
 namespace collector {
 /* A Process object store used to deduplicate process information.
@@ -91,8 +91,10 @@ class Process : public IProcess {
   // entry-point when system inspector resolved the requested process info
   void ProcessInfoResolved(std::shared_ptr<sinsp_threadinfo> process_info);
 
-  // block until process information is available, or timeout
-  void WaitForProcessInfo() const;
+  // Block until process information is available or times out; returns null
+  // on failure or timeout. The thread-info contents may still be mutated by
+  // the system-inspector thread.
+  std::shared_ptr<sinsp_threadinfo> WaitForProcessInfo() const;
 };
 
 std::ostream& operator<<(std::ostream& os, const IProcess& process);

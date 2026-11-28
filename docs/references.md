@@ -79,6 +79,11 @@ workloads it's the main part of memory consumption, this value effectively
 translates into the upper limit for memory usage. Note, that Falco puts it's
 own upper limit on top of that, which is 2^17.
 
+* `ROX_COLLECTOR_CONTAINER_ID_CACHE_PRUNE_INTERVAL`: How often, in seconds,
+Collector prunes its container ID cache of entries belonging to threads that
+are no longer present in the sinsp thread table. The default is 60 seconds,
+matching the thread table's own purging interval.
+
 * `ROX_COLLECTOR_ENABLE_DETAILED_METRICS`: Specified whether to expose per-syscall metrics. This
 information could be useful for troubleshooting, but under normal functioning
 is quite verbose. The default is true.
