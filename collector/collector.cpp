@@ -34,6 +34,7 @@ extern "C" {
 #include "CollectorVersion.h"
 #include "Control.h"
 #include "Diagnostics.h"
+#include "DropCapabilities.h"
 #include "EventNames.h"
 #include "FileSystem.h"
 #include "GRPC.h"
@@ -133,6 +134,21 @@ void RunService(CollectorConfig& config) {
   gplNotice();
 
   startup_diagnostics.Log();
+
+  // Drop capabilities no longer needed after BPF initialization.
+  // The main thread keeps BPF + PERFMON (runtime map lookups, potential
+  // capture restart) and SYS_PTRACE (/proc reads). Individual worker
+  // threads drop further in their own entry points.
+  auto kv = HostInfo::Instance().GetKernelVersion();
+  bool has_discrete_bpf = (kv.kernel > 5) || (kv.kernel == 5 && kv.major >= 8);
+
+  if (has_discrete_bpf) {
+    DropCapabilities({CAP_BPF, CAP_PERFMON, CAP_SYS_PTRACE}, true);
+    CLOG(INFO) << "Dropped capabilities, keeping CAP_BPF, CAP_PERFMON, CAP_SYS_PTRACE";
+  } else {
+    DropCapabilities({CAP_SYS_ADMIN, CAP_SYS_PTRACE}, true);
+    CLOG(INFO) << "Kernel " << kv.release << " lacks discrete CAP_BPF, keeping CAP_SYS_ADMIN, CAP_SYS_PTRACE";
+  }
 
   collector.RunForever();
 }
